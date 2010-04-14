@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+	android:orientation="vertical" android:background="@drawable/android_bg">
+	
+	<TextView
+		android:layout_gravity="center_horizontal"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:textSize="60sp" android:background="@drawable/icon_locast" android:width="174px" android:height="59px"/>
+		
+		<LinearLayout 
+	android:layout_width="200sp"
+	android:layout_height="fill_parent"
+	android:layout_gravity="center_horizontal"
+	android:orientation="vertical">
+	
+	<TextView
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center_horizontal"
+		android:text="@string/pairing_key"/>
+		
+	<Button android:id="@+id/ScanQRCodeButton"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center_horizontal"
+		android:text="@string/scan_qr_code" android:background="@drawable/icon_scan_qr"/>
+		
+	<TextView
+		android:layout_height="wrap_content" 
+		 android:layout_width="wrap_content"
+		 android:layout_gravity="center_horizontal"
+		android:text="@string/or"/>
+
+	<EditText android:id="@+id/PairingText"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center_horizontal"
+		android:hint="@string/pairing_code_entry"
+		android:inputType="number" 
+		android:imeOptions="actionGo" />
+		
+	<Button android:id="@+id/PairingButton" 
+		android:text="@string/pair_button" 
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center_horizontal"
+		android:background="@drawable/icon_pair"/>
+</LinearLayout>
+</LinearLayout>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:id="@+id/annotation_Frame"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent" 
+	android:orientation="horizontal">
+
+	<!-- Display video full-screen -->
+
+	<VideoView android:id="@+id/VideoView" 
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent">
+	</VideoView>
+	
+	<!-- Superimpose controls on top (when they are not hidden) -->
+	
+	<LinearLayout android:id="@+id/annotation_Line01"
+		android:orientation="vertical"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent">
+		
+		<SeekBar android:id="@+id/SeekBar"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			>
+		</SeekBar>
+			
+		<!-- annotation_listings
+			 - - -
+			 controls
+		 -->
+		
+	<!-- ANNOTATION_LISTINGS -->
+			<ListView android:id="@+id/annotation_list"
+				android:layout_weight="1"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:background="#77000000"
+				>			
+			</ListView>
+    		
+
+			<LinearLayout android:id="@+id/annotation_buttonTable"
+				android:orientation="horizontal"
+    			android:layout_height="wrap_content"
+    			android:layout_width="fill_parent"
+	    		android:gravity="bottom"
+	    		android:layout_gravity="bottom"
+	    		style="@android:style/ButtonBar"
+
+    		>
+					<Button android:id="@+id/annotation_Play"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+					    android:text="Play">
+					</Button>
+					<Button android:id="@+id/annotation_New"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="New Annotation">
+					</Button>		
+					<Button android:id="@+id/annotation_Done"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Done">
+					</Button>		
+			
+			</LinearLayout>
+			
+    		
+			
+			
+	</LinearLayout>
+</FrameLayout>

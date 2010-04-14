@@ -1,0 +1,26 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+	<item
+		android:id="@+id/settingsMenuItem"
+		android:title="@string/settings"
+		android:icon="@android:drawable/ic_menu_preferences" />
+	<item
+		android:title="@string/about"
+		android:id="@+id/aboutMenuItem"
+		android:icon="@android:drawable/ic_menu_info_details" />
+		
+	<item android:title="@string/upgrade"
+		android:id="@+id/upgrade"
+		android:icon="@android:drawable/ic_menu_manage"
+		/>
+		
+		<item android:title="Wipe Database"
+		android:id="@+id/reset"
+		android:visible="false"
+		android:icon="@android:drawable/ic_menu_delete" />
+		
+		<item android:title="Quit"
+		android:id="@+id/quit"
+		android:icon="@drawable/ic_menu_stop"
+		/>
+</menu>
+

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources  xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+	
+	<string name="app_name">Locast Civic Media</string>
+
+	<!-- Main screen -->
+    <string name="main_header_string">Locast</string>
+    <string name="projects_string">View My Projects</string>
+    <string name="browse_string">Browse Casts</string>
+    <string name="recordvideo_string">Record Cast</string>
+    <string name="recordaudio_string">Record Audio Note</string>
+    <string name="notifications_string">Notifications</string>
+    <string name="upgrade">Upgrade</string>
+    <string name="about">About</string>
+    <string name="settings">Settings</string>
+    
+    <!-- pairing -->
+	<string name="or">Or</string>
+	<string name="pairing_key">Enter Pairing Key</string>
+	<string name="scan_qr_code">Scan QRCode</string>
+	<string name="pairing_code_entry">Enter pairing code...</string>
+	<string name="pair_button">Pair</string>
+	
+	<!-- User-facing error messages -->
+	<string name="error_no_providers">Error: no location providers</string>
+	<string name="error_no_maps">Error: no map handler present.</string>
+	<string name="error_comments_sync">Error syncing comments.</string>
+	<string name="error_sync">Could not synchronize with server. Do you have a network connection?</string>
+	<string name="error_no_location">Could not get your location. This cast will not be geo-tagged until you add a location.</string>
+	<string name="error_cannot_edit">Sorry, you don't have permission to edit this item.</string>
+	
+	<!-- user-facing alerts -->
+	<string name="added_cast_to">Added cast to <xliff:g id="text">%0$s</xliff:g></string>
+	<string name="project_you_joined">You have joined <xliff:g id="text">%0$s</xliff:g></string>
+	<string name="project_you_left">You have left <xliff:g id="text">%0$s</xliff:g></string>
+	
+
+	<!-- casts -->
+	<string name="add_to_project">Add to Project</string>
+	<string name="edit_cast">Edit Cast</string>
+	<string name="annotate_cast">Annotate Cast</string>
+	<string name="view_cast">View Cast</string>
+	<string name="remove_cast">Remove Cast from Project</string>
+	<string name="current_location">Current location: </string>
+	<string name="requesting_location">Requesting current location...</string>
+	<string name="cast_location">Cast location: </string>
+	<string name="set_location">Set Location</string>
+	<string name="my_casts">My Casts</string>
+	<string name="casts_nearby">Nearby</string>
+	<string name="casts_tags">Tags</string>
+	<string name="view_casts_in_map">View casts in map</string>
+	
+	
+	<!-- projects -->
+	<string name="project_join">Join</string>
+	<string name="project_leave">Leave</string>
+	<string name="project_title">Project Title</string>
+	<string name="project_members_label">Members:</string>
+	<string name="project_start_date">Start Date:</string>
+	<string name="project_end_date">End Date:</string>
+	<string name="project_description">Project Description</string>
+	<string name="project_no_members"><i>No members</i></string>
+	<string name="project_no_casts">This project does not contain any casts. You can add a cast by pressing \'menu\'.</string>
+	
+	<!--  tags -->
+	<string name="tag_add_tag">Add Tag</string>
+	<string name="tag_no_tags">no tags</string>
+	<string name="tag_recommended">Recommended:</string>
+	
+	<!-- discussion -->
+	<string name="discussion_hint">Comment</string>
+	
+	<!-- generic -->
+	<string name="done">Done</string>
+	<string name="privacy_header">Privacy:</string>
+	<string name="privacy_spinner">Privacy level</string>
+	
+	<!-- Sync -->
+	<string name="sync_first">No local content detected. Starting first sync...</string>
+	<string name="sync_notification">Synchronizing with Locast server...</string>
+	<string name="sync_success">Sync successful.</string>
+
+	<string name="authority">edu.mit.mel.locast.mobile.provider</string>
+	<string name="type_content_item">vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content</string>
+	<string name="type_content_dir">vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.content</string>
+	
+	<!-- Mobile Video -->
+	<string name="mobilevideo_video_edit_title">Locast Video Editor</string>
+</resources>

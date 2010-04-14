@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@drawable/android_bg">
+    
+    <ImageView
+	android:id="@+id/header_textview"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+	android:layout_gravity="center_horizontal"
+	android:src="@drawable/icon_locast" />
+	
+	<TextView
+	android:id="@+id/header_subtitle"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+	android:layout_gravity="center_horizontal"
+	android:text="not logged in" />
+	
+	<LinearLayout
+		android:orientation="vertical"
+    	android:layout_width="280sp"
+    	android:layout_height="wrap_content"
+    	android:layout_gravity="center_horizontal"
+    	style="@style/LocastMainButton"
+    	>
+    	
+	<Button
+    android:id="@+id/browse_button"
+    android:layout_height="wrap_content"
+    android:layout_width="fill_parent"
+    android:layout_gravity="center_horizontal"
+    android:text="@string/browse_string" 
+    android:background="@drawable/btn_browse"/>
+	
+ 	<Button
+    android:id="@+id/projects_button"
+    android:layout_height="wrap_content"
+    android:layout_width="fill_parent"
+    android:layout_gravity="center_horizontal"
+    android:text="@string/projects_string"
+    android:background="@drawable/btn_projects" 
+    android:typeface="sans"/>
+	
+    <Button
+    android:id="@+id/recordvideo_button"
+    android:layout_height="wrap_content"
+    android:layout_width="fill_parent"
+    android:layout_gravity="center_horizontal"
+    android:text="@string/recordvideo_string" 
+    android:background="@drawable/btn_record_cast" 
+    android:typeface="sans" />
+    
+    <Button
+    android:id="@+id/recordaudio_button"
+    android:layout_height="wrap_content"
+    android:layout_width="fill_parent"
+    android:layout_gravity="center_horizontal"
+    android:text="@string/recordaudio_string" 
+    android:background="@drawable/btn_record_audio" 
+    android:typeface="sans" />
+    
+    <Button
+    android:id="@+id/sync_button"
+    android:layout_height="wrap_content"
+    android:layout_width="fill_parent"
+    android:layout_gravity="center_horizontal"
+    android:text="Sync with Server"
+    android:background="@drawable/btn_sync"
+    android:typeface="sans" />
+    <!-- 
+    <Button
+    android:id="@+id/sync_cancel_button"
+    android:layout_height="wrap_content"
+    android:layout_width="fill_parent"
+    android:layout_gravity="center_horizontal"
+    android:text="Cancel sync"
+    android:background="@drawable/btn_sync"
+    android:typeface="sans" />
+    -->
+    <!-- 
+    <Button
+    android:id="@+id/notifications_button"
+    android:layout_height="wrap_content"
+    android:layout_width="fill_parent"
+    android:layout_gravity="center_horizontal"
+    android:text="@string/notifications_string"
+    android:background="@drawable/btn_notification"
+    android:typeface="sans" /> -->
+</LinearLayout>
+
+</LinearLayout>

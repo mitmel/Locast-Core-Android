@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" 
+        android:paddingTop="2dip"
+        android:paddingBottom="2dip"
+        android:paddingRight="2dip"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:minHeight="?android:attr/listPreferredItemHeight"
+	    android:orientation="vertical"
+	    >
+    
+      <TextView android:id="@android:id/text1"
+      		android:text="text1"
+          	android:layout_width="fill_parent"
+          	android:layout_height="wrap_content"
+		    android:layout_marginLeft="6dip"
+		    android:layout_marginTop="6dip"
+		    android:textAppearance="?android:attr/textAppearanceMedium"
+          	style="TextView1" 
+        />
+    
+    <LinearLayout
+    	android:orientation="horizontal"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content">
+	    
+   	<LinearLayout android:orientation="vertical"
+   		android:layout_width="80dip"
+		android:layout_height="wrap_content"
+		android:layout_marginRight="6dip"
+		android:layout_marginLeft="4dip">
+
+		<FrameLayout android:layout_width="wrap_content"
+		 android:layout_height="wrap_content" 
+		  android:background="@android:drawable/picture_frame">
+		  
+    		<ImageView android:id="@+id/media_thumbnail" 
+    		android:layout_height="wrap_content" 
+    		android:layout_width="wrap_content" 
+    		android:scaleType="fitCenter"
+    		android:adjustViewBounds="true"
+    		android:src="@drawable/cast_placeholder" />
+    		
+     	</FrameLayout>
+     	
+      	<TextView android:id="@+id/author" 
+	      android:text="author" 
+	      android:layout_width="fill_parent" 
+	      android:layout_height="wrap_content"
+	      android:singleLine="true" />
+	      
+     </LinearLayout>
+
+                
+        <TextView android:id="@android:id/text2"
+				android:text="text2"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@android:id/text1"
+        		android:layout_alignLeft="@android:id/text1"
+                style="TextView2" 
+        />
+        </LinearLayout>
+
+</LinearLayout>

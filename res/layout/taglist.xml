@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="wrap_content"
+   android:orientation="vertical"
+  >
+  
+  	<TextView android:id="@+id/tag_no_tags"
+  		android:text="@string/tag_no_tags"
+  		android:layout_width="fill_parent"
+  		android:layout_height="wrap_content"
+  		android:textAppearance="?android:attr/textAppearanceMedium"
+  		android:textColor="@android:color/tertiary_text_dark"
+  		android:gravity="center_horizontal"
+  		android:padding="7dip" 
+  		 />
+  		 <!-- padding above should line up with the buttons, roughly. -->
+  		
+  	<se.fnord.android.layout.PredicateLayout 
+  	android:id="@+id/tag_added_tags"
+	android:layout_width="fill_parent" 
+	android:layout_height="wrap_content"
+    />
+	
+	<LinearLayout
+	android:id="@+id/tag_manual_entry"
+	android:orientation="horizontal"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	>
+	
+	<AutoCompleteTextView android:id="@+id/tag_add_text" 
+	android:hint="@string/tag_add_tag"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:singleLine="true" 
+	android:inputType="text"
+	android:imeOptions="actionDone"
+	android:maxLength="32"
+	android:layout_weight="1" /> 
+		
+	<ImageButton android:id="@+id/tag_add_button"
+	android:src="@android:drawable/ic_input_add"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+	/>
+	
+  </LinearLayout>
+  
+  <TextView
+  android:id="@+id/tag_recommended_label" 
+  	android:text="@string/tag_recommended" 
+  	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+	android:visibility="gone"
+  />
+  
+  <se.fnord.android.layout.PredicateLayout
+  	android:id="@+id/tag_recommended_tags"
+	android:layout_width="fill_parent" 
+	android:layout_height="wrap_content"
+    />
+   
+</LinearLayout>

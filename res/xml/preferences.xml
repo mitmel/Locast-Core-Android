@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+	<PreferenceCategory android:title="Account">
+		<EditTextPreference android:title="Username"
+			android:singleLine="true" 		
+			android:key="username" />
+		<EditTextPreference android:title="Password"
+			
+                android:password="true"
+                android:singleLine="true" 
+			
+			android:key="password" />
+			
+	</PreferenceCategory>
+	<!-- 
+	<PreferenceCategory android:title="Privacy">
+		<CheckBoxPreference android:title="Publish my location"
+			android:defaultValue="true" android:key="privacy" />
+	</PreferenceCategory>
+
+	<PreferenceCategory android:title="Tags">
+		<CheckBoxPreference android:defaultValue="true"
+			android:title="Favorite Tags" android:key="favoritetags" />
+	</PreferenceCategory>
+-->
+	<PreferenceCategory android:title="Advanced">
+		
+		<EditTextPreference android:title="Server URL"
+		android:key="server_url"
+		android:singleLine="true" 
+		android:defaultValue="http://locast.mit.edu/civic/api" />
+		<!-- 
+		<CheckBoxPreference android:defaultValue="true"
+			android:title="Unpair Mobile Device" android:key="unpair" />
+	-->
+</PreferenceCategory>
+
+
+</PreferenceScreen>

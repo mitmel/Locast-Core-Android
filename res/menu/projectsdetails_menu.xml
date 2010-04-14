@@ -1,0 +1,16 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+	<item
+		android:id="@+id/addCastItem"
+		android:title="Add Cast"
+		android:icon="@android:drawable/ic_menu_add" />
+	<item
+		android:id="@+id/project_edit"
+		android:title="Edit Project"
+		android:icon="@android:drawable/ic_menu_edit" />
+	
+	<!-- MOBILEVIDEO! -->
+	<item
+		android:id="@+id/projectdetailmenu_videoedit"
+		android:title="Video Edit this Project"
+		android:icon="@android:drawable/ic_menu_edit" />
+</menu>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+    <!--  giving a weight prioritizes this view over others, 
+    	letting the last item fall to the bottom -->
+    <ScrollView android:id="@+id/ScrollView01"
+     android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:orientation="vertical"
+      >
+    <LinearLayout
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content">
+    
+	<EditText android:id="@+id/projectTitle"
+	 android:hint="@string/project_title"
+	 android:layout_width="fill_parent"
+	 android:layout_height="wrap_content"
+	/>
+	
+	<TextView
+	 android:text="@string/project_members_label"
+	 android:layout_width="fill_parent"
+	 android:layout_height="wrap_content"
+	/>
+	
+	<Button android:id="@+id/people"
+	 android:layout_width="fill_parent"
+	 android:layout_height="wrap_content"
+	 android:lines="1"
+	 android:ellipsize="end"
+	/>
+	
+	<TextView
+	 android:text="@string/privacy_header"
+	 android:layout_width="fill_parent"
+	 android:layout_height="wrap_content" />
+	 
+	<Spinner android:id="@+id/privacy"
+	 android:layout_width="fill_parent"
+	 android:layout_height="wrap_content"
+	 android:prompt="@string/privacy_spinner" 
+	 android:entries="@array/privacy" />
+	
+	<TextView
+	 android:text="@string/project_start_date"
+	 android:layout_width="fill_parent"
+	 android:layout_height="wrap_content"
+	/>
+	
+	<Button android:id="@+id/projectStartDate"
+	 android:layout_width="fill_parent"
+	 android:layout_height="wrap_content"
+	/>
+	
+	<TextView
+	 android:text="@string/project_end_date"
+	 android:layout_width="fill_parent"
+	 android:layout_height="wrap_content"
+	/>
+
+	<Button android:id="@+id/projectEndDate"
+	 android:layout_width="fill_parent"
+	 android:layout_height="wrap_content"
+	/>
+	
+	<EditText android:id="@+id/projectDescription"
+	 android:hint="@string/project_description"
+	 android:layout_width="fill_parent"
+	 android:layout_height="90sp"
+	/>
+	
+	<edu.mit.mel.locast.mobile.widget.TagList 
+	android:id="@+id/new_project_tags"
+	 android:layout_width="fill_parent"
+	 android:layout_height="wrap_content"
+	/>
+	
+</LinearLayout>
+    </ScrollView>
+    
+    <LinearLayout android:orientation="horizontal"
+    android:layout_height="wrap_content"
+    android:layout_width="fill_parent"
+    android:gravity="bottom"
+    android:layout_gravity="bottom"
+    style="@android:style/ButtonBar"
+    >
+    <Button android:text="@string/done" 
+    android:id="@+id/done" 
+    android:layout_width="wrap_content" 
+    android:layout_height="wrap_content"/>
+    
+    <Button android:text="@android:string/cancel" 
+    android:id="@+id/cancel" 
+    android:layout_width="wrap_content" 
+    android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
+
+</LinearLayout>

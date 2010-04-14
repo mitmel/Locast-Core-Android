@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent" android:layout_height="wrap_content"
+	android:scrollbars="none">
+
+	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+		android:orientation="vertical" android:layout_width="fill_parent"
+		android:layout_height="wrap_content">
+
+		<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+			android:layout_width="fill_parent" android:layout_height="wrap_content"
+			android:stretchColumns="0">
+			<TableRow>
+				<EditText android:id="@+id/userText" android:layout_width="fill_parent"
+					android:layout_height="wrap_content" />
+
+				<Button android:id="@+id/send" android:layout_width="wrap_content"
+					android:layout_height="fill_parent" android:text="(+)"
+					android:layout_gravity="right" />
+			</TableRow>
+		</TableLayout>
+
+		<ListView android:id="@+id/tag_list" android:layout_width="fill_parent"
+			android:layout_height="200pt" android:layout_weight="1"
+			android:transcriptMode="normal" />
+	</LinearLayout>
+</ScrollView>

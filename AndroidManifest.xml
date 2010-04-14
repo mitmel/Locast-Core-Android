@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+	package="edu.mit.mel.locast.mobile" android:versionCode="4"
+	android:versionName="0.4.2">
+	
+	<supports-screens android:largeScreens="true" />
+	
+<!-- android:theme="@style/LocastTheme" -->
+	<application android:icon="@drawable/icon"
+		android:label="@string/app_name"
+		android:name=".Application"
+		android:debuggable="true">
+		
+                <uses-library android:name="com.google.android.maps" />
+                
+		
+		<activity android:name=".MainActivity" android:label="@string/app_name">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
+		<activity android:name="SettingsActivity" />
+		
+		<!-- projects -->
+		
+		<activity android:name=".projects.MyProjectsActivity">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<action android:name="android.intent.action.EDIT" />
+				<action android:name="android.intent.action.PICK" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.projects" />
+			</intent-filter>
+		</activity>
+		<activity android:name=".projects.ViewProjectActivity">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.projects" />
+			</intent-filter>
+
+		</activity>
+		<activity android:name=".projects.EditProjectActivity">
+			<intent-filter>
+				<action android:name="android.intent.action.EDIT" />
+				<action android:name="edu.mit.mel.locast.mobile.ACTION_ADD_CAST" />
+				<action android:name="edu.mit.mel.locast.mobile.ACTION_TOGGLE_MEMBERSHIP" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.projects" />
+			</intent-filter>
+			<!-- can create new projects -->
+			<intent-filter>
+				<action android:name="android.intent.action.INSERT" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.projects" />
+			</intent-filter>
+			<!-- can attach content to projects -->
+			<intent-filter>
+				<action android:name="android.intent.action.ATTACH_DATA" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content" />
+			</intent-filter>
+		</activity>
+
+		<activity android:name=".casts.BrowseCastsActivity">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.content" />
+			</intent-filter>		
+		</activity>
+		
+		<activity android:name=".casts.BrowseByMapActivity">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.content" />
+			</intent-filter>		
+		</activity>
+		
+		<activity android:name=".casts.BrowseByTagsActivity">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.content" />
+			</intent-filter>		
+		</activity>
+		
+		<activity android:name=".casts.MyCastsActivity">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<action android:name="android.intent.action.EDIT" />
+				<action android:name="android.intent.action.PICK" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.content" />
+			</intent-filter>
+		</activity>
+		<activity android:name=".casts.ViewCastActivity">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data
+					android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content" />
+			</intent-filter>
+		</activity>
+
+		<activity android:name="com.rmozone.mobilevideo.AnnotationActivity"
+			android:screenOrientation="landscape">
+		
+			<intent-filter>
+				<action android:name="com.rmozone.mobilevideo.ACTION_ANNOTATE_CAST_FROM_MEDIA_URI" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="video/*" />
+				<data android:mimeType="audio/*" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content" />
+			</intent-filter>
+			
+			<intent-filter>
+				<action android:name="com.rmozone.mobilevideo.ACTION_ANNOTATE_CAST_FROM_LOCAST_ID" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="video/*" />
+				<data android:mimeType="audio/*" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content" />				
+			</intent-filter>
+			
+			
+		</activity>
+
+		<provider android:name="com.rmozone.mobilevideo.AnnotationData"
+			android:authorities="com.rmozone.mobilevideo" />
+			
+		<activity android:name="com.rmozone.mobilevideo.VideoEditActivity"
+				  android:label="@string/mobilevideo_video_edit_title">
+			<intent-filter>
+				<action android:name="com.rmozone.mobilevideo.ACTION_EDIT_CASTS_IN_PROJECT" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.projects" />
+			</intent-filter>
+			
+			<intent-filter>
+				<action android:name="com.rmozone.mobilevideo.ACTION_APPEND_CAST_TO_EDIT" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content" />
+			</intent-filter>
+		</activity>
+		
+		<activity android:name="com.rmozone.mobilevideo.VideoTrimActivity">
+			<intent-filter>
+				<action android:name="com.rmozone.mobilevideo.ACTION_TRIM_CAST" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="*/*" />
+			</intent-filter>
+		</activity>		
+
+		<activity android:name="com.rmozone.mobilevideo.VideoChooseActivity">
+			<intent-filter>
+				<action android:name="com.rmozone.mobilevideo.ACTION_CHOOSE_VIDEO_FROM_PROJECT" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.projects" />
+			</intent-filter>
+		</activity>		
+		
+		
+		<activity android:name=".casts.ViewCastActivity">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data
+					android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content" />
+			</intent-filter>
+		</activity>
+		<activity android:name=".casts.EditCastActivity">
+			<intent-filter>
+				<action android:name="android.intent.action.EDIT" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content" />
+			</intent-filter>
+			<intent-filter>
+				<action android:name="android.intent.action.INSERT" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.content" />
+			</intent-filter>
+			<intent-filter>
+				<action android:name="android.intent.action.SEND" />
+				<action android:name="edu.mit.mel.locast.mobile.share.ACTION_CAST_FROM_MEDIA_URI" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="video/*" />
+				<data android:mimeType="audio/*" />
+			</intent-filter>
+		</activity>		
+		
+		<service android:name=".data.Sync">
+		<intent-filter>
+			<action android:name="edu.mit.mel.locast.mobile.ACTION_CANCEL_SYNC" />
+			<data android:mimeType="*/*" />
+			
+		</intent-filter>
+			<intent-filter>
+				<action android:name="android.intent.action.SYNC" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.content" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.projects" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.projects" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.comments" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.comments" />
+			</intent-filter>
+		</service>
+		
+		<activity android:name="FavoriteTagsActivity"></activity>
+		
+		<provider android:name=".data.MediaProvider"
+			android:authorities="edu.mit.mel.locast.mobile.provider" />
+</application>
+	<uses-sdk android:minSdkVersion="4" />
+
+	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+	<uses-permission android:name="android.permission.READ_CONTACTS" />
+	<uses-permission android:name="android.permission.WRITE_CONTACTS" />
+	<uses-permission android:name="android.permission.CAMERA" />
+	<uses-permission android:name="android.permission.VIBRATE" />
+	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+	<uses-permission android:name="android.permission.INTERNET" />
+
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+</manifest> 
