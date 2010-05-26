@@ -64,7 +64,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 15;
+		private static final int DB_VER = 16;
 		
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -86,8 +86,7 @@ public class MediaProvider extends ContentProvider {
 					+ Cast.PRIVACY 		+ " TEXT,"
 					+ Cast.LATITUDE 	+ " REAL,"
 					+ Cast.LONGITUDE 	+ " REAL,"
-					+ Cast.THUMBNAIL_URI+ " TEXT,"
-					+ Cast.THUMBNAIL 	+ " BINARY"
+					+ Cast.THUMBNAIL_URI+ " TEXT"
 					+ ");"
 					);
 			db.execSQL("CREATE TABLE " + PROJECT_TABLE_NAME + " ("
@@ -136,6 +135,7 @@ public class MediaProvider extends ContentProvider {
 			db.execSQL("DROP TABLE IF EXISTS " + PROJECT_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + COMMENT_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
+			db.execSQL("VACUUM");
 			onCreate(db);
 		}
 
@@ -207,6 +207,7 @@ public class MediaProvider extends ContentProvider {
 			default:
 				throw new IllegalArgumentException("Unknown URI: "+uri);
 		}
+		db.execSQL("VACUUM");
 		getContext().getContentResolver().notifyChange(uri, null);
 		return 0;
 	}
@@ -282,7 +283,7 @@ public class MediaProvider extends ContentProvider {
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
 		final SQLiteDatabase db = dbHelper.getWritableDatabase();
-		
+
 		long rowid;
 		final boolean syncable = canSync(uri);
 		if (syncable && !values.containsKey(Project.MODIFIED_DATE)){

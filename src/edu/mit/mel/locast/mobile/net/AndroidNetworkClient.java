@@ -148,6 +148,12 @@ public class AndroidNetworkClient extends NetworkClient {
 		Toast.makeText(this.context, e.toString(), Toast.LENGTH_LONG).show();
 		
 	}
+
+	@Override
+	protected void logDebug(String msg) {
+		Log.d(TAG, msg);
+		
+	}
 	
 	
 	/**

@@ -49,7 +49,6 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 		PUBLIC_URI = "public_uri",
 		CONTENT_TYPE = "content_type",
 
-		THUMBNAIL = "thumbnail",
 		THUMBNAIL_URI = "thumbnail_uri",
 
 		LATITUDE = "lat",
@@ -67,7 +66,6 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 		PUBLIC_URI,
 		CONTENT_TYPE,
 		MODIFIED_DATE,
-		THUMBNAIL,
 		THUMBNAIL_URI,
 		LATITUDE,
 		LONGITUDE };

@@ -77,7 +77,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		imgLoader = ((Application)getApplication()).getImageLoader();
 		
 		final Criteria criteria = new Criteria();
-		criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+		criteria.setAccuracy(Criteria.ACCURACY_FINE);
 		criteria.setCostAllowed(false);
 		locProvider = lm.getBestProvider(criteria, true);
         if (locProvider == null){

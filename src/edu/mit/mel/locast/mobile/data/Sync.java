@@ -1,7 +1,6 @@
 package edu.mit.mel.locast.mobile.data;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
@@ -138,6 +137,8 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 				}else {
 					remObjs = nc.getArray(MediaProvider.getPublicPath(cr, toSync));
 				}
+				// TODO figure out how to use getContentResolver().bulkInsert(url, values); for this:
+				
 				for (int i = 0; i < remObjs.length(); i++){
 					syncItem(toSync, null, JsonSyncableItem.fromJSON(getApplicationContext(), null, remObjs.getJSONObject(i), sync.getSyncMap()), sync);
 				}
@@ -346,8 +347,14 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
     
 
     
-    public void startSync(Uri... uri){
-    	syncQueue.addAll(Arrays.asList(uri));
+    public void startSync(Uri uri){
+    	if (! syncQueue.contains(uri)){
+    		syncQueue.add(uri);
+    		Log.d(TAG, "enqueing " + uri + " to sync queue");
+    	}else{
+    		Log.d(TAG, "NOT enqueing " + uri + " to sync queue, as it's already present");
+    	}
+    	
     	if (currentSyncTask == null || currentSyncTask.getStatus() == AsyncTask.Status.FINISHED){
     		currentSyncTask = new SyncTask();
     		currentSyncTask.execute(uri);
@@ -378,6 +385,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			
 			try {
 				while (!syncQueue.isEmpty()){
+					Log.d(TAG, syncQueue.size() + " items in the sync queue");
 					final Uri toSync = syncQueue.remove();
 					notification.setLatestEventInfo(getApplicationContext(), getText(R.string.sync_notification), "Syncing " + toSync.getPath(), showMainScreen);
 					

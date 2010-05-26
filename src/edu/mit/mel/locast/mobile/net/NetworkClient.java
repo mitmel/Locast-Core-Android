@@ -145,6 +145,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		}
 	}
 	abstract protected void showError(Exception e);
+	abstract protected void logDebug(String msg);
 	
 	/************************* credentials and pairing **********************/
 	
@@ -273,7 +274,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 			// avoids any unpleasantly-large error messages.
 			String msg;
 			if (c.getEntity().getContentLength() > 40){
-				System.err.println("Got long response");
+				logDebug("Got long response");
 				msg = c.getStatusLine().getReasonPhrase();
 			}else{
 				msg = StreamUtils.inputStreamToString(c.getEntity().getContent());
@@ -330,9 +331,9 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		if (statusCode != HttpStatus.SC_OK){
 			final HttpEntity e = res.getEntity();
 			if (e.getContentType().getValue().equals("text/html") || e.getContentLength() > 40){
-				System.err.println("Got long response body. Not showing.");
+				logDebug("Got long response body. Not showing.");
 			}else{
-				System.err.println(StreamUtils.inputStreamToString(e.getContent()));
+				logDebug(StreamUtils.inputStreamToString(e.getContent()));
 			}
 			throw new NetworkProtocolException("HTTP " + res.getStatusLine().getStatusCode() + " "+ res.getStatusLine().getReasonPhrase(), res);
 		}
@@ -411,9 +412,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		final HttpResponse c = this.execute(r);
 		
 		if (c.getStatusLine().getStatusCode() >= 300){
-			System.err.println("just sent:");
-			System.err.println(jsonString);
-			System.err.println();
+			logDebug("just sent:" + jsonString);
 			// TODO should revise this to say that HTTP_CREATED is ok too.
 			throw new NetworkProtocolException(c, HttpStatus.SC_OK);
 		}
@@ -452,31 +451,31 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	protected synchronized HttpHead openHEAD(String uri) throws IOException, 
 	NetworkProtocolException {
 		final String fullUri = getFullUri(uri);
-		System.err.println("GETting "+ fullUri);
+		logDebug("HEADting "+ fullUri);
 		return new HttpHead(fullUri);
 	}
 	
 	protected synchronized HttpGet openGET(String uri) throws IOException, 
 	NetworkProtocolException {
 		final String fullUri = getFullUri(uri);
-		System.err.println("GETting "+ fullUri);
+		logDebug("GETting "+ fullUri);
 		if (getCredentialsProvider() != null && getCredentialsProvider().getCredentials(authScope) != null){
-			System.err.println("Using this for auth:" + getCredentialsProvider().getCredentials(authScope).getPassword());
+			logDebug("Using this for auth:" + getCredentialsProvider().getCredentials(authScope).getPassword());
 		}else{
-			System.err.println("No credentials");
+			logDebug("No credentials");
 		}
 		return new HttpGet(fullUri);
 	}
 	
 	protected synchronized HttpPost openPOST(String uri) throws IOException, 
 	NetworkProtocolException {
-		System.err.println("POSTing "+ baseurl + uri);
+		logDebug("POSTing "+ baseurl + uri);
 		return new HttpPost(baseurl+uri);
 	}
 	
 	protected synchronized HttpPut openPUT(String uri) throws IOException, 
 	NetworkProtocolException {
-		System.err.println("PUTting "+ baseurl + uri);
+		logDebug("PUTting "+ baseurl + uri);
 		return new HttpPut(baseurl+uri);
 	}
 	
@@ -501,9 +500,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		final HttpResponse c = this.execute(r);
 		
 		if (c.getStatusLine().getStatusCode() >= 300){
-			System.err.println("just sent:");
-			System.err.println(jsonString);
-			System.err.println();
+			logDebug("just sent: " + jsonString);
 			// TODO should revise this to say that HTTP_CREATED is ok too.
 			throw new NetworkProtocolException(c, HttpStatus.SC_OK);
 		}
@@ -586,10 +583,10 @@ abstract public class NetworkClient extends DefaultHttpClient {
 //				if (userIcon != null){
 //					u.setIcon(userIcon);
 //				}else{
-//					System.err.println("could not retrieve icon for " + u.username);
+//					logDebug("could not retrieve icon for " + u.username);
 //				}
 			}else{
-				System.err.println(u.username + " has no user icon");
+				logDebug(u.username + " has no user icon");
 			}
 			
 		}catch(final JSONException e){

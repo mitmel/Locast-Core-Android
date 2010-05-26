@@ -85,11 +85,7 @@ public class ViewCastActivity extends Activity implements OnClickListener {
 			if (c.isNull(c.getColumnIndex(row))){
 				testOut.append("<<null>>");
 			}else{
-				if (row.equals(Cast.THUMBNAIL)){
-					testOut.append("<<blob>>");
-				}else{
-					testOut.append(c.getString(c.getColumnIndex(row)));
-				}
+				testOut.append(c.getString(c.getColumnIndex(row)));
 				
 			}
 			testOut.append("; ");
