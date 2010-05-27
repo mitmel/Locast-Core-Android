@@ -3,6 +3,7 @@ package edu.mit.mel.locast.mobile.widget;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -68,8 +69,9 @@ public class DiscussionBoard extends LinearLayout implements OnClickListener, On
         addPostingButton = (Button) findViewById(R.id.send);
         addPostingButton.setOnClickListener(this);
         
-        imageLoader = ((Application)context.getApplicationContext()).getImageLoader();
-        
+        if (context instanceof Activity){
+        	imageLoader = ((Application)context.getApplicationContext()).getImageLoader();
+        }
 	}
 	
 	protected void inflateLayout(Context context){

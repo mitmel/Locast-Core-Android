@@ -135,7 +135,6 @@ public class MediaProvider extends ContentProvider {
 			db.execSQL("DROP TABLE IF EXISTS " + PROJECT_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + COMMENT_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
-			db.execSQL("VACUUM");
 			onCreate(db);
 		}
 

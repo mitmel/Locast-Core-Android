@@ -39,12 +39,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
-import com.commonsware.cwac.cache.SimpleWebImageCache;
 import com.commonsware.cwac.thumbnail.ThumbnailAdapter;
-import com.commonsware.cwac.thumbnail.ThumbnailBus;
-import com.commonsware.cwac.thumbnail.ThumbnailMessage;
 import com.rmozone.mobilevideo.VideoEditActivity;
 
+import edu.mit.mel.locast.mobile.Application;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.JsonSyncableItem;
@@ -78,17 +76,11 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	        
 	        tagList = ((TagListView)findViewById(R.id.tags));
 	        
-	        // Reference the Gallery view
 	        final Gallery g = (Gallery) findViewById(R.id.gallery);
-	        // Set the adapter to our custom adapter (below)
-	        
-	        final SimpleWebImageCache<ThumbnailBus, ThumbnailMessage> cache = 
-	        	new SimpleWebImageCache<ThumbnailBus, ThumbnailMessage>(null, null, 101, 
-	        			new ThumbnailBus());
 	        
 	        // this defines what images need to be loaded. URLs are placed in the ImageView tag
 	        final int[] IMAGE_IDS = {R.id.thumbnail};
-	        castAdapter = new ThumbnailAdapter(this, new ImageAdapter(this), cache, IMAGE_IDS);
+	        castAdapter = new ThumbnailAdapter(this, new ImageAdapter(this), ((Application)getApplication()).getImageCache(), IMAGE_IDS);
 	        g.setAdapter(castAdapter);
 	        g.setOnItemClickListener(this);
 	        g.setOnCreateContextMenuListener(this);

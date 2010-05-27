@@ -25,6 +25,7 @@ import edu.mit.mel.locast.mobile.SettingsActivity;
 import edu.mit.mel.locast.mobile.data.Project;
 
 public class MyProjectsActivity extends ListActivity {
+	private final static String TAG = MyProjectsActivity.class.getSimpleName();
 	
 	//Selection of columns that we want in the cursor
 
@@ -70,19 +71,19 @@ public class MyProjectsActivity extends ListActivity {
 			return v;
 		}
 	
-    } 	
+    }
 
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		super.onListItemClick(l, v, position, id);
 		final String action = getIntent().getAction();
 		final Uri projectUri = ContentUris.withAppendedId(Project.CONTENT_URI, id);
-		if (Intent.ACTION_VIEW.equals(action)){
-			startActivity(new Intent(Intent.ACTION_VIEW, projectUri));
-			
-		}else if (Intent.ACTION_PICK.equals(action)){
+		
+		if (Intent.ACTION_PICK.equals(action)){
 			setResult(RESULT_OK, new Intent().setData(ContentUris.withAppendedId(getIntent().getData(), id)));
 			finish();
+		}else{
+			startActivity(new Intent(Intent.ACTION_VIEW, projectUri));
 		}
 	}
 
