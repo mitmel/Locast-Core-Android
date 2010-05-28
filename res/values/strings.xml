@@ -5,6 +5,8 @@
 
 	<!-- Main screen -->
     <string name="main_header_string">Locast</string>
+    <string name="tab_projects">Projects</string>
+    <string name="tab_casts">Casts</string>
     <string name="projects_string">View My Projects</string>
     <string name="browse_string">Browse Casts</string>
     <string name="recordvideo_string">Record Cast</string>
@@ -28,6 +30,7 @@
 	<string name="error_sync">Could not synchronize with server. Do you have a network connection?</string>
 	<string name="error_no_location">Could not get your location. This cast will not be geo-tagged until you add a location.</string>
 	<string name="error_cannot_edit">Sorry, you don't have permission to edit this item.</string>
+	<string name="error_no_project">Error: project %s could not be found in local database.</string>
 	
 	<!-- user-facing alerts -->
 	<string name="added_cast_to">Added cast to <xliff:g id="text">%0$s</xliff:g></string>

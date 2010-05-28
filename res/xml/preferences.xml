@@ -29,8 +29,7 @@
 		
 		<EditTextPreference android:title="Server URL"
 		android:key="server_url"
-		android:singleLine="true" 
-		android:defaultValue="http://locast.mit.edu/civic/api" />
+		android:singleLine="true" android:defaultValue="http://mel-pydev.mit.edu/civic/api"/>
 		<!-- 
 		<CheckBoxPreference android:defaultValue="true"
 			android:title="Unpair Mobile Device" android:key="unpair" />

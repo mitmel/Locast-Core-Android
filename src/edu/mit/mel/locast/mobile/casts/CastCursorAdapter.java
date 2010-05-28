@@ -22,10 +22,6 @@ public class CastCursorAdapter extends SimpleCursorAdapter {
 	
 	public CastCursorAdapter(Context context, Cursor c) {
 		super(context, R.layout.browse_content_item, c, from, to);
-	        // this defines what images need to be loaded. URLs are placed in the ImageView tag
-	        
-		
-		
 	}
 	
 	@Override

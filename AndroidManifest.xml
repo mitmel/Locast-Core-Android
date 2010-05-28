@@ -25,7 +25,7 @@
 		
 		<!-- projects -->
 		
-		<activity android:name=".projects.MyProjectsActivity">
+		<activity android:name=".projects.ListProjectsActivity">
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
 				<action android:name="android.intent.action.EDIT" />
@@ -209,6 +209,7 @@
 		
 		<provider android:name=".data.MediaProvider"
 			android:authorities="edu.mit.mel.locast.mobile.provider" />
+<activity android:name=".PairingActivity"></activity>
 </application>
 
 	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />

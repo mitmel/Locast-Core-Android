@@ -94,8 +94,8 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	        	final Uri projectUri = getIntent().getData();
 	        	c = managedQuery(projectUri, Project.PROJECTION, null, null, null);
 	        	
-	        	c.moveToFirst();
-	        	loadFromCursor(projectUri, c);
+	        	loadFirstFromCursor(projectUri, c);
+	        	
 	        	final ContentResolver cr = getContentResolver();
 	        	cr.registerContentObserver(getIntent().getData(), false, new ContentObserver(new Handler()) {
 	    			@Override
@@ -103,8 +103,7 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	    				super.onChange(selfChange);
 	    				if (!c.isClosed()){
 		    				c.requery();
-		    				c.moveToFirst();
-		    				loadFromCursor(projectUri, c);
+		    				loadFirstFromCursor(projectUri, c);
 	    				}
 	    			}
 	    			@Override
@@ -114,6 +113,15 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	    		});
 	        }
 	    }
+		
+		protected void loadFirstFromCursor(Uri projectUri, Cursor c){
+        	if (c.moveToFirst()){
+        		loadFromCursor(projectUri, c);
+        	}else{
+        		Toast.makeText(this, getString(R.string.error_no_project, projectUri.toString()), Toast.LENGTH_LONG).show();
+        		finish();
+        	}
+		}
 		
 		protected void loadFromCursor(Uri projectUri, Cursor c){
 			((TextView)findViewById(R.id.item_title)).setText(c.getString(c.getColumnIndex(Project.TITLE)));

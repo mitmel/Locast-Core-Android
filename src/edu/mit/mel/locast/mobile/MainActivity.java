@@ -1,7 +1,7 @@
 package edu.mit.mel.locast.mobile;
 
-import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.TabActivity;
 import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -11,28 +11,22 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.view.View.OnClickListener;
-import android.widget.EditText;
-import android.widget.TextView;
+import android.widget.TabHost;
 import android.widget.Toast;
-import android.widget.TextView.OnEditorActionListener;
-
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
-
-import edu.mit.mel.locast.mobile.casts.BrowseCastsActivity;
 import edu.mit.mel.locast.mobile.casts.EditCastActivity;
+import edu.mit.mel.locast.mobile.casts.MyCastsActivity;
 import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.Comment;
 import edu.mit.mel.locast.mobile.data.Project;
 import edu.mit.mel.locast.mobile.data.Tag;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
+import edu.mit.mel.locast.mobile.projects.ListProjectsActivity;
 
 /**
  * Main Menu. Also will handle pairing if there are no credentials stored.
@@ -40,18 +34,16 @@ import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
  * @author stevep
  *
  */
-public class MainActivity extends Activity implements OnClickListener, OnEditorActionListener {
+public class MainActivity extends TabActivity implements OnClickListener {
 	
-	AndroidNetworkClient nc;
+	private AndroidNetworkClient nc;
 	// There's some strange quirk with the network client where it 
 	// caches credentials in a way that it probably shouldn't. This will
 	// reset it after pairing. See https://mel-internal.mit.edu/trac/rai/ticket/432
-	boolean needToResetNc = false; 
+	private final boolean needToResetNc = false; 
 
-    SharedPreferences prefs;
+    private SharedPreferences prefs;
     final static boolean DEBUG = true;
-    
-	final static int INTENT_SCAN_QRCODE = 1;
 	
 	private static final int 
 		ACTIVITY_RECORD_SOUND = 1, 
@@ -64,40 +56,44 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         
         this.nc = AndroidNetworkClient.getInstance(this);
-        
 
+        requestWindowFeature(Window.FEATURE_LEFT_ICON);
+        
+        final TabHost tabHost = getTabHost();
+        
+        tabHost.addTab(tabHost.newTabSpec("projects")
+        		.setIndicator(getString(R.string.tab_projects)).setContent(new Intent(this, ListProjectsActivity.class)));
+        
+        tabHost.addTab(tabHost.newTabSpec("casts")
+        		.setIndicator(getString(R.string.tab_casts)).setContent(new Intent(this, MyCastsActivity.class)));
     }
     
 	@Override
+	protected void onPostCreate(Bundle icicle) {
+		super.onPostCreate(icicle);
+		// the icon is set here, due it needing to be called after setContentView()
+		getWindow().setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.icon);
+	}
+	
+	@Override
 	protected void onStart() {
+	    super.onStart();
 		if (needToResetNc){
 			nc = new AndroidNetworkClient(this);
 		}
         if (!nc.isPaired()){
-    		setContentView(R.layout.pairing);
-    		findViewById(R.id.ScanQRCodeButton).setOnClickListener(this);
-    		findViewById(R.id.PairingButton).setOnClickListener(this);
-    		((EditText)findViewById(R.id.PairingText)).setOnEditorActionListener(this);
-    		needToResetNc = true;
-
-        }else{
-	        setContentView(R.layout.main);
-	        findViewById(R.id.browse_button).setOnClickListener(this);
-	        findViewById(R.id.projects_button).setOnClickListener(this);
-	
-	        findViewById(R.id.recordvideo_button).setOnClickListener(this);
-	        findViewById(R.id.recordaudio_button).setOnClickListener(this);
-	        findViewById(R.id.sync_button).setOnClickListener(this);
-	        //findViewById(R.id.notifications_button).setOnClickListener(this);
+        	startActivity(new Intent(this, PairingActivity.class));
+        	finish();
+        	return;
         }
         
 	    if (nc.isPaired()){
-	    	((TextView)findViewById(R.id.header_subtitle)).setText("Logged in as " + nc.getUsername());
+	    	//((TextView)findViewById(R.id.header_subtitle)).setText("Logged in as " + nc.getUsername());
 			
         }
 	    
 	    new TestNetworkTask().execute();
-	    super.onStart();
+
 	}
 	
 	@Override
@@ -171,77 +167,13 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 	}
 
 	public void onClick(View v) {
-		Intent intent;
+		final Intent intent;
 		
 		switch (v.getId()) {
-		
-		case R.id.projects_button: 
-			startActivity(new Intent(Intent.ACTION_VIEW, Project.CONTENT_URI));
-			break;
 			
-		case R.id.recordvideo_button: 
-			//Toast.makeText(this, "Recording video...", Toast.LENGTH_SHORT).show();
-			intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-			startActivityForResult(intent, ACTIVITY_RECORD_VIDEO);
-			break;
-			
-		case R.id.recordaudio_button: 
-			//http://www.openintents.org/en/node/114
-			intent = new Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION);
-			startActivityForResult(intent, ACTIVITY_RECORD_SOUND);
-			//
-            //Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-            //intent.setType("audio/*");
-            //startActivity(Intent.createChooser(intent, "Select music"));
-			
-			break;
-		case R.id.browse_button:
-			startActivity(new Intent(this, BrowseCastsActivity.class));
-			break;
-		case R.id.sync_button:
-			startSync();
-			break;
-			/*
-		case R.id.sync_cancel_button:
-			startService(new Intent(Sync.ACTION_CANCEL_SYNC, Uri.EMPTY));
-			break;*/
-			
-		case R.id.ScanQRCodeButton:
-			IntentIntegrator.initiateScan(this);
-			break;
-
-		case R.id.PairingButton:
-
-			pair(((EditText) findViewById(R.id.PairingText)).getText()
-					.toString());
-
-			break;
 	
 		}
 	}
-	
-	private void pair(String code) {
-		try {
-			nc.pairDevice(code);
-			if (nc.isPaired()) {
-				startActivity(new Intent(this, MainActivity.class));
-			}
-		} catch (final Exception e) {
-			e.printStackTrace();
-			Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show();
-		}
-	}
-
-	public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-		switch (v.getId()){
-		case R.id.PairingText:
-			pair(((EditText) findViewById(R.id.PairingText)).getText()
-					.toString());
-			break;
-		}
-		return false;
-	}
-	
 	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -266,27 +198,6 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 			} // switch resultCode
 			break;
 			
-		case IntentIntegrator.REQUEST_CODE:
-			final IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-			if (scanResult != null){
-				final String format = scanResult.getFormatName();
-				// Handle successful scan
-				if (format == null){
-					// no barcode scanner installed. It'll pop up a install request.
-				}else if (format.equals("QR_CODE")) {
-					pair(scanResult.getContents());
-				} else {
-					Toast.makeText(this,
-							"Scanned barcode does not seem to be a QRCode",
-							Toast.LENGTH_LONG).show();				
-				}
-
-			}else{
-				switch (requestCode) {
-				// other intents here
-		
-				} // switch requestCode
-			}
 		} // switch requestCode
 	}
 
@@ -311,5 +222,6 @@ public class MainActivity extends Activity implements OnClickListener, OnEditorA
 			    content.close();
 		}
 	}
+	
 	
 }
