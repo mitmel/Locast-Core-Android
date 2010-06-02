@@ -168,6 +168,15 @@
 					android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content" />
 			</intent-filter>
 		</activity>
+		
+				<activity android:name=".casts.CastDetailsActivity">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<data
+					android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content" />
+			</intent-filter>
+		</activity>
+		
 		<activity android:name=".casts.EditCastActivity">
 			<intent-filter>
 				<action android:name="android.intent.action.EDIT" />
@@ -186,7 +195,23 @@
 				<data android:mimeType="video/*" />
 				<data android:mimeType="audio/*" />
 			</intent-filter>
-		</activity>		
+		</activity>
+		
+		<activity android:name=".DiscussionActivity">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.comments" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.comments" />
+			</intent-filter>
+			
+			<intent-filter>
+				<action android:name="android.intent.action.EDIT" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.comments" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.comments" />
+			</intent-filter>
+		</activity>
 		
 		<service android:name=".data.Sync">
 		<intent-filter>

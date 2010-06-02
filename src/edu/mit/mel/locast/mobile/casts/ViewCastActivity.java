@@ -1,260 +1,81 @@
 package edu.mit.mel.locast.mobile.casts;
 
-import android.app.Activity;
-import android.content.ActivityNotFoundException;
+import android.app.TabActivity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.ImageButton;
+import android.view.Window;
 import android.widget.ImageView;
+import android.widget.TabHost;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import com.rmozone.mobilevideo.AnnotationActivity;
-
 import edu.mit.mel.locast.mobile.Application;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.WebImageLoader;
 import edu.mit.mel.locast.mobile.data.Cast;
-import edu.mit.mel.locast.mobile.data.SyncException;
-import edu.mit.mel.locast.mobile.widget.DiscussionBoard;
-import edu.mit.mel.locast.mobile.widget.TagListView;
+import edu.mit.mel.locast.mobile.data.Comment;
 
-public class ViewCastActivity extends Activity implements OnClickListener {
-
-	DiscussionBoard board;
-	
-	Cursor c, commentsCursor;
-	Uri castUri;
-	
-	ImageView mediaThumbView;
-	String contentType;
-	Uri publicUri;
-	Uri localUri;
-	Uri geoUri;
-	int publicId = -1;
-	
-	WebImageLoader imgLoader;
+public class ViewCastActivity extends TabActivity {
+	private WebImageLoader imgLoader;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		getWindow().requestFeature(Window.FEATURE_NO_TITLE);
 		super.onCreate(savedInstanceState);
 		
-		final Uri data = getIntent().getData();
-        final String action = getIntent().getAction();
-        
-        setContentView(R.layout.view_cast);
-        
-        imgLoader = ((Application)getApplication()).getImageLoader();
-        
-        mediaThumbView = ((ImageView)findViewById(R.id.media_thumbnail));
-        mediaThumbView.setOnClickListener(this);
-        ((Button)findViewById(R.id.location)).setOnClickListener(this);
-        ((ImageButton)findViewById(R.id.refresh)).setOnClickListener(this);
-        
-		board = (DiscussionBoard)findViewById(R.id.discussion);
+		setContentView(R.layout.window_title_thick);
 		
-		if (Intent.ACTION_VIEW.equals(action)) {
-        	loadFromUri(data);
-        }
+		final TabHost tabHost = getTabHost();
+		final Intent intent = getIntent();
+		final String action = intent.getAction();
+		
+		imgLoader = ((Application)getApplication()).getImageLoader();
+		
+		if (Intent.ACTION_VIEW.equals(action)){
+			tabHost.addTab(tabHost.newTabSpec("cast")
+					.setContent(new Intent(Intent.ACTION_VIEW, intent.getData(),
+											this, CastDetailsActivity.class))
+					.setIndicator("cast"));
+			
+			
+			
+			loadFromIntent();
+		}
 	}
 	
-	private void loadFromUri(Uri data){
-		c = managedQuery(data, Cast.PROJECTION, null, null, null);
+	private void loadFromIntent(){
+		final Cursor c = managedQuery(getIntent().getData(), Cast.PROJECTION, null, null, null);
 		c.moveToFirst();
-		if (!c.isNull(c.getColumnIndex(Cast.PUBLIC_ID))){
-			startManagingCursor(board.setParentUri(data));
-		}
-		castUri = data;
+		loadFromCursors(c);
 	}
 	
 	private void loadFromCursors(Cursor c){
-		final StringBuilder testOut = new StringBuilder();
-		for (final String row: Cast.PROJECTION){
-			testOut.append(row);
-			testOut.append("=");
-
-			if (c.isNull(c.getColumnIndex(row))){
-				testOut.append("<<null>>");
-			}else{
-				testOut.append(c.getString(c.getColumnIndex(row)));
-				
-			}
-			testOut.append("; ");
-		}
-		Log.d("ViewCast", testOut.toString());
 		
-		((TextView)findViewById(R.id.item_title)).setText(
+		((TextView)(getWindow().findViewById(android.R.id.title))).setText(
 				c.getString(c.getColumnIndex(Cast.TITLE)));
+				
 		
-		((TagListView)findViewById(R.id.tags))
-			.addTags(Cast.getTags(getContentResolver(), castUri));
+		setTitle(c.getString(c.getColumnIndex(Cast.TITLE)));
 		
-		((TextView)findViewById(R.id.description)).setText(
-				c.getString(c.getColumnIndex(Cast.DESCRIPTION)));
-		
-		((TextView)findViewById(R.id.item_authors))
+		((TextView)(getWindow().findViewById(R.id.item_author)))
 			.setText(c.getString(c.getColumnIndex(Cast.AUTHOR)));
-		
-
-
-		contentType = c.getString(c.getColumnIndex(Cast.CONTENT_TYPE));
-		if (!c.isNull(c.getColumnIndex(Cast.PUBLIC_URI))){
-			publicUri = Uri.parse(c.getString(c.getColumnIndex(Cast.PUBLIC_URI)));
-		}
-		if (!c.isNull(c.getColumnIndex(Cast.LOCAL_URI))){
-			localUri = Uri.parse(c.getString(c.getColumnIndex(Cast.LOCAL_URI)));
-		}
-		if (!c.isNull(c.getColumnIndex(Cast.PUBLIC_ID))) {
-			publicId = c.getInt(c.getColumnIndex(Cast.PUBLIC_ID));
-		}
-		
-		final Button locButton = (Button)findViewById(R.id.location);
-		if (!c.isNull(c.getColumnIndex(Cast.LATITUDE))){
-			geoUri = Cast.toGeoUri(c);	
-			locButton.setEnabled(true);
-			locButton.setText(geoUri.toString());
-		}else{
-			((Button)findViewById(R.id.location)).setEnabled(false);
-		}
 		
 		final String thumbUrl = c.getString(c.getColumnIndex(Cast.THUMBNAIL_URI));
 		
 		if (thumbUrl != null){
 			Log.d("ViewCast", "found thumbnail " + thumbUrl);
-			
+			final ImageView mediaThumbView = ((ImageView)findViewById(android.R.id.icon));
 			imgLoader.loadImage(mediaThumbView, thumbUrl);
 		}
-		
-		
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-        final MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.cast_view, menu);
-        if (c != null){
-        	final MenuItem editItem = menu.findItem(R.id.menu_edit_cast);
-        	editItem.setEnabled(Cast.canEdit(c));
-        }
-        
-        return true;
-	}
-	
-	@Override
-	public boolean onMenuItemSelected(int featureId, MenuItem item) {
-		switch (item.getItemId()){
-		case R.id.add_cast_to_project:
-			startActivity(new Intent(Intent.ACTION_ATTACH_DATA, getIntent().getData()));
-			break;
+		if (!c.isNull(c.getColumnIndex(Cast.PUBLIC_ID))){
 			
-		case R.id.menu_edit_cast:
-			startActivity(new Intent(Intent.ACTION_EDIT,
-					getIntent().getData()));
-			break;
-			
-		case R.id.menu_annotate_cast:
-			if (localUri != null){
-				if(publicId > 0) {
-					final Uri uri_with_global_awareness = localUri.buildUpon().appendPath("id").appendPath(""+publicId).build();
-					
-					final Intent i = new Intent();
-					i.setClass(this, AnnotationActivity.class);
-					i.setData(uri_with_global_awareness);
-					i.setAction(AnnotationActivity.ACTION_ANNOTATE_CAST_FROM_LOCAST_ID);
-					
-					startActivity(i);					
-				}
-				else {
-					startActivity(new Intent(AnnotationActivity.ACTION_ANNOTATE_CAST_FROM_MEDIA_URI, 
-						localUri));
-				}
-			}else{
-				Toast.makeText(this, "Video annotation requires a local copy of the video.", Toast.LENGTH_LONG).show();
-			}
-			
-			break;
+			final TabHost tabHost = getTabHost();
+		tabHost.addTab(tabHost.newTabSpec("discussion")
+				.setContent(new Intent(Intent.ACTION_VIEW, 
+										Uri.withAppendedPath(getIntent().getData(), Comment.PATH)))
+				.setIndicator("discussion"));
 		}
-		return true;
-	}
-	
-	
-	
-	@Override
-	protected void onResume() {
-		super.onResume();
 		
-		c.moveToFirst();
-		loadFromCursors(c);
-	}
-
-	public void onClick(View v) {
-		switch (v.getId()){
-		case R.id.media_thumbnail:{
-			if (localUri == null){
-				try {
-					if (publicUri != null){
-						Cast.checkForMediaEntry(getApplicationContext(), getIntent().getData(), publicUri.toString());
-						
-						final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
-						
-						viewVideo.setDataAndType(publicUri, contentType);
-						
-						startActivity(viewVideo);
-					}
-				} catch (final SyncException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			if (localUri != null){
-				final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
-		
-				viewVideo.setDataAndType(localUri, contentType);
-				
-				startActivity(viewVideo);
-				
-			}else if (publicUri != null){
-				Toast.makeText(this, "This video still needs to be downloaded before it can be played.", Toast.LENGTH_LONG).show();
-				
-			}else {
-				Toast.makeText(this, "Cannot find a local or remote copy of this video :-(", Toast.LENGTH_LONG).show();
-			}
-			
-			break;
-		}
-		case R.id.location:
-            final Intent mapsIntent = new Intent(Intent.ACTION_VIEW, geoUri);
-            try {
-            	startActivity(mapsIntent);
-            }catch (final ActivityNotFoundException e){
-            	// no maps :-(
-            	Toast.makeText(this, R.string.error_no_maps, Toast.LENGTH_LONG);
-            }
-			break;
-			
-		case R.id.refresh:
-			if (publicUri == null && localUri != null){
-				Toast.makeText(this, "Uploading cast...", Toast.LENGTH_SHORT).show();
-			}else{
-				Toast.makeText(this, "Synchronizing cast...", Toast.LENGTH_SHORT).show();
-			}
-			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()));
-			break;
-		}	
-	}
-	
-	@Override
-	protected void onDestroy() {
-		
-		super.onDestroy();
 	}
 }

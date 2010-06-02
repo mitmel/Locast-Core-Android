@@ -20,6 +20,7 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.location.Location;
 import android.media.MediaScannerConnection;
 import android.media.MediaScannerConnection.MediaScannerConnectionClient;
 import android.net.Uri;
@@ -93,6 +94,18 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 			return null;
 		}
 		return Uri.parse("geo:"+c.getDouble(c.getColumnIndex(LATITUDE))+","+c.getDouble(c.getColumnIndex(LONGITUDE)));
+	}
+	
+	public static Location toLocation(Cursor c){
+		final int lat_idx = c.getColumnIndex(LATITUDE);
+		final int lon_idx = c.getColumnIndex(LONGITUDE);
+		if (c.isNull(lat_idx) || c.isNull(lon_idx)) {
+			return null;
+		}
+		final Location l = new Location("internal");
+		l.setLatitude(c.getDouble(lat_idx));
+		l.setLongitude(c.getDouble(lon_idx));
+		return l;
 	}
 	
 

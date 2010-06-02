@@ -1,12 +1,10 @@
 package edu.mit.mel.locast.mobile.widget;
 
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
 import android.content.Context;
-import android.os.AsyncTask;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -15,15 +13,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
-import android.widget.ArrayAdapter;
+import android.view.View.OnFocusChangeListener;
 import android.widget.AutoCompleteTextView;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import edu.mit.mel.locast.mobile.MelAndroid;
 import edu.mit.mel.locast.mobile.R;
-import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 
 /**
  * A user-modifiable set of free tags. The user can add a new tag to a set of available tags
@@ -32,25 +28,20 @@ import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
  * @author stevep
  *
  */
-public class TagList extends TagListView implements OnEditorActionListener, OnClickListener {
-	ViewGroup recommendedTagView;
-	TextView recommendedTagLabel;
+public class TagList extends TagListView implements OnEditorActionListener, OnClickListener, OnFocusChangeListener {
+	private final ViewGroup recommendedTagView;
+	private final TextView recommendedTagLabel;
+	private final AutoCompleteTextView addTagEditText;
 	
-	List<String> recommendedTags = new Vector<String>();
-	List<String> shownRecs = new Vector<String>();
-	
-	AndroidNetworkClient nc;
-	
-	final static long cacheAge = 60 * 1000;
-	//static Map<String, Integer> autocomplete = new HashMap<String, Integer>();
-	static List<String> acList;
-	static Date lastUpdated;
+	private final List<String> recommendedTags = new Vector<String>();
+	private final List<String> shownRecs = new Vector<String>();
 	
 	private static int STYLE_FULL = 1,
 					STYLE_SELECTOR = 2;
 	private int style = STYLE_FULL;
 	
-	static ArrayAdapter<String> acAdapter;
+	//private static ArrayAdapter<String> acAdapter;
+	private static RemoteTagsAdapter acAdapter;
 	
 	public TagList(Context context) {
 		this(context, null);
@@ -61,16 +52,16 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
     	
 		recommendedTagView = (ViewGroup)findViewById(R.id.tag_recommended_tags);
 		recommendedTagLabel = (TextView)findViewById(R.id.tag_recommended_label);
+		addTagEditText = (AutoCompleteTextView)findViewById(R.id.tag_add_text);
 		
 		((ImageButton)findViewById(R.id.tag_add_button)).setOnClickListener(this);
-		this.nc = AndroidNetworkClient.getInstance(context);
 
-		if (lastUpdated == null || (new Date().getTime() - lastUpdated.getTime() > cacheAge)){
-			new TagLoaderTask().execute(new Object());	
-		}
 		setOnTagClickListener(this);
-		acAdapter = new ArrayAdapter<String>(context, R.id.tag_add_text);
-		((EditText)findViewById(R.id.tag_add_text)).setOnEditorActionListener(this);
+		
+		acAdapter = new RemoteTagsAdapter(context, android.R.layout.simple_dropdown_item_1line);
+		addTagEditText.setOnFocusChangeListener(this);
+		addTagEditText.setAdapter(acAdapter);
+		addTagEditText.setOnEditorActionListener(this);
 
     }
 
@@ -195,14 +186,13 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 	
 	private boolean addEditTextTag(){
 		boolean changed = false;
-		final EditText t = (EditText) findViewById(R.id.tag_add_text);
-		String tag = t.getText().toString();
+		String tag = addTagEditText.getText().toString();
 		tag = tag.trim();
 		tag = tag.toLowerCase();
 		
 		if (tag.length() > 0){
 			changed = addTag(tag);
-			t.setText("");
+			addTagEditText.setText("");
 		}
 		return changed;
 	}
@@ -218,28 +208,6 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 		}
 		return false;
 	}
-	
-	public class TagLoaderTask extends AsyncTask<Object, Integer, Object>{
-
-		@Override
-		protected Object doInBackground(Object... params) {
-			try {
-				acList = nc.getTagsList();
-				lastUpdated = new Date();
-			} catch (final Exception e) {
-				e.printStackTrace();
-			}
-			return null;
-		}
-		
-		@Override
-		protected void onPostExecute(Object result) {
-			super.onPostExecute(result);
-			acAdapter = new ArrayAdapter<String>(getContext(),android.R.layout.simple_dropdown_item_1line , acList);
-			((AutoCompleteTextView)findViewById(R.id.tag_add_text)).setAdapter(acAdapter);
-		}
-	}
-	
 
 	static class SavedState extends BaseSavedState{
 		private final List<String> addedTags;
@@ -308,5 +276,16 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 	
 	public interface OnTagListChangeListener {
 		public void onTagListChange(TagList v);
+	}
+
+	public void onFocusChange(View v, boolean hasFocus) {
+		switch (v.getId()){
+		case R.id.tag_add_text:
+			if (hasFocus){
+				acAdapter.refreshTags();
+			}
+			break;
+		}
+		
 	}
 }

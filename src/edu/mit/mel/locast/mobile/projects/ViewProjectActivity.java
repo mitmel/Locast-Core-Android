@@ -48,7 +48,6 @@ import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.JsonSyncableItem;
 import edu.mit.mel.locast.mobile.data.Project;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
-import edu.mit.mel.locast.mobile.widget.DiscussionBoard;
 import edu.mit.mel.locast.mobile.widget.TagListView;
 	
 	public class ViewProjectActivity extends Activity 
@@ -57,7 +56,6 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 		private TagListView tagList;
 		protected List<Long> casts = new Vector<Long>();
 		protected Set<String> members;
-		private DiscussionBoard board;
 		
 		private final static int MENU_ITEM_VIEW_CAST = 0,
 								 MENU_ITEM_REMOVE_CAST = 1;
@@ -84,8 +82,6 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	        g.setAdapter(castAdapter);
 	        g.setOnItemClickListener(this);
 	        g.setOnCreateContextMenuListener(this);
-	         
-	        board = (DiscussionBoard)findViewById(R.id.discussion);
 	        
 	        /////////// intent handling //////////////
 	        final String action = getIntent().getAction();
@@ -159,10 +155,6 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 				mJoinButton.setText(R.string.project_join);
 			}
 			((TextView)findViewById(R.id.people)).setText(Project.getMemberList(getApplicationContext(), c));
-			
-			if (!c.isNull(c.getColumnIndex(Cast.PUBLIC_ID))){
-				startManagingCursor(board.setParentUri(getIntent().getData()));
-			}
 		}
 		
 		@Override

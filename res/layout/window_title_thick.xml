@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+  	android:layout_width="fill_parent"
+  	android:layout_height="fill_parent"
+  	android:orientation="vertical">
+  	
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  style="@style/WindowTitleThickBackground"
+  android:layout_height="72dip">
+  
+  <!-- XXX style doesn't work below for some reason. -->
+  <ImageView android:id="@android:id/icon" 
+  	android:layout_width="wrap_content"
+  	android:layout_height="wrap_content"
+  	
+  	style="@style/CastIcon"
+  	
+  	android:layout_alignParentLeft="true"
+  	android:layout_centerVertical="true"
+  	android:src="@drawable/cast_placeholder"
+  	android:padding="2dip"
+  	 />
+  	 
+	<CheckBox android:id="@+id/star"
+	  	 android:button="@android:drawable/btn_star"
+	  	 android:layout_height="wrap_content"
+	  	 android:layout_width="wrap_content"
+	  	 
+	  	 android:layout_alignParentRight="true"
+	  	 android:layout_centerVertical="true"
+  	 />
+  	 
+  	 
+  	 <TextView android:id="@android:id/title"
+  	 	android:layout_width="wrap_content"
+  		android:layout_height="wrap_content"
+  		android:layout_toRightOf="@android:id/icon"
+  		android:layout_alignWithParentIfMissing="true"
+  		style="@style/WindowTitleThick"
+  		android:gravity="center_vertical"
+  		
+  	 />
+  	  <TextView android:id="@+id/item_author"
+  	 	android:layout_width="wrap_content"
+  		android:layout_height="wrap_content"
+		style="@style/WindowTitleThickSubtitle"
+  		android:layout_alignLeft="@android:id/title"
+  		android:layout_below="@android:id/title"
+  		android:layout_alignWithParentIfMissing="true"
+  		android:gravity="center_vertical"
+  		
+  	 />
+
+	</RelativeLayout>
+ 	<TabHost
+	android:id="@android:id/tabhost" 
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent">
+
+	<LinearLayout android:orientation="vertical"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent">
+		
+		<TabWidget android:id="@android:id/tabs"
+			android:layout_width="fill_parent" 
+			android:layout_height="wrap_content" />
+			
+		<FrameLayout android:id="@android:id/tabcontent"
+			android:layout_width="fill_parent"
+			android:layout_height="0dip"
+			android:layout_weight="1" />
+
+			</LinearLayout>
+		</TabHost>
+</LinearLayout>

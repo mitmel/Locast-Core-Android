@@ -139,8 +139,12 @@ public class DiscussionBoard extends LinearLayout implements OnClickListener, On
 	}
     
     public Cursor setParentUri(Uri parent){
-    	thisThread = Uri.withAppendedPath(parent, Comment.PATH);
-    	c = getContext().getContentResolver().query(thisThread,
+    	return setUri(Uri.withAppendedPath(parent, Comment.PATH));
+    }
+    
+    public Cursor setUri(Uri myUri){
+    	thisThread = myUri;
+       	c = getContext().getContentResolver().query(thisThread,
 				Comment.PROJECTION, null, null, Comment.DEFAULT_SORT_BY);
     	
     	getContext().startService(new Intent(Intent.ACTION_SYNC, thisThread));

@@ -29,20 +29,13 @@
 		android:layout_height="wrap_content"
 		android:layout_marginRight="6dip"
 		android:layout_marginLeft="4dip">
-
-		<FrameLayout android:layout_width="wrap_content"
-		 android:layout_height="wrap_content" 
-		  android:background="@android:drawable/picture_frame">
 		  
     		<ImageView android:id="@+id/media_thumbnail" 
     		android:layout_height="wrap_content" 
     		android:layout_width="wrap_content" 
-    		android:scaleType="fitCenter"
-    		android:adjustViewBounds="true"
+    		style="@style/CastIcon"
     		android:src="@drawable/cast_placeholder" />
     		
-     	</FrameLayout>
-     	
       	<TextView android:id="@+id/author" 
 	      android:text="author" 
 	      android:layout_width="fill_parent" 

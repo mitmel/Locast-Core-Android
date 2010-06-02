@@ -171,9 +171,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			privacy.setEnabled(Cast.canChangePrivacyLevel(c));
 		}
 		
-		location = new Location("GPS"); // XXX maybe we should come up with a better provider
-		location.setLatitude(c.getDouble(c.getColumnIndex(Cast.LATITUDE)));
-		location.setLongitude(c.getDouble(c.getColumnIndex(Cast.LONGITUDE)));
+		location = Cast.toLocation(c);
 		updateLocations(null);
 	}
 	

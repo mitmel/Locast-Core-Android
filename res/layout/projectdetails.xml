@@ -57,11 +57,6 @@
 				
 		</LinearLayout>
 		
-		<edu.mit.mel.locast.mobile.widget.DiscussionBoard
-		android:id="@+id/discussion"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		/>
 	</LinearLayout>
 	
 </ScrollView>

@@ -48,5 +48,32 @@
 		<item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
     </style>
   
- 
+ 	<style name="LocationLink" parent="android:Widget.Button">
+ 	
+ 	</style>
+
+ 	<style name="WindowTitleThickBackground">
+ 		
+        <item name="android:background">@android:drawable/title_bar</item>
+ 	</style>
+ 	
+ 	<style name="WindowTitleThick" parent="android:WindowTitle">
+        <item name="android:singleLine">true</item>
+        <item name="android:textAppearance">@android:style/TextAppearance.WindowTitle</item>
+        <item name="android:shadowColor">#BB000000</item>
+        <item name="android:shadowRadius">2.75</item>
+        <item name="android:paddingLeft">4dip</item>
+ 		
+ 	</style>
+ 	
+ 	<style name="WindowTitleThickSubtitle" parent="WindowTitleThick">
+        <item name="android:textColor">#ddd</item>
+ 		<item name="android:shadowColor">#99000000</item>
+ 	</style>
+ 		
+ 	<style name="CastIcon">
+ 		<item name="android:scaleType">fitCenter</item>
+ 		<item name="android:adjustViewBounds">true</item>
+ 		<item name="android:background">@android:drawable/picture_frame</item>
+ 	</style>
 </resources>

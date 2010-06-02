@@ -44,8 +44,8 @@
     android:layout_gravity="center_horizontal" 
     android:src="@drawable/cast_placeholder" />
 
-	<Button android:id="@+id/location" 
-	android:text="Location" 
+	<edu.mit.mel.locast.mobile.widget.LocationLink android:id="@+id/location" 
+	android:text="location" 
 	android:layout_width="wrap_content" 
 	android:textAppearance="?android:attr/textAppearanceMedium"
 	android:layout_height="wrap_content" />
@@ -59,12 +59,6 @@
 	android:layout_width="fill_parent" 
 	android:layout_height="wrap_content" 
 	android:textAppearance="?android:attr/textAppearanceMedium"/>
-	
-	<edu.mit.mel.locast.mobile.widget.DiscussionBoard
-	android:id="@+id/discussion"
-	android:layout_width="fill_parent"
-	android:layout_height="fill_parent"
-	/>
 
 </LinearLayout>
 </ScrollView>
