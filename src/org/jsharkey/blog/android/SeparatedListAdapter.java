@@ -109,6 +109,7 @@ public class SeparatedListAdapter extends BaseAdapter {
 		return (getItemViewType(position) != TYPE_SECTION_HEADER);
 	}
 
+	// TODO optimize by storing sub-adapter sizes and registering dataset listeners.
 	public View getView(int position, View convertView, ViewGroup parent) {
 		int sectionnum = 0;
 		for(final Object section : this.sections.keySet()) {

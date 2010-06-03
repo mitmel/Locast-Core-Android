@@ -1,5 +1,21 @@
 package edu.mit.mel.locast.mobile;
-
+/*
+ * Copyright (C) 2010 MIT Mobile Experience Lab
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -16,9 +32,9 @@ public class StreamUtils {
 	 * @throws IOException
 	 */
 	static public String readLine(InputStream in) throws IOException{
-		StringBuffer buf = new StringBuffer(512);
+		final StringBuffer buf = new StringBuffer(512);
 		
-		InputStreamReader in_reader = new InputStreamReader(in);
+		final InputStreamReader in_reader = new InputStreamReader(in);
 		
 		boolean receivedData = false;
 		
@@ -26,12 +42,18 @@ public class StreamUtils {
 			b != -1;
 			b = in_reader.read()) {
 			receivedData = true;
-			if (b == '\r') continue;
-			if (b == '\n') break;
+			if (b == '\r') {
+				continue;
+			}
+			if (b == '\n') {
+				break;
+			}
 			buf.append((char)b);
 		}
 		
-		if (!receivedData) return null;
+		if (!receivedData) {
+			return null;
+		}
 		
 		return buf.toString();
 	}
@@ -45,11 +67,11 @@ public class StreamUtils {
 	 */
 	static public String inputStreamToString(InputStream in) throws IOException{
 		final int bufsize = 8196;
-		char[] cbuf = new char[bufsize];
+		final char[] cbuf = new char[bufsize];
 		
-		StringBuffer buf = new StringBuffer(bufsize);
+		final StringBuffer buf = new StringBuffer(bufsize);
 		
-		InputStreamReader in_reader = new InputStreamReader(in);
+		final InputStreamReader in_reader = new InputStreamReader(in);
 		
 		for (int readBytes = in_reader.read(cbuf, 0, bufsize);
 			readBytes > 0;
@@ -68,7 +90,7 @@ public class StreamUtils {
 	 */
 	static public void inputStreamToOutputStream(InputStream is, OutputStream os) throws IOException{
 		final int bufsize = 8196;
-		byte[] cbuf = new byte[bufsize];
+		final byte[] cbuf = new byte[bufsize];
 		
 		for (int readBytes = is.read(cbuf, 0, bufsize);
 			readBytes > 0;
