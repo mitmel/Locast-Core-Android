@@ -35,8 +35,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.util.Log;
-import edu.mit.mel.locast.mobile.ListUtils;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 
 /**
@@ -128,14 +126,13 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 * @return a list of all the tags attached to a given item
 	 */
 	public static Set<String> getTags(ContentResolver cr, Uri item) {
-		Log.d("TaggableItem", "getTags() for "+ item);
 		final Cursor tags = cr.query(Uri.withAppendedPath(item, Tag.PATH), Tag.DEFAULT_PROJECTION, null, null, null);
 		final Set<String> tagList = new HashSet<String>(tags.getCount());
 		final int tagColumn = tags.getColumnIndex(Tag._NAME);
 		for (tags.moveToFirst(); !tags.isAfterLast(); tags.moveToNext()){
 			tagList.add(tags.getString(tagColumn));
 		}
-		Log.d("TaggableItem", "getTags() = " + ListUtils.join(tagList, ", "));
+		tags.close();
 		return tagList;
 	}
 	
@@ -145,7 +142,6 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 * @param tags
 	 */
 	public static void putTags(ContentResolver cr, Uri item, Collection<String> tags) {
-		Log.d("TaggableItem", "putTags() for "+ item);
 		final ContentValues cv = new ContentValues();
 		cv.put(Tag.PATH, TaggableItem.toListString(tags));
 		cr.update(Uri.withAppendedPath(item, Tag.PATH), cv, null, null);
