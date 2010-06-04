@@ -9,8 +9,5 @@
 		android:icon="@android:drawable/ic_menu_edit" />
 	
 	<!-- MOBILEVIDEO! -->
-	<item
-		android:id="@+id/projectdetailmenu_videoedit"
-		android:title="Video Edit this Project"
-		android:icon="@android:drawable/ic_menu_edit" />
+	
 </menu>

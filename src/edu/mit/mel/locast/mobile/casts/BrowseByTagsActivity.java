@@ -18,7 +18,6 @@ package edu.mit.mel.locast.mobile.casts;
  */
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import android.content.Intent;
 import android.database.Cursor;
@@ -28,7 +27,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.data.Cast;
-import edu.mit.mel.locast.mobile.data.Tag;
 import edu.mit.mel.locast.mobile.data.TaggableItem;
 import edu.mit.mel.locast.mobile.widget.TagList;
 import edu.mit.mel.locast.mobile.widget.TagList.OnTagListChangeListener;
@@ -38,20 +36,8 @@ public class BrowseByTagsActivity extends CastListActivity implements OnTagListC
 	
 	private Uri thisUri;
 	
-	//private static List<String> projection = null;
-	public static String[] projection;
-	static {
-		final List<String> l = new ArrayList<String>(CastCursorAdapter.projection.length);
-		// horrible hack to get around duplicate column names.
-		for (final String col: CastCursorAdapter.projection){
-			if (TaggableItem._ID.equals(col)){
-				l.add("c."+col +" AS "+TaggableItem._ID);
-			}else{
-				l.add(col);
-			}
-		}
-		projection = l.toArray(new String[]{});
-	}
+	public static String[] projection = TaggableItem.getTagProjection(CastCursorAdapter.projection);
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -75,8 +61,7 @@ public class BrowseByTagsActivity extends CastListActivity implements OnTagListC
 			thisUri = Cast.CONTENT_URI;
 			c = managedQuery(thisUri, CastCursorAdapter.projection, null, null, Cast.DEFAULT_SORT);
 		}else{
-			final String tagstring = Tag.toTagString(tags);
-			thisUri = Uri.withAppendedPath(Uri.withAppendedPath(Cast.CONTENT_URI, Tag.PATH), tagstring);
+			thisUri = Cast.getTagUri(Cast.CONTENT_URI, tags);
 			c = managedQuery(thisUri, projection, null, null, Cast.DEFAULT_SORT);
 		}
 		return c;
@@ -106,6 +91,7 @@ public class BrowseByTagsActivity extends CastListActivity implements OnTagListC
 		tagList.clearRecommendedTags();
 		tagList.addedRecommendedTags(Cast.getPopularTags(getContentResolver()));
 		
-		getAdapter().changeCursor(query(v.getTags()));
+		// TODO fix this
+		// getListAdapter().changeCursor(query(v.getTags()));
 	}
 }

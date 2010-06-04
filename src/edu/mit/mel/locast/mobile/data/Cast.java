@@ -87,7 +87,9 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 		LATITUDE,
 		LONGITUDE };
 	
-	public static final String DEFAULT_SORT = Cast.MODIFIED_DATE+" DESC";
+	public static final String 
+		DEFAULT_SORT = Cast.MODIFIED_DATE+" DESC",
+		SELECTION_LAT_LON = Cast.LATITUDE + " - ? < 1 and "+Cast.LONGITUDE + " - ? < 1";
 
 	private Context context;
 	private AndroidNetworkClient nc;

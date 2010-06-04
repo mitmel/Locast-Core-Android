@@ -58,6 +58,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	// key for ContentValues to temporarily store tags as a delimited list
 	public static final String TEMP_TAGS = "_tags";
 	
+	
 	@Override
 	public Map<String, SyncItem> getSyncMap() {
 		final Map<String, SyncItem>syncMap = new HashMap<String, SyncItem>();
@@ -190,5 +191,31 @@ public abstract class TaggableItem extends JsonSyncableItem {
 			limit = MAX_POPULAR_TAGS;
 		}
 		return popTags.subList(0, limit);
+	}
+	
+	/**
+	 * A hack to work around duplicate column names when selecting with tags.
+	 * @param projection The TaggableItem's projection
+	 * @return a projection with appropriate namespacing to avoid conflicts.
+	 */
+	public static String[] getTagProjection(String[] projection){
+		final List<String> l = new ArrayList<String>(projection.length);
+		// horrible hack to get around duplicate column names.
+		for (final String col: projection){
+			if (TaggableItem._ID.equals(col)){
+				l.add("c."+col +" AS "+TaggableItem._ID);
+			}else{
+				l.add(col);
+			}
+		}
+		return l.toArray(new String[]{});
+	}
+	
+	public static Uri getTagUri(Uri baseUri, Collection<String> tags){
+		if (tags.isEmpty()){
+			return baseUri;
+		}
+		
+		return Uri.withAppendedPath(Uri.withAppendedPath(baseUri, Tag.PATH), Tag.toTagString(tags));
 	}
 }

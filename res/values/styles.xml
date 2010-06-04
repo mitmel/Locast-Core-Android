@@ -3,7 +3,16 @@
 
   <!--  MAIN -->
   
-    <style name="Theme.NoBackground" parent="android:Theme.Light">
+   	<style name="TabWidgetTextOnly" parent="@android:style/Widget.TabWidget">
+ 		<item name="android:textSize">18sp</item>
+ 		<item name="android:textStyle">bold</item>
+ 		<item name="android:textColor">#f00</item>
+ 		<item name="android:shadowColor">#BB000000</item>
+        <item name="android:shadowRadius">2.75</item>
+        <item name="android:layout_gravity">center_vertical</item>
+ 	</style>
+ 	
+    <style name="Theme.NoBackground" parent="@android:style/Theme.Light">
         <item name="android:windowBackground">@null</item>
     </style>
     
@@ -17,12 +26,8 @@
 		<item name="android:windowBackground">@drawable/android_bg</item>
         <item name="android:windowNoTitle">true</item>
 		<item name="android:textAppearance">@style/MyDefaultTextAppearance</item>   
-		      <item name="android:textColorPrimaryInverse">
-         		@android:color/primary_text_light
-      		</item>
-		<item name="android:textColorPrimary">
-         		@android:color/primary_text_light
-      		</item>
+		<item name="android:textColorPrimaryInverse">@android:color/primary_text_light</item>
+		<item name="android:textColorPrimary">@android:color/primary_text_light</item>
 	 </style>
  
   
@@ -36,7 +41,7 @@
   
   <!--  TEXT ITEMS -->
   
-     <style name="TextView1" parent="@android:id/text1">
+     <style name="TextView1">
         <item name="android:textSize">60sp</item>
         <item name="android:textColor">#000088</item>
 		<item name="android:layout_marginLeft">6dip</item>
@@ -44,36 +49,44 @@
 		<item name="android:textAppearance">?android:attr/textAppearanceLarge</item>
     </style>
  
-      <style name="TextView2" parent="@android:id/text2">
+      <style name="TextView2">
 		<item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
     </style>
   
- 	<style name="LocationLink" parent="android:Widget.Button">
+ 	<style name="LocationLink" parent="@android:style/Widget.Button">
  	
  	</style>
 
  	<style name="WindowTitleThickBackground">
- 		
         <item name="android:background">@android:drawable/title_bar</item>
  	</style>
  	
- 	<style name="WindowTitleThick" parent="android:WindowTitle">
+ 	<style name="WindowTitleThick" parent="@android:style/WindowTitle">
         <item name="android:singleLine">true</item>
-        <item name="android:textAppearance">@android:style/TextAppearance.WindowTitle</item>
         <item name="android:shadowColor">#BB000000</item>
         <item name="android:shadowRadius">2.75</item>
         <item name="android:paddingLeft">4dip</item>
- 		
+        <item name="android:paddingTop">4dip</item>
+ 		<item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
  	</style>
  	
- 	<style name="WindowTitleThickSubtitle" parent="WindowTitleThick">
-        <item name="android:textColor">#ddd</item>
- 		<item name="android:shadowColor">#99000000</item>
+ 	<style name="WindowTitleThick.Subtitle">
+		<item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
  	</style>
  		
  	<style name="CastIcon">
+ 		<item name="android:background">@android:drawable/picture_frame</item>
  		<item name="android:scaleType">fitCenter</item>
  		<item name="android:adjustViewBounds">true</item>
- 		<item name="android:background">@android:drawable/picture_frame</item>
+ 		
  	</style>
+ 	
+ 	<style name="DiscussionUserIcon">
+ 		<item name="android:padding">3dip</item>
+ 		<item name="android:scaleType">fitCenter</item>
+ 		<item name="android:adjustViewBounds">true</item>
+ 		<item name="android:src">@drawable/default_user_icon</item>
+ 	</style>
+ 	
+
 </resources>

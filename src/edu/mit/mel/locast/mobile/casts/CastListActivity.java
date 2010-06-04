@@ -27,6 +27,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 
 import com.commonsware.cwac.cache.SimpleWebImageCache;
@@ -40,7 +41,7 @@ import edu.mit.mel.locast.mobile.data.Cast;
 
 public abstract class CastListActivity extends ListActivity {
 
-	private CastCursorAdapter adapter;
+	private ListAdapter adapter;
 	
 	protected SimpleWebImageCache<ThumbnailBus, ThumbnailMessage> imgCache;
 
@@ -48,16 +49,25 @@ public abstract class CastListActivity extends ListActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		imgCache = ((Application)getApplication()).getImageCache();
+		
+		getListView().addHeaderView(getLayoutInflater().inflate(R.layout.cast_list_header, getListView(), false));
 	}
 	
 	protected void loadList(Cursor c){
 		adapter = new CastCursorAdapter(this, c);
-        
+
+        setListAdapter(adapter);
+	}
+	
+	@Override
+	public void setListAdapter(ListAdapter adapter){
         // this defines what images need to be loaded. URLs are placed in the ImageView tag
         final int[] IMAGE_IDS = {R.id.media_thumbnail};
-        setListAdapter(new ThumbnailAdapter(this, adapter, imgCache, IMAGE_IDS));
+        this.adapter = adapter;
+		super.setListAdapter(new ThumbnailAdapter(this, adapter, imgCache, IMAGE_IDS));
 	}
-	protected CastCursorAdapter getAdapter(){
+	
+	protected ListAdapter getAdapter(){
 		return adapter;
 	}
 	

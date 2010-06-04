@@ -35,8 +35,8 @@ import android.view.Window;
 import android.view.View.OnClickListener;
 import android.widget.TabHost;
 import android.widget.Toast;
+import edu.mit.mel.locast.mobile.casts.BrowseCastsActivity;
 import edu.mit.mel.locast.mobile.casts.EditCastActivity;
-import edu.mit.mel.locast.mobile.casts.MyCastsActivity;
 import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.Comment;
 import edu.mit.mel.locast.mobile.data.Project;
@@ -69,11 +69,14 @@ public class MainActivity extends TabActivity implements OnClickListener {
 	public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+        
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         
         this.nc = AndroidNetworkClient.getInstance(this);
 
         requestWindowFeature(Window.FEATURE_LEFT_ICON);
+        
+        setContentView(R.layout.main);
         
         final TabHost tabHost = getTabHost();
         
@@ -81,7 +84,7 @@ public class MainActivity extends TabActivity implements OnClickListener {
         		.setIndicator(getString(R.string.tab_projects)).setContent(new Intent(this, ListProjectsActivity.class)));
         
         tabHost.addTab(tabHost.newTabSpec("casts")
-        		.setIndicator(getString(R.string.tab_casts)).setContent(new Intent(this, MyCastsActivity.class)));
+        		.setIndicator(getString(R.string.tab_casts)).setContent(new Intent(this, BrowseCastsActivity.class)));
     }
     
 	@Override

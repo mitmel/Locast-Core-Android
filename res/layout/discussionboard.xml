@@ -7,17 +7,15 @@
 
 <!-- the weird addition of android:focusable below is to avoid the EditText from taking
      initial focus. See: http://stackoverflow.com/questions/1555109/ -->
-	<TextView android:id="@+id/header_discussionboard"
-		android:text="Discussion" android:layout_width="wrap_content"
-		android:textAppearance="?android:attr/textAppearanceMedium"
-		android:focusable="true"
-		android:focusableInTouchMode="true"
-		android:layout_height="wrap_content" />
 
 	<LinearLayout
 		android:layout_width="fill_parent" android:layout_height="wrap_content"
 		>
 
+			<ImageView android:id="@+id/user_icon" 
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+				
 			<EditText android:id="@+id/discussionText"
 				android:layout_width="fill_parent" 
 				android:layout_height="wrap_content"
@@ -29,10 +27,13 @@
 			<Button android:id="@+id/send" android:layout_width="wrap_content"
 				android:layout_height="fill_parent" android:text="Send"
 				android:layout_gravity="right" />
-		</LinearLayout>
+				
+		
+</LinearLayout>
 	
 	<LinearLayout android:id="@+id/discussionboard_items"
-	android:layout_width="fill_parent" android:layout_height="wrap_content"
-	android:orientation="vertical"
+		android:layout_width="fill_parent" 
+		android:layout_height="wrap_content"
+		android:orientation="vertical"
 	/>
 </LinearLayout>

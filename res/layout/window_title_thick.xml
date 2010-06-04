@@ -25,7 +25,7 @@
   	 />
   	 
 	<CheckBox android:id="@+id/star"
-	  	 android:button="@android:drawable/btn_star"
+		 style="?android:attr/starStyle" 
 	  	 android:layout_height="wrap_content"
 	  	 android:layout_width="wrap_content"
 	  	 
@@ -46,7 +46,7 @@
   	  <TextView android:id="@+id/item_author"
   	 	android:layout_width="wrap_content"
   		android:layout_height="wrap_content"
-		style="@style/WindowTitleThickSubtitle"
+		style="@style/WindowTitleThick.Subtitle"
   		android:layout_alignLeft="@android:id/title"
   		android:layout_below="@android:id/title"
   		android:layout_alignWithParentIfMissing="true"

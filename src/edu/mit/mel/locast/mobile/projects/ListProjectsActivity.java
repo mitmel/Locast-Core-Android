@@ -56,10 +56,10 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
 
     	final SeparatedListAdapter separatedList = new SeparatedListAdapter(this, R.layout.list_section_header);
     	
-    	separatedList.addSection("featured", new ProjectListAdapter(getApplicationContext(), 
+    	separatedList.addSection("featured", "Featured", new ProjectListAdapter(getApplicationContext(), 
     			cr.query(Project.CONTENT_URI, ProjectListAdapter.PROJECTION, Project._ID + "=1", null, null), this));
     	
-    	separatedList.addSection("nearby", new ProjectListAdapter(getApplicationContext(), 
+    	separatedList.addSection("nearby", "Nearby", new ProjectListAdapter(getApplicationContext(), 
     			cr.query(Project.CONTENT_URI, ProjectListAdapter.PROJECTION, null, null, null), this));
     	
         setListAdapter(separatedList);

@@ -42,6 +42,12 @@
 			</intent-filter>
 
 		</activity>
+		<activity android:name=".projects.ProjectDetailsActivity">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.projects" />
+			</intent-filter>
+		</activity>
 		<activity android:name=".projects.EditProjectActivity">
 			<intent-filter>
 				<action android:name="android.intent.action.EDIT" />
