@@ -61,13 +61,8 @@ import org.json.JSONObject;
 import android.location.Location;
 import android.util.Log;
 import edu.mit.mel.locast.mobile.StreamUtils;
-import edu.mit.mel.locast.mobile.data.Coordinates;
-import edu.mit.mel.locast.mobile.data.Itinerary;
 import edu.mit.mel.locast.mobile.data.JSONSerializable;
-import edu.mit.mel.locast.mobile.data.StatusUpdate;
-import edu.mit.mel.locast.mobile.data.Track;
 import edu.mit.mel.locast.mobile.data.User;
-import edu.mit.mel.locast.mobile.data.Waypoint;
 
 
 /**
@@ -277,7 +272,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	public boolean pairDevice(String pairCode) throws IOException, JSONException, NetworkProtocolException{
 		final DefaultHttpClient hc = new DefaultHttpClient();
 		hc.addRequestInterceptor(removeExpectations);
-		final HttpPost r = openPOST("/auth-pair");
+		final HttpPost r = openPOST("/pair/");
 		final String formData = "auth_secret="+pairCode;
 		r.setEntity(new StringEntity(formData));
 		
@@ -551,7 +546,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	
 		User u;
 		try{
-			u = loadUser(getObject("/users/"+username));
+			u = loadUser(getObject("/user/"+username));
 		}catch(final JSONException e){
 			throw new NetworkProtocolException(e);
 		}
@@ -562,7 +557,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	public Vector<User> getUsers() throws NetworkProtocolException, IOException {
 		final Vector<User> outUsers = new Vector<User>();
 		try{
-			final JSONArray users =getArray("/users");
+			final JSONArray users =getArray("/user/");
 			for (int i = 0; i < users.length(); i++){
 				outUsers.addElement(loadUser(users.getJSONObject(i)));
 				
@@ -611,83 +606,6 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		return u;
 	}
 	
-	/********************************** itineraries *****************************/
-	
-	public Vector<Itinerary> getItineraries() throws IOException, JSONException, NetworkProtocolException{
-		Vector<Itinerary> itineraries;
-		
-		final JSONArray iJson = getArray("/itineraries/?order=-is_favorite");
-		itineraries = new Vector<Itinerary>(iJson.length());
-		
-		for (int i = 0; i < iJson.length(); i++){
-			try{
-				final Itinerary itinerary = new Itinerary(iJson.getJSONObject(i));
-				//Itinerary.fromJSON(itinerary, );
-				itineraries.addElement(itinerary);
-			}catch (final Exception e){
-				// skip this
-				e.printStackTrace();
-			}
-		}
-		
-		
-		return itineraries;
-	}
-
-	public Itinerary getItinerary(int id) throws IOException, JSONException, NetworkProtocolException{
-		return new Itinerary(getObject("/itineraries/"+id));
-	}
-	
-	/******************************** waypoints *****************************/
-	
-	public Vector<Waypoint> getWaypointsBetween(String username) throws IOException, JSONException, NetworkProtocolException{
-		final Vector<Waypoint> w = new Vector<Waypoint>();
-		
-		final JSONArray wJson = getArray("/waypoints/between/"+username);
-		
-		for (int i = 0; i < wJson.length(); i++){
-			w.addElement(new Waypoint(wJson.getJSONObject(i)));
-		}
-		
-		return w;
-	}
-
-	public Vector<Waypoint> getWaypoints() throws IOException, JSONException, NetworkProtocolException {
-		return waypointsJsonToList(getObject("/waypoints/"));
-	}
-	
-	public Vector<Waypoint> waypointsJsonToList(JSONObject wJson) throws NetworkProtocolException, JSONException, IOException {
-		
-		final Vector<Waypoint> w = new Vector<Waypoint>();
-		
-		final JSONArray features = featureCollectionToList(wJson);
-		
-		for (int i = 0; i < features.length(); i++){
-			w.addElement(new Waypoint(features.getJSONObject(i)));
-		}
-		
-		return w;
-	}
-
-	public Waypoint getWaypoint(int id) throws IOException, JSONException, NetworkProtocolException{
-		return new Waypoint(getObject("/waypoints/"+id));
-	}
-	
-	public Vector<Waypoint> getWaypoints(Coordinates near, boolean showFavoritesFirst) 
-		throws IOException, JSONException, NetworkProtocolException {
-		return waypointsJsonToList(getObject("/waypoints/near/" +
-				near.getLongitude() + ','+ near.getLatitude() +
-				(showFavoritesFirst ? "/?postcount_order=-is_favorite": "")));
-	}
-	
-	public Vector<Waypoint> getWaypoints(Coordinates near) throws IOException, JSONException, NetworkProtocolException {
-		return getWaypoints(near, false);
-	}
-	
-	public void postWaypoint(Waypoint w) throws IOException, NetworkProtocolException, JSONException {
-		putJson("/waypoints/", w.toJSON());
-	}
-	
 	protected abstract InputStream getFileStream(String localFile) throws IOException;
 	
 	public void uploadContent(int contentId, String localFile, String contentType) throws NetworkProtocolException, IOException{
@@ -712,33 +630,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		}
 	}
 	
-	/***************************** status update ********************/
-	
-	/**
-	 * @param statusUpdate
-	 * @return
-	 * @throws NetworkProtocolException 
-	 * @throws IOException 
-	 * @throws JSONException  
-	 */
-	public HttpResponse postStatusUpdate(StatusUpdate statusUpdate) throws IOException, NetworkProtocolException, JSONException {
-		final HttpResponse c = post("/status/", statusUpdate.toJSON().toString());
-		
-		
-		return c;
-	}
-	
-	/**************************** tracks *****************************/
-	
-	/**
-	 * @throws JSONException 
-	 * @throws NetworkProtocolException 
-	 * @throws IOException 
-	 */
-	public HttpResponse postTrack(Track track) throws IOException, NetworkProtocolException, JSONException {
-		final HttpResponse c = post("/tracks/", track.toJSON().toString());
-		return c;
-	}
+
 	/***************************categories   **************************/
 	
 	/**
@@ -790,7 +682,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @throws NetworkProtocolException
 	 */
 	public List<String> getTagsList(String path) throws JSONException, IOException, NetworkProtocolException {
-		return toNativeStringList(getArray("/tags/"+path));
+		return toNativeStringList(getArray("/tag/"+path));
 	}
 	
 	/******************************** utils **************************/

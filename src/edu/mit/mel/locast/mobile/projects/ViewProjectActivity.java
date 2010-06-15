@@ -68,13 +68,13 @@ public class ViewProjectActivity extends TabActivity {
 	private void loadFromCursors(Cursor c){
 		
 		((TextView)(getWindow().findViewById(android.R.id.title))).setText(
-				c.getString(c.getColumnIndex(Project.TITLE)));
+				c.getString(c.getColumnIndex(Project._TITLE)));
 				
 		
-		setTitle(c.getString(c.getColumnIndex(Project.TITLE)));
+		setTitle(c.getString(c.getColumnIndex(Project._TITLE)));
 		
 		((TextView)(getWindow().findViewById(R.id.item_author)))
-			.setText(c.getString(c.getColumnIndex(Project.AUTHOR)));
+			.setText(c.getString(c.getColumnIndex(Project._AUTHOR)));
 		
 		//final String thumbUrl = c.getString(c.getColumnIndex(Project.THUMBNAIL_URI));
 		
@@ -87,7 +87,7 @@ public class ViewProjectActivity extends TabActivity {
 		final ImageView mediaThumbView = ((ImageView)findViewById(android.R.id.icon));
 		mediaThumbView.setImageResource(R.drawable.icon);
 		
-		if (!c.isNull(c.getColumnIndex(Project.PUBLIC_ID))){
+		if (!c.isNull(c.getColumnIndex(Project._PUBLIC_ID))){
 			
 			final TabHost tabHost = getTabHost();
 		tabHost.addTab(tabHost.newTabSpec("discussion")

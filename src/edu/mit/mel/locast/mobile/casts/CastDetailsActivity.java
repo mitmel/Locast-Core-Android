@@ -101,32 +101,32 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 		Log.d("ViewCast", testOut.toString());
 		
 		((TextView)findViewById(R.id.item_title)).setText(
-				c.getString(c.getColumnIndex(Cast.TITLE)));
+				c.getString(c.getColumnIndex(Cast._TITLE)));
 		
 		((TagListView)findViewById(R.id.tags))
 			.addTags(Cast.getTags(getContentResolver(), castUri));
 		
 		((TextView)findViewById(R.id.description)).setText(
-				c.getString(c.getColumnIndex(Cast.DESCRIPTION)));
+				c.getString(c.getColumnIndex(Cast._DESCRIPTION)));
 		
 		((TextView)findViewById(R.id.item_authors))
-			.setText(c.getString(c.getColumnIndex(Cast.AUTHOR)));
+			.setText(c.getString(c.getColumnIndex(Cast._AUTHOR)));
 		
 
 
-		contentType = c.getString(c.getColumnIndex(Cast.CONTENT_TYPE));
-		if (!c.isNull(c.getColumnIndex(Cast.PUBLIC_URI))){
-			publicUri = Uri.parse(c.getString(c.getColumnIndex(Cast.PUBLIC_URI)));
+		contentType = c.getString(c.getColumnIndex(Cast._CONTENT_TYPE));
+		if (!c.isNull(c.getColumnIndex(Cast._PUBLIC_URI))){
+			publicUri = Uri.parse(c.getString(c.getColumnIndex(Cast._PUBLIC_URI)));
 		}
-		if (!c.isNull(c.getColumnIndex(Cast.LOCAL_URI))){
-			localUri = Uri.parse(c.getString(c.getColumnIndex(Cast.LOCAL_URI)));
+		if (!c.isNull(c.getColumnIndex(Cast._LOCAL_URI))){
+			localUri = Uri.parse(c.getString(c.getColumnIndex(Cast._LOCAL_URI)));
 		}
-		if (!c.isNull(c.getColumnIndex(Cast.PUBLIC_ID))) {
-			publicId = c.getInt(c.getColumnIndex(Cast.PUBLIC_ID));
+		if (!c.isNull(c.getColumnIndex(Cast._PUBLIC_ID))) {
+			publicId = c.getInt(c.getColumnIndex(Cast._PUBLIC_ID));
 		}
 		
 		final LocationLink locButton = (LocationLink)findViewById(R.id.location);
-		if (!c.isNull(c.getColumnIndex(Cast.LATITUDE))){
+		if (!c.isNull(c.getColumnIndex(Cast._LATITUDE))){
 			geoUri = Cast.toGeoUri(c);	
 			locButton.setEnabled(true);
 			locButton.setLocation(Cast.toLocation(c));
@@ -135,7 +135,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 			((Button)findViewById(R.id.location)).setEnabled(false);
 		}
 		
-		final String thumbUrl = c.getString(c.getColumnIndex(Cast.THUMBNAIL_URI));
+		final String thumbUrl = c.getString(c.getColumnIndex(Cast._THUMBNAIL_URI));
 		
 		if (thumbUrl != null){
 			Log.d("ViewCast", "found thumbnail " + thumbUrl);

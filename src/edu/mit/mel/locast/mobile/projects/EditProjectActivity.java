@@ -67,7 +67,7 @@ public class EditProjectActivity extends Activity implements OnClickListener {
 	
 	private TagListView tagList;
 	
-	private List<Long> casts = new Vector<Long>();
+	private final List<Long> casts = new Vector<Long>();
 	private Set<String> members = new TreeSet<String>();
 	
 	final private static int NEW_ITEM = -1;
@@ -169,26 +169,27 @@ public class EditProjectActivity extends Activity implements OnClickListener {
 			Toast.makeText(this, getText(R.string.error_cannot_edit), Toast.LENGTH_LONG).show();
 			finish();
 		}
-		title.setText(c.getString(c.getColumnIndex(Project.TITLE)));
-		((EditText)findViewById(R.id.projectDescription)).setText(c.getString(c.getColumnIndex(Project.DESCRIPTION)));
-		if (! c.isNull(c.getColumnIndex(Project.START_DATE))){
+		title.setText(c.getString(c.getColumnIndex(Project._TITLE)));
+		((EditText)findViewById(R.id.projectDescription)).setText(c.getString(c.getColumnIndex(Project._DESCRIPTION)));
+		/*
+		if (! c.isNull(c.getColumnIndex(Project._START_DATE))){
 			fromDate = Calendar.getInstance();
-			fromDate.setTimeInMillis(c.getLong(c.getColumnIndex(Project.START_DATE)));
+			fromDate.setTimeInMillis(c.getLong(c.getColumnIndex(Project._START_DATE)));
 		}
-		if (! c.isNull(c.getColumnIndex(Project.END_DATE))){
+		if (! c.isNull(c.getColumnIndex(Project._END_DATE))){
 			toDate = Calendar.getInstance();
-			toDate.setTimeInMillis(c.getLong(c.getColumnIndex(Project.END_DATE)));
+			toDate.setTimeInMillis(c.getLong(c.getColumnIndex(Project._END_DATE)));
 		}
-		updateDates();
+		updateDates();*/
 		id = c.getInt(c.getColumnIndex(Project._ID));
 		tagList.addTags(Project.getTags(getContentResolver(), projectUri));
-		casts = Project.getListLong(c.getColumnIndex(Project.CASTS), c);
-		final List<String> memberList = Project.getList(c.getColumnIndex(Project.MEMBERS), c);
+		//casts = Project.getListLong(c.getColumnIndex(Project._CASTS), c);
+		/*final List<String> memberList = Project.getList(c.getColumnIndex(Project._MEMBERS), c);
 		members = new TreeSet<String>(memberList);
-		updateMembers();
+		updateMembers();*/
 		
-		if (! c.isNull(c.getColumnIndex(Cast.PRIVACY))){
-			privacy.setSelection(Arrays.asList(Project.PRIVACY_LIST).indexOf(c.getString(c.getColumnIndex(Cast.PRIVACY))));
+		if (! c.isNull(c.getColumnIndex(Cast._PRIVACY))){
+			privacy.setSelection(Arrays.asList(Project.PRIVACY_LIST).indexOf(c.getString(c.getColumnIndex(Cast._PRIVACY))));
 			privacy.setEnabled(Project.canChangePrivacyLevel(c));
 		}
 	}
@@ -196,14 +197,16 @@ public class EditProjectActivity extends Activity implements OnClickListener {
 	protected ContentValues toContentValues(){
 		final ContentValues cv = new ContentValues();
 		
-		cv.put(Project.TITLE, title.getText().toString());
-		cv.put(Project.DESCRIPTION, description.getText().toString());
-		cv.put(Project.START_DATE, (fromDate != null) ? fromDate.getTimeInMillis(): null);
-		cv.put(Project.END_DATE, (toDate != null) ? toDate.getTimeInMillis() : null);
+		cv.put(Project._TITLE, title.getText().toString());
+		cv.put(Project._DESCRIPTION, description.getText().toString());
+		/*
+		cv.put(Project._START_DATE, (fromDate != null) ? fromDate.getTimeInMillis(): null);
+		cv.put(Project._END_DATE, (toDate != null) ? toDate.getTimeInMillis() : null);
 		
-		Project.putList(Project.CASTS, cv, casts);
-		Project.putList(Project.MEMBERS, cv, new Vector<String>(members));
-		cv.put(Project.PRIVACY, Project.PRIVACY_LIST[privacy.getSelectedItemPosition()]);
+		Project.putList(Project._CASTS, cv, casts);
+		Project.putList(Project._MEMBERS, cv, new Vector<String>(members));
+		*/
+		cv.put(Project._PRIVACY, Project.PRIVACY_LIST[privacy.getSelectedItemPosition()]);
 		
 		return cv;
 	}

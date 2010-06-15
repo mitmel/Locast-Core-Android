@@ -24,16 +24,16 @@ import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.data.Cast;
 
 public class CastCursorAdapter extends SimpleCursorAdapter {
-	private final static String[] from = new String[] {Cast.THUMBNAIL_URI, Cast.AUTHOR, Cast.TITLE, Cast.DESCRIPTION};
+	private final static String[] from = new String[] {Cast._THUMBNAIL_URI, Cast._AUTHOR, Cast._TITLE, Cast._DESCRIPTION};
 	private final static int[] to = new int[] {R.id.media_thumbnail, R.id.author, android.R.id.text1, android.R.id.text2};
 	public final static int[] IMAGE_IDS = {R.id.media_thumbnail};
 	
 	public final static String[] projection = {
 			Cast._ID,
-			Cast.AUTHOR,
-			Cast.TITLE,
-			Cast.DESCRIPTION,
-			Cast.THUMBNAIL_URI
+			Cast._AUTHOR,
+			Cast._TITLE,
+			Cast._DESCRIPTION,
+			Cast._THUMBNAIL_URI
 		};
 	
 	public CastCursorAdapter(Context context, Cursor c) {

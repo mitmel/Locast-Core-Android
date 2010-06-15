@@ -26,14 +26,14 @@ import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.data.Project;
 
 public class ProjectListAdapter extends SimpleCursorAdapter {
-	private final static String[] from = {Project.TITLE, Project.DESCRIPTION};
+	private final static String[] from = {Project._TITLE, Project._DESCRIPTION};
 	private final static int[]    to   = {android.R.id.text1, android.R.id.text2};
 	private final OnClickListener buttonListener;
 	
 	public static final String[] PROJECTION = {
 		Project._ID, 
-		Project.TITLE, 
-		Project.DESCRIPTION
+		Project._TITLE, 
+		Project._DESCRIPTION
 		};
 	
     public ProjectListAdapter(Context context, Cursor cursor, OnClickListener buttonListener) {

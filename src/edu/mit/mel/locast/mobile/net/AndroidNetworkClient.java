@@ -82,7 +82,7 @@ public class AndroidNetworkClient extends NetworkClient {
 	}
 	
 	protected synchronized void loadBaseUri(){
-		this.baseurl = prefs.getString(PREF_SERVER_URL, "http://mel-pydev.mit.edu/civic/api");
+		this.baseurl = prefs.getString(PREF_SERVER_URL, "http://18.85.23.110:8888/api");
 	}
 	/**
 	 * Retrieves the user credentials from local storage.

@@ -149,27 +149,27 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			Toast.makeText(this, getText(R.string.error_cannot_edit), Toast.LENGTH_LONG).show();
 			finish();
 		}
-		if (!c.isNull(c.getColumnIndex(Cast.TITLE))){
-			mTitleField.setText(c.getString(c.getColumnIndex(Cast.TITLE)));
+		if (!c.isNull(c.getColumnIndex(Cast._TITLE))){
+			mTitleField.setText(c.getString(c.getColumnIndex(Cast._TITLE)));
 		}
 		
-		if (!c.isNull(c.getColumnIndex(Cast.DESCRIPTION))){
-			descriptionField.setText(c.getString(c.getColumnIndex(Cast.DESCRIPTION)));
+		if (!c.isNull(c.getColumnIndex(Cast._DESCRIPTION))){
+			descriptionField.setText(c.getString(c.getColumnIndex(Cast._DESCRIPTION)));
 		}
 		
 		tagList.addTags(Cast.getTags(getContentResolver(), castUri));
 		
-		if (!c.isNull(c.getColumnIndex(Cast.PUBLIC_ID))){
-			castPublicId = c.getInt(c.getColumnIndex(Cast.PUBLIC_ID));
+		if (!c.isNull(c.getColumnIndex(Cast._PUBLIC_ID))){
+			castPublicId = c.getInt(c.getColumnIndex(Cast._PUBLIC_ID));
 		}
-		if (!c.isNull(c.getColumnIndex(Cast.LOCAL_URI))){
-			localMediaUri = Uri.parse(c.getString(c.getColumnIndex(Cast.LOCAL_URI)));
+		if (!c.isNull(c.getColumnIndex(Cast._LOCAL_URI))){
+			localMediaUri = Uri.parse(c.getString(c.getColumnIndex(Cast._LOCAL_URI)));
 		}
-		if (!c.isNull(c.getColumnIndex(Cast.PUBLIC_URI))){
-			mediaUri = Uri.parse(c.getString(c.getColumnIndex(Cast.PUBLIC_URI)));
+		if (!c.isNull(c.getColumnIndex(Cast._PUBLIC_URI))){
+			mediaUri = Uri.parse(c.getString(c.getColumnIndex(Cast._PUBLIC_URI)));
 		}
-		if (!c.isNull(c.getColumnIndex(Cast.THUMBNAIL_URI))){
-			final String thumbString = c.getString(c.getColumnIndex(Cast.THUMBNAIL_URI));
+		if (!c.isNull(c.getColumnIndex(Cast._THUMBNAIL_URI))){
+			final String thumbString = c.getString(c.getColumnIndex(Cast._THUMBNAIL_URI));
 			Uri.parse(thumbString);
 			try {
 				imgLoader.loadImage(videoThumbView, thumbString);
@@ -180,10 +180,10 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			}
 		}
 		
-		contentType = c.getString(c.getColumnIndex(Cast.CONTENT_TYPE));
+		contentType = c.getString(c.getColumnIndex(Cast._CONTENT_TYPE));
 		
-		if (! c.isNull(c.getColumnIndex(Cast.PRIVACY))){
-			privacy.setSelection(Arrays.asList(Project.PRIVACY_LIST).indexOf(c.getString(c.getColumnIndex(Cast.PRIVACY))));
+		if (! c.isNull(c.getColumnIndex(Cast._PRIVACY))){
+			privacy.setSelection(Arrays.asList(Project.PRIVACY_LIST).indexOf(c.getString(c.getColumnIndex(Cast._PRIVACY))));
 			privacy.setEnabled(Cast.canChangePrivacyLevel(c));
 		}
 		
@@ -210,20 +210,20 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 	
 	protected ContentValues toContentValues() {
 		final ContentValues cv = new ContentValues();
-		cv.put(Cast.TITLE, mTitleField.getText().toString());
-		cv.put(Cast.DESCRIPTION, descriptionField.getText().toString());
-		cv.put(Cast.PRIVACY, "PUBLIC");
-		cv.put(Cast.LOCAL_URI, (localMediaUri != null && ! "null".equals(localMediaUri)) ? localMediaUri.toString(): null);
-		cv.put(Cast.PUBLIC_URI, (mediaUri != null && !mediaUri.equals("null")) ? mediaUri.toString(): null);
-		cv.put(Cast.CONTENT_TYPE, contentType);
+		cv.put(Cast._TITLE, mTitleField.getText().toString());
+		cv.put(Cast._DESCRIPTION, descriptionField.getText().toString());
+		cv.put(Cast._PRIVACY, "PUBLIC");
+		cv.put(Cast._LOCAL_URI, (localMediaUri != null && ! "null".equals(localMediaUri)) ? localMediaUri.toString(): null);
+		cv.put(Cast._PUBLIC_URI, (mediaUri != null && !mediaUri.equals("null")) ? mediaUri.toString(): null);
+		cv.put(Cast._CONTENT_TYPE, contentType);
 		//Cast.putTags(cv, tagList.getTags());
 		if (castPublicId != UNPUBLISHED_CAST) {
-			cv.put(Cast.PUBLIC_ID, castPublicId);
+			cv.put(Cast._PUBLIC_ID, castPublicId);
 		}
-		cv.put(Project.PRIVACY, Project.PRIVACY_LIST[privacy.getSelectedItemPosition()]);
+		cv.put(Project._PRIVACY, Project.PRIVACY_LIST[privacy.getSelectedItemPosition()]);
 		if (location != null){	
-			cv.put(Cast.LATITUDE, location.getLatitude());
-			cv.put(Cast.LONGITUDE, location.getLongitude());
+			cv.put(Cast._LATITUDE, location.getLatitude());
+			cv.put(Cast._LONGITUDE, location.getLongitude());
 		}
 
 		Log.d("EditCast", cv.toString());

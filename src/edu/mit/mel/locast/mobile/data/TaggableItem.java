@@ -29,6 +29,7 @@ import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -45,8 +46,8 @@ import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
  */
 public abstract class TaggableItem extends JsonSyncableItem {
 
-	public static final String PRIVACY = "privacy",
-								AUTHOR = "author";
+	public static final String _PRIVACY = "privacy",
+								_AUTHOR = "author";
 	
 	public static final String PRIVACY_PUBLIC = "public",
 								PRIVACY_PROTECTED = "protected",
@@ -58,13 +59,10 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	// key for ContentValues to temporarily store tags as a delimited list
 	public static final String TEMP_TAGS = "_tags";
 	
+	public static final Map<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem> (JsonSyncableItem.SYNC_MAP);
 	
-	@Override
-	public Map<String, SyncItem> getSyncMap() {
-		final Map<String, SyncItem>syncMap = new HashMap<String, SyncItem>();
-		
-		//syncMap.put(Tag.PATH, new SyncMap("tags", SyncMap.LIST_STRING));
-		syncMap.put(Tag.PATH, new SyncCustomArray("tags") {
+	static {
+		SYNC_MAP.put(Tag.PATH, new SyncCustomArray("tags") {
 			
 			@Override
 			public JSONArray toJSON(Context context, Uri localItem, Cursor c) throws JSONException {
@@ -89,7 +87,16 @@ public abstract class TaggableItem extends JsonSyncableItem {
 				return putList(Tag.PATH, cv, tags);	
 			}
 		});
-		return syncMap;
+		
+		final HashMap<String,SyncItem> authorSync = new HashMap<String, SyncItem>();
+		authorSync.put(_AUTHOR, new SyncMap("username", SyncMap.STRING));
+		SYNC_MAP.put("_author", 			new SyncMapChain("author", authorSync, SyncItem.SYNC_FROM));
+		
+		SYNC_MAP.put(_PRIVACY,          	new SyncMap("privacy", SyncMap.STRING));
+	}
+	@Override
+	public Map<String, SyncItem> getSyncMap() {
+		return SYNC_MAP;
 	}
 
 	/**
@@ -97,8 +104,8 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 * @return true if the item is editable by the logged-in user.
 	 */
 	public static boolean canEdit(Cursor c){
-		return c.getString(c.getColumnIndex(PRIVACY)).equals(PRIVACY_PUBLIC) ||
-		AndroidNetworkClient.getInstance(null).getUsername().equals(c.getString(c.getColumnIndex(AUTHOR)));
+		return c.getString(c.getColumnIndex(_PRIVACY)).equals(PRIVACY_PUBLIC) ||
+		AndroidNetworkClient.getInstance(null).getUsername().equals(c.getString(c.getColumnIndex(_AUTHOR)));
 	}
 	
 	/**
@@ -106,7 +113,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 * @return true if the authenticated user can change the item's privacy level.
 	 */
 	public static boolean canChangePrivacyLevel(Cursor c){
-		return AndroidNetworkClient.getInstance(null).getUsername().equals(c.getString(c.getColumnIndex(AUTHOR)));
+		return AndroidNetworkClient.getInstance(null).getUsername().equals(c.getString(c.getColumnIndex(_AUTHOR)));
 	}
 	
 	
@@ -117,7 +124,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	}
 	
 	@Override
-	public void onUpdateItem(Context context, Uri uri) throws SyncException,
+	public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException,
 			IOException {
 
 	}

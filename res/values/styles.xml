@@ -72,6 +72,8 @@
  	
  	<style name="WindowTitleThick.Subtitle">
 		<item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+		
  	</style>
  		
  	<style name="CastIcon">

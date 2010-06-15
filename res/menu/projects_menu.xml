@@ -9,4 +9,6 @@
 		android:icon="@android:drawable/ic_menu_preferences" />
 
 
+<item android:title="Wipe Database" android:id="@+id/reset"
+ android:icon="@android:drawable/ic_menu_delete" />
 </menu>

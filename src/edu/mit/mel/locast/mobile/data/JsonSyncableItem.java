@@ -21,9 +21,12 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -46,13 +49,17 @@ import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
  *
  */
 public abstract class JsonSyncableItem implements BaseColumns {
-	public static final String PUBLIC_ID = "id";
-	public static final String MODIFIED_DATE = "modified";
+	public static final String 
+		_PUBLIC_ID      = "id",
+		_MODIFIED_DATE  = "modified",
+		_CREATED_DATE 	= "created";
 	
 	public static final String[] SYNC_PROJECTION = {
 		_ID,
-		PUBLIC_ID,
-		MODIFIED_DATE
+		_PUBLIC_ID,
+		_MODIFIED_DATE,
+		_CREATED_DATE,
+		
 	};
 	
 	/**
@@ -67,7 +74,17 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	/**
 	 * @return A mapping of server↔local DB items.
 	 */
-	public abstract Map<String, SyncItem> getSyncMap();
+	public Map<String, SyncItem> getSyncMap(){
+		return SYNC_MAP;
+	};
+	
+	public static final HashMap<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem>();
+	static {
+		SYNC_MAP.put(_PUBLIC_ID, 		new SyncMap("id", SyncMap.INTEGER, true));
+		SYNC_MAP.put(_MODIFIED_DATE,	new SyncMap("modified", SyncMap.DATE, SyncItem.SYNC_FROM));
+		SYNC_MAP.put(_CREATED_DATE,		new SyncMap("created", SyncMap.DATE, true, SyncItem.SYNC_FROM));
+
+	}
 	
 	/**
 	 * Hook called after an item has been updated on the server.
@@ -75,7 +92,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 * @throws SyncException
 	 * @throws IOException 
 	 */
-	public void onUpdateItem(Context context, Uri uri) throws SyncException, IOException {}
+	public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException, IOException {}
 	
 	/**
 	 * Called just before an item is sync'd.  
@@ -158,6 +175,19 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		return ListUtils.join(tempList, LIST_DELIM);
 	}
 	
+	private static Pattern durationPattern = Pattern.compile("(\\d{1,2}):(\\d{1,2}):(\\d{1,2})");
+	/**
+	 * Given a JSON item and a sync map, create a ContentValues map to be inserted into the DB.
+	 *  
+	 * @param context
+	 * @param localItem will be null if item is new to mobile. If it's been sync'd before, will point to local entry.
+	 * @param item incoming JSON item. 
+	 * @param mySyncMap A mapping between the JSON object and the content values.
+	 * @return new ContentValues, ready to be inserted into the database.
+	 * @throws JSONException
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 */
 	public final static ContentValues fromJSON(Context context, Uri localItem, JSONObject item, Map<String, SyncItem> mySyncMap) throws JSONException, IOException,
 			NetworkProtocolException {
 		final ContentValues cv = new ContentValues();
@@ -225,6 +255,16 @@ public abstract class JsonSyncableItem implements BaseColumns {
 						ne.initCause(e);
 						throw ne;
 					}
+					break;
+					
+				case SyncMap.DURATION:{
+					final Matcher m = durationPattern.matcher(item.getString(map.remoteKey));
+					if (! m.matches()){
+						throw new NetworkProtocolException("bad duration format");
+					}
+					final int durationSeconds = 1200 * Integer.parseInt(m.group(1)) + 60 * Integer.parseInt(m.group(2)) + Integer.parseInt(m.group(3));
+					cv.put(propName, durationSeconds);
+				} break;
 				}
 			}else if (map instanceof SyncLiteral){
 				// don't need to load these
@@ -242,7 +282,17 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		return cv;
 	}
 
-	public final static JSONObject toJSON(Context context, Uri localItem, Cursor c, Map<String, SyncItem> mySyncMap) throws JSONException {
+	/**
+	 * @param context
+	 * @param localItem Will contain the URI of the local item being referenced in the cursor
+	 * @param c active cursor with the item to sync selected.
+	 * @param mySyncMap 
+	 * @return a new JSONObject representing the item
+	 * @throws JSONException
+	 * @throws NetworkProtocolException
+	 * @throws IOException
+	 */
+	public final static JSONObject toJSON(Context context, Uri localItem, Cursor c, Map<String, SyncItem> mySyncMap) throws JSONException, NetworkProtocolException, IOException {
 		final JSONObject jo = new JSONObject();
 		
 		for (final String lProp: mySyncMap.keySet()){
@@ -322,6 +372,12 @@ public abstract class JsonSyncableItem implements BaseColumns {
             		jo.put(map.remoteKey, 
 						NetworkClient.dateFormat.format(new Date(c.getLong(columnIndex))));
 				break;
+				
+            	case SyncMap.DURATION:{
+            		final int durationSeconds = c.getInt(columnIndex);
+            		// hh:mm:ss
+            		jo.put(map.remoteKey, String.format("%02i:%02i:%02i", durationSeconds / 1200, (durationSeconds / 60) % 60, durationSeconds % 60));
+            	}break;
             	}
             }
 		}
@@ -395,11 +451,14 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		public SyncCustomArray(String remoteKey) {
 			super(remoteKey);
 		}
+		public SyncCustomArray(String remoteKey, int direction){
+			super(remoteKey, direction);
+		}
 		public SyncCustomArray(String remoteKey, boolean optional){
 			super(remoteKey, optional);
 		}
-		public abstract JSONArray toJSON(Context context, Uri localItem, Cursor c) throws JSONException;
-		public abstract ContentValues fromJSON(Context context, Uri localItem, JSONArray item) throws JSONException;
+		public abstract JSONArray toJSON(Context context, Uri localItem, Cursor c) throws JSONException, NetworkProtocolException, IOException;
+		public abstract ContentValues fromJSON(Context context, Uri localItem, JSONArray item) throws JSONException, NetworkProtocolException, IOException;
 	}
 	
 	/**
@@ -435,7 +494,9 @@ public abstract class JsonSyncableItem implements BaseColumns {
 			DATE    = 4,
 			DOUBLE  = 5,
 			LIST_DOUBLE = 6,
-			LIST_INTEGER = 7;
+			LIST_INTEGER = 7,
+			LOCATION = 8,
+			DURATION = 9;
 
 	}
 	

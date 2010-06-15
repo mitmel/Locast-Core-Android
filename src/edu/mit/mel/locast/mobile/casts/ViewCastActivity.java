@@ -69,22 +69,22 @@ public class ViewCastActivity extends TabActivity {
 	private void loadFromCursors(Cursor c){
 		
 		((TextView)(getWindow().findViewById(android.R.id.title))).setText(
-				c.getString(c.getColumnIndex(Cast.TITLE)));
+				c.getString(c.getColumnIndex(Cast._TITLE)));
 				
 		
-		setTitle(c.getString(c.getColumnIndex(Cast.TITLE)));
+		setTitle(c.getString(c.getColumnIndex(Cast._TITLE)));
 		
 		((TextView)(getWindow().findViewById(R.id.item_author)))
-			.setText(c.getString(c.getColumnIndex(Cast.AUTHOR)));
+			.setText(c.getString(c.getColumnIndex(Cast._AUTHOR)));
 		
-		final String thumbUrl = c.getString(c.getColumnIndex(Cast.THUMBNAIL_URI));
+		final String thumbUrl = c.getString(c.getColumnIndex(Cast._THUMBNAIL_URI));
 		
 		if (thumbUrl != null){
 			Log.d("ViewCast", "found thumbnail " + thumbUrl);
 			final ImageView mediaThumbView = ((ImageView)findViewById(android.R.id.icon));
 			imgLoader.loadImage(mediaThumbView, thumbUrl);
 		}
-		if (!c.isNull(c.getColumnIndex(Cast.PUBLIC_ID))){
+		if (!c.isNull(c.getColumnIndex(Cast._PUBLIC_ID))){
 			
 			final TabHost tabHost = getTabHost();
 		tabHost.addTab(tabHost.newTabSpec("discussion")

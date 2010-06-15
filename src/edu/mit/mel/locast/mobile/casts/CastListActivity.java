@@ -47,10 +47,12 @@ public abstract class CastListActivity extends ListActivity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		setContentView(R.layout.cast_list_header);
 		super.onCreate(savedInstanceState);
 		imgCache = ((Application)getApplication()).getImageCache();
 		
-		getListView().addHeaderView(getLayoutInflater().inflate(R.layout.cast_list_header, getListView(), false));
+
+		//getListView().addHeaderView(getLayoutInflater().inflate(R.layout.cast_list_header, getListView(), false));
 	}
 	
 	protected void loadList(Cursor c){

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="wrap_content" android:orientation="horizontal"
+  android:minHeight="30sp"
+  >
+  <TextView android:id="@android:id/text1"  android:layout_weight="1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  android:textColor="@color/template_item_text_color"
+  android:textSize="30sp"
+  android:gravity="center_vertical"
+  android:paddingLeft="5sp"
+   />
+  <TextView android:id="@+id/time_remaining" android:layout_height="wrap_content" android:layout_width="wrap_content" 
+  android:textColor="@color/template_item_text_color"
+  android:textSize="30sp"
+  android:gravity="center_vertical"
+  android:text="3s"
+  android:paddingRight="5sp"
+  />
+</LinearLayout>

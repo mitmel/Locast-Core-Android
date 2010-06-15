@@ -28,8 +28,8 @@ public class MyCastsActivity extends CastListActivity {
 		final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(getApplicationContext());
 		
 		loadList(managedQuery(Cast.CONTENT_URI, CastCursorAdapter.projection, 
-				Cast.AUTHOR+"=?", 
+				Cast._AUTHOR+"=?", 
 				new String[]{nc.getUsername()}, 
-				Cast.MODIFIED_DATE+" DESC"));
+				Cast._MODIFIED_DATE+" DESC"));
 	}	
 }

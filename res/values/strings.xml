@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources  xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<resources >
 	
-	<string name="app_name">Locast Civic Media</string>
+	<string name="app_name">Locast Connects</string>
 
 	<!-- Main screen -->
     <string name="main_header_string">Locast</string>
@@ -29,13 +29,13 @@
 	<string name="error_comments_sync">Error syncing comments.</string>
 	<string name="error_sync">Could not synchronize with server. Do you have a network connection?</string>
 	<string name="error_no_location">Could not get your location. This cast will not be geo-tagged until you add a location.</string>
-	<string name="error_cannot_edit">Sorry, you don't have permission to edit this item.</string>
+	<string name="error_cannot_edit">Sorry, you don\'t have permission to edit this item.</string>
 	<string name="error_no_project">Error: project %s could not be found in local database.</string>
 	
 	<!-- user-facing alerts -->
-	<string name="added_cast_to">Added cast to <xliff:g id="text">%0$s</xliff:g></string>
-	<string name="project_you_joined">You have joined <xliff:g id="text">%0$s</xliff:g></string>
-	<string name="project_you_left">You have left <xliff:g id="text">%0$s</xliff:g></string>
+	<string name="added_cast_to">Added cast to %s</string>
+	<string name="project_you_joined">You have joined %s</string>
+	<string name="project_you_left">You have left %s</string>
 	
 
 	<!-- casts -->

@@ -17,21 +17,10 @@ package edu.mit.mel.locast.mobile.projects;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.Vector;
-
 import android.app.ListActivity;
 import android.content.ContentResolver;
 import android.content.ContentUris;
-import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
-import android.content.res.TypedArray;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
@@ -43,14 +32,12 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 import android.view.View.OnCreateContextMenuListener;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -60,17 +47,17 @@ import com.commonsware.cwac.thumbnail.ThumbnailAdapter;
 
 import edu.mit.mel.locast.mobile.Application;
 import edu.mit.mel.locast.mobile.R;
+import edu.mit.mel.locast.mobile.casts.CastCursorAdapter;
 import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.Project;
-import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.widget.TagListView;
 	
 	public class ProjectDetailsActivity extends ListActivity 
 		implements OnClickListener, OnItemClickListener, OnCreateContextMenuListener {
 		private Button mJoinButton;
 		private TagListView tagList;
-		protected List<Long> casts = new Vector<Long>();
-		protected Set<String> members;
+		//protected List<Long> casts = new Vector<Long>();
+		//protected Set<String> members;
 		
 		private final static int MENU_ITEM_VIEW_CAST = 0,
 								 MENU_ITEM_REMOVE_CAST = 1;
@@ -84,7 +71,7 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	        
 	        final ListView castList = getListView();
 	        castList.addHeaderView(LayoutInflater.from(this).inflate(R.layout.projectdetails, castList, false));
-	        
+
 	        castList.setVerticalScrollBarEnabled(false);
 	        
 	        
@@ -96,8 +83,15 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	        
 	        // this defines what images need to be loaded. URLs are placed in the ImageView tag
 	        final int[] IMAGE_IDS = {R.id.thumbnail};
-	        castAdapter = new ThumbnailAdapter(this, new CastListAdapter(this), ((Application)getApplication()).getImageCache(), IMAGE_IDS);
+	        
+	        castAdapter = new ThumbnailAdapter(this, 
+	        		new CastCursorAdapter(this, 
+	        				getContentResolver().query(Uri.withAppendedPath(getIntent().getData(), Cast.PATH),
+	        						Cast.PROJECTION, null, null, Cast.DEFAULT_SORT)),
+	        		((Application)getApplication()).getImageCache(), IMAGE_IDS);
+	        
 	        setListAdapter(castAdapter);
+
 	        castList.setOnItemClickListener(this);
 	        castList.setOnCreateContextMenuListener(this);
 	        
@@ -138,34 +132,30 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 		}
 		
 		protected void loadFromCursor(Uri projectUri, Cursor c){
-			((TextView)findViewById(R.id.item_title)).setText(c.getString(c.getColumnIndex(Project.TITLE)));
-			((TextView)findViewById(R.id.description)).setText(c.getString(c.getColumnIndex(Project.DESCRIPTION)));
+			((TextView)findViewById(R.id.item_title)).setText(c.getString(c.getColumnIndex(Project._TITLE)));
+			((TextView)findViewById(R.id.description)).setText(c.getString(c.getColumnIndex(Project._DESCRIPTION)));
 			
+			/*
 			Calendar fromDate = null, toDate = null;
-			if (! c.isNull(c.getColumnIndex(Project.START_DATE))){
+			if (! c.isNull(c.getColumnIndex(Project._START_DATE))){
 				fromDate = Calendar.getInstance();
-				fromDate.setTimeInMillis(c.getLong(c.getColumnIndex(Project.START_DATE)));
+				fromDate.setTimeInMillis(c.getLong(c.getColumnIndex(Project._START_DATE)));
 			}
-			if (! c.isNull(c.getColumnIndex(Project.END_DATE))){
+			if (! c.isNull(c.getColumnIndex(Project._END_DATE))){
 				toDate = Calendar.getInstance();
-				toDate.setTimeInMillis(c.getLong(c.getColumnIndex(Project.END_DATE)));
+				toDate.setTimeInMillis(c.getLong(c.getColumnIndex(Project._END_DATE)));
 			}
 			final DateFormat df = SimpleDateFormat.getDateInstance(SimpleDateFormat.MEDIUM);
 			final String dateString = ((fromDate != null) ? df.format(fromDate.getTime()) : "")
 				+ (( fromDate != null && toDate != null) ? " - " : "")
 				+ ((toDate != null) ? df.format(toDate.getTime()) : "");
 			((TextView)findViewById(R.id.date)).setText(dateString);
-			
+			*/
 			tagList.addTags(Project.getTags(getContentResolver(), projectUri));
-			casts = Project.getListLong(c.getColumnIndex(Project.CASTS), c);
-			if (casts.size() == 0){
-				((TextView)findViewById(R.id.cast_notice)).setText(R.string.project_no_casts);
-			}else{
-				((TextView)findViewById(R.id.cast_notice)).setText("");
-			}
+
 			castAdapter.notifyDataSetChanged();
 	
-			members = new TreeSet<String>(Project.getList(c.getColumnIndex(Project.MEMBERS), c));
+			/* membership members = new TreeSet<String>(Project.getList(c.getColumnIndex(Project._MEMBERS), c));
 			final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(this);
 			if (members.contains(nc.getUsername())){
 				mJoinButton.setText(R.string.project_leave);
@@ -173,6 +163,8 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 				mJoinButton.setText(R.string.project_join);
 			}
 			((TextView)findViewById(R.id.people)).setText(Project.getMemberList(getApplicationContext(), c));
+			 * 
+			 */
 		}
 		
 		@Override
@@ -224,8 +216,8 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 				
 			case MENU_ITEM_REMOVE_CAST:
 				info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-				casts.remove(info.position);
-				updateCasts();
+				//casts.remove(info.position);
+				//updateCasts();
 				break;
 				
 			default:
@@ -234,7 +226,7 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 			return true;
 		}
 		
-	    public class CastListAdapter extends BaseAdapter {
+	    /*public class CastListAdapter extends BaseAdapter {
 	        int mGalleryItemBackground;
 	        final LayoutInflater inflater = getLayoutInflater();
 	        
@@ -272,20 +264,20 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	            final Cursor c = cr.query(ContentUris.withAppendedId(Cast.CONTENT_URI, getItemId(position)), Cast.PROJECTION, null, null, null);
 	            if (c.moveToFirst()){
 	            	
-	            	i.setTag(c.getString(c.getColumnIndex(Cast.THUMBNAIL_URI)));
+	            	i.setTag(c.getString(c.getColumnIndex(Cast._THUMBNAIL_URI)));
 	            	i.setImageResource(R.drawable.cast_placeholder);
 	            }
 	            c.close();
 	            
 	            return i;
 	        }
-	    }
+	    }*/
 	    
-	    private void updateCasts(){
+	   /* private void updateCasts(){
 			final ContentValues cv = new ContentValues();
-			Project.putList(Project.CASTS, cv, casts);
+			Project.putList(Project._CASTS, cv, casts);
 			getContentResolver().update(getIntent().getData(), cv, null, null);
-	    }
+	    }*/
 	
 		public void onClick(View v) {
 			switch (v.getId()){

@@ -18,6 +18,7 @@ package edu.mit.mel.locast.mobile.data;
  */
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -45,51 +46,52 @@ import android.provider.MediaStore.Video.Media;
 import android.util.Log;
 import edu.mit.mel.locast.mobile.StreamUtils;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
+import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
 
 public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 	public final static String TAG = "LocastSyncCast";
-	public final static String PATH = "content";
+	public final static String PATH = "casts";
 	public final static Uri 
 		CONTENT_URI = Uri.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
 	
-	public final static String SERVER_PATH = "/content/";
-	public final static String LOCAST_EXTERNAL_PATH = "/locast/";
+	public final static String SERVER_PATH = "/cast/";
+	public final static String DEVICE_EXTERNAL_MEDIA_PATH = "/locast/";
 	
 	public static final String
-		TITLE 			= "title",
-		DESCRIPTION 	= "description",
-		AUTHOR 			= "author",
-		CREATED_DATE 	= "created";
+		_TITLE 			= "title",
+		_DESCRIPTION 	= "description";
 
 	public static final String 
-		LOCAL_URI = "local_uri",
-		PUBLIC_URI = "public_uri",
-		CONTENT_TYPE = "content_type",
+		_LOCAL_URI = "local_uri",
+		_PUBLIC_URI = "public_uri",
+		_CONTENT_TYPE = "content_type",
+		_PROJECT_ID   = "project_id",
 
-		THUMBNAIL_URI = "thumbnail_uri",
+		_THUMBNAIL_URI = "thumbnail_uri",
 
-		LATITUDE = "lat",
-		LONGITUDE = "lon";
+		_LATITUDE = "lat",
+		_LONGITUDE = "lon";
 	
 	public static final String[] PROJECTION = 
 	{   _ID,
-		TITLE,
-		DESCRIPTION,
-		PRIVACY,
-		AUTHOR,
-		CREATED_DATE,
-		PUBLIC_ID,
-		LOCAL_URI,
-		PUBLIC_URI,
-		CONTENT_TYPE,
-		MODIFIED_DATE,
-		THUMBNAIL_URI,
-		LATITUDE,
-		LONGITUDE };
+		_TITLE,
+		_DESCRIPTION,
+		_PRIVACY,
+		_AUTHOR,
+		_CREATED_DATE,
+		_PUBLIC_ID,
+		_PROJECT_ID,
+		_LOCAL_URI,
+		_PUBLIC_URI,
+		_CONTENT_TYPE,
+		_MODIFIED_DATE,
+		_THUMBNAIL_URI,
+		_LATITUDE,
+		_LONGITUDE };
 	
 	public static final String 
-		DEFAULT_SORT = Cast.MODIFIED_DATE+" DESC",
-		SELECTION_LAT_LON = Cast.LATITUDE + " - ? < 1 and "+Cast.LONGITUDE + " - ? < 1";
+		DEFAULT_SORT = Cast._MODIFIED_DATE+" DESC",
+		SELECTION_LAT_LON = Cast._LATITUDE + " - ? < 1 and "+Cast._LONGITUDE + " - ? < 1";
 
 	private Context context;
 	private AndroidNetworkClient nc;
@@ -108,15 +110,15 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 	}
 	
 	public static Uri toGeoUri(Cursor c){
-		if (c.isNull(c.getColumnIndex(LATITUDE)) || c.isNull(c.getColumnIndex(LONGITUDE))) {
+		if (c.isNull(c.getColumnIndex(_LATITUDE)) || c.isNull(c.getColumnIndex(_LONGITUDE))) {
 			return null;
 		}
-		return Uri.parse("geo:"+c.getDouble(c.getColumnIndex(LATITUDE))+","+c.getDouble(c.getColumnIndex(LONGITUDE)));
+		return Uri.parse("geo:"+c.getDouble(c.getColumnIndex(_LATITUDE))+","+c.getDouble(c.getColumnIndex(_LONGITUDE)));
 	}
 	
 	public static Location toLocation(Cursor c){
-		final int lat_idx = c.getColumnIndex(LATITUDE);
-		final int lon_idx = c.getColumnIndex(LONGITUDE);
+		final int lat_idx = c.getColumnIndex(_LATITUDE);
+		final int lon_idx = c.getColumnIndex(_LONGITUDE);
 		if (c.isNull(lat_idx) || c.isNull(lon_idx)) {
 			return null;
 		}
@@ -126,64 +128,76 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 		return l;
 	}
 	
-
-	
 	@Override
 	public java.util.Map<String,SyncItem> getSyncMap() {
-		final Map<String,SyncItem> syncMap = new HashMap<String, SyncItem>();
-		syncMap.put("_type_feature", new SyncLiteral("type", "Feature"));
-		syncMap.put(PUBLIC_ID, 		new SyncMap("id", SyncMap.INTEGER, true));
+		final Map<String,SyncItem> syncMap = new HashMap<String, SyncItem> (super.getSyncMap());
+		syncMap.put(_PUBLIC_ID, 	new SyncMap("id", SyncMap.INTEGER, true));
 		
-		syncMap.put("_geometry", new SyncCustom("geometry", true){
+		syncMap.put("_location", new SyncCustomArray("location", true) {
+			
 			@Override
-			public ContentValues fromJSON(Uri locItem, JSONObject item) throws JSONException {
-				final ContentValues cv = new ContentValues();
-				final JSONArray coords = item.getJSONArray("coordinates");
-				cv.put(LONGITUDE, coords.getDouble(0));
-				cv.put(LATITUDE, coords.getDouble(1));
-				return cv;
+			public JSONArray toJSON(Context context, Uri localItem, Cursor c)
+					throws JSONException {
+				
+				final int latCol = c.getColumnIndex(_LATITUDE);
+				final int lonCol = c.getColumnIndex(_LONGITUDE);
+				
+				if (c.isNull(latCol) || c.isNull(lonCol)){
+					return null;
+				}
+				
+				final JSONArray coords = new JSONArray();
+				coords.put(c.getDouble(lonCol));
+				coords.put(c.getDouble(latCol));
+				return coords;
 			}
 			
 			@Override
-			public JSONObject toJSON(Uri locItem, Cursor c) throws JSONException {
-				final JSONObject jo = new JSONObject();
-				jo.put("type", "Point");
-				final JSONArray coords = new JSONArray();
-				coords.put(c.getDouble(c.getColumnIndex(LONGITUDE)));
-				coords.put(c.getDouble(c.getColumnIndex(LATITUDE)));
-				jo.put("coordinates", coords);
-				return jo;
+			public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
+					throws JSONException {
+				final ContentValues cv = new ContentValues();
+				cv.put(_LONGITUDE, item.getDouble(0));
+				cv.put(_LATITUDE, item.getDouble(1));
+				return cv;
 			}
 		});
 		
-		final Map<String, SyncItem> props = super.getSyncMap();
+		syncMap.put(_DESCRIPTION, 		new SyncMap("description", SyncMap.STRING));
+		syncMap.put(_TITLE, 			new SyncMap("title", SyncMap.STRING));
 		
+
 		
-		props.put(DESCRIPTION, 		new SyncMap("description", SyncMap.STRING));
-		props.put(TITLE, 			new SyncMap("title", SyncMap.STRING));
-		props.put(MODIFIED_DATE,	new SyncMap("modified", SyncMap.DATE, SyncItem.SYNC_FROM));
-		props.put(CREATED_DATE,		new SyncMap("created", SyncMap.DATE, SyncItem.SYNC_FROM));
-		props.put(PRIVACY,          new SyncMap("privacy", SyncMap.STRING));
+		syncMap.put(_THUMBNAIL_URI, 	new SyncMap("screenshot", SyncMap.STRING, true, SyncItem.SYNC_FROM));
 		
-		// author sub-object
-		final Map<String, SyncItem> author = new HashMap<String, SyncItem>();
-		author.put(AUTHOR, new SyncMap("username", SyncMap.STRING, SyncItem.SYNC_FROM));
-		props.put("_author_obj", new SyncMapChain("author", author, SyncItem.SYNC_FROM));
+
+		syncMap.put("_contents", new SyncCustomArray("castvideos", SyncItem.SYNC_FROM) {
+			
+			@Override
+			public JSONArray toJSON(Context context, Uri localItem, Cursor c)
+					throws JSONException, NetworkProtocolException, IOException {
+				
+				final Cursor castMedia_c = context.getContentResolver().query(Uri.withAppendedPath(localItem, CastMedia.PATH), CastMedia.PROJECTION, null, null, null);
+				final JSONArray ja = new JSONArray();
+				for (castMedia_c.moveToFirst(); !castMedia_c.isAfterLast(); castMedia_c.moveToNext()){
+					ja.put(CastMedia.toJSON(context, localItem, castMedia_c, CastMedia.SYNC_MAP));
+				}
+				castMedia_c.close();
+				return ja;
+			}
+			
+			@Override
+			public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
+					throws JSONException, NetworkProtocolException, IOException {
+				// do nothing. We can't load from JSON until we have the local Cast URI to create the reference.
+				return new ContentValues();
+			}
+		});
 		
-		props.put(THUMBNAIL_URI, new SyncMap("thumbnail_large_url", SyncMap.STRING, true, SyncItem.SYNC_FROM));
-		
-		// content sub-object
-		final Map<String, SyncItem> content = new HashMap<String, SyncItem>();
-		content.put(PUBLIC_URI, new SyncMap("url", SyncMap.STRING, true, SyncItem.SYNC_FROM));
-		content.put(CONTENT_TYPE, new SyncMap("type", SyncMap.STRING, true));
-		props.put("_content_obj", new SyncMapChain("content", content, SyncItem.SYNC_FROM));
-		
-		syncMap.put("_properties", 	new SyncMapChain("properties", props));
 		return syncMap;
 	}
 
 	@Override
-	public void onUpdateItem(Context context, Uri uri) throws SyncException {
+	public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException {
 		this.context = context;
 		final ContentResolver cr = context.getContentResolver();
 		final Cursor c = cr.query(uri, PROJECTION, null, null, null);
@@ -192,34 +206,70 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 			nc = AndroidNetworkClient.getInstance(context);
 		}
 		
-		final String locUri = c.getString(c.getColumnIndex(LOCAL_URI));
-		final String pubUri = c.getString(c.getColumnIndex(PUBLIC_URI));
-		final boolean hasLocUri = locUri != null && locUri.length() > 0;
-		final boolean hasPubUri = pubUri != null && pubUri.length() > 0;
-		
-		if (hasLocUri && hasPubUri){
-			Log.i(TAG, "Content media item "+uri+ "appears to be in sync with server.");
+		final Map<String, SyncItem> syncMap = new HashMap<String, SyncItem>();
+		syncMap.put("_contents", new SyncCustomArray("castvideos") {
 			
-		// only have a public copy, so download it and store locally.
-		}else if (!hasLocUri && hasPubUri){
-			/* temp disable
-			final File destfile = getFilePath(pubUri);
-			String newLocUri = null;
-			if (!downloadCastMedia(destfile, uri, pubUri)){
-				newLocUri = checkForMediaEntry(this.context, uri, pubUri);
+			@Override
+			public JSONArray toJSON(Context context, Uri localItem, Cursor c)
+					throws JSONException, NetworkProtocolException, IOException {
+				// do nothing.
+				return new JSONArray();
 			}
-			*/
-		}else if (hasLocUri && !hasPubUri){
-			// upload
-			try {
-				nc.uploadContent(c.getInt(c.getColumnIndex(PUBLIC_ID)), locUri, c.getString(c.getColumnIndex(CONTENT_TYPE)));
-			} catch (final Exception e){
-				final SyncException se = new SyncException("Error uploading content item.");
-				se.initCause(e);
-				throw se;
+			
+			@Override
+			public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
+					throws JSONException, NetworkProtocolException, IOException {
+				final ContentResolver cr = context.getContentResolver();
+				
+				for (int i = 0; i < item.length(); i++){
+					final ContentValues cv = CastMedia.fromJSON(context, null, item.getJSONObject(i), CastMedia.SYNC_MAP);
+					
+					cv.put(CastMedia._LIST_IDX, i);
+					cv.put(CastMedia._PARENT_ID, ContentUris.parseId(localItem));
+					// this will actually overwrite any existing entries in the same index.
+					cr.insert(Uri.withAppendedPath(localItem, CastMedia.PATH), cv);
+				}
+				return new ContentValues();
 			}
+		});
+		
+		try {
+			Log.d(TAG, "trying to load cast videos from "+ item);
+			fromJSON(context, uri, item, syncMap);
+		} catch (final Exception e1) {
+			final SyncException e = new SyncException("Error loading cast videos");
+			e.initCause(e1);
+			throw e;
 		}
 		
+//		final String locUri = c.getString(c.getColumnIndex(_LOCAL_URI));
+//		final String pubUri = c.getString(c.getColumnIndex(_PUBLIC_URI));
+//		final boolean hasLocUri = locUri != null && locUri.length() > 0;
+//		final boolean hasPubUri = pubUri != null && pubUri.length() > 0;
+//		
+//		if (hasLocUri && hasPubUri){
+//			Log.i(TAG, "Content media item "+uri+ "appears to be in sync with server.");
+//			
+//		// only have a public copy, so download it and store locally.
+//		}else if (!hasLocUri && hasPubUri){
+//			/* temp disable
+//			final File destfile = getFilePath(pubUri);
+//			String newLocUri = null;
+//			if (!downloadCastMedia(destfile, uri, pubUri)){
+//				newLocUri = checkForMediaEntry(this.context, uri, pubUri);
+//			}
+//			*/
+//		}else if (hasLocUri && !hasPubUri){
+//			// upload
+//			try {
+//				nc.uploadContent(c.getInt(c.getColumnIndex(_PUBLIC_ID)), locUri, c.getString(c.getColumnIndex(_CONTENT_TYPE)));
+//			} catch (final Exception e){
+//				final SyncException se = new SyncException("Error uploading content item.");
+//				se.initCause(e);
+//				throw se;
+//			}
+//		}
+//		
 		c.close();
 	}
 	
@@ -227,7 +277,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 		final File sdcardPath = Environment.getExternalStorageDirectory();
 		// pull off the server's name for this file.
 		final String localFile = pubUri.substring(pubUri.lastIndexOf('/') + 1);
-		final File locastSaveFile = new File(sdcardPath, LOCAST_EXTERNAL_PATH);
+		final File locastSaveFile = new File(sdcardPath, DEVICE_EXTERNAL_MEDIA_PATH);
 		locastSaveFile.mkdirs();
 		if (!locastSaveFile.canWrite()) {
 			throw new SyncException("cannot write to external storage '"+locastSaveFile.getAbsolutePath()+"'");
@@ -297,7 +347,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 		
 		
 		final ContentValues cvCast = new ContentValues();
-		cvCast.put(LOCAL_URI, uri.toString());
+		cvCast.put(_LOCAL_URI, uri.toString());
 		final ScanQueueItem item = scanMap.get(path);
 		Log.d("Locast", "new local uri " + uri + " for cast "+item.castUri);
 		// TODO should be passing in the modified date here to prevent marking the cast as dirty.
@@ -347,11 +397,11 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 	
 		if (newLocUri != null){
 			final ContentValues cvCast = new ContentValues();
-			cvCast.put(LOCAL_URI, newLocUri);
-			final String[] castProjection = {_ID, MODIFIED_DATE}; 
+			cvCast.put(_LOCAL_URI, newLocUri);
+			final String[] castProjection = {_ID, _MODIFIED_DATE}; 
 			final Cursor castCursor = context.getContentResolver().query(uri, castProjection, null, null, null);
 			castCursor.moveToFirst();
-			cvCast.put(MODIFIED_DATE, castCursor.getLong(castCursor.getColumnIndex(MODIFIED_DATE)));
+			cvCast.put(_MODIFIED_DATE, castCursor.getLong(castCursor.getColumnIndex(_MODIFIED_DATE)));
 			castCursor.close();
 			
 			Log.d("Locast", "new local uri " + newLocUri + " for cast "+uri);

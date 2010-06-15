@@ -98,12 +98,12 @@ public class DiscussionBoard extends LinearLayout implements OnClickListener, On
 		boardItems.removeAllViews();
 		
 		for (c.moveToFirst(); ! c.isAfterLast(); c.moveToNext()) {
-			final int numberColumn = c.getColumnIndex(Comment.COMMENT_NUMBER);
-			final View v = getCommentView(c.getString(c.getColumnIndex(Comment.AUTHOR)), 
-					c.getString(c.getColumnIndex(Comment.AUTHOR_ICON)), 
-					c.getLong(c.getColumnIndex(Comment.MODIFIED_DATE)),
+			final int numberColumn = c.getColumnIndex(Comment._COMMENT_NUMBER);
+			final View v = getCommentView(c.getString(c.getColumnIndex(Comment._AUTHOR)), 
+					c.getString(c.getColumnIndex(Comment._AUTHOR_ICON)), 
+					c.getLong(c.getColumnIndex(Comment._MODIFIED_DATE)),
 					c.getString(numberColumn), 
-					c.getString(c.getColumnIndex(Comment.DESCRIPTION)));
+					c.getString(c.getColumnIndex(Comment._DESCRIPTION)));
 			boardItems.addView(v);
 		}
 	}
@@ -117,7 +117,7 @@ public class DiscussionBoard extends LinearLayout implements OnClickListener, On
     	
     	final ContentResolver cr = mContext.getContentResolver();
     	final ContentValues cv = new ContentValues();
-		cv.put(Comment.DESCRIPTION, text);
+		cv.put(Comment._DESCRIPTION, text);
 		cr.insert(thisThread, cv);
     	
 		postingTextField.setText("");

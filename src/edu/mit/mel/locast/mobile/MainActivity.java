@@ -19,6 +19,7 @@ package edu.mit.mel.locast.mobile;
 import android.app.AlertDialog;
 import android.app.TabActivity;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -27,8 +28,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
@@ -38,6 +37,7 @@ import android.widget.Toast;
 import edu.mit.mel.locast.mobile.casts.BrowseCastsActivity;
 import edu.mit.mel.locast.mobile.casts.EditCastActivity;
 import edu.mit.mel.locast.mobile.data.Cast;
+import edu.mit.mel.locast.mobile.data.CastMedia;
 import edu.mit.mel.locast.mobile.data.Comment;
 import edu.mit.mel.locast.mobile.data.Project;
 import edu.mit.mel.locast.mobile.data.Tag;
@@ -114,16 +114,6 @@ public class MainActivity extends TabActivity implements OnClickListener {
 	    new TestNetworkTask().execute();
 
 	}
-	
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-        final MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.homescreen_menu, menu);
-        if (DEBUG){
-        	menu.findItem(R.id.reset).setVisible(true);
-        }
-        return true;
-    }
     
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -135,7 +125,7 @@ public class MainActivity extends TabActivity implements OnClickListener {
 			}
 			case R.id.aboutMenuItem: {
 				final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-				builder.setTitle("Locast Civic Media");
+				builder.setTitle(R.string.app_name);
 				builder.setMessage("This is Locast Civic Media, a democratic Media Platform developed by the Mobile Experience Lab at the MIT.");
 				//builder.setPositiveButton(R.string.button_open_browser, mAboutListener);
 				//builder.setNegativeButton(R.string.button_cancel, null);
@@ -144,38 +134,6 @@ public class MainActivity extends TabActivity implements OnClickListener {
 			}
 			case R.id.upgrade: {
 				startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://locast.mit.edu/civic/static/LocastMobileAndroid.apk")));
-				break;
-			}
-			
-			case R.id.quit:
-				android.os.Process.killProcess(android.os.Process.myPid());
-				break;
-				
-			case R.id.reset: {
-				final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-				builder.setTitle("Locast Civic Media");
-				builder.setMessage("This will erase all the Locast information stored on the device, aside from the video files themselves. Do you want to reset Locast?");
-				builder.setPositiveButton("Reset databases", new DialogInterface.OnClickListener() {
-					
-					public void onClick(DialogInterface dialog, int which) {
-						// reset preferences
-						/*final Editor e = prefs.edit();
-						e.clear();
-						e.commit();*/
-						
-						// reset DBs
-						final ContentResolver cr = getApplication().getContentResolver();
-						cr.delete(Cast.CONTENT_URI, null, null);
-						cr.delete(Project.CONTENT_URI, null, null);
-						cr.delete(Comment.CONTENT_URI, null, null);
-						cr.delete(Tag.CONTENT_URI, null, null);
-						Toast.makeText(getApplicationContext(), "Databases reset.", Toast.LENGTH_LONG).show();
-						android.os.Process.killProcess(android.os.Process.myPid());
-					}
-				});
-				
-				builder.setNegativeButton(android.R.string.cancel, null);
-				builder.show();
 				break;
 			}
 			
@@ -219,8 +177,37 @@ public class MainActivity extends TabActivity implements OnClickListener {
 			
 		} // switch requestCode
 	}
+	
+	public static void resetDB(final Context context){
+		final AlertDialog.Builder builder = new AlertDialog.Builder(context);
+		builder.setTitle(R.string.app_name);
+		builder.setMessage("This will erase all the Locast information stored on the device, aside from the video files themselves. Do you want to reset Locast?");
+		builder.setPositiveButton("Reset databases", new DialogInterface.OnClickListener() {
+			
+			public void onClick(DialogInterface dialog, int which) {
+				// reset preferences
+				/*final Editor e = prefs.edit();
+				e.clear();
+				e.commit();*/
+				
+				// reset DBs
+				final ContentResolver cr = context.getContentResolver();
+				cr.delete(Cast.CONTENT_URI, null, null);
+				cr.delete(Project.CONTENT_URI, null, null);
+				cr.delete(Comment.CONTENT_URI, null, null);
+				cr.delete(Tag.CONTENT_URI, null, null);
+				cr.delete(CastMedia.CONTENT_URI, null, null);
+				Toast.makeText(context.getApplicationContext(), "Databases reset.", Toast.LENGTH_LONG).show();
+				
+			}
+		});
+		
+		builder.setNegativeButton(android.R.string.cancel, null);
+		builder.show();
+	}
 
 	public void startSync(){
+		
 		startService(new Intent(Intent.ACTION_SYNC, Cast.CONTENT_URI));
 		startService(new Intent(Intent.ACTION_SYNC, Project.CONTENT_URI));
 	}

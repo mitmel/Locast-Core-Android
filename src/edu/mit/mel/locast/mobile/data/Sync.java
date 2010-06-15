@@ -84,6 +84,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 	
 	@Override
 	public void onStart(Intent intent, int startId) {
+		
 		if (Intent.ACTION_SYNC.equals(intent.getAction())){
 			
 			startSync(intent.getData());
@@ -118,8 +119,8 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 				|| MediaProvider.TYPE_COMMENT_ITEM.equals(contentType)){
 			syncItem = new Comment();
 			
-		}else if (MediaProvider.TYPE_CONTENT_DIR.equals(contentType)
-				|| MediaProvider.TYPE_CONTENT_ITEM.equals(contentType)){
+		}else if (MediaProvider.TYPE_CAST_DIR.equals(contentType)
+				|| MediaProvider.TYPE_CAST_ITEM.equals(contentType)){
 			syncItem = new Cast();
 			
 		}else if (MediaProvider.TYPE_PROJECT_DIR.equals(contentType)
@@ -143,20 +144,16 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 		syncdItems = new TreeSet<Uri>();
 		
 		final String contentType = getApplicationContext().getContentResolver().getType(toSync);
+		
+		// Handle a list of items.
 		if (contentType.startsWith("vnd.android.cursor.dir")){
 		
 			try {
-				// special case for FeatureCollections
-				if (sync instanceof Cast){
-					final JSONObject featureCollection = nc.getObject(MediaProvider.getPublicPath(cr, toSync));
-					remObjs = featureCollection.getJSONArray("features");
-				}else {
-					remObjs = nc.getArray(MediaProvider.getPublicPath(cr, toSync));
-				}
+				remObjs = nc.getArray(MediaProvider.getPublicPath(cr, toSync));
 				// TODO figure out how to use getContentResolver().bulkInsert(url, values); for this:
 				
 				for (int i = 0; i < remObjs.length(); i++){
-					syncItem(toSync, null, JsonSyncableItem.fromJSON(getApplicationContext(), null, remObjs.getJSONObject(i), sync.getSyncMap()), sync);
+					syncItem(toSync, null, remObjs.getJSONObject(i), sync);
 				}
 			} catch (final SyncException se){
 				throw se;
@@ -187,17 +184,27 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 	 * Either c or cvNet can be null, but not both. 
 	 * 
 	 * @param c A cursor pointing to the data item. Null is OK here.
-	 * @param cvNet Values of the data item as it exists on the network side. Null is OK here.
+	 * @param jsonObject JSON object for the item as loaded from the network. null is OK here. 
 	 * @param sync An empty JsonSyncableItem object.
 	 * @return True if the item has been modified on either end.
 	 * @throws IOException 
 	 */
-	private boolean syncItem(Uri toSync, Cursor c, ContentValues cvNet, JsonSyncableItem sync) throws SyncException, IOException {
+	private boolean syncItem(Uri toSync, Cursor c, JSONObject jsonObject, JsonSyncableItem sync) throws SyncException, IOException {
 		boolean modified = false;
 		boolean needToCloseCursor = false;
 
 		Uri locUri = null;
-
+		ContentValues cvNet = null;
+		if (jsonObject != null){
+			try {
+				cvNet = JsonSyncableItem.fromJSON(getApplicationContext(), null, jsonObject, sync.getSyncMap());
+			}catch (final Exception e){
+				final SyncException se = new SyncException("Problem loading JSON object.");
+				se.initCause(e);
+				throw se;
+			}
+		}
+		
 		final String contentType = getApplicationContext().getContentResolver().getType(toSync);
 		
 		if (c != null) {
@@ -216,7 +223,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 		}
 
 		// when the PUBLIC_ID is null, that means it's only local
-		final int pubIdColumn = (c != null) ? c.getColumnIndex(JsonSyncableItem.PUBLIC_ID) : -1;
+		final int pubIdColumn = (c != null) ? c.getColumnIndex(JsonSyncableItem._PUBLIC_ID) : -1;
 		if (c != null && (c.isNull(pubIdColumn) || c.getInt(pubIdColumn) == 0)){
 			// new content on the local side only. Gotta publish.
 
@@ -227,17 +234,19 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 				}else{
 					postHereUri = toSync;
 				}
-				final HttpResponse hr = nc.post(MediaProvider.getPublicPath(cr, postHereUri), JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, sync.getSyncMap()).toString());
+				jsonObject = JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, sync.getSyncMap());
+				final HttpResponse hr = nc.post(MediaProvider.getPublicPath(cr, postHereUri), jsonObject.toString());
 					
 				if (! hr.containsHeader("Content-Type")  
-						|| ! hr.getHeaders("Content-Type")[0].getValue().equals(NetworkClient.JSON_MIME_TYPE)) {
+						|| ! hr.getHeaders("Content-Type")[0].getValue().startsWith(NetworkClient.JSON_MIME_TYPE)) {
 					throw new NetworkProtocolException("Got wrong response content-type from posting a sync'd item. Got "+(hr.containsHeader("Content-Type")? "'" + hr.getHeaders("Content-Type")[0].getValue() + "'" : "no header")+"; was expecting "+NetworkClient.JSON_MIME_TYPE, hr);
 				}
 				
 				// The response from a post to create a new item should be the newly created item,
 				// which contains the public ID that we need.
 				final HttpEntity entity = hr.getEntity();
-				final ContentValues cvUpdate = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, new JSONObject(StreamUtils.inputStreamToString(entity.getContent())), sync.getSyncMap());
+				jsonObject = new JSONObject(StreamUtils.inputStreamToString(entity.getContent()));
+				final ContentValues cvUpdate = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, sync.getSyncMap());
 				// as there is no public ID yet, the item can't be updated using the URI
 				cr.update(locUri, cvUpdate, null, null);
 
@@ -253,7 +262,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 		}else if (c == null && cvNet != null) {
 			c = cr.query(toSync, 
 					sync.getFullProjection(), 
-					JsonSyncableItem.PUBLIC_ID+"="+cvNet.getAsLong(JsonSyncableItem.PUBLIC_ID), null, null);
+					JsonSyncableItem._PUBLIC_ID+"="+cvNet.getAsLong(JsonSyncableItem._PUBLIC_ID), null, null);
 			c.moveToFirst();
 			needToCloseCursor = true;
 			if (c.getCount() == 0){
@@ -268,14 +277,15 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 		
 		// we've now found data on both sides, so sync them.
 		if (! modified && c != null){
-			final long pubId = c.getLong(c.getColumnIndex(JsonSyncableItem.PUBLIC_ID));
+			final long pubId = c.getLong(c.getColumnIndex(JsonSyncableItem._PUBLIC_ID));
 			
 			final String path = MediaProvider.getPublicPath(cr, toSync, pubId);
 			try {
 				
 				if (cvNet == null){
 					try{
-						cvNet = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, nc.getObject(path), sync.getSyncMap());
+						jsonObject = nc.getObject(path);
+						cvNet = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, sync.getSyncMap());
 					}catch (final HttpResponseException hre){
 						if (hre.getStatusCode() == HttpStatus.SC_NOT_FOUND){
 							final SyncItemDeletedException side = new SyncItemDeletedException(locUri);
@@ -284,8 +294,8 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 						}
 					}
 				}
-				final Date netLastModified = new Date(cvNet.getAsLong(JsonSyncableItem.MODIFIED_DATE));
-				final Date locLastModified = new Date(c.getLong(c.getColumnIndex(JsonSyncableItem.MODIFIED_DATE)));
+				final Date netLastModified = new Date(cvNet.getAsLong(JsonSyncableItem._MODIFIED_DATE));
+				final Date locLastModified = new Date(c.getLong(c.getColumnIndex(JsonSyncableItem._MODIFIED_DATE)));
 
 				if (netLastModified.equals(locLastModified)){
 					// same! yay! We don't need to do anything.
@@ -323,7 +333,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 		}
 		
 		if (modified){
-			sync.onUpdateItem(getApplicationContext(), locUri);
+			sync.onUpdateItem(getApplicationContext(), locUri, jsonObject);
 		}
 		
 		syncdItems.add(locUri);
@@ -388,7 +398,12 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 		protected void onPreExecute() {
 			super.onPreExecute();
 			startTime = new Date();
-			notification = new Notification(R.drawable.ico_notification, getText(R.string.sync_notification), System.currentTimeMillis());
+			notification = new Notification(R.drawable.ico_notification, null, System.currentTimeMillis());
+			//notification.FLAG_ONGOING_EVENT;
+			notification.flags = Notification.FLAG_ONGOING_EVENT;
+			
+			
+			//notification = new Notification(R.drawable.ico_notification, getText(R.string.sync_notification), System.currentTimeMillis());
 			showMainScreen = PendingIntent.getActivity(getApplicationContext(), 0, new Intent(getApplicationContext(), MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK), PendingIntent.FLAG_UPDATE_CURRENT);
 			notification.setLatestEventInfo(getApplicationContext(), getText(R.string.sync_notification), "Starting sync...", showMainScreen);
 			

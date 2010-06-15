@@ -153,10 +153,10 @@ public class BrowseByMapActivity extends MapActivity {
 		@Override
 		protected OverlayItem createItem(int i) {
 			c.moveToPosition(i);
-			final int lat = (int)(c.getFloat(c.getColumnIndex(Cast.LATITUDE)) * 1E6);
-			final int lon = (int)(c.getFloat(c.getColumnIndex(Cast.LONGITUDE)) * 1E6);
+			final int lat = (int)(c.getFloat(c.getColumnIndex(Cast._LATITUDE)) * 1E6);
+			final int lon = (int)(c.getFloat(c.getColumnIndex(Cast._LONGITUDE)) * 1E6);
 			final GeoPoint geo = new GeoPoint(lat, lon);
-			return new OverlayItem(geo, c.getString(c.getColumnIndex(Cast.TITLE)), c.getString(c.getColumnIndex(Cast.DESCRIPTION)));
+			return new OverlayItem(geo, c.getString(c.getColumnIndex(Cast._TITLE)), c.getString(c.getColumnIndex(Cast._DESCRIPTION)));
 		}
 
 		@Override

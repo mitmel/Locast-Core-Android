@@ -33,9 +33,11 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 import android.widget.ListView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import edu.mit.mel.locast.mobile.MainActivity;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.SettingsActivity;
 import edu.mit.mel.locast.mobile.data.Project;
+import edu.mit.mel.locast.mobile.templates.TemplateActivity;
 
 public class ListProjectsActivity extends ListActivity implements OnClickListener {
 	public final static String TAG = ListProjectsActivity.class.getSimpleName();
@@ -99,6 +101,10 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
 				startActivity(intent);
 				break;			
 			}
+			
+			case R.id.reset: {
+				MainActivity.resetDB(this);
+			} break;
 		}
 		return super.onOptionsItemSelected(item);
 	}
@@ -136,7 +142,8 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
 	public void onClick(View v) {
 		switch (v.getId()){
 		case R.id.project_cast_add:
-			startActivity(new Intent(EditProjectActivity.ACTION_ADD_CAST, (Uri)v.getTag()));
+			//startActivity(new Intent(EditProjectActivity.ACTION_ADD_CAST, (Uri)v.getTag()));
+			startActivity(new Intent(TemplateActivity.ACTION_RECORD_TEMPLATED_VIDEO, (Uri)v.getTag()));
 			break;
 		}
 		
