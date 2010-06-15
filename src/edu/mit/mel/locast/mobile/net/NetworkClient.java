@@ -360,8 +360,10 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @throws NetworkProtocolException
 	 */
 	public JSONObject getObject(String uri) throws IOException, JSONException, NetworkProtocolException{
-		
-		return new JSONObject(StreamUtils.inputStreamToString(getJson(uri)));
+		final HttpEntity ent = getJson(uri);
+		final JSONObject jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
+		ent.consumeContent();
+		return jo;
 	}
 	
 	/**
@@ -374,10 +376,14 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @throws NetworkProtocolException
 	 */
 	public JSONArray getArray(String uri) throws IOException, JSONException, NetworkProtocolException{
-		return new JSONArray(StreamUtils.inputStreamToString(getJson(uri)));	
+		
+		final HttpEntity ent = getJson(uri);
+		final JSONArray ja = new JSONArray(StreamUtils.inputStreamToString(ent.getContent()));
+		ent.consumeContent();
+		return ja;	
 	}
 	
-	private synchronized InputStream getJson(String uri) throws IOException, JSONException, NetworkProtocolException {
+	private synchronized HttpEntity getJson(String uri) throws IOException, JSONException, NetworkProtocolException {
 		
 		final HttpResponse res = get(uri);
 		
@@ -387,7 +393,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		}
 		isAuthenticated = true; // this should only get set if we managed to make it here
 		
-		return res.getEntity().getContent();
+		return res.getEntity();
 	}
 
 	/***************************** PUT ***********************************/
@@ -546,7 +552,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	
 		User u;
 		try{
-			u = loadUser(getObject("/user/"+username));
+			u = loadUser(getObject("/user/"+username+"/"));
 		}catch(final JSONException e){
 			throw new NetworkProtocolException(e);
 		}

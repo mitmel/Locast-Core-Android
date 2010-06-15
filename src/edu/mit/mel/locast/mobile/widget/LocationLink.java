@@ -34,6 +34,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.widget.Button;
 import edu.mit.mel.locast.mobile.AddressUtils;
+import edu.mit.mel.locast.mobile.R;
 
 /**
  * A clickable link that shows a reverse-geocoded location. 
@@ -47,9 +48,11 @@ public class LocationLink extends Button {
 	private Location location;
 	private static String LAT_LON_FORMAT = "%.4f, %.4f";
 	private String geocodedName;
+	private final int noLocationResId = R.string.location_link_no_location;
 
 	public LocationLink(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
+		setLocation(null);
 	}
 	
 	public LocationLink(Context context, AttributeSet attrs){
@@ -63,12 +66,16 @@ public class LocationLink extends Button {
 	public void setLocation(Location location){
 		this.location = location;
 		
-		if (geocodedName == null || ! this.location.equals(location)){
-			setText(String.format(LAT_LON_FORMAT, location.getLatitude(), location.getLongitude()));
-			final GeocoderTask t = new GeocoderTask();
-			t.execute(location);
+		if (location == null){
+			setText(noLocationResId);
 		}else{
-			Log.d(TAG, "not setting previously stored location");
+			if (geocodedName == null || ! this.location.equals(location)){
+				setText(String.format(LAT_LON_FORMAT, location.getLatitude(), location.getLongitude()));
+				final GeocoderTask t = new GeocoderTask();
+				t.execute(location);
+			}else{
+				Log.d(TAG, "not setting previously stored location");
+			}
 		}
 	}
 	
@@ -137,8 +144,7 @@ public class LocationLink extends Button {
 			super.writeToParcel(dest, flags);
 			
 			dest.writeString(geocodedName);
-			location.writeToParcel(dest, flags);
-			
+			dest.writeParcelable(location, flags);
 		}
 	}
 	

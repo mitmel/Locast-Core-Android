@@ -18,6 +18,7 @@ package edu.mit.mel.locast.mobile.net;
  */
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -38,12 +39,14 @@ public class AndroidNetworkClient extends NetworkClient {
 								PREF_SERVER_URL = "server_url",
 								TAG = "AndroidNetworkClient";
 	
-	private static AndroidNetworkClient instance = null;
+	// maintain a separate network client for each thread as the client should only be used on one thread.
+	private static HashMap<Long, AndroidNetworkClient> instances = new HashMap<Long, AndroidNetworkClient>(); 
 	static public AndroidNetworkClient getInstance(Context context){
-		if (instance == null){
-			instance = new AndroidNetworkClient(context);
+		final long thisThread = Thread.currentThread().getId();
+		if (!instances.containsKey(thisThread)){
+			instances.put(thisThread, new AndroidNetworkClient(context));
 		}
-		return instance;
+		return instances.get(thisThread);
 	}
 	
 	public AndroidNetworkClient(Context context){

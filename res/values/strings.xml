@@ -73,6 +73,9 @@
 	<!-- discussion -->
 	<string name="discussion_hint">Comment</string>
 	
+	<!-- LocationLink widget -->
+	<string name="location_link_no_location">No Location</string>
+	
 	<!-- generic -->
 	<string name="done">Done</string>
 	<string name="privacy_header">Privacy:</string>

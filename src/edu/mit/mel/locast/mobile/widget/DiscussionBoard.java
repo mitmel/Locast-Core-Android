@@ -154,15 +154,15 @@ public class DiscussionBoard extends LinearLayout implements OnClickListener, On
 		
 	}
     
-    public Cursor setParentUri(Uri parent){
-    	return setUri(Uri.withAppendedPath(parent, Comment.PATH));
+    public void setParentUri(Uri parent){
+    	setUri(Uri.withAppendedPath(parent, Comment.PATH));
     }
     
-    public Cursor setUri(Uri myUri){
+    public void setUri(Uri myUri){
     	thisThread = myUri;
        	c = getContext().getContentResolver().query(thisThread,
 				Comment.PROJECTION, null, null, Comment.DEFAULT_SORT_BY);
-    	
+
     	getContext().startService(new Intent(Intent.ACTION_SYNC, thisThread));
     	
     	c.registerContentObserver(new ContentObserver(new Handler()) {
@@ -173,7 +173,7 @@ public class DiscussionBoard extends LinearLayout implements OnClickListener, On
     		}
 		});
     	fillDiscussionList(c);
-    	return c;
+    	c.close();
     }
 
 	public void onClick(View v) {

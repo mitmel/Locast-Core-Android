@@ -128,12 +128,10 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 		return l;
 	}
 	
-	@Override
-	public java.util.Map<String,SyncItem> getSyncMap() {
-		final Map<String,SyncItem> syncMap = new HashMap<String, SyncItem> (super.getSyncMap());
-		syncMap.put(_PUBLIC_ID, 	new SyncMap("id", SyncMap.INTEGER, true));
-		
-		syncMap.put("_location", new SyncCustomArray("location", true) {
+	public final static HashMap<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem>(TaggableItem.SYNC_MAP);
+	
+	static {
+		SYNC_MAP.put("_location", new SyncCustomArray("location", true) {
 			
 			@Override
 			public JSONArray toJSON(Context context, Uri localItem, Cursor c)
@@ -162,19 +160,18 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 			}
 		});
 		
-		syncMap.put(_DESCRIPTION, 		new SyncMap("description", SyncMap.STRING));
-		syncMap.put(_TITLE, 			new SyncMap("title", SyncMap.STRING));
+		SYNC_MAP.put(_DESCRIPTION, 		new SyncMap("description", SyncMap.STRING));
+		SYNC_MAP.put(_TITLE, 			new SyncMap("title", SyncMap.STRING));
+		
+		SYNC_MAP.put(_THUMBNAIL_URI, 	new SyncMap("screenshot", SyncMap.STRING, true, SyncItem.SYNC_FROM));
 		
 
-		
-		syncMap.put(_THUMBNAIL_URI, 	new SyncMap("screenshot", SyncMap.STRING, true, SyncItem.SYNC_FROM));
-		
-
-		syncMap.put("_contents", new SyncCustomArray("castvideos", SyncItem.SYNC_FROM) {
+		SYNC_MAP.put("_contents", new SyncCustomArray("castvideos", SyncItem.SYNC_FROM) {
 			
 			@Override
 			public JSONArray toJSON(Context context, Uri localItem, Cursor c)
 					throws JSONException, NetworkProtocolException, IOException {
+				Log.d(TAG, "main toJSON");
 				
 				final Cursor castMedia_c = context.getContentResolver().query(Uri.withAppendedPath(localItem, CastMedia.PATH), CastMedia.PROJECTION, null, null, null);
 				final JSONArray ja = new JSONArray();
@@ -188,12 +185,18 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 			@Override
 			public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
 					throws JSONException, NetworkProtocolException, IOException {
-				// do nothing. We can't load from JSON until we have the local Cast URI to create the reference.
+				Log.d(TAG, "main fromJSON");
+				// Do nothing. We can't load from JSON until we have the local Cast URI to create the reference.
+				// This is handled instead in onUpdateItem()
 				return new ContentValues();
 			}
 		});
-		
-		return syncMap;
+
+	}
+	
+	@Override
+	public java.util.Map<String,SyncItem> getSyncMap() {
+		return SYNC_MAP;
 	}
 
 	@Override
@@ -202,9 +205,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 		final ContentResolver cr = context.getContentResolver();
 		final Cursor c = cr.query(uri, PROJECTION, null, null, null);
 		c.moveToFirst();
-		if (nc == null){
-			nc = AndroidNetworkClient.getInstance(context);
-		}
+		nc = AndroidNetworkClient.getInstance(context);
 		
 		final Map<String, SyncItem> syncMap = new HashMap<String, SyncItem>();
 		syncMap.put("_contents", new SyncCustomArray("castvideos") {
@@ -213,12 +214,14 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 			public JSONArray toJSON(Context context, Uri localItem, Cursor c)
 					throws JSONException, NetworkProtocolException, IOException {
 				// do nothing.
+				Log.d(TAG, "onUpdateItem toJSON");
 				return new JSONArray();
 			}
 			
 			@Override
 			public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
 					throws JSONException, NetworkProtocolException, IOException {
+				Log.d(TAG, "onUpdateItem fromJSON");
 				final ContentResolver cr = context.getContentResolver();
 				
 				for (int i = 0; i < item.length(); i++){
@@ -241,6 +244,13 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 			e.initCause(e1);
 			throw e;
 		}
+		
+		final Cursor castMedia = cr.query(Uri.withAppendedPath(uri, CastMedia.PATH), CastMedia.PROJECTION, null, null, null);
+		
+		for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
+			Log.d(TAG, "Cast Media #" + castMedia.getPosition() + " is " + castMedia.getString(castMedia.getColumnIndex(CastMedia._MEDIA_URL)));
+		}
+		castMedia.close();
 		
 //		final String locUri = c.getString(c.getColumnIndex(_LOCAL_URI));
 //		final String pubUri = c.getString(c.getColumnIndex(_PUBLIC_URI));

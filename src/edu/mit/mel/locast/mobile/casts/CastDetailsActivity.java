@@ -84,7 +84,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 		castUri = data;
 	}
 	
-	private void loadFromCursors(Cursor c){
+	private void dumpCastToLog(Cursor c){
 		final StringBuilder testOut = new StringBuilder();
 		for (final String row: Cast.PROJECTION){
 			testOut.append(row);
@@ -99,6 +99,10 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 			testOut.append("; ");
 		}
 		Log.d("ViewCast", testOut.toString());
+	}
+	
+	private void loadFromCursors(Cursor c){
+		dumpCastToLog(c);
 		
 		((TextView)findViewById(R.id.item_title)).setText(
 				c.getString(c.getColumnIndex(Cast._TITLE)));

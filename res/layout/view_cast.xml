@@ -45,10 +45,10 @@
     android:src="@drawable/cast_placeholder" />
 
 	<edu.mit.mel.locast.mobile.widget.LocationLink android:id="@+id/location" 
-	android:text="location" 
-	android:layout_width="wrap_content" 
-	android:textAppearance="?android:attr/textAppearanceMedium"
-	android:layout_height="wrap_content" />
+		android:layout_width="wrap_content" 
+		android:layout_height="wrap_content" 
+		android:textAppearance="?android:attr/textAppearanceMedium"
+	/>
 
     <edu.mit.mel.locast.mobile.widget.TagListView
 	android:id="@+id/tags"
