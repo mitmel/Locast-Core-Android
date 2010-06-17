@@ -16,9 +16,6 @@ package edu.mit.mel.locast.mobile.widget;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -28,7 +25,6 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -37,33 +33,28 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import edu.mit.mel.locast.mobile.Application;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.WebImageLoader;
 import edu.mit.mel.locast.mobile.data.Comment;
+import edu.mit.mel.locast.mobile.data.MediaProvider;
 
-public class DiscussionBoard extends LinearLayout implements OnClickListener, OnEditorActionListener {
+public class DiscussionBoard extends ListView implements OnClickListener, OnEditorActionListener {
 	
-	Context mContext;
-	
-	ListView discussionPostingsList;
+	private final Context mContext;
 	
 	private final EditText postingTextField;
 	
 	private final Button addPostingButton;
     
-    LinearLayout boardItems;
-    
-    Parcelable listState;
-    
     private Uri thisThread;
     private Cursor c;
     
-    WebImageLoader imageLoader;
+    private WebImageLoader imageLoader;
 
 	public DiscussionBoard(Context context) {
 		this(context, null);
@@ -74,9 +65,7 @@ public class DiscussionBoard extends LinearLayout implements OnClickListener, On
 		
 		mContext = context;
 		
-		inflateLayout(context);
-		
-		boardItems = (LinearLayout) findViewById(R.id.discussionboard_items);
+		addHeaderView(LayoutInflater.from(context).inflate(R.layout.discussionboard, this, false));
 		
         postingTextField = (EditText) findViewById(R.id.discussionText);
         postingTextField.setOnEditorActionListener(this);
@@ -90,30 +79,30 @@ public class DiscussionBoard extends LinearLayout implements OnClickListener, On
         }
 	}
 	
-	protected void inflateLayout(Context context){
-		LayoutInflater.from(context).inflate(R.layout.discussionboard, this);
-	}
+	private static final String[] ADAPTER_FROM = {Comment._AUTHOR, Comment._AUTHOR_ICON,  Comment._DESCRIPTION, Comment._MODIFIED_DATE, Comment._COMMENT_NUMBER};
+	private static final int[] ADAPTER_TO   = {R.id.commentuser,   R.id.commentuserthumb, R.id.commentcontent,  R.id.commentdate,      R.id.commentnumber};
 	
-	public void fillDiscussionList(Cursor c) {
-		boardItems.removeAllViews();
+	public class DiscussionBoardAdapter extends SimpleCursorAdapter {
+		public DiscussionBoardAdapter(Context context, Cursor c) {
+			super(context, R.layout.discussionboardentry, c, ADAPTER_FROM, ADAPTER_TO);
+		}
 		
-		for (c.moveToFirst(); ! c.isAfterLast(); c.moveToNext()) {
-			final int numberColumn = c.getColumnIndex(Comment._COMMENT_NUMBER);
-			final View v = getCommentView(c.getString(c.getColumnIndex(Comment._AUTHOR)), 
-					c.getString(c.getColumnIndex(Comment._AUTHOR_ICON)), 
-					c.getLong(c.getColumnIndex(Comment._MODIFIED_DATE)),
-					c.getString(numberColumn), 
-					c.getString(c.getColumnIndex(Comment._DESCRIPTION)));
-			boardItems.addView(v);
+		@Override
+		public void setViewImage(ImageView v, String value) {
+			if (value != null && value.length() > 0){
+				imageLoader.loadImage(v, value);
+			}
 		}
 	}
 	
     private void savePosting() {
     	//save comment
     	final String text = postingTextField.getText().toString();
+    	
     	if (text.length() == 0) {
 			return;
 		}
+    	
     	
     	final ContentResolver cr = mContext.getContentResolver();
     	final ContentValues cv = new ContentValues();
@@ -121,38 +110,9 @@ public class DiscussionBoard extends LinearLayout implements OnClickListener, On
 		cr.insert(thisThread, cv);
     	
 		postingTextField.setText("");
-		
-		//getContext().startService(new Intent(Intent.ACTION_SYNC, thisThread));
     }
     
-	View getCommentView(String pUsername, String pUrl, long mDate, String pNo, String description){
-
-		final View v = LayoutInflater.from(mContext).inflate(R.layout.discussionboardentry, boardItems, false);
-		
-		final TextView user = (TextView) v.findViewById(R.id.commentuser);
-		user.setText(pUsername);
-		
-		final TextView date = (TextView) v.findViewById(R.id.commentdate);
-		final SimpleDateFormat formatter = new SimpleDateFormat ("yyyy.MM.dd 'at' HH:mm:ss ");
-		final Date commentTime = new Date(mDate);
-		date.setText(formatter.format(commentTime));
-		
-		final ImageView userthumb = (ImageView) v.findViewById(R.id.commentuserthumb);
-		if (pUrl != null){
-			imageLoader.loadImage(userthumb, pUrl);
-		}
-		
-		final TextView commentnumber = (TextView) v.findViewById(R.id.commentnumber);
-		if(pNo != null) {
-			commentnumber.setText("#" + pNo);
-		}
-		
-		final TextView commentcontent = (TextView) v.findViewById(R.id.commentcontent);
-		commentcontent.setText(description);
-		
-		return v;
-		
-	}
+ 
     
     public void setParentUri(Uri parent){
     	setUri(Uri.withAppendedPath(parent, Comment.PATH));
@@ -162,6 +122,10 @@ public class DiscussionBoard extends LinearLayout implements OnClickListener, On
     	thisThread = myUri;
        	c = getContext().getContentResolver().query(thisThread,
 				Comment.PROJECTION, null, null, Comment.DEFAULT_SORT_BY);
+       	
+       	for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
+       		MediaProvider.dumpCursorToLog(c, Comment.PROJECTION);
+       	}
 
     	getContext().startService(new Intent(Intent.ACTION_SYNC, thisThread));
     	
@@ -169,10 +133,9 @@ public class DiscussionBoard extends LinearLayout implements OnClickListener, On
     		@Override
     		public void onChange(boolean selfChange) {
     			c.requery();
-    			fillDiscussionList(c);
     		}
 		});
-    	fillDiscussionList(c);
+    	setAdapter(new DiscussionBoardAdapter(getContext(), c));
     }
     
     @Override
@@ -194,7 +157,7 @@ public class DiscussionBoard extends LinearLayout implements OnClickListener, On
 		switch (v.getId()){
 		case R.id.discussionText:
 			savePosting();
-			break;
+			return true;
 		}
 		return false;
 	}

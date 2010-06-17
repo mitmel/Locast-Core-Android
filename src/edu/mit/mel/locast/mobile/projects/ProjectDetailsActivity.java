@@ -76,8 +76,8 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	        
 	        
 	        //to be added: on-click listener for joining
-	        mJoinButton = (Button) findViewById(R.id.project_join);
-	        mJoinButton.setOnClickListener(this);
+	        //mJoinButton = (Button) findViewById(R.id.project_join);
+	        //mJoinButton.setOnClickListener(this);
 	        
 	        tagList = ((TagListView)findViewById(R.id.tags));
 	        
@@ -281,11 +281,11 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	
 		public void onClick(View v) {
 			switch (v.getId()){
-			case R.id.project_join:
+			/*case R.id.project_join:
 				startActivity(new Intent(EditProjectActivity.ACTION_TOGGLE_MEMBERSHIP, 
 						getIntent().getData()));
 				break;
-				
+				*/
 			}
 			
 		}

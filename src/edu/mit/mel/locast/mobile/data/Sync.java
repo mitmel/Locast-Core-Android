@@ -148,12 +148,14 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 		// Handle a list of items.
 		if (contentType.startsWith("vnd.android.cursor.dir")){
 		
+			// load from the network first...
 			try {
 				remObjs = nc.getArray(MediaProvider.getPublicPath(cr, toSync));
 				// TODO figure out how to use getContentResolver().bulkInsert(url, values); for this:
 				
 				for (int i = 0; i < remObjs.length(); i++){
-					syncItem(toSync, null, remObjs.getJSONObject(i), sync);
+					final JSONObject jo = remObjs.getJSONObject(i);
+					syncItem(toSync, null, jo, sync);
 				}
 			} catch (final SyncException se){
 				throw se;
@@ -164,8 +166,9 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			}
 		}
 		
+		// then load locally.
 		final Cursor c = cr.query(toSync, sync.getFullProjection(), null, null, null);
-		Log.d("LocastSync", "have " + c.getCount() + " items to sync");
+		Log.d(TAG, "have " + c.getCount() + " local items to sync");
 		for (c.moveToFirst(); ! c.isAfterLast(); c.moveToNext()){
 			try {
 				syncItem(toSync, c, null, sync);
@@ -192,6 +195,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 	private boolean syncItem(Uri toSync, Cursor c, JSONObject jsonObject, JsonSyncableItem sync) throws SyncException, IOException {
 		boolean modified = false;
 		boolean needToCloseCursor = false;
+		boolean toSyncIsIndex = false;
 
 		Uri locUri = null;
 		ContentValues cvNet = null;
@@ -211,6 +215,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			if (contentType.startsWith("vnd.android.cursor.dir")){
 				locUri = ContentUris.withAppendedId(toSync, 
 						c.getLong(c.getColumnIndex(JsonSyncableItem._ID)));
+				toSyncIsIndex = true;
 			}else{
 				locUri = toSync;
 			}
@@ -219,6 +224,8 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			if (syncdItems.contains(locUri)) {
 				return false;
 			}
+
+			
 			sync.onPreSyncItem(cr, locUri, c);
 		}
 
@@ -279,13 +286,24 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 		if (! modified && c != null){
 			final long pubId = c.getLong(c.getColumnIndex(JsonSyncableItem._PUBLIC_ID));
 			
-			final String path = MediaProvider.getPublicPath(cr, toSync, pubId);
+			final String publicPath = MediaProvider.getPublicPath(cr, toSync, pubId);
 			try {
 				
 				if (cvNet == null){
 					try{
-						jsonObject = nc.getObject(path);
-						cvNet = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, sync.getSyncMap());
+						if (publicPath == null && toSyncIsIndex && ! MediaProvider.canSync(locUri)){
+
+							// At this point, we've already checked the index and it doesn't contain the item (otherwise it would be in the syncdItems).
+							// If we can't sync individual items, it's possible that the index is paged or the item has been deleted.
+							Log.w(TAG, "Asked to sync "+locUri+" but item wasn't in server index and cannot sync individual entries. Skipping and hoping it is up to date.");
+							return false;
+
+						}else{
+							if (jsonObject == null){
+								jsonObject = nc.getObject(publicPath);
+							}
+							cvNet = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, sync.getSyncMap());
+						}
 					}catch (final HttpResponseException hre){
 						if (hre.getStatusCode() == HttpStatus.SC_NOT_FOUND){
 							final SyncItemDeletedException side = new SyncItemDeletedException(locUri);
@@ -308,17 +326,17 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 
 				}else if (netLastModified.before(locLastModified)){
 					// local is more up to date, propagate!
-					nc.putJson(path, JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, sync.getSyncMap()));
+					nc.putJson(publicPath, JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, sync.getSyncMap()));
 					Log.d("LocastSync", cvNet + " is older than "+locUri);
 					modified = true;
 				}
 
 			} catch (final JSONException e) {
-				final SyncException se = new SyncException("Item sync error for path "+path+": invalid JSON.");
+				final SyncException se = new SyncException("Item sync error for path "+publicPath+": invalid JSON.");
 				se.initCause(e);
 				throw se;
 			} catch (final NetworkProtocolException e) {
-				final SyncException se = new SyncException("Item sync error for path "+path+": "+ e.getHttpResponseMessage());
+				final SyncException se = new SyncException("Item sync error for path "+publicPath+": "+ e.getHttpResponseMessage());
 				se.initCause(e);
 				throw se;
 			}

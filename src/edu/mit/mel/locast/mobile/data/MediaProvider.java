@@ -37,6 +37,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.util.Log;
 import edu.mit.mel.locast.mobile.ListUtils;
 
 public class MediaProvider extends ContentProvider {
@@ -92,7 +93,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 19;
+		private static final int DB_VER = 20;
 		
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -167,6 +168,7 @@ public class MediaProvider extends ContentProvider {
 					+ CastMedia._LIST_IDX      + " INTEGER,"
 					+ CastMedia._MODIFIED_DATE + " INTEGER,"
 					+ CastMedia._MEDIA_URL     + " TEXT,"
+					+ CastMedia._LOCAL_URI     + " TEXT,"
 					+ CastMedia._MIME_TYPE     + " TEXT,"
 					+ CastMedia._PREVIEW_URL   + " TEXT,"
 					+ CastMedia._SCREENSHOT    + " TEXT,"
@@ -271,7 +273,7 @@ public class MediaProvider extends ContentProvider {
 	 * @param uri
 	 * @return true if the matching URI can sync.
 	 */
-	public boolean canSync(Uri uri){
+	public static boolean canSync(Uri uri){
 		switch (uriMatcher.match(uri)){
 		case MATCHER_ITEM_TAGS:
 		case MATCHER_TAG_DIR:
@@ -279,12 +281,15 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CAST_MEDIA_DIR:
 		case MATCHER_CAST_MEDIA_ITEM:
 			
+		case MATCHER_COMMENT_ITEM:
+		case MATCHER_CHILD_COMMENT_ITEM:
+			
 			return false;
 			
 		case MATCHER_CHILD_COMMENT_DIR:
-		case MATCHER_CHILD_COMMENT_ITEM:
+
 		case MATCHER_COMMENT_DIR:
-		case MATCHER_COMMENT_ITEM:
+
 			
 		case MATCHER_CAST_BY_TAGS:
 		case MATCHER_CAST_DIR:
@@ -760,6 +765,9 @@ public class MediaProvider extends ContentProvider {
 			break;
 			
 		case MATCHER_CHILD_COMMENT_DIR:
+			if (publicId != null){
+				return null;
+			}
 			return getPublicPath(cr, removeLastPathSegment(uri)) + Comment.SERVER_PATH;
 			
 		}
@@ -796,6 +804,29 @@ public class MediaProvider extends ContentProvider {
 		cvNew.put(key, val);
 		return cvNew;
 	}
+	
+	/**
+	 * Handly helper
+	 * @param c
+	 * @param projection
+	 */
+	public static void dumpCursorToLog(Cursor c, String[] projection){
+		final StringBuilder testOut = new StringBuilder();
+		for (final String row: projection){
+			testOut.append(row);
+			testOut.append("=");
+
+			if (c.isNull(c.getColumnIndex(row))){
+				testOut.append("<<null>>");
+			}else{
+				testOut.append(c.getString(c.getColumnIndex(row)));
+				
+			}
+			testOut.append("; ");
+		}
+		Log.d("CursorDump", testOut.toString());
+	}
+	
 	
 	static {
 		uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);

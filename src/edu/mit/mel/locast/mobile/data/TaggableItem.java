@@ -104,7 +104,8 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 * @return true if the item is editable by the logged-in user.
 	 */
 	public static boolean canEdit(Cursor c){
-		return c.getString(c.getColumnIndex(_PRIVACY)).equals(PRIVACY_PUBLIC) ||
+		final String privacy = c.getString(c.getColumnIndex(_PRIVACY));
+		return privacy == null || privacy.equals(PRIVACY_PUBLIC) ||
 		AndroidNetworkClient.getInstance(null).getUsername().equals(c.getString(c.getColumnIndex(_AUTHOR)));
 	}
 	

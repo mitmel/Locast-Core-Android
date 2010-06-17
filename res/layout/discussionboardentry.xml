@@ -52,8 +52,4 @@
 				android:layout_weight="1"
 			android:padding="10dip" />
 	</LinearLayout>
-
-	<View android:layout_width="fill_parent" android:layout_height="2dip"
-		android:background="#FFFFFFFF" />
-
 </LinearLayout>

@@ -41,6 +41,7 @@ import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.WebImageLoader;
 import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.Locatable;
+import edu.mit.mel.locast.mobile.data.MediaProvider;
 import edu.mit.mel.locast.mobile.data.SyncException;
 import edu.mit.mel.locast.mobile.widget.LocationLink;
 import edu.mit.mel.locast.mobile.widget.TagListView;
@@ -84,26 +85,9 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 		c.moveToFirst();
 		castUri = data;
 	}
-	
-	private void dumpCastToLog(Cursor c){
-		final StringBuilder testOut = new StringBuilder();
-		for (final String row: Cast.PROJECTION){
-			testOut.append(row);
-			testOut.append("=");
 
-			if (c.isNull(c.getColumnIndex(row))){
-				testOut.append("<<null>>");
-			}else{
-				testOut.append(c.getString(c.getColumnIndex(row)));
-				
-			}
-			testOut.append("; ");
-		}
-		Log.d("ViewCast", testOut.toString());
-	}
-	
 	private void loadFromCursors(Cursor c){
-		dumpCastToLog(c);
+		MediaProvider.dumpCursorToLog(c, Cast.PROJECTION);
 		
 		((TextView)findViewById(R.id.item_title)).setText(
 				c.getString(c.getColumnIndex(Cast._TITLE)));
@@ -216,7 +200,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 			if (localUri == null){
 				try {
 					if (publicUri != null){
-						Cast.checkForMediaEntry(getApplicationContext(), getIntent().getData(), publicUri.toString());
+						Cast.checkForMediaEntry(getApplicationContext(), getIntent().getData(), publicUri);
 						
 						final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
 						
@@ -237,7 +221,9 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 				startActivity(viewVideo);
 				
 			}else if (publicUri != null){
-				Toast.makeText(this, "This video still needs to be downloaded before it can be played.", Toast.LENGTH_LONG).show();
+				
+				// stream the video!
+				//Toast.makeText(this, "This video still needs to be downloaded before it can be played.", Toast.LENGTH_LONG).show();
 				
 			}else {
 				Toast.makeText(this, "Cannot find a local or remote copy of this video :-(", Toast.LENGTH_LONG).show();

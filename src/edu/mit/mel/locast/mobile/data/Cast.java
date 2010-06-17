@@ -117,6 +117,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		SYNC_MAP.put(_TITLE, 			new SyncMap("title", SyncMap.STRING));
 		
 		SYNC_MAP.put(_THUMBNAIL_URI, 	new SyncMap("screenshot", SyncMap.STRING, true, SyncItem.SYNC_FROM));
+		SYNC_MAP.put(_PUBLIC_URI,       new SyncMap("file_url",   SyncMap.STRING, true, SyncItem.SYNC_FROM));
 		
 
 		SYNC_MAP.put("_contents", new SyncCustomArray("castvideos", SyncItem.SYNC_FROM) {
@@ -236,16 +237,22 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		c.close();
 	}
 	
-	public static File getFilePath(String pubUri) throws SyncException{
+	/**
+	 * @param pubUri
+	 * @return The local path on disk for the given remote video.
+	 * @throws SyncException
+	 */
+	public static File getFilePath(Uri pubUri) throws SyncException{
 		final File sdcardPath = Environment.getExternalStorageDirectory();
 		// pull off the server's name for this file.
-		final String localFile = pubUri.substring(pubUri.lastIndexOf('/') + 1);
-		final File locastSaveFile = new File(sdcardPath, DEVICE_EXTERNAL_MEDIA_PATH);
-		locastSaveFile.mkdirs();
-		if (!locastSaveFile.canWrite()) {
-			throw new SyncException("cannot write to external storage '"+locastSaveFile.getAbsolutePath()+"'");
+		final String localFile = pubUri.getLastPathSegment();
+
+		final File locastSavePath = new File(sdcardPath, DEVICE_EXTERNAL_MEDIA_PATH);
+		locastSavePath.mkdirs();
+		if (!locastSavePath.canWrite()) {
+			throw new SyncException("cannot write to external storage '"+locastSavePath.getAbsolutePath()+"'");
 		}
-		final File saveFile = new File(locastSaveFile, localFile);
+		final File saveFile = new File(locastSavePath, localFile);
 		return saveFile;
 	}
 	/**
@@ -337,13 +344,12 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	 * Scans the media database to see if the given item is there.
 	 * 
 	 * @param context
-	 * @param uri 
-	 * @param c
-	 * @param pubUri
+	 * @param uri Local URI to the cast.
+	 * @param pubUri public URI to the media file.
 	 * @return local URI if it exists.
 	 * @throws SyncException
 	 */
-	public static String checkForMediaEntry(Context context, Uri uri, String pubUri) throws SyncException{
+	public static String checkForMediaEntry(Context context, Uri uri, Uri pubUri) throws SyncException{
 		String newLocUri = null;
 		final File destfile = getFilePath(pubUri);
 		final String[] projection = {Media.DATA, Media._ID};

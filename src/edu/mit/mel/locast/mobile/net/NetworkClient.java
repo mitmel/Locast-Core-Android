@@ -477,7 +477,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		final String fullUri = getFullUri(uri);
 		logDebug("GETting "+ fullUri);
 		if (getCredentialsProvider() != null && getCredentialsProvider().getCredentials(authScope) != null){
-			logDebug("Using this for auth:" + getCredentialsProvider().getCredentials(authScope).getPassword());
+			logDebug("Authenticating as " + getCredentialsProvider().getCredentials(authScope).getUserPrincipal().getName());
 		}else{
 			logDebug("No credentials");
 		}
