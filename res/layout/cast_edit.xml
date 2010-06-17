@@ -61,7 +61,7 @@
 			android:layout_height="wrap_content"
 			android:layout_width="wrap_content" />
 			
-		<TextView android:id="@+id/location"
+		<edu.mit.mel.locast.mobile.widget.LocationLink android:id="@+id/location"
 			android:layout_height="wrap_content"
 			android:layout_width="wrap_content" />
 		
@@ -75,7 +75,7 @@
 			android:layout_height="wrap_content"
 			android:layout_width="wrap_content" />
 			
-		<TextView android:id="@+id/location_new"
+		<edu.mit.mel.locast.mobile.widget.LocationLink android:id="@+id/location_new"
 			android:layout_height="wrap_content"
 			android:layout_width="wrap_content" />
 		

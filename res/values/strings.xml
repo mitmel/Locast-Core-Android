@@ -75,6 +75,8 @@
 	
 	<!-- LocationLink widget -->
 	<string name="location_link_no_location">No Location</string>
+	<string name="location_link_accuracy_meter">±%.0f meters</string>
+	<string name="location_link_accuracy_kilometer">±%.01f kilometers</string>
 	
 	<!-- generic -->
 	<string name="done">Done</string>
@@ -85,6 +87,7 @@
 	<string name="sync_first">No local content detected. Starting first sync...</string>
 	<string name="sync_notification">Synchronizing with Locast server...</string>
 	<string name="sync_success">Sync successful.</string>
+	<string name="sync_menu">Synchronize</string>
 
 	<string name="authority">edu.mit.mel.locast.mobile.provider</string>
 	<string name="type_content_item">vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content</string>

@@ -173,7 +173,12 @@ public class DiscussionBoard extends LinearLayout implements OnClickListener, On
     		}
 		});
     	fillDiscussionList(c);
+    }
+    
+    @Override
+    protected void onDetachedFromWindow() {
     	c.close();
+    	super.onDetachedFromWindow();
     }
 
 	public void onClick(View v) {
