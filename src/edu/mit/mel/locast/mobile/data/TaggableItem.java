@@ -49,9 +49,9 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	public static final String _PRIVACY = "privacy",
 								_AUTHOR = "author";
 	
-	public static final String PRIVACY_PUBLIC = "public",
+	public static final String  PRIVACY_PUBLIC    = "public",
 								PRIVACY_PROTECTED = "protected",
-								PRIVACY_PRIVATE = "private";
+								PRIVACY_PRIVATE   = "private";
 
 	// the ordering of this must match the arrays.xml
 	public static final String[] PRIVACY_LIST = {PRIVACY_PUBLIC, PRIVACY_PROTECTED, PRIVACY_PRIVATE};

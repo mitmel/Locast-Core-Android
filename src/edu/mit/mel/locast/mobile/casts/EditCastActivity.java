@@ -40,7 +40,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.rmozone.mobilevideo.AnnotationActivity;
@@ -49,12 +48,16 @@ import edu.mit.mel.locast.mobile.Application;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.WebImageLoader;
 import edu.mit.mel.locast.mobile.data.Cast;
+import edu.mit.mel.locast.mobile.data.Locatable;
 import edu.mit.mel.locast.mobile.data.Project;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
+import edu.mit.mel.locast.mobile.widget.LocationLink;
 import edu.mit.mel.locast.mobile.widget.TagList;
 
 public class EditCastActivity extends Activity implements OnClickListener, LocationListener {
-	public static final String ACTION_CAST_FROM_MEDIA_URI = "edu.mit.mel.locast.mobile.share.ACTION_CAST_FROM_MEDIA_URI";
+	public static final String 
+		ACTION_CAST_FROM_MEDIA_URI = "edu.mit.mobile.android.locast.share.ACTION_CAST_FROM_MEDIA_URI",
+		ACTION_TOGGLE_STARRED = "edu.mit.mobile.android.locast.ACTION_TOGGLE_STARRED";
 	
 	private final static int UNPUBLISHED_CAST = -1;
 	
@@ -85,24 +88,26 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-		setContentView(R.layout.newcast);
 		
-		lm = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+		final Intent i = getIntent();
+        final Uri data = i.getData();
+        final String action = i.getAction();
+        final String type = i.getType();
+        
+        if (ACTION_TOGGLE_STARRED.equals(action)){
+        	final ContentResolver cr = getContentResolver();
+        	//String[] STARRED_PROJECTION = {Cast._ID, Cast._};
+        	//cr.query(uri, projection, selection, selectionArgs, sortOrder);
+        	
+        	//getContentResolver().update(data, values, where, selectionArgs);
+        }
+		
+		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+		setContentView(R.layout.cast_edit);
 		
 		imgLoader = ((Application)getApplication()).getImageLoader();
 		
-		final Criteria criteria = new Criteria();
-		criteria.setAccuracy(Criteria.ACCURACY_FINE);
-		criteria.setCostAllowed(false);
-		locProvider = lm.getBestProvider(criteria, true);
-        if (locProvider == null){
-                Toast.makeText(getApplicationContext(), 
-                                getString(R.string.error_no_providers), 
-                                Toast.LENGTH_LONG).show();
-        }
-        
-        
+
 		tagList = (TagList)findViewById(R.id.new_cast_tags);
 		mTitleField = (EditText) findViewById(R.id.edit_cast_title);
 		descriptionField = (EditText) findViewById(R.id.edit_cast_description);
@@ -119,10 +124,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		cancelButton.setOnClickListener(this);
 		
 		
-		final Intent i = getIntent();
-        final Uri data = i.getData();
-        final String action = i.getAction();
-        final String type = i.getType();
+
         
         if (ACTION_CAST_FROM_MEDIA_URI.equals(action) ){
         	localMediaUri = data;
@@ -141,7 +143,22 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
         	c.moveToFirst();
         	castUri = data;
         	loadFromCursor();
-        } 
+        }
+        
+		lm = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+		
+        // initialize location finding...
+		final Criteria criteria = new Criteria();
+		criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+		locProvider = lm.getBestProvider(criteria, true);
+        if (locProvider == null){
+                Toast.makeText(getApplicationContext(), 
+                                getString(R.string.error_no_providers), 
+                                Toast.LENGTH_LONG).show();
+        }
+        
+        
+        
 	}
 	
 	protected void loadFromCursor() {
@@ -187,24 +204,26 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			privacy.setEnabled(Cast.canChangePrivacyLevel(c));
 		}
 		
-		location = Cast.toLocation(c);
+		location = Locatable.toLocation(c);
 		updateLocations(null);
 	}
 	
+	/**
+	 * Updates the view of the locations. 
+	 * @param currentLocation Pass the current location if it is available.
+	 */
 	private void updateLocations(Location currentLocation){
-		if (location != null){
-			final String locString = String.format("%.4f, %.4f", location.getLatitude(), location.getLongitude());
-			((TextView)findViewById(R.id.location)).setText(locString);
-		}
+		((LocationLink)findViewById(R.id.location)).setLocation(location);
+
+		((LocationLink)findViewById(R.id.location_new)).setLocation(currentLocation);
 		if (currentLocation != null){
-			final String locString = String.format("%.4f, %.4f ±%.2fm", currentLocation.getLatitude(), currentLocation.getLongitude(), currentLocation.getAccuracy());
-			((TextView)findViewById(R.id.location_new)).setText(locString);
+//			final String locString = String.format("%.4f, %.4f ±%.2fm", currentLocation.getLatitude(), currentLocation.getLongitude(), currentLocation.getAccuracy());
+//			((TextView)findViewById(R.id.location_new)).setText(locString);
 
 			if (tagRecommendationTask == null || tagRecommendationTask.getStatus() == AsyncTask.Status.FINISHED){
 				tagRecommendationTask = new UpdateRecommendedTagsTask();
 				tagRecommendationTask.execute(currentLocation);
 			}
-			
 		}
 	}
 	

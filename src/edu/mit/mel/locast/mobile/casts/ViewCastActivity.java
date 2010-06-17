@@ -18,9 +18,11 @@ package edu.mit.mel.locast.mobile.casts;
  */
 import android.app.TabActivity;
 import android.content.Intent;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Window;
 import android.widget.ImageView;
@@ -33,6 +35,7 @@ import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.Comment;
 
 public class ViewCastActivity extends TabActivity {
+	public static final String TAG = ViewCastActivity.class.getSimpleName();
 	private WebImageLoader imgLoader;
 	
 	@Override
@@ -42,20 +45,11 @@ public class ViewCastActivity extends TabActivity {
 		
 		setContentView(R.layout.window_title_thick);
 		
-		final TabHost tabHost = getTabHost();
-		final Intent intent = getIntent();
-		final String action = intent.getAction();
+		final String action = getIntent().getAction();
 		
 		imgLoader = ((Application)getApplication()).getImageLoader();
 		
 		if (Intent.ACTION_VIEW.equals(action)){
-			tabHost.addTab(tabHost.newTabSpec("cast")
-					.setContent(new Intent(Intent.ACTION_VIEW, intent.getData(),
-											this, CastDetailsActivity.class))
-					.setIndicator("cast"));
-			
-			
-			
 			loadFromIntent();
 		}
 	}
@@ -64,9 +58,31 @@ public class ViewCastActivity extends TabActivity {
 		final Cursor c = managedQuery(getIntent().getData(), Cast.PROJECTION, null, null, null);
 		c.moveToFirst();
 		loadFromCursors(c);
+
+		c.registerContentObserver(new ContentObserver(new Handler()) {
+			@Override
+			public void onChange(boolean selfChange) {
+				if (selfChange){
+					loadFromCursors(c);
+				}
+			}
+		});
 	}
-	
+
 	private void loadFromCursors(Cursor c){
+		final Intent intent = getIntent();
+		final TabHost tabHost = getTabHost();
+		final Uri data = intent.getData();
+		
+		final int currentTab = tabHost.getCurrentTab();
+		// workaround for TabWidget bug: http://code.google.com/p/android/issues/detail?id=2772
+		tabHost.setCurrentTab(0);
+		tabHost.clearAllTabs();
+		
+		tabHost.addTab(tabHost.newTabSpec("cast")
+				.setContent(new Intent(Intent.ACTION_VIEW, data,
+										this, CastDetailsActivity.class))
+				.setIndicator("cast"));
 		
 		((TextView)(getWindow().findViewById(android.R.id.title))).setText(
 				c.getString(c.getColumnIndex(Cast._TITLE)));
@@ -76,22 +92,24 @@ public class ViewCastActivity extends TabActivity {
 		
 		((TextView)(getWindow().findViewById(R.id.item_author)))
 			.setText(c.getString(c.getColumnIndex(Cast._AUTHOR)));
-		
+
 		final String thumbUrl = c.getString(c.getColumnIndex(Cast._THUMBNAIL_URI));
-		
+
 		if (thumbUrl != null){
 			Log.d("ViewCast", "found thumbnail " + thumbUrl);
 			final ImageView mediaThumbView = ((ImageView)findViewById(android.R.id.icon));
 			imgLoader.loadImage(mediaThumbView, thumbUrl);
 		}
+		
+		// only add the discussion tab if it is published already.
 		if (!c.isNull(c.getColumnIndex(Cast._PUBLIC_ID))){
-			
-			final TabHost tabHost = getTabHost();
-		tabHost.addTab(tabHost.newTabSpec("discussion")
-				.setContent(new Intent(Intent.ACTION_VIEW, 
-										Uri.withAppendedPath(getIntent().getData(), Comment.PATH)))
-				.setIndicator("discussion"));
+			tabHost.addTab(tabHost.newTabSpec("discussion")
+					.setContent(new Intent(Intent.ACTION_VIEW, 
+							Uri.withAppendedPath(data, Comment.PATH)))
+							.setIndicator("discussion"));
+
 		}
 		
+		tabHost.setCurrentTab(currentTab);
 	}
 }

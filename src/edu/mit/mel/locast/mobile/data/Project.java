@@ -34,7 +34,7 @@ import android.net.Uri;
  * @author stevep
  *
  */
-public class Project extends TaggableItem {
+public class Project extends TaggableItem implements Favoritable.Columns, Locatable.Columns {
 	public final static String PATH = "projects";
 	public final static Uri CONTENT_URI = Uri
 			.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
@@ -86,13 +86,18 @@ public class Project extends TaggableItem {
 
 	@Override
 	public Map<String, SyncItem> getSyncMap() {
-		final HashMap<String, SyncItem> syncMap = new HashMap<String, SyncItem>(super.getSyncMap());
+		return SYNC_MAP;
+	}
+	
+	public static final HashMap<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem>(TaggableItem.SYNC_MAP);
+	
+	static {
+		SYNC_MAP.put(_DESCRIPTION, 		new SyncMap("description", SyncMap.STRING));
+		SYNC_MAP.put(_TITLE, 			new SyncMap("title", SyncMap.STRING));
+		SYNC_MAP.putAll(Locatable.SYNC_MAP);
+		SYNC_MAP.putAll(Favoritable.SYNC_MAP);
 		
-		syncMap.put(_DESCRIPTION, 	new SyncMap("description", SyncMap.STRING));
-		syncMap.put(_TITLE, 			new SyncMap("title", SyncMap.STRING));
-		syncMap.remove(_PRIVACY);
-		
-		return syncMap;
+		SYNC_MAP.remove(_PRIVACY);
 	}
 
 }

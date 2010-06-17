@@ -26,13 +26,19 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.data.Cast;
+import edu.mit.mel.locast.mobile.data.Locatable;
 
+/**
+ * @author steve
+ *
+ */
 public class BrowseCastsActivity extends CastListActivity implements LocationListener, OnClickListener {
 
 	private LocationManager lm;
@@ -107,7 +113,22 @@ public class BrowseCastsActivity extends CastListActivity implements LocationLis
 	}
 	
 	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		super.onCreateOptionsMenu(menu);
+		
+		getMenuInflater().inflate(R.menu.cast_list, menu);
+		
+		return true;
+	}
+	
+	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()){
+		case R.id.refresh:
+
+			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()));
+			return true;
+		}
 		
 		return super.onOptionsItemSelected(item);
 	}
@@ -124,7 +145,7 @@ public class BrowseCastsActivity extends CastListActivity implements LocationLis
 		final String[] nearLoc = {String.valueOf(location.getLatitude()), 
 				String.valueOf(location.getLongitude())};
 
-		nearbyCursorAdapter.changeCursor(managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast.SELECTION_LAT_LON, nearLoc, null));
+		nearbyCursorAdapter.changeCursor(managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Locatable.SELECTION_LAT_LON, nearLoc, null));
 	}
 
 	public void onLocationChanged(Location location) {

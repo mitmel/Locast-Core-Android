@@ -92,7 +92,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 18;
+		private static final int DB_VER = 19;
 		
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -113,8 +113,12 @@ public class MediaProvider extends ContentProvider {
 					+ Cast._CREATED_DATE + " INTEGER,"
 					+ Cast._PROJECT_ID  + " INTEGER,"
 					+ Cast._PRIVACY 		+ " TEXT,"
+					
 					+ Cast._LATITUDE 	+ " REAL,"
 					+ Cast._LONGITUDE 	+ " REAL,"
+					
+					+ Cast._FAVORITED   + " BOOLEAN,"
+					
 					+ Cast._THUMBNAIL_URI+ " TEXT"
 					+ ");"
 					);
@@ -125,6 +129,12 @@ public class MediaProvider extends ContentProvider {
 					+ Project._AUTHOR		+ " TEXT,"
 					+ Project._DESCRIPTION 	+ " TEXT,"
 					+ Project._PRIVACY 		+ " TEXT,"
+					
+					+ Project._LATITUDE 	+ " REAL,"
+					+ Project._LONGITUDE 	+ " REAL,"
+					
+					+ Project._FAVORITED    + " BOOLEAN,"
+					
 					+ Project._MODIFIED_DATE + " INTEGER,"
 					+ Project._CREATED_DATE + " INTEGER"
 					+ ");"		
@@ -257,10 +267,18 @@ public class MediaProvider extends ContentProvider {
 		return 0;
 	}
 
+	/**
+	 * @param uri
+	 * @return true if the matching URI can sync.
+	 */
 	public boolean canSync(Uri uri){
 		switch (uriMatcher.match(uri)){
 		case MATCHER_ITEM_TAGS:
 		case MATCHER_TAG_DIR:
+			
+		case MATCHER_CAST_MEDIA_DIR:
+		case MATCHER_CAST_MEDIA_ITEM:
+			
 			return false;
 			
 		case MATCHER_CHILD_COMMENT_DIR:
@@ -271,6 +289,7 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CAST_BY_TAGS:
 		case MATCHER_CAST_DIR:
 		case MATCHER_CAST_ITEM:
+			
 			
 		case MATCHER_PROJECT_BY_TAGS:
 		case MATCHER_PROJECT_CAST_DIR:
@@ -401,6 +420,8 @@ public class MediaProvider extends ContentProvider {
 			final String castId = uri.getPathSegments().get(1);
 			values.put(CastMedia._PARENT_ID, castId);
 			rowid = db.insert(CAST_MEDIA_TABLE_NAME, null, values);
+			
+			newItem = ContentUris.withAppendedId(uri, rowid);
 			
 		} break;
 						

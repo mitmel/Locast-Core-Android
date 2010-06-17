@@ -28,6 +28,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
@@ -81,10 +82,12 @@ public class MainActivity extends TabActivity implements OnClickListener {
         final TabHost tabHost = getTabHost();
         
         tabHost.addTab(tabHost.newTabSpec("projects")
-        		.setIndicator(getString(R.string.tab_projects)).setContent(new Intent(this, ListProjectsActivity.class)));
+        		.setIndicator(getString(R.string.tab_projects)).setContent(
+        				new Intent(Intent.ACTION_VIEW, Project.CONTENT_URI, this, ListProjectsActivity.class)));
         
         tabHost.addTab(tabHost.newTabSpec("casts")
-        		.setIndicator(getString(R.string.tab_casts)).setContent(new Intent(this, BrowseCastsActivity.class)));
+        		.setIndicator(getString(R.string.tab_casts)).setContent(
+        				new Intent(Intent.ACTION_VIEW, Cast.CONTENT_URI, this, BrowseCastsActivity.class)));
     }
     
 	@Override
@@ -114,9 +117,9 @@ public class MainActivity extends TabActivity implements OnClickListener {
 	    new TestNetworkTask().execute();
 
 	}
-    
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
+	
+	public boolean myonOptionsItemSelected(MenuItem item) {
+		Log.d("MainActivity", "onOptionsItemSelected");
 		switch (item.getItemId()) {
 			case R.id.settingsMenuItem: {
 				final Intent intent = new Intent(this, SettingsActivity.class);

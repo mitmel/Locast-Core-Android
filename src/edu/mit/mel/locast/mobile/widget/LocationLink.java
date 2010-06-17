@@ -31,7 +31,6 @@ import android.os.AsyncTask;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.widget.Button;
 import edu.mit.mel.locast.mobile.AddressUtils;
 import edu.mit.mel.locast.mobile.R;
@@ -52,7 +51,7 @@ public class LocationLink extends Button {
 
 	public LocationLink(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
-		setLocation(null);
+		setText(noLocationResId);
 	}
 	
 	public LocationLink(Context context, AttributeSet attrs){
@@ -64,18 +63,15 @@ public class LocationLink extends Button {
 	}
 	
 	public void setLocation(Location location){
-		this.location = location;
+		// only update if it's a distinctly new location.
+		if (this.location == null ||
+				location == null ||
+				this.location.distanceTo(location) != 0){
+			
+			this.location = location;
+			geocodedName = null; // invalidated
 		
-		if (location == null){
-			setText(noLocationResId);
-		}else{
-			if (geocodedName == null || ! this.location.equals(location)){
-				setText(String.format(LAT_LON_FORMAT, location.getLatitude(), location.getLongitude()));
-				final GeocoderTask t = new GeocoderTask();
-				t.execute(location);
-			}else{
-				Log.d(TAG, "not setting previously stored location");
-			}
+			updateLabel();
 		}
 	}
 	
@@ -90,10 +86,39 @@ public class LocationLink extends Button {
 		return location;
 	}
 	
-	public void setGeocodedName(String placename){
+	private void setGeocodedName(String placename){
 		geocodedName = placename;
-		setText(placename);
+		updateLabel();
 	}
+	
+	private void updateLabel(){
+		if (location == null){
+			setText(noLocationResId);
+		}else{
+			String accuracy = "";
+			if (location.hasAccuracy()){
+				final float accuracyVal = location.getAccuracy();
+				if (accuracyVal <= 500){
+					accuracy = getResources().getString(R.string.location_link_accuracy_meter, accuracyVal);
+				}else{
+					accuracy = getResources().getString(R.string.location_link_accuracy_kilometer, accuracyVal / 1000.0);
+				}
+			}
+			
+			String placename;
+			
+			if (geocodedName == null){
+				placename = String.format(LAT_LON_FORMAT, location.getLatitude(), location.getLongitude());
+				final GeocoderTask t = new GeocoderTask();
+				t.execute(location);
+			}else{
+				placename = geocodedName;
+			}
+			
+			setText(placename + accuracy);
+		}
+	}
+	
 	
 	@Override
 	public void onRestoreInstanceState(Parcelable state) {
@@ -104,9 +129,11 @@ public class LocationLink extends Button {
 		
 		final SavedState ss = (SavedState)state;
 		super.onRestoreInstanceState(ss.getSuperState());
-		
-		setGeocodedName(ss.geocodedName);
-		setLocation(ss.location);	
+
+		this.location = ss.location;
+		this.geocodedName = ss.geocodedName;
+		updateLabel();
+
 	}
 	
 	@Override

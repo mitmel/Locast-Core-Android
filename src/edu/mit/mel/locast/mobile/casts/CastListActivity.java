@@ -23,7 +23,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.ContextMenu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -39,6 +38,11 @@ import edu.mit.mel.locast.mobile.Application;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.data.Cast;
 
+/**
+ * A list of casts.
+ * @author steve
+ *
+ */
 public abstract class CastListActivity extends ListActivity {
 
 	private ListAdapter adapter;
@@ -47,12 +51,10 @@ public abstract class CastListActivity extends ListActivity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		setContentView(R.layout.cast_list_header);
+		setContentView(R.layout.cast_list);
 		super.onCreate(savedInstanceState);
 		imgCache = ((Application)getApplication()).getImageCache();
-		
 
-		//getListView().addHeaderView(getLayoutInflater().inflate(R.layout.cast_list_header, getListView(), false));
 	}
 	
 	protected void loadList(Cursor c){
@@ -76,35 +78,28 @@ public abstract class CastListActivity extends ListActivity {
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v,
 			ContextMenuInfo menuInfo) {
-		/*final AdapterView.AdapterContextMenuInfo info 
-			= (AdapterView.AdapterContextMenuInfo) menuInfo;*/
-		
-	    final MenuInflater inflater = getMenuInflater();
-	    inflater.inflate(R.menu.cast_view, menu);
-	    menu.add("test");
+		super.onCreateContextMenu(menu, v, menuInfo);
+	    getMenuInflater().inflate(R.menu.cast_view, menu);
 	}
 
 	@Override
 	protected void onListItemClick(ListView l, View v, int position,
 			long id) {
-				super.onListItemClick(l, v, position, id);
-				final Uri uri = ContentUris.withAppendedId(Cast.CONTENT_URI, id);
-				if (Intent.ACTION_PICK.equals(getIntent().getAction())){
-					setResult(RESULT_OK, new Intent().setData(uri));
-					finish();
-				}else {
-					startActivity(new Intent(Intent.ACTION_VIEW, uri));
-				}
-			}
-
-	@Override
-	public boolean onMenuItemSelected(int featureId, MenuItem item) {
-		switch (item.getItemId()){
-		case R.id.menu_edit_cast:
-			
-			break;	
+		super.onListItemClick(l, v, position, id);
+		final Uri uri = ContentUris.withAppendedId(Cast.CONTENT_URI, id);
+		if (Intent.ACTION_PICK.equals(getIntent().getAction())){
+			setResult(RESULT_OK, new Intent().setData(uri));
+			finish();
+		}else {
+			startActivity(new Intent(Intent.ACTION_VIEW, uri));
 		}
-		return true;
 	}
-
+	
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+		switch (item.getItemId()){
+		
+		}
+		return super.onContextItemSelected(item);
+	}
 }

@@ -37,7 +37,6 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.location.Location;
 import android.media.MediaScannerConnection;
 import android.media.MediaScannerConnection.MediaScannerConnectionClient;
 import android.net.Uri;
@@ -48,7 +47,7 @@ import edu.mit.mel.locast.mobile.StreamUtils;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
 
-public class Cast extends TaggableItem implements MediaScannerConnectionClient {
+public class Cast extends TaggableItem implements MediaScannerConnectionClient, Favoritable.Columns, Locatable.Columns {
 	public final static String TAG = "LocastSyncCast";
 	public final static String PATH = "casts";
 	public final static Uri 
@@ -67,10 +66,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 		_CONTENT_TYPE = "content_type",
 		_PROJECT_ID   = "project_id",
 
-		_THUMBNAIL_URI = "thumbnail_uri",
-
-		_LATITUDE = "lat",
-		_LONGITUDE = "lon";
+		_THUMBNAIL_URI = "thumbnail_uri";
 	
 	public static final String[] PROJECTION = 
 	{   _ID,
@@ -90,8 +86,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 		_LONGITUDE };
 	
 	public static final String 
-		DEFAULT_SORT = Cast._MODIFIED_DATE+" DESC",
-		SELECTION_LAT_LON = Cast._LATITUDE + " - ? < 1 and "+Cast._LONGITUDE + " - ? < 1";
+		DEFAULT_SORT = Cast._MODIFIED_DATE+" DESC";
 
 	private Context context;
 	private AndroidNetworkClient nc;
@@ -109,56 +104,14 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient {
 		return PROJECTION;
 	}
 	
-	public static Uri toGeoUri(Cursor c){
-		if (c.isNull(c.getColumnIndex(_LATITUDE)) || c.isNull(c.getColumnIndex(_LONGITUDE))) {
-			return null;
-		}
-		return Uri.parse("geo:"+c.getDouble(c.getColumnIndex(_LATITUDE))+","+c.getDouble(c.getColumnIndex(_LONGITUDE)));
-	}
-	
-	public static Location toLocation(Cursor c){
-		final int lat_idx = c.getColumnIndex(_LATITUDE);
-		final int lon_idx = c.getColumnIndex(_LONGITUDE);
-		if (c.isNull(lat_idx) || c.isNull(lon_idx)) {
-			return null;
-		}
-		final Location l = new Location("internal");
-		l.setLatitude(c.getDouble(lat_idx));
-		l.setLongitude(c.getDouble(lon_idx));
-		return l;
-	}
+
 	
 	public final static HashMap<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem>(TaggableItem.SYNC_MAP);
 	
 	static {
-		SYNC_MAP.put("_location", new SyncCustomArray("location", true) {
-			
-			@Override
-			public JSONArray toJSON(Context context, Uri localItem, Cursor c)
-					throws JSONException {
-				
-				final int latCol = c.getColumnIndex(_LATITUDE);
-				final int lonCol = c.getColumnIndex(_LONGITUDE);
-				
-				if (c.isNull(latCol) || c.isNull(lonCol)){
-					return null;
-				}
-				
-				final JSONArray coords = new JSONArray();
-				coords.put(c.getDouble(lonCol));
-				coords.put(c.getDouble(latCol));
-				return coords;
-			}
-			
-			@Override
-			public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
-					throws JSONException {
-				final ContentValues cv = new ContentValues();
-				cv.put(_LONGITUDE, item.getDouble(0));
-				cv.put(_LATITUDE, item.getDouble(1));
-				return cv;
-			}
-		});
+		SYNC_MAP.putAll(Favoritable.SYNC_MAP);
+		SYNC_MAP.putAll(Locatable.SYNC_MAP);
+		
 		
 		SYNC_MAP.put(_DESCRIPTION, 		new SyncMap("description", SyncMap.STRING));
 		SYNC_MAP.put(_TITLE, 			new SyncMap("title", SyncMap.STRING));

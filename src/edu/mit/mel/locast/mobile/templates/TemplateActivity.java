@@ -2,6 +2,8 @@ package edu.mit.mel.locast.mobile.templates;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.NumberFormat;
@@ -69,7 +71,6 @@ public class TemplateActivity extends Activity implements OnClickListener {
 		lv = (ListView)findViewById(R.id.instructions_list);
 		findViewById(R.id.list_overlay).setOnClickListener(new OnClickListener() { 
 			public void onClick(View v) {
-				// TODO Auto-generated method stub
 				final ViewSwitcher vs = (ViewSwitcher)findViewById(R.id.shot_list_switch);
 				vs.setDisplayedChild(1);
 				final Handler h = new Handler(){
@@ -84,8 +85,7 @@ public class TemplateActivity extends Activity implements OnClickListener {
 						try {
 							Thread.sleep(5000);
 						} catch (final InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+							// 
 						}
 						h.sendEmptyMessage(0);
 					}
@@ -107,22 +107,6 @@ public class TemplateActivity extends Activity implements OnClickListener {
 
 	private final SurfaceHolderCallback cameraSHListener = new SurfaceHolderCallback();
 	private class SurfaceHolderCallback implements SurfaceHolder.Callback {
-		public static final int MSG_UNLOCK_CAMERA = 0;
-		
-		private final Handler surfaceHandler = new Handler(){
-			@Override
-			public void handleMessage(Message msg) {
-				switch (msg.what){
-				case MSG_UNLOCK_CAMERA:
-					Log.d("template", "unlocking camera");
-					camera.unlock();
-					break;
-				}
-			};
-		};
-		public void unlockCamera(){
-			surfaceHandler.sendEmptyMessage(MSG_UNLOCK_CAMERA);
-		}
 		
 		public void surfaceDestroyed(SurfaceHolder holder) {
 
@@ -137,18 +121,37 @@ public class TemplateActivity extends Activity implements OnClickListener {
 
 				camera.setPreviewDisplay(surfaceHolder);
 			} catch (final IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				throw new RuntimeException(e);
 			}
 		}
 
 		public void surfaceChanged(SurfaceHolder holder, int format, int width,
 				int height) {
 			camera.startPreview();
-			camera.unlock();
-			Log.d("template", "unlocked camera");
-			initRecorder();
 
+			// Call the unlock() method (introduced in API level 5) if possible
+			// Otherwise just stop the preview to unlock.
+			try {
+				try {
+					final Method unlock = camera.getClass().getDeclaredMethod("unlock");
+					unlock.invoke(camera);
+
+				}catch (final NoSuchMethodException m){
+					camera.stopPreview();
+				}
+				
+				Log.d("template", "unlocked camera");
+				initRecorder();
+				
+			}catch (final InvocationTargetException ie){
+				throw new RuntimeException(ie);
+
+			} catch (final IllegalArgumentException e) {
+				throw new RuntimeException(e);
+				
+			} catch (final IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	};
 	private int videoCount = 0; 
@@ -162,23 +165,33 @@ public class TemplateActivity extends Activity implements OnClickListener {
 			recorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
 			recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 			
-			recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+			recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
 			//recorder.setMaxDuration(5000); // XXX
 			
-			/*recorder.setVideoSize(320, 240);
-			recorder.setVideoFrameRate(15);*/
+			recorder.setVideoSize(320, 240);
+			recorder.setVideoFrameRate(15);
 			
-			recorder.setVideoSize(720, 480); // N1-specific
-			recorder.setVideoFrameRate(1000);
+			/*recorder.setVideoSize(720, 480); // N1-specific
+			recorder.setVideoFrameRate(1000); */
 			
 			recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
 			recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H263);
 			
 			final File storage = Environment.getExternalStorageDirectory();
 			
-			recorder.setOutputFile(storage + "/locast/" + "video_"+ videoCount++ +".3gp");
+			if (!storage.canWrite()){
+				// something's wrong; can't access SD card.
+				throw new RuntimeException("cannot write to SD card");
+			}
 			
-			//camera.unlock();
+			final File locastBase = new File(storage, "locast");
+
+			if (!locastBase.exists()){
+				if (!locastBase.mkdirs()){
+					throw new RuntimeException("could not make directory, "+locastBase+", for recording videos.");
+				}
+			}
+			recorder.setOutputFile(locastBase + "video_"+ videoCount++ +".3gp");
 			
 			/*final Camera.Parameters params = camera.getParameters();
 			params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);

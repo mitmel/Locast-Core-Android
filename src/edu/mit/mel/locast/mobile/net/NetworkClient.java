@@ -676,7 +676,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	}
 	
 	public List<String> getRecommendedTagsList(Location near) throws JSONException, IOException, NetworkProtocolException{
-		return getTagsList("recommended/?point=" + near.getLongitude() + ','+ near.getLatitude());
+		return getTagsList("?location=" + near.getLongitude() + ','+ near.getLatitude());
 	}
 	
 	/**

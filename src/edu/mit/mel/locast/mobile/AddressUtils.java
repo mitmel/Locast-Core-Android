@@ -38,11 +38,13 @@ public class AddressUtils {
 		}
 		
 		if (title == null || title.matches(BAD_DESCRIPTION_RE)){
-			title = thisLocation.getSubLocality();	
+			title = thisLocation.getSubLocality();
 		}
 
 		if (title == null){
-			title = thisLocation.getLocality();
+			title = thisLocation.getLocality() + ", " + thisLocation.getCountryName();
+		}else{
+			title += ", " + thisLocation.getLocality();
 		}
 		
 		return title;

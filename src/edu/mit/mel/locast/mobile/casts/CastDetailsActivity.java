@@ -40,6 +40,7 @@ import edu.mit.mel.locast.mobile.Application;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.WebImageLoader;
 import edu.mit.mel.locast.mobile.data.Cast;
+import edu.mit.mel.locast.mobile.data.Locatable;
 import edu.mit.mel.locast.mobile.data.SyncException;
 import edu.mit.mel.locast.mobile.widget.LocationLink;
 import edu.mit.mel.locast.mobile.widget.TagListView;
@@ -131,9 +132,9 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 		
 		final LocationLink locButton = (LocationLink)findViewById(R.id.location);
 		if (!c.isNull(c.getColumnIndex(Cast._LATITUDE))){
-			geoUri = Cast.toGeoUri(c);	
+			geoUri = Locatable.toGeoUri(c);	
 			locButton.setEnabled(true);
-			locButton.setLocation(Cast.toLocation(c));
+			locButton.setLocation(Locatable.toLocation(c));
 			
 		}else{
 			((Button)findViewById(R.id.location)).setEnabled(false);

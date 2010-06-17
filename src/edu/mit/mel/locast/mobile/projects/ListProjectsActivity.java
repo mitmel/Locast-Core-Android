@@ -24,9 +24,9 @@ import android.content.ContentUris;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -83,13 +83,14 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-        final MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.projects_menu, menu);
+        super.onCreateOptionsMenu(menu);
+        getMenuInflater().inflate(R.menu.projects_menu, menu);
         return true;
     }
     
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
+		Log.d(TAG, "onOptionsItemSelected");
 		switch (item.getItemId()) {
 			case R.id.addProjectMenuItem: {
 				final Intent i = new Intent(Intent.ACTION_INSERT, Project.CONTENT_URI);
@@ -105,8 +106,11 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
 			case R.id.reset: {
 				MainActivity.resetDB(this);
 			} break;
+			
+			default:
+				return super.onOptionsItemSelected(item);
 		}
-		return super.onOptionsItemSelected(item);
+		return true;
 	}
 
 	@Override
