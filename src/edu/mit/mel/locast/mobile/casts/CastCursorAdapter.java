@@ -46,7 +46,7 @@ public class CastCursorAdapter extends SimpleCursorAdapter {
 			v.setTag(value);
 		}else{
 			v.setTag(null);
-			v.setImageResource(R.drawable.cast_placeholder);
+			v.setImageResource(R.drawable.icon_default_cast);
 		}
 	}
 }

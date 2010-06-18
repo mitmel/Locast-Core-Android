@@ -9,20 +9,18 @@ import org.json.JSONObject;
 import android.content.Context;
 import android.net.Uri;
 
-public class CastMedia extends JsonSyncableItem {
+public class CastMedia extends JsonSyncableItem implements OrderedList.Columns{
 	public final static String 
 		_MEDIA_URL    = "url",
 		_LOCAL_URI    = "local_uri",
 		_SCREENSHOT   = "screenshot",
 		_MIME_TYPE    = "mimetype",
 		_DURATION     = "duration",
-		_PREVIEW_URL  = "preview_url",
-		_PARENT_ID    = "parent_id",
-		_LIST_IDX     = "list_idx"
+		_PREVIEW_URL  = "preview_url"
 		;
 	public final static String PATH = "cast_media";
 	public final static Uri CONTENT_URI = Uri.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
-	public final static String DEFAULT_SORT = _LIST_IDX + " ASC";
+	
 	public final static String[] PROJECTION = {
 		_ID,
 		_PUBLIC_ID,

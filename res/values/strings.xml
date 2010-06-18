@@ -5,8 +5,6 @@
 
 	<!-- Main screen -->
     <string name="main_header_string">Locast</string>
-    <string name="tab_projects">Projects</string>
-    <string name="tab_casts">Casts</string>
     <string name="projects_string">View My Projects</string>
     <string name="browse_string">Browse Casts</string>
     <string name="recordvideo_string">Record Cast</string>
@@ -16,11 +14,18 @@
     <string name="about">About</string>
     <string name="settings">Settings</string>
     
+    <!-- Tabs -->
+    <string name="tab_cast">Cast</string>
+    <string name="tab_casts">Casts</string>
+    <string name="tab_project">Project</string>
+    <string name="tab_projects">Projects</string>
+    <string name="tab_discussion">Discussion</string>
+    
     <!-- pairing -->
-	<string name="or">Or</string>
+	<string name="pair_or">or</string>
 	<string name="pairing_key">Enter Pairing Key</string>
 	<string name="scan_qr_code">Scan QRCode</string>
-	<string name="pairing_code_entry">Enter pairing code...</string>
+	<string name="pairing_code_entry">Type pairing code</string>
 	<string name="pair_button">Pair</string>
 	
 	<!-- User-facing error messages -->
@@ -37,6 +42,10 @@
 	<string name="project_you_joined">You have joined %s</string>
 	<string name="project_you_left">You have left %s</string>
 	
+	<!-- List sections -->
+	<string name="section_featured">Featured</string>
+	<string name="section_nearby">Nearby</string>
+	<string name="section_starred">Liked</string>
 
 	<!-- casts -->
 	<string name="add_to_project">Add to Project</string>

@@ -23,9 +23,10 @@
         android:lines="1"
         android:scrollHorizontally="true"
         android:ellipsize="marquee"
+        android:textColor="#000"
 		android:textAppearance="?android:attr/textAppearanceLarge"
 	/>
-	
+	<!-- android:textColor="?android:attr/textColorSecondary" -->
 	<TextView android:id="@android:id/text2"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
@@ -34,6 +35,7 @@
 		android:layout_alignParentLeft="true"
         android:ellipsize="end"
         android:maxLines="3"
+        android:textColor="#111"
 		android:textAppearance="?android:attr/textAppearanceSmall"
 	/>
 

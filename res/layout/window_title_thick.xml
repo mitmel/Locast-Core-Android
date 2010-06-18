@@ -20,7 +20,7 @@
   	
   	android:layout_alignParentLeft="true"
   	android:layout_centerVertical="true"
-  	android:src="@drawable/cast_placeholder"
+  	android:src="@drawable/icon_default_cast"
   	android:padding="2dip"
   	 />
   	 

@@ -1,4 +1,0 @@
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-        <item android:drawable="@drawable/btn_main" />
-        <item android:drawable="@drawable/icon_record_cast" />
-</layer-list>

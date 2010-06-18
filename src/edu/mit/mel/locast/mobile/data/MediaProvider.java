@@ -64,36 +64,38 @@ public class MediaProvider extends ContentProvider {
 		;
 
 	private static final String 
-		CAST_TABLE_NAME    = "casts",
+		CAST_TABLE_NAME       = "casts",
 		CAST_MEDIA_TABLE_NAME = "castmedia",
-		PROJECT_TABLE_NAME = "projects",
-		COMMENT_TABLE_NAME = "comments",
-		TAG_TABLE_NAME     = "tags",
-		SHOTLIST_TABLE_NAME = "shotlist";
+		PROJECT_TABLE_NAME    = "projects",
+		COMMENT_TABLE_NAME    = "comments",
+		TAG_TABLE_NAME        = "tags",
+		SHOTLIST_TABLE_NAME   = "shotlist";
 	
 	private static UriMatcher uriMatcher;
 	
-	private static final int MATCHER_CAST_DIR             = 1,
-	 						 MATCHER_CAST_ITEM            = 2,
-	 						 MATCHER_PROJECT_DIR          = 3,
-	 						 MATCHER_PROJECT_ITEM         = 4,
-	 						 MATCHER_COMMENT_DIR          = 5,
-	 						 MATCHER_COMMENT_ITEM         = 6,
-	 						 MATCHER_PROJECT_CAST_DIR     = 7,
-	 						 MATCHER_PROJECT_CAST_ITEM    = 8,
-	 						 MATCHER_CHILD_COMMENT_DIR    = 9,
-	 						 MATCHER_CHILD_COMMENT_ITEM   = 10,
-	 						 MATCHER_PROJECT_BY_TAGS      = 11,
-	 						 MATCHER_CAST_BY_TAGS         = 12,
-	 						 MATCHER_TAG_DIR              = 13,
-	 						 MATCHER_ITEM_TAGS    		  = 14,
-	 						 MATCHER_CAST_MEDIA_DIR       = 15,
-	 						 MATCHER_CAST_MEDIA_ITEM      = 16,
-	 						 MATCHER_PROJECT_SHOTLIST_DIR = 17;
+	private static final int 
+		MATCHER_CAST_DIR             = 1,
+		MATCHER_CAST_ITEM            = 2,
+		MATCHER_PROJECT_DIR          = 3,
+		MATCHER_PROJECT_ITEM         = 4,
+		MATCHER_COMMENT_DIR          = 5,
+		MATCHER_COMMENT_ITEM         = 6,
+		MATCHER_PROJECT_CAST_DIR     = 7,
+		MATCHER_PROJECT_CAST_ITEM    = 8,
+		MATCHER_CHILD_COMMENT_DIR    = 9,
+		MATCHER_CHILD_COMMENT_ITEM   = 10,
+		MATCHER_PROJECT_BY_TAGS      = 11,
+		MATCHER_CAST_BY_TAGS         = 12,
+		MATCHER_TAG_DIR              = 13,
+		MATCHER_ITEM_TAGS    		 = 14,
+		MATCHER_CAST_MEDIA_DIR       = 15,
+		MATCHER_CAST_MEDIA_ITEM      = 16,
+		MATCHER_PROJECT_SHOTLIST_DIR = 17,
+		MATCHER_PROJECT_SHOTLIST_ITEM= 18;
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 20;
+		private static final int DB_VER = 21;
 		
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -179,6 +181,19 @@ public class MediaProvider extends ContentProvider {
 			+ ")"		
 			);
 			
+			db.execSQL("CREATE TABLE "+ SHOTLIST_TABLE_NAME + " ("
+					+ ShotList._ID            + " INTEGER PRIMARY KEY,"
+					+ ShotList._PUBLIC_ID     + " INTEGER,"
+					+ ShotList._PARENT_ID     + " INTEGER,"
+					+ ShotList._LIST_IDX      + " INTEGER,"
+					+ ShotList._DIRECTION     + " TEXT,"
+					+ ShotList._DURATION      + " INTEGER,"
+					// this ensures that each cast has only one cast media in each list position.
+					// List_idx is the index in the cast media array.
+					+ "CONSTRAINT shot_list_unique UNIQUE ("+ ShotList._LIST_IDX+ ","+ShotList._PARENT_ID+") ON CONFLICT REPLACE"
+			+ ")"		
+			);
+			
 		}
 
 		@Override
@@ -188,6 +203,7 @@ public class MediaProvider extends ContentProvider {
 			db.execSQL("DROP TABLE IF EXISTS " + COMMENT_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + CAST_MEDIA_TABLE_NAME);
+			db.execSQL("DROP TABLE IF EXISTS " + SHOTLIST_TABLE_NAME);
 			onCreate(db);
 		}
 
@@ -260,6 +276,11 @@ public class MediaProvider extends ContentProvider {
 			db.delete(CAST_MEDIA_TABLE_NAME, where, whereArgs);
 			break;
 		}
+		
+		case MATCHER_PROJECT_SHOTLIST_DIR:{
+			
+			db.delete(SHOTLIST_TABLE_NAME, where, whereArgs);
+		}
 			
 			default:
 				throw new IllegalArgumentException("Unknown URI: "+uri);
@@ -283,6 +304,7 @@ public class MediaProvider extends ContentProvider {
 			
 		case MATCHER_COMMENT_ITEM:
 		case MATCHER_CHILD_COMMENT_ITEM:
+		case MATCHER_PROJECT_SHOTLIST_DIR:
 			
 			return false;
 			
@@ -582,7 +604,18 @@ public class MediaProvider extends ContentProvider {
 			qb.appendWhere(CastMedia._PARENT_ID + "="+castId);
 
 			// the default sort is necessary to ensure items are returned in list index order.
-			c = qb.query(db, projection, selection, selectionArgs, null, null, CastMedia.DEFAULT_SORT);
+			c = qb.query(db, projection, selection, selectionArgs, null, null, OrderedList.Columns.DEFAULT_SORT);
+
+		} break;
+			
+		case MATCHER_PROJECT_SHOTLIST_DIR:{
+			final String projectId = uri.getPathSegments().get(1);
+			
+			qb.setTables(SHOTLIST_TABLE_NAME);
+			qb.appendWhere(OrderedList.Columns._PARENT_ID + "="+projectId);
+
+			// the default sort is necessary to ensure items are returned in list index order.
+			c = qb.query(db, projection, selection, selectionArgs, null, null, OrderedList.Columns.DEFAULT_SORT);
 			
 		} break;
 			
@@ -857,6 +890,9 @@ public class MediaProvider extends ContentProvider {
 		// /project/1/content, etc
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH, MATCHER_PROJECT_CAST_DIR);
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH + "/#", MATCHER_PROJECT_CAST_ITEM);
+		
+		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + ShotList.PATH, MATCHER_PROJECT_SHOTLIST_DIR);
+		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + ShotList.PATH + "#", MATCHER_PROJECT_SHOTLIST_ITEM);
 		
 		// /content/1/tags
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);

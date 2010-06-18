@@ -376,7 +376,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
             	case SyncMap.DURATION:{
             		final int durationSeconds = c.getInt(columnIndex);
             		// hh:mm:ss
-            		jo.put(map.remoteKey, String.format("%02i:%02i:%02i", durationSeconds / 1200, (durationSeconds / 60) % 60, durationSeconds % 60));
+            		jo.put(map.remoteKey, String.format("%02d:%02d:%02d", durationSeconds / 1200, (durationSeconds / 60) % 60, durationSeconds % 60));
             	}break;
             	}
             }
@@ -457,6 +457,9 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		public SyncCustomArray(String remoteKey, boolean optional){
 			super(remoteKey, optional);
 		}
+		public SyncCustomArray(String remoteKey, boolean optional, int direction) {
+			super(remoteKey, optional, direction);
+		}
 		public abstract JSONArray toJSON(Context context, Uri localItem, Cursor c) throws JSONException, NetworkProtocolException, IOException;
 		public abstract ContentValues fromJSON(Context context, Uri localItem, JSONArray item) throws JSONException, NetworkProtocolException, IOException;
 	}
@@ -466,6 +469,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 * @author steve
 	 *
 	 */
+	// TODO change 'optional' boolean to flag system.
 	public static class SyncMap extends SyncItem {
 		private final int type;
 		public SyncMap(String remoteKey, int type) {

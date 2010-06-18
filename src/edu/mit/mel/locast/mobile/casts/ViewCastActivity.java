@@ -18,6 +18,7 @@ package edu.mit.mel.locast.mobile.casts;
  */
 import android.app.TabActivity;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
@@ -79,10 +80,11 @@ public class ViewCastActivity extends TabActivity {
 		tabHost.setCurrentTab(0);
 		tabHost.clearAllTabs();
 		
+		final Resources r = getResources();
 		tabHost.addTab(tabHost.newTabSpec("cast")
 				.setContent(new Intent(Intent.ACTION_VIEW, data,
 										this, CastDetailsActivity.class))
-				.setIndicator("cast"));
+				.setIndicator(r.getString(R.string.tab_cast), r.getDrawable(R.drawable.icon_cast)));
 		
 		((TextView)(getWindow().findViewById(android.R.id.title))).setText(
 				c.getString(c.getColumnIndex(Cast._TITLE)));
@@ -106,7 +108,7 @@ public class ViewCastActivity extends TabActivity {
 			tabHost.addTab(tabHost.newTabSpec("discussion")
 					.setContent(new Intent(Intent.ACTION_VIEW, 
 							Uri.withAppendedPath(data, Comment.PATH)))
-							.setIndicator("discussion"));
+							.setIndicator(r.getString(R.string.tab_discussion), r.getDrawable(R.drawable.icon_discussion)));
 
 		}
 		

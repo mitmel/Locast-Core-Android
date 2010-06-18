@@ -12,10 +12,11 @@
   	android:text="Record a cast"
   	android:layout_margin="5dip"
   	 />
-  	 
+  	 <!--   	 	android:cacheColorHint="@android:color/transparent" -->
   	 <ListView android:id="@android:id/list"
   	 	android:layout_width="fill_parent"
   	 	android:layout_height="0dip" 
   	 	android:layout_weight="1"
+
   	 	/>
 </LinearLayout>

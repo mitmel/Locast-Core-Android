@@ -10,10 +10,11 @@ public class ShotList extends JsonSyncableItem {
 		_PUBLIC_ID   = "id",
 		_DIRECTION   = "direction",
 		_DURATION    = "duration",
-		_PARENT_ID   = "parent_id"
+		_PARENT_ID   = "parent_id",
+		_LIST_IDX    = "list_idx"
 		;
 	
-	public final static String PATH = "shotlists";
+	public final static String PATH = "shotlist";
 	public final static Uri CONTENT_URI = Uri.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH); 
 	public final static String[] PROJECTION = {
 		_ID,
@@ -21,7 +22,8 @@ public class ShotList extends JsonSyncableItem {
 		_MODIFIED_DATE,
 		_DIRECTION,
 		_DURATION,
-		_PARENT_ID
+		_PARENT_ID,
+		_LIST_IDX
 	};
 
 	@Override
@@ -34,14 +36,17 @@ public class ShotList extends JsonSyncableItem {
 		return PROJECTION;
 	}
 
+	public static final HashMap<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem>();
+	
+	static {
+		SYNC_MAP.put(_DURATION,  new SyncMap("duration", SyncMap.DURATION));
+		SYNC_MAP.put(_DIRECTION, new SyncMap("direction", SyncMap.STRING));
+		SYNC_MAP.put(_PUBLIC_ID, new SyncMap("id", SyncMap.INTEGER, SyncMap.SYNC_FROM));
+	}
+	
 	@Override
 	public Map<String, SyncItem> getSyncMap() {
-		final Map<String, SyncItem> syncMap = new HashMap<String, SyncItem>();
-		syncMap.put(_DURATION, new SyncMap("duration", SyncMap.DURATION));
-		syncMap.put(_DIRECTION, new SyncMap("direction", SyncMap.STRING));
-		syncMap.put(_PUBLIC_ID, new SyncMap("id", SyncMap.INTEGER, SyncMap.SYNC_FROM));
-		//syncMap.put(, value)
-		return syncMap;
+		return SYNC_MAP;
 	}
 
 }

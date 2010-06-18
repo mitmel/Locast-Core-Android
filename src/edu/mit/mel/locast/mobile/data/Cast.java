@@ -18,7 +18,6 @@ package edu.mit.mel.locast.mobile.data;
  */
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -28,8 +27,6 @@ import java.util.TreeMap;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.ContentResolver;
@@ -45,7 +42,6 @@ import android.provider.MediaStore.Video.Media;
 import android.util.Log;
 import edu.mit.mel.locast.mobile.StreamUtils;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
-import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
 
 public class Cast extends TaggableItem implements MediaScannerConnectionClient, Favoritable.Columns, Locatable.Columns {
 	public final static String TAG = "LocastSyncCast";
@@ -120,32 +116,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		SYNC_MAP.put(_PUBLIC_URI,       new SyncMap("file_url",   SyncMap.STRING, true, SyncItem.SYNC_FROM));
 		
 
-		SYNC_MAP.put("_contents", new SyncCustomArray("castvideos", SyncItem.SYNC_FROM) {
-			
-			@Override
-			public JSONArray toJSON(Context context, Uri localItem, Cursor c)
-					throws JSONException, NetworkProtocolException, IOException {
-				Log.d(TAG, "main toJSON");
-				
-				final Cursor castMedia_c = context.getContentResolver().query(Uri.withAppendedPath(localItem, CastMedia.PATH), CastMedia.PROJECTION, null, null, null);
-				final JSONArray ja = new JSONArray();
-				for (castMedia_c.moveToFirst(); !castMedia_c.isAfterLast(); castMedia_c.moveToNext()){
-					ja.put(CastMedia.toJSON(context, localItem, castMedia_c, CastMedia.SYNC_MAP));
-				}
-				castMedia_c.close();
-				return ja;
-			}
-			
-			@Override
-			public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
-					throws JSONException, NetworkProtocolException, IOException {
-				Log.d(TAG, "main fromJSON");
-				// Do nothing. We can't load from JSON until we have the local Cast URI to create the reference.
-				// This is handled instead in onUpdateItem()
-				return new ContentValues();
-			}
-		});
-
+		SYNC_MAP.put("_contents", new OrderedList.SyncMap("castvideos", new CastMedia(), CastMedia.PATH));
 	}
 	
 	@Override
@@ -161,43 +132,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		c.moveToFirst();
 		nc = AndroidNetworkClient.getInstance(context);
 		
-		final Map<String, SyncItem> syncMap = new HashMap<String, SyncItem>();
-		syncMap.put("_contents", new SyncCustomArray("castvideos") {
-			
-			@Override
-			public JSONArray toJSON(Context context, Uri localItem, Cursor c)
-					throws JSONException, NetworkProtocolException, IOException {
-				// do nothing.
-				Log.d(TAG, "onUpdateItem toJSON");
-				return new JSONArray();
-			}
-			
-			@Override
-			public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
-					throws JSONException, NetworkProtocolException, IOException {
-				Log.d(TAG, "onUpdateItem fromJSON");
-				final ContentResolver cr = context.getContentResolver();
-				
-				for (int i = 0; i < item.length(); i++){
-					final ContentValues cv = CastMedia.fromJSON(context, null, item.getJSONObject(i), CastMedia.SYNC_MAP);
-					
-					cv.put(CastMedia._LIST_IDX, i);
-					cv.put(CastMedia._PARENT_ID, ContentUris.parseId(localItem));
-					// this will actually overwrite any existing entries in the same index.
-					cr.insert(Uri.withAppendedPath(localItem, CastMedia.PATH), cv);
-				}
-				return new ContentValues();
-			}
-		});
-		
-		try {
-			Log.d(TAG, "trying to load cast videos from "+ item);
-			fromJSON(context, uri, item, syncMap);
-		} catch (final Exception e1) {
-			final SyncException e = new SyncException("Error loading cast videos");
-			e.initCause(e1);
-			throw e;
-		}
+		OrderedList.onUpdate(context, uri, item, "castvideos", new CastMedia(), CastMedia.PATH);
 		
 		final Cursor castMedia = cr.query(Uri.withAppendedPath(uri, CastMedia.PATH), CastMedia.PROJECTION, null, null, null);
 		

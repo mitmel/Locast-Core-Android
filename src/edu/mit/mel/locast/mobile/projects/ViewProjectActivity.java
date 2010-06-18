@@ -18,6 +18,7 @@ package edu.mit.mel.locast.mobile.projects;
  */
 import android.app.TabActivity;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -48,10 +49,7 @@ public class ViewProjectActivity extends TabActivity {
 		imgLoader = ((Application)getApplication()).getImageLoader();
 		
 		if (Intent.ACTION_VIEW.equals(action)){
-			tabHost.addTab(tabHost.newTabSpec("Project")
-					.setContent(new Intent(Intent.ACTION_VIEW, intent.getData(),
-											this, ProjectDetailsActivity.class))
-					.setIndicator("Project"));
+
 			
 			loadFromIntent();
 		}
@@ -64,6 +62,11 @@ public class ViewProjectActivity extends TabActivity {
 	}
 	
 	private void loadFromCursors(Cursor c){
+		final TabHost tabHost = getTabHost();
+		final int currentTab = tabHost.getCurrentTab();
+		// workaround for TabWidget bug: http://code.google.com/p/android/issues/detail?id=2772
+		tabHost.setCurrentTab(0);
+		tabHost.clearAllTabs();
 		
 		((TextView)(getWindow().findViewById(android.R.id.title))).setText(
 				c.getString(c.getColumnIndex(Project._TITLE)));
@@ -83,15 +86,24 @@ public class ViewProjectActivity extends TabActivity {
 //		}
 		
 		final ImageView mediaThumbView = ((ImageView)findViewById(android.R.id.icon));
-		mediaThumbView.setImageResource(R.drawable.icon);
+		mediaThumbView.setImageResource(R.drawable.app_icon);
+		
+		final Resources r = getResources();
+		final Intent intent = getIntent();
+		
+		tabHost.addTab(tabHost.newTabSpec("Project")
+				.setContent(new Intent(Intent.ACTION_VIEW, intent.getData(),
+										this, ProjectDetailsActivity.class))
+				.setIndicator(r.getString(R.string.tab_project), r.getDrawable(R.drawable.icon_project)));
 		
 		if (!c.isNull(c.getColumnIndex(Project._PUBLIC_ID))){
 			
-			final TabHost tabHost = getTabHost();
 		tabHost.addTab(tabHost.newTabSpec("discussion")
 				.setContent(new Intent(Intent.ACTION_VIEW, 
 										Uri.withAppendedPath(getIntent().getData(), Comment.PATH)))
-				.setIndicator("discussion"));
+				.setIndicator(r.getString(R.string.tab_discussion), r.getDrawable(R.drawable.icon_discussion)));
+		
+		tabHost.setCurrentTab(currentTab);
 		}
 		
 	}

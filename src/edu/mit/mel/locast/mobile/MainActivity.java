@@ -23,6 +23,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -81,20 +82,23 @@ public class MainActivity extends TabActivity implements OnClickListener {
         
         final TabHost tabHost = getTabHost();
         
+        final Resources r = getResources();
         tabHost.addTab(tabHost.newTabSpec("projects")
-        		.setIndicator(getString(R.string.tab_projects)).setContent(
-        				new Intent(Intent.ACTION_VIEW, Project.CONTENT_URI, this, ListProjectsActivity.class)));
+        		.setIndicator(getString(R.string.tab_projects), r.getDrawable(R.drawable.icon_projects))
+        		.setContent(new Intent(Intent.ACTION_VIEW, Project.CONTENT_URI,
+        				this, ListProjectsActivity.class)));
         
         tabHost.addTab(tabHost.newTabSpec("casts")
-        		.setIndicator(getString(R.string.tab_casts)).setContent(
-        				new Intent(Intent.ACTION_VIEW, Cast.CONTENT_URI, this, BrowseCastsActivity.class)));
+        		.setIndicator(getString(R.string.tab_casts), r.getDrawable(R.drawable.icon_casts))
+        		.setContent(new Intent(Intent.ACTION_VIEW, Cast.CONTENT_URI,
+        						this, BrowseCastsActivity.class)));
     }
     
 	@Override
 	protected void onPostCreate(Bundle icicle) {
 		super.onPostCreate(icicle);
 		// the icon is set here, due it needing to be called after setContentView()
-		getWindow().setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.icon);
+		getWindow().setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.app_icon);
 	}
 	
 	@Override

@@ -80,8 +80,7 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 	
 	@Override
 	public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException, IOException {
-		final ContentResolver cr = context.getContentResolver();
-
+		OrderedList.onUpdate(context, uri, item, "shotlist", new ShotList(), ShotList.PATH);
 	}
 
 	@Override
@@ -96,6 +95,7 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 		SYNC_MAP.put(_TITLE, 			new SyncMap("title", SyncMap.STRING));
 		SYNC_MAP.putAll(Locatable.SYNC_MAP);
 		SYNC_MAP.putAll(Favoritable.SYNC_MAP);
+		SYNC_MAP.put("_shotlist",   new OrderedList.SyncMap("shotlist", true, new ShotList(), ShotList.PATH));
 		
 		SYNC_MAP.remove(_PRIVACY);
 	}
