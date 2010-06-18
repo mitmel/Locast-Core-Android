@@ -16,6 +16,8 @@ package edu.mit.mel.locast.mobile.casts;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import org.apache.http.HttpResponse;
+
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -43,6 +45,7 @@ import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.Locatable;
 import edu.mit.mel.locast.mobile.data.MediaProvider;
 import edu.mit.mel.locast.mobile.data.SyncException;
+import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.widget.LocationLink;
 import edu.mit.mel.locast.mobile.widget.TagListView;
 
@@ -203,7 +206,16 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 						Cast.checkForMediaEntry(getApplicationContext(), getIntent().getData(), publicUri);
 						
 						final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
-						
+						// try to look up content type if we don't have it...
+						if (contentType == null){
+							try {
+								final HttpResponse resp = AndroidNetworkClient.getInstance(getApplicationContext()).head(publicUri.toString());
+								contentType = resp.getFirstHeader("Content-Type").getValue();
+								
+							} catch (final Exception e) {
+								e.printStackTrace();
+							}
+						}
 						viewVideo.setDataAndType(publicUri, contentType);
 						
 						startActivity(viewVideo);

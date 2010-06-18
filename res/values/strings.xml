@@ -64,6 +64,7 @@
 	<string name="project_description">Project Description</string>
 	<string name="project_no_members"><i>No members</i></string>
 	<string name="project_no_casts">This project does not contain any casts. You can add a cast by pressing \'menu\'.</string>
+	<string name="project_new_cast">Record a cast</string>
 	
 	<!--  tags -->
 	<string name="tag_add_tag">Add Tag</string>

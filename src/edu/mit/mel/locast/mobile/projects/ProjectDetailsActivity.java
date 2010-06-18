@@ -27,7 +27,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.ContextMenu;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -37,7 +36,6 @@ import android.view.View.OnClickListener;
 import android.view.View.OnCreateContextMenuListener;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -54,10 +52,7 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	
 	public class ProjectDetailsActivity extends ListActivity 
 		implements OnClickListener, OnItemClickListener, OnCreateContextMenuListener {
-		private Button mJoinButton;
 		private TagListView tagList;
-		//protected List<Long> casts = new Vector<Long>();
-		//protected Set<String> members;
 		
 		private final static int MENU_ITEM_VIEW_CAST = 0,
 								 MENU_ITEM_REMOVE_CAST = 1;
@@ -69,15 +64,15 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 		public void onCreate(Bundle savedInstanceState) {
 	        super.onCreate(savedInstanceState);
 	        
+	        setContentView(R.layout.projectdetails);
 	        final ListView castList = getListView();
-	        castList.addHeaderView(LayoutInflater.from(this).inflate(R.layout.projectdetails, castList, false));
+	        
+	        //castList.addHeaderView(LayoutInflater.from(this).inflate(R.layout.projectdetails, castList, false));
 
 	        castList.setVerticalScrollBarEnabled(false);
 	        
-	        
-	        //to be added: on-click listener for joining
-	        //mJoinButton = (Button) findViewById(R.id.project_join);
-	        //mJoinButton.setOnClickListener(this);
+	        castList.setEmptyView(findViewById(R.id.empty));
+	        //castList.setEmptyView(getLayoutInflater().inflate(R.layout.project_no_casts, castList, false));
 	        
 	        tagList = ((TagListView)findViewById(R.id.tags));
 	        

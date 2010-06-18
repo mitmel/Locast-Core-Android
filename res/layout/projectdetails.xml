@@ -4,16 +4,11 @@
 		android:orientation="vertical" android:layout_width="fill_parent"
 		android:layout_height="wrap_content">
 
-		<LinearLayout android:orientation="horizontal"
-			android:layout_width="fill_parent" android:layout_height="wrap_content">
-
 			<TextView android:id="@+id/item_title" 
 				android:text="My Project"
 				android:textAppearance="?android:attr/textAppearanceLarge"
 				android:layout_width="wrap_content" android:layout_height="wrap_content"
 				android:layout_gravity="left" />
-
-		</LinearLayout>
 
 		<LinearLayout android:orientation="vertical"
 			android:layout_width="fill_parent" android:layout_height="wrap_content">
@@ -27,7 +22,24 @@
 				android:text="…"
 				android:layout_width="fill_parent" android:layout_height="wrap_content" />
 				
+		<Button android:id="@+id/project_cast_add"
+			android:text="@string/project_new_cast"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content" />
 		</LinearLayout>
 		
+		<FrameLayout android:layout_width="fill_parent"
+		android:layout_height="fill_parent">
+		<ListView android:id="@android:id/list" 
+			android:layout_width="fill_parent" android:layout_height="fill_parent" />
+		<TextView android:id="@+id/empty"
+		android:text="@string/project_no_casts"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			 android:textAppearance="?android:attr/textAppearanceLarge"
+  android:padding="20sp"
+  android:visibility="gone"
+  android:gravity="center" />
+  </FrameLayout>
 	</LinearLayout>
 	

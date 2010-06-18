@@ -53,8 +53,6 @@ public class ViewProjectActivity extends TabActivity {
 											this, ProjectDetailsActivity.class))
 					.setIndicator("Project"));
 			
-			
-			
 			loadFromIntent();
 		}
 	}
