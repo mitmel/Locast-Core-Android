@@ -59,8 +59,8 @@ public class MediaProvider extends ContentProvider {
 		// XXX needed? TYPE_TAG_ITEM     = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.tags",
 		TYPE_TAG_DIR      = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.tags",
 		
-		TYPE_SHOTLIST_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.shotlists",
-		TYPE_SHOTLIST_DIR  = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.shotlists"
+		TYPE_SHOTLIST_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.shotlist",
+		TYPE_SHOTLIST_DIR  = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.shotlist"
 		;
 
 	private static final String 
@@ -341,6 +341,12 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_PROJECT_CAST_ITEM:
 			return TYPE_CAST_ITEM;
 			
+		case MATCHER_CAST_MEDIA_DIR:
+			return TYPE_CAST_MEDIA_DIR;
+			
+		case MATCHER_CAST_MEDIA_ITEM:
+			return TYPE_CAST_MEDIA_ITEM;
+			
 		case MATCHER_PROJECT_DIR:
 			return TYPE_PROJECT_DIR;
 			
@@ -365,6 +371,13 @@ public class MediaProvider extends ContentProvider {
 			
 		case MATCHER_PROJECT_BY_TAGS:
 			return TYPE_PROJECT_DIR;
+
+			
+		case MATCHER_PROJECT_SHOTLIST_DIR:
+			return TYPE_SHOTLIST_DIR;
+				
+		case MATCHER_PROJECT_SHOTLIST_ITEM:
+			return TYPE_SHOTLIST_ITEM;
 			
 		default:
 			throw new IllegalArgumentException("Cannot get type for URI "+uri);
@@ -451,7 +464,16 @@ public class MediaProvider extends ContentProvider {
 			newItem = ContentUris.withAppendedId(uri, rowid);
 			
 		} break;
-						
+
+		case MATCHER_PROJECT_SHOTLIST_DIR:{
+			final String projectId = uri.getPathSegments().get(1);
+			values.put(ShotList._PARENT_ID, projectId);
+			rowid = db.insert(SHOTLIST_TABLE_NAME, null, values);
+			
+			newItem = ContentUris.withAppendedId(uri, rowid);
+			
+		} break;
+		
 		default:
 			throw new IllegalArgumentException("Unknown URI: "+uri);
 		}

@@ -37,6 +37,7 @@ import edu.mit.mel.locast.mobile.MainActivity;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.SettingsActivity;
 import edu.mit.mel.locast.mobile.data.Project;
+import edu.mit.mel.locast.mobile.data.ShotList;
 import edu.mit.mel.locast.mobile.templates.TemplateActivity;
 
 public class ListProjectsActivity extends ListActivity implements OnClickListener {
@@ -147,7 +148,7 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
 		switch (v.getId()){
 		case R.id.project_cast_add:
 			//startActivity(new Intent(EditProjectActivity.ACTION_ADD_CAST, (Uri)v.getTag()));
-			startActivity(new Intent(TemplateActivity.ACTION_RECORD_TEMPLATED_VIDEO, (Uri)v.getTag()));
+			startActivity(new Intent(TemplateActivity.ACTION_RECORD_TEMPLATED_VIDEO, Uri.withAppendedPath((Uri)v.getTag(), ShotList.PATH)));
 			break;
 		}
 		

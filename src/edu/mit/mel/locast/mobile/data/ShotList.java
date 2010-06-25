@@ -19,7 +19,6 @@ public class ShotList extends JsonSyncableItem {
 	public final static String[] PROJECTION = {
 		_ID,
 		_PUBLIC_ID,
-		_MODIFIED_DATE,
 		_DIRECTION,
 		_DURATION,
 		_PARENT_ID,

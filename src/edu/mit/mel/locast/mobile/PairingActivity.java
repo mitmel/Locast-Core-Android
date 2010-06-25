@@ -83,10 +83,6 @@ public class PairingActivity extends Activity implements OnClickListener, OnEdit
 				startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://locast.mit.edu/civic/static/LocastMobileAndroid.apk")));
 				break;
 			}
-			
-			case R.id.quit:
-				android.os.Process.killProcess(android.os.Process.myPid());
-				break;
 				
 			case R.id.reset: {
 				final AlertDialog.Builder builder = new AlertDialog.Builder(this);

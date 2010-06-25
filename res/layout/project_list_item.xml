@@ -13,7 +13,7 @@
 	android:layout_alignParentRight="true"
 	android:layout_centerVertical="true"
 	android:layout_gravity="center_vertical"
-	android:src="@drawable/btn_plus" />
+	android:src="@drawable/icon_add_project" />
 	
 	<TextView android:id="@android:id/text1"
 		android:layout_width="fill_parent"

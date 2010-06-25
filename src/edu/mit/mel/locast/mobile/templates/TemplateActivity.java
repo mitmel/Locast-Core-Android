@@ -1,18 +1,46 @@
 package edu.mit.mel.locast.mobile.templates;
+/*
+ * Copyright (C) 2010  MIT Mobile Experience Lab
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+/*
+ * Some parts Copyright (C) 2007 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.text.NumberFormat;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.Context;
+import android.database.Cursor;
 import android.hardware.Camera;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -20,26 +48,27 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.ViewSwitcher;
 import edu.mit.mel.locast.mobile.R;
-import edu.mit.mobile.android.json.JSONArrayAdapter;
+import edu.mit.mel.locast.mobile.data.ShotList;
 
 public class TemplateActivity extends Activity implements OnClickListener {
+	public final static String TAG = TemplateActivity.class.getSimpleName();
 	public final static String ACTION_RECORD_TEMPLATED_VIDEO = "edu.mit.mobile.android.locast.ACTION_RECORD_TEMPLATED_VIDEO";
 
-	private Camera camera;
-	private SurfaceHolder surfaceHolder;
+	private Camera mCamera;
+	private SurfaceHolder mSurfaceHolder;
+	private boolean mIsPreviewing = false;
 	private MediaRecorder recorder;
 
 	private TemplateAdapter templateAdapter; 
@@ -56,17 +85,34 @@ public class TemplateActivity extends Activity implements OnClickListener {
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,   
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
+		// run startPreview in the background to speed up creation
+		final Thread startPreviewThread = new Thread(new Runnable() {
+			
+			public void run() {
+				startPreview();
+			}
+		});
+		startPreviewThread.start();
+		
 		setContentView(R.layout.template_main);
 
 		final SurfaceView sv = ((SurfaceView)findViewById(R.id.camera_view));
-		progressBar = (ProgressBar)findViewById(R.id.progress);
+
+		// mSurfaceHolder is set from the callback so we can ensure
+		// that we have one initialized.
+		final SurfaceHolder holder = sv.getHolder();
+		holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+		holder.addCallback(cameraSHListener);
 		
-		surfaceHolder = sv.getHolder();
-		surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+		// so we can tap to record.
 		sv.setOnClickListener(this);
 
-		surfaceHolder.addCallback(cameraSHListener);
+
 		recorder = new MediaRecorder();
+		
+
+		
+		progressBar = (ProgressBar)findViewById(R.id.progress);
 		
 		lv = (ListView)findViewById(R.id.instructions_list);
 		findViewById(R.id.list_overlay).setOnClickListener(new OnClickListener() { 
@@ -93,74 +139,161 @@ public class TemplateActivity extends Activity implements OnClickListener {
 				t.start();
 			}
 		});
-
-		try {
-			templateAdapter = new TemplateAdapter(this, new URI("http://mobile-server.mit.edu/~stevep/test.json"));
+		
+		final Cursor c = getContentResolver().query(getIntent().getData(), ShotList.PROJECTION, null, null, null);
+		startManagingCursor(c);
+		if (c.getCount() >= 0){
+			templateAdapter = new TemplateAdapter(this, c);
 			lv.setAdapter(templateAdapter);
 			((ListView)findViewById(R.id.instructions_list_full)).setAdapter(templateAdapter);
-			lv.setEnabled(false);
-			
-		} catch (final URISyntaxException e) {
-			e.printStackTrace();
+		}else{
+			final ViewSwitcher vs = (ViewSwitcher)findViewById(R.id.shot_list_switch);
+			vs.setVisibility(View.GONE);
+		}
+		lv.setEnabled(false);
+
+		try {
+			startPreviewThread.join();
+		} catch (final InterruptedException e) {
+			// ignore
 		}
 	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		
+		if (!mIsPreviewing){
+			startPreview();
+		}
+		/*
+		if (mSurfaceHolder != null){
+			initRecorder();
+		}*/
+		
+		
+	}
+	
+	@Override
+	protected void onPause() {
+		super.onPause();
+		closeCamera();
+	}
+	
+	@Override
+	protected void onDestroy() {
 
-	private final SurfaceHolderCallback cameraSHListener = new SurfaceHolderCallback();
-	private class SurfaceHolderCallback implements SurfaceHolder.Callback {
+		super.onDestroy();
+	}
+	
+	private void startPreview(){
+		if (mIsPreviewing){
+			// already rolling...
+			return;
+		}
+		if (mCamera == null){
+			mCamera = Camera.open();
+		}
+		try {
+			mCamera.setPreviewDisplay(mSurfaceHolder);
+		} catch (final IOException e) {
+			throw new RuntimeException(e);
+		}
+
+        try {
+    		mCamera.startPreview();
+    		mIsPreviewing = true;
+        } catch (final Throwable ex) {
+            closeCamera();
+            throw new RuntimeException("startPreview failed", ex);
+        }
+        if (mSurfaceHolder != null){
+        	unlockCamera();
+        }
+	}
+	
+	private void closeCamera(){
+		if (mCamera != null){
+			mIsPreviewing = false;
+			mCamera.stopPreview();
+			mCamera.release();
+			mCamera = null;
+			Log.d(TAG, "Camera has been shut down");
+		}
+	}
+	
+    private void setPreviewDisplay(SurfaceHolder holder) {
+        try {
+            mCamera.setPreviewDisplay(holder);
+        } catch (final Throwable ex) {
+            closeCamera();
+            throw new RuntimeException("setPreviewDisplay failed", ex);
+        }
+    }
+
+
+	private final SurfaceHolder.Callback cameraSHListener = new SurfaceHolder.Callback() {
 		
 		public void surfaceDestroyed(SurfaceHolder holder) {
+			mSurfaceHolder = null;
 
-			camera.stopPreview();
-			camera.release();   
 
 		}
 
 		public void surfaceCreated(SurfaceHolder holder) {
-			camera = Camera.open();
-			try {
-
-				camera.setPreviewDisplay(surfaceHolder);
-			} catch (final IOException e) {
-				throw new RuntimeException(e);
-			}
+			mSurfaceHolder = holder;
 		}
 
 		public void surfaceChanged(SurfaceHolder holder, int format, int width,
 				int height) {
-			camera.startPreview();
-
-			// Call the unlock() method (introduced in API level 5) if possible
-			// Otherwise just stop the preview to unlock.
-			try {
-				try {
-					final Method unlock = camera.getClass().getDeclaredMethod("unlock");
-					unlock.invoke(camera);
-
-				}catch (final NoSuchMethodException m){
-					camera.stopPreview();
-				}
-				
-				Log.d("template", "unlocked camera");
-				initRecorder();
-				
-			}catch (final InvocationTargetException ie){
-				throw new RuntimeException(ie);
-
-			} catch (final IllegalArgumentException e) {
-				throw new RuntimeException(e);
-				
-			} catch (final IllegalAccessException e) {
-				throw new RuntimeException(e);
+			if (mCamera == null){
+				Log.d(TAG, "camera was null in surfaceChanged");
+				return;
 			}
+			
+			if (holder.isCreating()){
+				setPreviewDisplay(holder);
+				unlockCamera();
+				Log.d(TAG, "surface changed set preview display");
+				listHandler.sendEmptyMessage(MSG_INIT_RECORDER);
+			}
+			//mCamera.startPreview();
+
+
 		}
 	};
+	
+	
+	
+	public void unlockCamera(){
+		// Call the unlock() method (introduced in API level 5) if possible
+		// Otherwise just stop the preview to unlock.
+		try {
+			try {
+				final Method unlock = mCamera.getClass().getDeclaredMethod("unlock");
+				unlock.invoke(mCamera);
+
+			}catch (final NoSuchMethodException m){
+				// before API level 5, this seems to be the only way to unlock.
+				mCamera.stopPreview();
+			}
+			
+			Log.d(TAG, "unlocked camera");
+			
+		}catch (final InvocationTargetException ie){
+			throw new RuntimeException(ie);
+
+		} catch (final IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+	}
 	private int videoCount = 0; 
 	private void initRecorder(){
-		Log.d("template", "initializing recorder...");
+		Log.d(TAG, "initializing recorder...");
 		try {
 
-			recorder.setCamera(camera);
-			recorder.setPreviewDisplay(surfaceHolder.getSurface());
+			recorder.setCamera(mCamera);
+			recorder.setPreviewDisplay(mSurfaceHolder.getSurface());
 			
 			recorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
 			recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
@@ -245,19 +378,13 @@ public class TemplateActivity extends Activity implements OnClickListener {
 			int totalLength = 0;
 
 			for (int section = 0; section < count; section++){
-				try {
-					final JSONObject jo = (JSONObject)adapter.getItem(section);
-					totalLength += jo.getInt("time");
-				}catch (final JSONException e){
-					continue;
-				}
+				totalLength += adapter.getTotalTime(section);
 			}
 
 			listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_PROGRESS_MAX, totalLength, 0));
 
 			int curTime = 0;
 			int segmentedTime = 0;
-			JSONObject jo;
 			int segmentTime = 0;
 			
 			for (int section = 0; section < count; section++){
@@ -267,8 +394,8 @@ public class TemplateActivity extends Activity implements OnClickListener {
 					pause();
 				}
 				listHandler.sendMessage(Message.obtain(listHandler, MSG_START_SECTION, section, 0));
-				jo = (JSONObject)adapter.getItem(section);
-				segmentTime = jo.optInt("time");
+
+				segmentTime = adapter.getTotalTime(section);
 				for (int remainingTime = segmentTime; remainingTime >= 0; remainingTime -= 100){
 					curTime += 100;
 					
@@ -290,55 +417,37 @@ public class TemplateActivity extends Activity implements OnClickListener {
 		}
 	}
 
-	private class TemplateAdapter extends JSONArrayAdapter {
-		private final LayoutInflater inflater;
+	private static String[] TEMPLATE_FROM = {ShotList._DIRECTION, ShotList._DURATION};
+	private static int[]    TEMPLATE_TO   = {android.R.id.text1, R.id.time_remaining};
+	
+	private class TemplateAdapter extends SimpleCursorAdapter {
 		private final NumberFormat timeFormat  = NumberFormat.getInstance();
 
-		public TemplateAdapter(Context context, URI templateList) {
-			super(context, templateList);
-			inflater = (LayoutInflater)context.getSystemService(LAYOUT_INFLATER_SERVICE);
+		public TemplateAdapter(Context context, Cursor c) {
+			super(context, R.layout.template_item, c, TEMPLATE_FROM, TEMPLATE_TO);
+			setStringConversionColumn(c.getColumnIndex(ShotList._DIRECTION));
+			
 			timeFormat.setMinimumFractionDigits(1);
 			timeFormat.setMaximumFractionDigits(1);
+			
+			
 		}
-
-		public void setItemProperty(int position, String key, Object value){
-			final JSONObject jo = (JSONObject) getItem(position);
-
-			try {
-				jo.putOpt(key, value);
-				this.notifyDataSetChanged();
-			} catch (final JSONException e) {
-				e.printStackTrace();
+		
+		@Override
+		public void setViewText(TextView v, String text) {
+			switch (v.getId()){
+			case R.id.time_remaining:
+				//v.setText(timeFormat.format(Integer.valueOf(text)/.0));
+				//break;
+				default:
+					super.setViewText(v, text);
 			}
 		}
-
-		public void setItemProperty(int position, String key, int value){
-
-			final JSONObject jo = (JSONObject) getItem(position);
-
-			try {
-				jo.putOpt(key, value);
-				this.notifyDataSetInvalidated();
-			} catch (final JSONException e) {
-				e.printStackTrace();
-			}
-		}
-
-
-		public View getView(int position, View convertView, ViewGroup parent) {
-
-			final JSONObject jo = (JSONObject) getItem(position);
-			if (convertView == null){
-				convertView = inflater.inflate(R.layout.template_item, null);
-			}
-			final TextView text = (TextView)convertView.findViewById(android.R.id.text1);
-			text.setText(jo.optString("text"));
-
-			final TextView countdown = (TextView)convertView.findViewById(R.id.time_remaining);
-			final int time = jo.optInt("remainingtime", jo.optInt("time"));
-			countdown.setText(timeFormat.format(time/1000.0) + "s");
-
-			return convertView;
+		
+		public int getTotalTime(int position){
+			final Cursor c = getCursor();
+			c.moveToPosition(position);
+			return c.getInt(c.getColumnIndex(ShotList._DURATION)) * 1000;
 		}
 	}
 
@@ -362,7 +471,8 @@ public class TemplateActivity extends Activity implements OnClickListener {
 		MSG_SET_PROGRESS = 2,
 		MSG_SET_PROGRESS_MAX = 3,
 		MSG_START_SECTION = 4,
-		MSG_END_SECTION = 5;
+		MSG_END_SECTION = 5,
+		MSG_INIT_RECORDER = 6;
 
 	private class ListHandler extends Handler {
 		@Override
@@ -375,7 +485,7 @@ public class TemplateActivity extends Activity implements OnClickListener {
 				break;
 
 			case MSG_UPDATE_TIME:
-				templateAdapter.setItemProperty(msg.arg1, "remainingtime", msg.arg2);
+				//templateAdapter.setItemProperty(msg.arg1, "remainingtime", msg.arg2);
 				break;
 				
 			case MSG_SET_PROGRESS:
@@ -401,6 +511,10 @@ public class TemplateActivity extends Activity implements OnClickListener {
 				
 				initRecorder();
 				
+				break;
+				
+			case MSG_INIT_RECORDER:
+				initRecorder();
 				break;
 			}
 		}

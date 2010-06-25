@@ -223,7 +223,7 @@
 			<intent-filter>
 				<action android:name="edu.mit.mobile.android.locast.ACTION_RECORD_TEMPLATED_VIDEO" />
 				<category android:name="android.intent.category.DEFAULT" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.shotlist" />
 			</intent-filter>
 		</activity>
 		
