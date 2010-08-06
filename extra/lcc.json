@@ -1,0 +1,14 @@
+{
+    "package": {
+        "downloadUrl": "http://locast.mit.edu/connects/lcc.apk"
+    },
+
+    "1.2.3": {
+    "versionCode": 6,
+    "changelog": ["Updated location finding ability."]
+    },
+    "1.2.2": {
+    "versionCode": 5,
+    "changelog": ["Now with an automatic updater :-)", "Fixed crash when saving cast"]
+    }
+}

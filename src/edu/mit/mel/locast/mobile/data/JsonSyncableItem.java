@@ -71,6 +71,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 * @return The URI for a given content directory.
 	 */
 	public abstract Uri getContentUri();
+
 	/**
 	 * @return A mapping of server↔local DB items.
 	 */
@@ -101,6 +102,14 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 * @throws SyncException
 	 */
 	public void onPreSyncItem(ContentResolver cr, Uri uri, Cursor c) throws SyncException {}
+	
+	/**
+	 * Hook called after an item has been synchronized on the server. Called each time the sync request is made.
+	 * @param uri Local URI pointing to the item.
+	 * @throws SyncException
+	 * @throws IOException 
+	 */
+	public void onPostSyncItem(Context context, Uri uri, JSONObject item) throws SyncException, IOException {}
 	
 	public static final String LIST_DELIM = "|";
 	// the below splits "tag1|tag2" but not "tag1\|tag2"

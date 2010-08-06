@@ -1,12 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:background="#000"
     >
-     <SurfaceView android:id="@+id/camera_view" 
-    		android:layout_width="fill_parent" 
-    		android:layout_height="fill_parent" />
+    <RelativeLayout android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:background="#000"
+    android:orientation="horizontal">
+    <TextView android:id="@android:id/title"
+    	android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:background="#000"
+    	android:textColor="#fff"
+    	android:text="this is a title"
+    	android:textStyle="bold"
+    	android:shadowColor="#99ffffff"
+    	android:shadowRadius="2.5"
+		android:layout_alignParentLeft="true"
+    	android:padding="2dip"
+    	android:layout_marginLeft="4dip"
+    	 />
+    	 <edu.mit.mel.locast.mobile.widget.LocationLink android:id="@+id/location"
+			android:layout_height="wrap_content"
+			android:layout_alignParentRight="true"
+			android:layout_width="wrap_content" />
+    	 </RelativeLayout>
+   
+	    	<FrameLayout 
+
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+    	 
+	     <SurfaceView android:id="@+id/camera_view" 
+	    		android:layout_width="fill_parent" 
+	    		android:layout_height="fill_parent" />
+
    
    	<ViewSwitcher android:id="@+id/shot_list_switch"
    		android:layout_width="fill_parent"
@@ -18,6 +48,11 @@
    		
     <RelativeLayout android:layout_width="fill_parent" android:layout_height="fill_parent">
 
+	<ImageView android:id="@+id/indicator"
+		android:layout_height="wrap_content"
+		android:layout_width="wrap_content"
+		android:visibility="gone"
+		android:layout_centerInParent="true" />
     		
 	    <ListView android:id="@+id/instructions_list"
 	    	android:clickable="false" 
@@ -39,17 +74,51 @@
 	        style="?android:attr/progressBarStyleHorizontal"
 	       />
     		
-    		<LinearLayout 
+
+    		<!-- To receive click events for the list. -->
+       	<View android:id="@+id/list_overlay"
+    		android:layout_height="wrap_content"
+    		android:layout_width="fill_parent"
+    		android:layout_alignTop="@id/instructions_list"
+    		android:layout_alignParentBottom="true"
+    		android:clickable="true" 
+    		 />
+    </RelativeLayout>
+    <LinearLayout android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    >
+    	<EditText android:id="@+id/cast_title"
+    	android:layout_width="fill_parent" 
+		    android:layout_height="wrap_content" android:hint="Cast title" />
+ 
+    	<ListView android:id="@+id/instructions_list_full" 
+		    android:background="#a0000000"
+		    android:layout_width="fill_parent" 
+		    android:layout_height="fill_parent" 
+		    android:layout_weight="1"
+		    android:layout_alignParentBottom="true"
+		    android:fadingEdge="vertical"
+		    android:cacheColorHint="@android:color/transparent"
+		    android:listSelector="@android:color/transparent"
+		    android:scrollbars="none"/>
+		    <!-- android:background="@drawable/btn_mode_switch_bg" -->
+    	<LinearLayout 
     		android:layout_width="wrap_content" android:layout_height="wrap_content"
-    		android:background="@drawable/btn_mode_switch_bg"
-    		android:orientation="vertical" 
-    		android:layout_alignParentTop="true"
-    		android:layout_alignParentRight="true">
     		
-    		<Button android:layout_width="wrap_content"
+    		android:orientation="horizontal" >
+    		
+			<Button android:id="@+id/done" 
+				android:layout_width="wrap_content"
     			android:layout_height="wrap_content" 
-    			android:background="@drawable/btn_ic_review_cancel" />
-    		
+    			android:text="Publish Cast" />
+    		<!-- 	
+       		<Button android:id="@+id/cancel" 
+       			android:layout_width="wrap_content"
+    			android:layout_height="wrap_content" 
+    			android:background="@drawable/btn_ic_review_cancel"
+    			android:layout_margin="10dip" /> -->
+<!--     		
     		<Button android:layout_width="wrap_content"
     			android:layout_height="wrap_content" 
     			android:enabled="false"
@@ -60,30 +129,11 @@
     			android:enabled="false"
     			android:background="@drawable/btn_ic_review_delete" />
     			
-			<Button android:layout_width="wrap_content"
-    			android:layout_height="wrap_content" 
-    			android:enabled="false"
-    			android:background="@drawable/btn_ic_review_done" />
+ -->
     		
     		</LinearLayout>
     		
-    		<!-- To receive click events for the list. -->
-       	<View android:id="@+id/list_overlay"
-    		android:layout_height="wrap_content"
-    		android:layout_width="fill_parent"
-    		android:layout_alignTop="@id/instructions_list"
-    		android:layout_alignParentBottom="true"
-    		android:clickable="true" 
-    		 />
-    </RelativeLayout>
-    <ListView android:id="@+id/instructions_list_full" 
-		    android:background="#a0000000"
-		    android:layout_width="fill_parent" 
-		    android:layout_height="fill_parent" 
-		    android:layout_alignParentBottom="true"
-		    android:fadingEdge="vertical"
-		    android:cacheColorHint="@android:color/transparent"
-		    android:listSelector="@android:color/transparent"
-		    android:scrollbars="none"/>
+    </LinearLayout>
     </ViewSwitcher>
-</FrameLayout>
+    </FrameLayout>
+</LinearLayout>

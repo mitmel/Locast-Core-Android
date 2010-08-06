@@ -19,6 +19,7 @@ public class CastMedia extends JsonSyncableItem implements OrderedList.Columns{
 		_PREVIEW_URL  = "preview_url"
 		;
 	public final static String PATH = "cast_media";
+	public final static String SERVER_PATH = "content/";
 	public final static Uri CONTENT_URI = Uri.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
 	
 	public final static String[] PROJECTION = {
@@ -29,6 +30,7 @@ public class CastMedia extends JsonSyncableItem implements OrderedList.Columns{
 		_LOCAL_URI,
 		_SCREENSHOT,
 		_MIME_TYPE,
+		_DURATION,
 		_PARENT_ID,
 		_LIST_IDX
 

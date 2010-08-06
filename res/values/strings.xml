@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources >
+<resources>
 	
 	<string name="app_name">Locast Connects</string>
 
+	<string name="default_api_url">http://locast.mit.edu/connects/api</string>
+	<string name="app_update_url">http://locast.mit.edu/connects/static/lcc.json</string>
+	
 	<!-- Main screen -->
-    <string name="main_header_string">Locast</string>
-    <string name="projects_string">View My Projects</string>
-    <string name="browse_string">Browse Casts</string>
-    <string name="recordvideo_string">Record Cast</string>
-    <string name="recordaudio_string">Record Audio Note</string>
-    <string name="notifications_string">Notifications</string>
     <string name="upgrade">Upgrade</string>
     <string name="about">About</string>
     <string name="settings">Settings</string>
+    
+    <!-- AppUpdateChecker -->
+    <string name="app_update_new_version">There is a new version (%s) of %s available!</string>
     
     <!-- Tabs -->
     <string name="tab_cast">Cast</string>
@@ -36,6 +36,8 @@
 	<string name="error_no_location">Could not get your location. This cast will not be geo-tagged until you add a location.</string>
 	<string name="error_cannot_edit">Sorry, you don\'t have permission to edit this item.</string>
 	<string name="error_no_project">Error: project %s could not be found in local database.</string>
+	<string name="error_sync_no_post">Sorry, there was a problem uploading your media to the server. Please try synchronizing again.</string>
+	<string name="error_cast_no_videos">Sorry, there aren't any videos for this cast yet.</string>
 	
 	<!-- user-facing alerts -->
 	<string name="added_cast_to">Added cast to %s</string>
@@ -75,10 +77,18 @@
 	<string name="project_no_casts">This project does not contain any casts. You can add a cast by pressing \'menu\'.</string>
 	<string name="project_new_cast">Record a cast</string>
 	
-	<!--  tags -->
-	<string name="tag_add_tag">Add Tag</string>
-	<string name="tag_no_tags">no tags</string>
-	<string name="tag_recommended">Recommended:</string>
+	<!-- template -->
+	<string name="template_delete_video_title">Delete Cast Video</string>
+	<string name="template_delete_video_body">Are you sure you want to delete this cast video?</string>
+	<string name="template_delete_error">Error: could not delete cast video.</string>
+	
+	<string name="template_rerecord_video_title">Rerecord Cast Video</string>
+	<string name="template_rerecord_video_body">Are you sure you want to rerecord this cast video?</string>
+	<string name="template_toast_start_record">Tap the red circle to start recording.</string>
+	<string name="template_default_direction">Record a cast video for this project.</string>
+	
+	<string name="dialog_button_delete">Delete</string>
+	<string name="dialog_button_rerecord">Rerecord</string>
 	
 	<!-- discussion -->
 	<string name="discussion_hint">Comment</string>

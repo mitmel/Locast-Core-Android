@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="edu.mit.mel.locast.mobile" android:versionCode="4"
-	android:versionName="0.4.2">
+	package="edu.mit.mel.locast.mobile" android:versionCode="6"
+	android:versionName="1.2.3">
 	
 	<uses-sdk android:minSdkVersion="4" android:targetSdkVersion="4"/>
 	<supports-screens android:largeScreens="true" />
@@ -51,8 +51,8 @@
 		<activity android:name=".projects.EditProjectActivity">
 			<intent-filter>
 				<action android:name="android.intent.action.EDIT" />
-				<action android:name="edu.mit.mel.locast.mobile.ACTION_ADD_CAST" />
-				<action android:name="edu.mit.mel.locast.mobile.ACTION_TOGGLE_MEMBERSHIP" />
+				<action android:name="edu.mit.mobile.android.locast.ACTION_ADD_CAST" />
+				<action android:name="edu.mit.mobile.android.locast.ACTION_TOGGLE_MEMBERSHIP" />
 				<category android:name="android.intent.category.DEFAULT" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects" />
 			</intent-filter>
@@ -196,7 +196,7 @@
 			</intent-filter>
 			<intent-filter>
 				<action android:name="android.intent.action.SEND" />
-				<action android:name="edu.mit.mel.locast.mobile.share.ACTION_CAST_FROM_MEDIA_URI" />
+				<action android:name="edu.mit.mobile.android.locast.share.ACTION_CAST_FROM_MEDIA_URI" />
 				<category android:name="android.intent.category.DEFAULT" />
 				<data android:mimeType="video/*" />
 				<data android:mimeType="audio/*" />
@@ -229,7 +229,7 @@
 		
 		<service android:name=".data.Sync">
 		<intent-filter>
-			<action android:name="edu.mit.mel.locast.mobile.ACTION_CANCEL_SYNC" />
+			<action android:name="edu.mit.mobile.android.locast.ACTION_CANCEL_SYNC" />
 			<data android:mimeType="*/*" />
 			
 		</intent-filter>

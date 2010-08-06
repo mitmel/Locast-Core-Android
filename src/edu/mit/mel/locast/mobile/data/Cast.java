@@ -46,25 +46,25 @@ import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 public class Cast extends TaggableItem implements MediaScannerConnectionClient, Favoritable.Columns, Locatable.Columns {
 	public final static String TAG = "LocastSyncCast";
 	public final static String PATH = "casts";
-	public final static Uri 
+	public final static Uri
 		CONTENT_URI = Uri.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
-	
-	public final static String SERVER_PATH = "/cast/";
+
+	public final static String SERVER_PATH = "cast/";
 	public final static String DEVICE_EXTERNAL_MEDIA_PATH = "/locast/";
-	
+
 	public static final String
 		_TITLE 			= "title",
 		_DESCRIPTION 	= "description";
 
-	public static final String 
+	public static final String
 		_LOCAL_URI = "local_uri",
 		_PUBLIC_URI = "public_uri",
 		_CONTENT_TYPE = "content_type",
 		_PROJECT_ID   = "project_id",
 
 		_THUMBNAIL_URI = "thumbnail_uri";
-	
-	public static final String[] PROJECTION = 
+
+	public static final String[] PROJECTION =
 	{   _ID,
 		_TITLE,
 		_DESCRIPTION,
@@ -80,8 +80,8 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		_THUMBNAIL_URI,
 		_LATITUDE,
 		_LONGITUDE };
-	
-	public static final String 
+
+	public static final String
 		DEFAULT_SORT = Cast._MODIFIED_DATE+" DESC";
 
 	private Context context;
@@ -89,7 +89,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	private MediaScannerConnection msc;
 	private final Queue<String> toScan = new LinkedList<String>();
 	private final Map<String, ScanQueueItem> scanMap = new TreeMap<String, ScanQueueItem>();
-	
+
 	@Override
 	public Uri getContentUri() {
 		return CONTENT_URI;
@@ -99,56 +99,78 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	public String[] getFullProjection() {
 		return PROJECTION;
 	}
-	
 
-	
+
+
 	public final static HashMap<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem>(TaggableItem.SYNC_MAP);
-	
+
 	static {
 		SYNC_MAP.putAll(Favoritable.SYNC_MAP);
 		SYNC_MAP.putAll(Locatable.SYNC_MAP);
-		
-		
+
+
 		SYNC_MAP.put(_DESCRIPTION, 		new SyncMap("description", SyncMap.STRING));
 		SYNC_MAP.put(_TITLE, 			new SyncMap("title", SyncMap.STRING));
-		
+
 		SYNC_MAP.put(_THUMBNAIL_URI, 	new SyncMap("screenshot", SyncMap.STRING, true, SyncItem.SYNC_FROM));
 		SYNC_MAP.put(_PUBLIC_URI,       new SyncMap("file_url",   SyncMap.STRING, true, SyncItem.SYNC_FROM));
-		
+
 
 		SYNC_MAP.put("_contents", new OrderedList.SyncMap("castvideos", new CastMedia(), CastMedia.PATH));
 	}
-	
+
 	@Override
 	public java.util.Map<String,SyncItem> getSyncMap() {
 		return SYNC_MAP;
 	}
 
 	@Override
-	public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException {
+	public void onPostSyncItem(Context context, Uri uri, JSONObject item) throws SyncException {
 		this.context = context;
 		final ContentResolver cr = context.getContentResolver();
-		final Cursor c = cr.query(uri, PROJECTION, null, null, null);
-		c.moveToFirst();
+		//final Cursor c = cr.query(uri, PROJECTION, null, null, null);
+		//c.moveToFirst();
 		nc = AndroidNetworkClient.getInstance(context);
-		
+
 		OrderedList.onUpdate(context, uri, item, "castvideos", new CastMedia(), CastMedia.PATH);
-		
-		final Cursor castMedia = cr.query(Uri.withAppendedPath(uri, CastMedia.PATH), CastMedia.PROJECTION, null, null, null);
-		
+		final Uri castMediaDirUri = Uri.withAppendedPath(uri, CastMedia.PATH);
+		final String pubCastMediaUri = MediaProvider.getPublicPath(cr, castMediaDirUri);
+
+		final Cursor castMedia = cr.query(castMediaDirUri, CastMedia.PROJECTION, null, null, null);
+
+		final int mediaUrlCol = castMedia.getColumnIndex(CastMedia._MEDIA_URL);
+		final int localUriCol = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
+		final int idxCol = castMedia.getColumnIndex(CastMedia._LIST_IDX);
+		final int mediaContentTypeCol = castMedia.getColumnIndex(CastMedia._MIME_TYPE);
+		final int locIdCol = castMedia.getColumnIndex(CastMedia._ID);
 		for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
+			final String locMediaUri = castMedia.getString(localUriCol);
+			final String pubMediaUri = castMedia.getString(mediaUrlCol);
+			final boolean hasLocMediaUri = locMediaUri != null && locMediaUri.length() > 0;
+			final boolean hasPubMediaUri = pubMediaUri != null && pubMediaUri.length() > 0;
+			if (hasLocMediaUri && !hasPubMediaUri){
+				// upload
+				try {
+					nc.uploadContent(pubCastMediaUri + castMedia.getLong(idxCol)+"/", locMediaUri, castMedia.getString(mediaContentTypeCol));
+				} catch (final Exception e){
+					final SyncException se = new SyncException("Error uploading content item.");
+					se.initCause(e);
+					throw se;
+				}
 			Log.d(TAG, "Cast Media #" + castMedia.getPosition() + " is " + castMedia.getString(castMedia.getColumnIndex(CastMedia._MEDIA_URL)));
+			}
 		}
 		castMedia.close();
-		
+		//c.close();
+
 //		final String locUri = c.getString(c.getColumnIndex(_LOCAL_URI));
 //		final String pubUri = c.getString(c.getColumnIndex(_PUBLIC_URI));
 //		final boolean hasLocUri = locUri != null && locUri.length() > 0;
 //		final boolean hasPubUri = pubUri != null && pubUri.length() > 0;
-//		
+//
 //		if (hasLocUri && hasPubUri){
 //			Log.i(TAG, "Content media item "+uri+ "appears to be in sync with server.");
-//			
+//
 //		// only have a public copy, so download it and store locally.
 //		}else if (!hasLocUri && hasPubUri){
 //			/* temp disable
@@ -168,10 +190,24 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 //				throw se;
 //			}
 //		}
-//		
-		c.close();
+//
 	}
-	
+
+	/*
+	public void updateCastMedia(String castVideoPath, String mimeType){
+		if (msc == null){
+			this.msc = new MediaScannerConnection(context, this);
+			this.msc.connect();
+
+		}else if (msc.isConnected()){
+			msc.scanFile(castVideoPath, mimeType);
+
+		}else{
+			scanMap.put(castVideoPath, new ScanQueueItem(castUri, contentType));
+			toScan.add(filePath);
+		}
+	}*/
+
 	/**
 	 * @param pubUri
 	 * @return The local path on disk for the given remote video.
@@ -214,7 +250,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 			final HttpResponse res = nc.get(pubUri);
 			final HttpEntity ent = res.getEntity();
 			final InputStream is = ent.getContent();
-			
+
 			final FileOutputStream fos = new FileOutputStream(saveFile);
 			StreamUtils.inputStreamToOutputStream(is, fos);
 			fos.close();
@@ -222,20 +258,20 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 
 			final String filePath = saveFile.getAbsolutePath();
 			final String contentType = ent.getContentType().getValue();
-			
-			
+
+
 			if (msc == null){
 				this.msc = new MediaScannerConnection(context, this);
 				this.msc.connect();
-				
+
 			}else if (msc.isConnected()){
 				msc.scanFile(filePath, contentType);
-				
+
 			}else{
 				scanMap.put(filePath, new ScanQueueItem(castUri, contentType));
 				toScan.add(filePath);
 			}
-							
+
 		} catch (final Exception e) {
 			final SyncException se = new SyncException("Error downloading content item.");
 			se.initCause(e);
@@ -243,14 +279,14 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		}
 		return true;
 	}
-	
+
 	public void onScanCompleted(String path, Uri uri) {
 		if (uri == null){
 			Log.e(TAG, "Scan failed for newly downloaded content: "+path);
 			return;
 		}
-		
-		
+
+
 		final ContentValues cvCast = new ContentValues();
 		cvCast.put(_LOCAL_URI, uri.toString());
 		final ScanQueueItem item = scanMap.get(path);
@@ -258,7 +294,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		// TODO should be passing in the modified date here to prevent marking the cast as dirty.
 		this.context.getContentResolver().update(item.castUri, cvCast, null, null);
 	}
-	
+
 	public void onMediaScannerConnected() {
 		while (!toScan.isEmpty()){
 			final String scanme = toScan.remove();
@@ -274,10 +310,10 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 			this.contentType = contentType;
 		}
 	}
-	
+
 	/**
 	 * Scans the media database to see if the given item is there.
-	 * 
+	 *
 	 * @param context
 	 * @param uri Local URI to the cast.
 	 * @param pubUri public URI to the media file.
@@ -297,17 +333,18 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		}else{
 			Log.e(TAG, "The media provider doesn't seem to know about "+destfile.getAbsolutePath()+" which is on the filesystem. Strange...");
 		}
-		
-	
+		mediaEntry.close();
+
+
 		if (newLocUri != null){
 			final ContentValues cvCast = new ContentValues();
 			cvCast.put(_LOCAL_URI, newLocUri);
-			final String[] castProjection = {_ID, _MODIFIED_DATE}; 
+			final String[] castProjection = {_ID, _MODIFIED_DATE};
 			final Cursor castCursor = context.getContentResolver().query(uri, castProjection, null, null, null);
 			castCursor.moveToFirst();
 			cvCast.put(_MODIFIED_DATE, castCursor.getLong(castCursor.getColumnIndex(_MODIFIED_DATE)));
 			castCursor.close();
-			
+
 			Log.d("Locast", "new local uri " + newLocUri + " for cast "+uri);
 			context.getContentResolver().update(uri, cvCast, null, null);
 		}

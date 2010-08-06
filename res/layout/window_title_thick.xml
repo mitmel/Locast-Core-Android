@@ -8,7 +8,7 @@
 <RelativeLayout
   xmlns:android="http://schemas.android.com/apk/res/android"
   android:layout_width="fill_parent"
-  style="@style/WindowTitleThickBackground"
+  style="@style/WindowTitleThick.Background"
   android:layout_height="72dip">
   
   <!-- XXX style doesn't work below for some reason. -->

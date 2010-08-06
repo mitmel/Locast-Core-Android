@@ -54,7 +54,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 								PRIVACY_PRIVATE   = "private";
 
 	// the ordering of this must match the arrays.xml
-	public static final String[] PRIVACY_LIST = {PRIVACY_PUBLIC, PRIVACY_PROTECTED, PRIVACY_PRIVATE};
+	public static final String[] PRIVACY_LIST = {PRIVACY_PUBLIC, PRIVACY_PRIVATE};
 	
 	// key for ContentValues to temporarily store tags as a delimited list
 	public static final String TEMP_TAGS = "_tags";
@@ -84,7 +84,8 @@ public abstract class TaggableItem extends JsonSyncableItem {
 				for (int i = 0; i < item.length(); i++){
 					tags.add(item.getString(i));
 				}
-				return putList(Tag.PATH, cv, tags);	
+				//TaggableItem.putTags(context.getContentResolver(), localItem, tags);
+				return cv;
 			}
 		});
 		
@@ -105,7 +106,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 */
 	public static boolean canEdit(Cursor c){
 		final String privacy = c.getString(c.getColumnIndex(_PRIVACY));
-		return privacy == null || privacy.equals(PRIVACY_PUBLIC) ||
+		return privacy == null ||
 		AndroidNetworkClient.getInstance(null).getUsername().equals(c.getString(c.getColumnIndex(_AUTHOR)));
 	}
 	
@@ -136,13 +137,13 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 */
 	public static Set<String> getTags(ContentResolver cr, Uri item) {
 		final Cursor tags = cr.query(Uri.withAppendedPath(item, Tag.PATH), Tag.DEFAULT_PROJECTION, null, null, null);
-		final Set<String> tagList = new HashSet<String>(tags.getCount());
+		final Set<String> tagSet = new HashSet<String>(tags.getCount());
 		final int tagColumn = tags.getColumnIndex(Tag._NAME);
 		for (tags.moveToFirst(); !tags.isAfterLast(); tags.moveToNext()){
-			tagList.add(tags.getString(tagColumn));
+			tagSet.add(tags.getString(tagColumn));
 		}
 		tags.close();
-		return tagList;
+		return tagSet;
 	}
 	
 	/**

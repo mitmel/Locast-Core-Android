@@ -6,6 +6,7 @@
 
 			<TextView android:id="@+id/item_title" 
 				android:text="My Project"
+				android:visibility="gone"
 				android:textAppearance="?android:attr/textAppearanceLarge"
 				android:layout_width="wrap_content" android:layout_height="wrap_content"
 				android:layout_gravity="left" />
@@ -24,6 +25,7 @@
 				
 		<Button android:id="@+id/project_cast_add"
 			android:text="@string/project_new_cast"
+			android:visibility="gone"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content" />
 		</LinearLayout>

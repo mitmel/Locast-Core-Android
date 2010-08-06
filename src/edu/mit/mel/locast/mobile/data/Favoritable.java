@@ -14,6 +14,6 @@ public class Favoritable {
 	public static final HashMap<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem>();
 	
 	static {
-		SYNC_MAP.put(Columns._FAVORITED, new JsonSyncableItem.SyncMap("favorited", SyncMap.BOOLEAN, SyncMap.SYNC_FROM));
+		SYNC_MAP.put(Columns._FAVORITED, new JsonSyncableItem.SyncMap("favorited", SyncMap.BOOLEAN, true, SyncMap.SYNC_FROM));
 	}
 }

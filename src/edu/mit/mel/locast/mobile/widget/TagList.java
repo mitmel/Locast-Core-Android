@@ -40,7 +40,7 @@ import edu.mit.mel.locast.mobile.R;
 /**
  * A user-modifiable set of free tags. The user can add a new tag to a set of available tags
  * or choose from a set of recommended tags.
- * 
+ *
  * @author stevep
  *
  */
@@ -48,32 +48,32 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 	private final ViewGroup recommendedTagView;
 	private final TextView recommendedTagLabel;
 	private final AutoCompleteTextView addTagEditText;
-	
+
 	private final List<String> recommendedTags = new Vector<String>();
 	private final List<String> shownRecs = new Vector<String>();
-	
+
 	private static int STYLE_FULL = 1,
 					STYLE_SELECTOR = 2;
 	private int style = STYLE_FULL;
-	
+
 	//private static ArrayAdapter<String> acAdapter;
 	private static RemoteTagsAdapter acAdapter;
-	
+
 	public TagList(Context context) {
 		this(context, null);
 	}
-	
+
     public TagList(Context context, AttributeSet attrs){
     	super(context, attrs);
-    	
+
 		recommendedTagView = (ViewGroup)findViewById(R.id.tag_recommended_tags);
 		recommendedTagLabel = (TextView)findViewById(R.id.tag_recommended_label);
 		addTagEditText = (AutoCompleteTextView)findViewById(R.id.tag_add_text);
-		
+
 		((ImageButton)findViewById(R.id.tag_add_button)).setOnClickListener(this);
 
 		setOnTagClickListener(this);
-		
+
 		acAdapter = new RemoteTagsAdapter(context, android.R.layout.simple_dropdown_item_1line);
 		addTagEditText.setOnFocusChangeListener(this);
 		addTagEditText.setAdapter(acAdapter);
@@ -90,16 +90,16 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
     	if (style == STYLE_SELECTOR){
     		findViewById(R.id.tag_manual_entry).setVisibility(View.GONE);
     		findViewById(R.id.tag_recommended_label).setVisibility(View.GONE);
-    		
+
     	}
     }
-    
+
     @Override
     public boolean addTag(String tag) {
     	if (! super.addTag(tag)) {
 			return false;
 		}
-    	
+
 		if (recommendedTags.contains(tag)){
 			recommendedTagView.removeViewAt(shownRecs.indexOf(tag));
 			shownRecs.remove(tag);
@@ -109,13 +109,13 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 		}
 		return true;
     }
-    
+
     @Override
     public boolean removeTag(String tag) {
     	if(! super.removeTag(tag)) {
 			return false;
 		}
-    		
+
 		if (recommendedTags.contains(tag) && !shownRecs.contains(tag)){
 			shownRecs.add(tag);
 			Collections.sort(shownRecs);
@@ -125,10 +125,10 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 
     	return true;
     }
-    
+
     /**
 	 * A list of tags that are recommended for the given item.
-	 * 
+	 *
 	 * @param tag
 	 */
 	public void addRecommendedTag(String tag){
@@ -136,8 +136,8 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 			throw new IllegalArgumentException("cannot add empty tag");
 		}
 		if (! recommendedTags.contains(tag)){
-			recommendedTags.add(tag);	
-			
+			recommendedTags.add(tag);
+
 			if (! getTags().contains(tag)){
 				shownRecs.add(tag);
 				Collections.sort(shownRecs);
@@ -146,26 +146,26 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 			}
 		}
 	}
-	
+
 	public void addedRecommendedTags(List <String> tags){
 		for (final String tag: tags){
 			addRecommendedTag(tag);
 		}
 	}
-	
+
 	@Override
 	public void clearAllTags(){
 		super.clearAllTags();
 		clearRecommendedTags();
 	}
-	
+
 	public void clearRecommendedTags(){
 		recommendedTags.clear();
 		shownRecs.clear();
 		recommendedTagView.removeAllViews();
 		recommendedTagLabel.setVisibility(TextView.GONE);
 	}
-	
+
 	@Override
 	TagButton getTagView(String tag, boolean added){
 		final TagButton b = new TagButton(getContext(), tag, added, true);
@@ -178,12 +178,12 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 	 */
 	public void onClick(View v) {
 		boolean changed = false;
-		
+
 		switch (v.getId()){
 		case R.id.tag_add_button:
 			changed = addEditTextTag();
 			break;
-			
+
 		default:
 			if (v instanceof TagButton){
 				final TagButton tagButton = (TagButton)v;
@@ -194,25 +194,25 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 				}
 			}
 		}
-		
+
 		if (changed && listener != null){
 			listener.onTagListChange(this);
 		}
 	}
-	
+
 	private boolean addEditTextTag(){
 		boolean changed = false;
 		String tag = addTagEditText.getText().toString();
 		tag = tag.trim();
 		tag = tag.toLowerCase();
-		
+
 		if (tag.length() > 0){
 			changed = addTag(tag);
 			addTagEditText.setText("");
 		}
 		return changed;
 	}
-	
+
 	public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
 		switch (v.getId()){
 		case R.id.tag_add_text:
@@ -220,7 +220,7 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 				listener.onTagListChange(this);
 			}
 			return true;
-			
+
 		}
 		return false;
 	}
@@ -228,28 +228,28 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 	static class SavedState extends BaseSavedState{
 		private final List<String> addedTags;
 		private final List<String> recTags;
-		
+
 		SavedState(Parcelable superState, List<String>addedTags, List<String>recTags) {
 			super(superState);
 			this.addedTags = addedTags;
 			this.recTags = recTags;
 		}
-		
+
 		@SuppressWarnings("unchecked")
 		private SavedState(Parcel in) {
 			super(in);
 			addedTags = in.readArrayList(String.class.getClassLoader());
 			recTags = in.readArrayList(String.class.getClassLoader());
 		}
-		
+
 		public List<String> getAddedTags() {
 			return addedTags;
 		}
-		
+
 		public List<String> getRecTags() {
 			return recTags;
 		}
-		
+
 		@Override
 		public void writeToParcel(Parcel dest, int flags) {
 			super.writeToParcel(dest, flags);
@@ -268,11 +268,11 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 			}
 		};
 	}
-	
+
 	@Override
 	protected Parcelable onSaveInstanceState() {
 		final Parcelable superState = super.onSaveInstanceState();
-		
+
 		return new SavedState(superState, getTags(), recommendedTags);
 	}
 
@@ -284,12 +284,12 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 		addTags(ss.getAddedTags());
 		addedRecommendedTags(ss.getRecTags());
 	}
-	
+
 	private OnTagListChangeListener listener = null;
 	public void setOnTagListChangeListener(OnTagListChangeListener listener){
 		this.listener = listener;
 	}
-	
+
 	public interface OnTagListChangeListener {
 		public void onTagListChange(TagList v);
 	}
@@ -302,6 +302,6 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 			}
 			break;
 		}
-		
+
 	}
 }

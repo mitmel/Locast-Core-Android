@@ -3,15 +3,9 @@
 		android:id="@+id/settingsMenuItem"
 		android:title="@string/settings"
 		android:icon="@android:drawable/ic_menu_preferences" />
-	<item
-		android:title="@string/about"
-		android:id="@+id/aboutMenuItem"
-		android:icon="@android:drawable/ic_menu_info_details" />
+	
 		
-	<item android:title="@string/upgrade"
-		android:id="@+id/upgrade"
-		android:icon="@android:drawable/ic_menu_manage"
-		/>
+	
 		
 		<item android:title="Wipe Database"
 		android:id="@+id/reset"

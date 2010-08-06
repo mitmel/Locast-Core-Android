@@ -35,7 +35,7 @@ public class OrderedList {
 		syncMap.put("_contents", new OrderedList.SyncMapOnUpdate(remoteKey, true, listItem, itemPath));
 		
 		try {
-			Log.d(TAG, "trying to load ordered list from "+ parentUri);
+			Log.d(TAG, "trying to load ordered list for "+ parentUri+"; remoteKey: " + remoteKey+ "; item path: " + itemPath + "; item type: "+ listItem.getClass().getSimpleName());
 			JsonSyncableItem.fromJSON(context, parentUri, item, syncMap);
 		} catch (final Exception e1) {
 			final SyncException e = new SyncException("Error loading list");

@@ -16,331 +16,393 @@ package edu.mit.mel.locast.mobile.templates;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-/*
- * Some parts Copyright (C) 2007 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- */
-
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
 
-import android.app.Activity;
+import android.app.Dialog;
+import android.app.AlertDialog.Builder;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.database.Cursor;
-import android.hardware.Camera;
-import android.media.MediaRecorder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.SurfaceHolder;
+import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnClickListener;
+import android.view.animation.AnimationUtils;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
-import android.widget.SimpleCursorAdapter;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ViewSwitcher;
+import edu.mit.mel.locast.mobile.IncrementalLocator;
+import edu.mit.mel.locast.mobile.ListUtils;
 import edu.mit.mel.locast.mobile.R;
+import edu.mit.mel.locast.mobile.data.Cast;
+import edu.mit.mel.locast.mobile.data.CastMedia;
+import edu.mit.mel.locast.mobile.data.MediaProvider;
+import edu.mit.mel.locast.mobile.data.Project;
 import edu.mit.mel.locast.mobile.data.ShotList;
+import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
+import edu.mit.mel.locast.mobile.widget.LocationLink;
 
-public class TemplateActivity extends Activity implements OnClickListener {
-	public final static String TAG = TemplateActivity.class.getSimpleName();
+public class TemplateActivity extends VideoRecorder implements OnClickListener, LocationListener {
+	private static final String TAG = TemplateActivity.class.getSimpleName();
 	public final static String ACTION_RECORD_TEMPLATED_VIDEO = "edu.mit.mobile.android.locast.ACTION_RECORD_TEMPLATED_VIDEO";
 
-	private Camera mCamera;
-	private SurfaceHolder mSurfaceHolder;
-	private boolean mIsPreviewing = false;
-	private MediaRecorder recorder;
+	// stateful
+	private long instanceId;
+	private ArrayList<CastMediaInProgress> mCastMediaInProgressList = new ArrayList<CastMediaInProgress>();
 
-	private TemplateAdapter templateAdapter; 
+	// non-stateful
+	private Uri projectUri;
+	private TemplateAdapter templateAdapter;
+	private TemplateAdapter fullTemplateAdapter;
+	private ImageView mIndicator;
 	private ListView lv;
 	private ProgressBar progressBar;
-	private final ListHandler listHandler = new ListHandler();
+	private ViewSwitcher shotlistSwitch;
+	private String filePrefix;
+	private boolean hasDoneFirstInit;
 
+	private IncrementalLocator iloc;
+	private Location location;
+
+	private final static String
+		RUNTIME_STATE_INSTANCE_ID = "edu.mit.mobile.android.locast.instanceid",
+		RUNTIME_STATE_CAST_MEDIA_IN_PROGRESS = "edu.mit.mobile.android.locast.cast_media_in_progress";
+
+	private final static int
+		SHOTLIST_SWITCH_MAIN = 0,
+		SHOTLIST_SWITCH_FULL_LIST = 1;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 
 		super.onCreate(savedInstanceState);
+
+		if (savedInstanceState != null
+				&& savedInstanceState.containsKey(RUNTIME_STATE_INSTANCE_ID)){
+			instanceId = savedInstanceState.getLong(RUNTIME_STATE_INSTANCE_ID);
+		}else{
+			instanceId = System.currentTimeMillis();
+		}
+
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,   
+		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-		// run startPreview in the background to speed up creation
-		final Thread startPreviewThread = new Thread(new Runnable() {
-			
-			public void run() {
-				startPreview();
-			}
-		});
-		startPreviewThread.start();
-		
+		initialStartPreview();
+
+
 		setContentView(R.layout.template_main);
 
 		final SurfaceView sv = ((SurfaceView)findViewById(R.id.camera_view));
 
+
 		// mSurfaceHolder is set from the callback so we can ensure
 		// that we have one initialized.
-		final SurfaceHolder holder = sv.getHolder();
-		holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-		holder.addCallback(cameraSHListener);
-		
-		// so we can tap to record.
-		sv.setOnClickListener(this);
+		initSurfaceHolder(sv.getHolder());
 
 
-		recorder = new MediaRecorder();
-		
-
-		
 		progressBar = (ProgressBar)findViewById(R.id.progress);
-		
+		mIndicator = (ImageView)findViewById(R.id.indicator);
+		shotlistSwitch = (ViewSwitcher)findViewById(R.id.shot_list_switch);
+		((Button)findViewById(R.id.done)).setOnClickListener(this);
+
 		lv = (ListView)findViewById(R.id.instructions_list);
-		findViewById(R.id.list_overlay).setOnClickListener(new OnClickListener() { 
+
+		// so we can tap to record.
+		mIndicator.setOnClickListener(this);
+
+
+		findViewById(R.id.list_overlay).setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
-				final ViewSwitcher vs = (ViewSwitcher)findViewById(R.id.shot_list_switch);
-				vs.setDisplayedChild(1);
-				final Handler h = new Handler(){
-					@Override
-					public void handleMessage(Message msg) {
-						vs.setDisplayedChild(0);
-					}
-				};
-				final Thread t = new Thread(new Runnable() {
-					
-					public void run() {
-						try {
-							Thread.sleep(5000);
-						} catch (final InterruptedException e) {
-							// 
-						}
-						h.sendEmptyMessage(0);
-					}
-				});
-				t.start();
+				shotlistSwitch.setDisplayedChild(SHOTLIST_SWITCH_FULL_LIST);
 			}
 		});
-		
-		final Cursor c = getContentResolver().query(getIntent().getData(), ShotList.PROJECTION, null, null, null);
-		startManagingCursor(c);
-		if (c.getCount() >= 0){
-			templateAdapter = new TemplateAdapter(this, c);
-			lv.setAdapter(templateAdapter);
-			((ListView)findViewById(R.id.instructions_list_full)).setAdapter(templateAdapter);
+		final Uri data = getIntent().getData();
+		if (savedInstanceState != null
+				&& savedInstanceState.containsKey(RUNTIME_STATE_CAST_MEDIA_IN_PROGRESS)){
+			mCastMediaInProgressList = savedInstanceState.getParcelableArrayList(RUNTIME_STATE_CAST_MEDIA_IN_PROGRESS);
 		}else{
-			final ViewSwitcher vs = (ViewSwitcher)findViewById(R.id.shot_list_switch);
-			vs.setVisibility(View.GONE);
+			final Cursor c = managedQuery(data, ShotList.PROJECTION, null, null, null);
+			final int directionColumn = c.getColumnIndex(ShotList._DIRECTION);
+			final int durationColumn = c.getColumnIndex(ShotList._DURATION);
+			final int idxColumn = c.getColumnIndex(ShotList._LIST_IDX);
+
+			if (c.getCount() > 0){
+				for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
+					mCastMediaInProgressList.add(new CastMediaInProgress(c.getString(directionColumn), c.getInt(durationColumn), c.getInt(idxColumn)));
+				}
+			}else{
+				mCastMediaInProgressList.add(new CastMediaInProgress(getString(R.string.template_default_direction), 0, 0));
+
+			}
+			c.close();
 		}
+		//CursorJoiner j = new CursorJoiner(c, columnNamesLeft, cursorRight, columnNamesRight);
+		templateAdapter = new TemplateAdapter(this, mCastMediaInProgressList, R.layout.template_item);
+		lv.setAdapter(templateAdapter);
+		fullTemplateAdapter = new TemplateAdapter(this, mCastMediaInProgressList, R.layout.template_item_full);
+		((ListView)findViewById(R.id.instructions_list_full)).setAdapter(fullTemplateAdapter);
+
 		lv.setEnabled(false);
 
-		try {
-			startPreviewThread.join();
-		} catch (final InterruptedException e) {
-			// ignore
+		projectUri = MediaProvider.removeLastPathSegment(data);
+		final Cursor parent = managedQuery(projectUri, Project.PROJECTION, null, null, null);
+		if (parent.getCount() > 1){
+			Log.w(TAG, "got more than one project for " + projectUri);
+		}else if (parent.getCount() == 0){
+			Log.e(TAG, "did not find a project at "+ projectUri);
+			Toast.makeText(this, "Error loading project", Toast.LENGTH_LONG);
+			finish();
 		}
+		parent.moveToFirst();
+		((TextView)findViewById(android.R.id.title)).setText(parent.getString(parent.getColumnIndex(Project._TITLE)));
+
+		final List<String> path = data.getPathSegments();
+		filePrefix = ListUtils.join(path, "-");
+
+		hasDoneFirstInit = false;
+		setRecorderStateHandler(new Handler(){
+			@Override
+			public void handleMessage(Message msg) {
+				switch (msg.what){
+				case MSG_RECORDER_INITIALIZED:
+					if (!hasDoneFirstInit){
+						setOutputFilename(filePrefix + "-0-"+instanceId);
+						prepareRecorder();
+						hasDoneFirstInit = true;
+						setIndicator(INDICATOR_RECORD);
+						final Toast t = Toast.makeText(TemplateActivity.this, R.string.template_toast_start_record, Toast.LENGTH_LONG);
+						final DisplayMetrics metrics = new DisplayMetrics();
+						getWindowManager().getDefaultDisplay().getMetrics(metrics);
+						// position it above the red circle.
+						t.setGravity(Gravity.CENTER, 0, (int)(-50.0 * metrics.density));
+
+						t.show();
+
+					}
+
+					break;
+				}
+			}
+		});
+
+		iloc = new IncrementalLocator(this);
+
+		waitForInitialStartPreview();
 	}
-	
-	@Override
-	protected void onResume() {
-		super.onResume();
-		
-		if (!mIsPreviewing){
-			startPreview();
-		}
-		/*
-		if (mSurfaceHolder != null){
-			initRecorder();
-		}*/
-		
-		
-	}
-	
+
 	@Override
 	protected void onPause() {
 		super.onPause();
-		closeCamera();
+		iloc.removeLocationUpdates(this);
 	}
-	
+
 	@Override
-	protected void onDestroy() {
-
-		super.onDestroy();
+	protected void onResume() {
+		super.onResume();
+		iloc.requestLocationUpdates(this);
 	}
-	
-	private void startPreview(){
-		if (mIsPreviewing){
-			// already rolling...
-			return;
-		}
-		if (mCamera == null){
-			mCamera = Camera.open();
-		}
-		try {
-			mCamera.setPreviewDisplay(mSurfaceHolder);
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
-		}
 
-        try {
-    		mCamera.startPreview();
-    		mIsPreviewing = true;
-        } catch (final Throwable ex) {
-            closeCamera();
-            throw new RuntimeException("startPreview failed", ex);
-        }
-        if (mSurfaceHolder != null){
-        	unlockCamera();
-        }
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		outState.putLong(RUNTIME_STATE_INSTANCE_ID, instanceId);
+		outState.putParcelableArrayList(RUNTIME_STATE_CAST_MEDIA_IN_PROGRESS, mCastMediaInProgressList);
 	}
-	
-	private void closeCamera(){
-		if (mCamera != null){
-			mIsPreviewing = false;
-			mCamera.stopPreview();
-			mCamera.release();
-			mCamera = null;
-			Log.d(TAG, "Camera has been shut down");
-		}
+
+	private static final int
+		INDICATOR_NONE = 0,
+		INDICATOR_RECORD = 1,
+		INDICATOR_RECORD_PAUSE = 2,
+		INDICATOR_STOP = 3;
+
+	private int mIndicatorState = 0;
+
+	private static final RelativeLayout.LayoutParams osdLayoutCenter = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+	private static final RelativeLayout.LayoutParams osdLayoutLeft = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+
+	static {
+		osdLayoutLeft.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+		osdLayoutLeft.addRule(RelativeLayout.CENTER_VERTICAL);
+
+		osdLayoutCenter.addRule(RelativeLayout.CENTER_IN_PARENT);
 	}
-	
-    private void setPreviewDisplay(SurfaceHolder holder) {
-        try {
-            mCamera.setPreviewDisplay(holder);
-        } catch (final Throwable ex) {
-            closeCamera();
-            throw new RuntimeException("setPreviewDisplay failed", ex);
-        }
-    }
+	private void setIndicator(int indicator){
 
-
-	private final SurfaceHolder.Callback cameraSHListener = new SurfaceHolder.Callback() {
-		
-		public void surfaceDestroyed(SurfaceHolder holder) {
-			mSurfaceHolder = null;
-
-
+		if(mIndicatorState == INDICATOR_STOP && indicator != INDICATOR_STOP){
+			mIndicator.setLayoutParams(osdLayoutCenter);
 		}
 
-		public void surfaceCreated(SurfaceHolder holder) {
-			mSurfaceHolder = holder;
-		}
+		switch (indicator){
+		case INDICATOR_RECORD:
+			mIndicator.setImageResource(R.drawable.osd_record);
+			mIndicator.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_in));
+		break;
 
-		public void surfaceChanged(SurfaceHolder holder, int format, int width,
-				int height) {
-			if (mCamera == null){
-				Log.d(TAG, "camera was null in surfaceChanged");
-				return;
+		case INDICATOR_RECORD_PAUSE:
+			mIndicator.setImageResource(R.drawable.osd_record_pause);
+			break;
+
+		case INDICATOR_STOP:
+			mIndicator.setImageResource(R.drawable.osd_stop);
+			mIndicator.setLayoutParams(osdLayoutLeft);
+			mIndicator.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_in));
+			break;
+
+		case INDICATOR_NONE:
+			if (mIndicatorState != INDICATOR_NONE){
+				mIndicator.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_out));
+				mIndicator.setVisibility(View.GONE);
 			}
-			
-			if (holder.isCreating()){
-				setPreviewDisplay(holder);
-				unlockCamera();
-				Log.d(TAG, "surface changed set preview display");
-				listHandler.sendEmptyMessage(MSG_INIT_RECORDER);
+		}
+		if (mIndicatorState == INDICATOR_NONE && indicator != INDICATOR_NONE){
+			mIndicator.setVisibility(View.VISIBLE);
+
+		}
+		mIndicatorState = indicator;
+	}
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event)  {
+	    if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+	    	if (shotlistSwitch.getDisplayedChild() == SHOTLIST_SWITCH_FULL_LIST){
+	    		shotlistSwitch.setDisplayedChild(SHOTLIST_SWITCH_MAIN);
+	    		return true;
+	    	}
+	    }
+
+	    return super.onKeyDown(keyCode, event);
+	}
+
+	private static final int
+		DIALOG_CONFIRM_DELETE = 0,
+		DIALOG_CONFIRM_RERECORD = 1;
+	// this is to work around the missing bundle API introduced in API level 5
+	private int whichToDelete = -1;
+
+	@Override
+	protected Dialog onCreateDialog(int id) {
+		final Builder dialogBuilder = new Builder(this);
+		switch (id){
+		case DIALOG_CONFIRM_DELETE:
+			dialogBuilder.setTitle(R.string.template_delete_video_title);
+			dialogBuilder.setPositiveButton(R.string.dialog_button_delete, dialogDeleteOnClickListener);
+			dialogBuilder.setMessage(R.string.template_delete_video_body);
+			return dialogBuilder.create();
+
+		case DIALOG_CONFIRM_RERECORD:
+			dialogBuilder.setTitle(R.string.template_rerecord_video_title);
+			dialogBuilder.setPositiveButton(R.string.dialog_button_rerecord, dialogRerecordOnClickListener);
+			dialogBuilder.setMessage(R.string.template_rerecord_video_body);
+			return dialogBuilder.create();
+
+			default:
+				return super.onCreateDialog(id);
+		}
+	}
+
+	private final DialogInterface.OnClickListener dialogDeleteOnClickListener = new DialogInterface.OnClickListener() {
+		public void onClick(DialogInterface dialog, int which) {
+			switch (which){
+			case Dialog.BUTTON_POSITIVE:
+				if (whichToDelete != -1){
+					deleteCastVideo(whichToDelete);
+				}
+				break;
 			}
-			//mCamera.startPreview();
-
-
 		}
 	};
-	
-	
-	
-	public void unlockCamera(){
-		// Call the unlock() method (introduced in API level 5) if possible
-		// Otherwise just stop the preview to unlock.
-		try {
-			try {
-				final Method unlock = mCamera.getClass().getDeclaredMethod("unlock");
-				unlock.invoke(mCamera);
 
-			}catch (final NoSuchMethodException m){
-				// before API level 5, this seems to be the only way to unlock.
-				mCamera.stopPreview();
+	private final DialogInterface.OnClickListener dialogRerecordOnClickListener = new DialogInterface.OnClickListener() {
+		public void onClick(DialogInterface dialog, int which) {
+			switch (which){
+			case Dialog.BUTTON_POSITIVE:
+				if (whichToDelete != -1){
+					deleteCastVideo(whichToDelete);
+					recordCastVideo(whichToDelete);
+				}
+				break;
 			}
-			
-			Log.d(TAG, "unlocked camera");
-			
-		}catch (final InvocationTargetException ie){
-			throw new RuntimeException(ie);
+		}
+	};
 
-		} catch (final IllegalAccessException e) {
-			throw new RuntimeException(e);
+	private void deleteCastVideo(int index){
+		final CastMediaInProgress item = mCastMediaInProgressList.get(index);
+		final File localUri = new File(item.localUri);
+		if (localUri.delete()){
+			item.localUri = null;
+			fullTemplateAdapter.notifyDataSetChanged();
+		}else{
+			Toast.makeText(getApplicationContext(), R.string.template_delete_error, Toast.LENGTH_LONG).show();
 		}
 	}
-	private int videoCount = 0; 
-	private void initRecorder(){
-		Log.d(TAG, "initializing recorder...");
-		try {
 
-			recorder.setCamera(mCamera);
-			recorder.setPreviewDisplay(mSurfaceHolder.getSurface());
-			
-			recorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
-			recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-			
-			recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-			//recorder.setMaxDuration(5000); // XXX
-			
-			recorder.setVideoSize(320, 240);
-			recorder.setVideoFrameRate(15);
-			
-			/*recorder.setVideoSize(720, 480); // N1-specific
-			recorder.setVideoFrameRate(1000); */
-			
-			recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-			recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H263);
-			
-			final File storage = Environment.getExternalStorageDirectory();
-			
-			if (!storage.canWrite()){
-				// something's wrong; can't access SD card.
-				throw new RuntimeException("cannot write to SD card");
-			}
-			
-			final File locastBase = new File(storage, "locast");
+	private void recordCastVideo(int index){
 
-			if (!locastBase.exists()){
-				if (!locastBase.mkdirs()){
-					throw new RuntimeException("could not make directory, "+locastBase+", for recording videos.");
-				}
-			}
-			recorder.setOutputFile(locastBase + "video_"+ videoCount++ +".3gp");
-			
-			/*final Camera.Parameters params = camera.getParameters();
-			params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-			params.setSceneMode(Camera.Parameters.SCENE_MODE_AUTO);
-			params.setColorEffect(Camera.Parameters.EFFECT_NONE);*/
-			//camera.setParameters(params);
-			
-			recorder.prepare();
-		} catch (final IllegalStateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return;
-		} catch (final IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return;
+	}
+
+	/**
+	 * Saves this as new cast associated with a given project
+	 */
+	private void save(){
+		final ContentResolver cr = getContentResolver();
+
+		final ContentValues cast = new ContentValues();
+		cast.put(Cast._PROJECT_ID, ContentUris.parseId(projectUri));
+		cast.put(Cast._PRIVACY, Cast.PRIVACY_PUBLIC);
+		cast.put(Cast._TITLE, ((EditText)findViewById(R.id.cast_title)).getText().toString());
+		cast.put(Cast._AUTHOR, AndroidNetworkClient.getInstance(this).getUsername());
+
+		if (location != null){
+			cast.put(Cast._LATITUDE, location.getLatitude());
+			cast.put(Cast._LONGITUDE, location.getLongitude());
+		}
+
+		final Uri castUri = cr.insert(Uri.withAppendedPath(projectUri, Cast.PATH), cast);
+		Log.d(TAG, "created cast "+ castUri);
+		final Uri castMediaUri = Uri.withAppendedPath(castUri, CastMedia.PATH);
+
+		final ContentValues[] castMedia = new ContentValues[mCastMediaInProgressList.size()];
+		for (int i = 0; i < castMedia.length; i++){
+			final CastMediaInProgress item = mCastMediaInProgressList.get(i);
+			castMedia[i] = new ContentValues();
+			castMedia[i].put(CastMedia._LIST_IDX, i);
+			castMedia[i].put(CastMedia._LOCAL_URI, item.localUri);
+			castMedia[i].put(CastMedia._DURATION, item.duration);
+			castMedia[i].put(CastMedia._MIME_TYPE, "video/3gpp");
+		}
+		final int inserts = cr.bulkInsert(castMediaUri, castMedia);
+		if (inserts == castMedia.length){
+			Toast.makeText(this, "Cast saved.", Toast.LENGTH_LONG).show();
+			finish();
+		}else{
+			Toast.makeText(this, "Error saving cast videos. Only saved "+inserts, Toast.LENGTH_LONG).show();
 		}
 	}
 
@@ -350,6 +412,10 @@ public class TemplateActivity extends Activity implements OnClickListener {
 		private boolean finished = false;
 		private Boolean paused = false;
 
+		private boolean stoppable = false;
+		private boolean stop = false;
+		private Integer section = 0;
+
 		public TemplateRunnable(ListView listView) {
 			this.listView = listView;
 			this.adapter = (TemplateAdapter)listView.getAdapter();
@@ -358,11 +424,18 @@ public class TemplateActivity extends Activity implements OnClickListener {
 			paused = false;
 			notify();
 		}
-		
+
+		public void recordSection(int index){
+			synchronized(section){
+				section = index;
+			}
+
+		}
+
 		public boolean isFinished(){
 			return finished;
 		}
-		
+
 		synchronized private void pause(){
 			paused = true;
 			while(paused){
@@ -371,10 +444,18 @@ public class TemplateActivity extends Activity implements OnClickListener {
 				} catch (final InterruptedException e) {break;}
 			}
 		}
-		
+
+		synchronized public void stop(){
+			this.stop = true;
+		}
+
+		synchronized public boolean isStoppable(){
+			return stoppable;
+		}
+
 		public void run() {
 			final int count = adapter.getCount();
-			
+
 			int totalLength = 0;
 
 			for (int section = 0; section < count; section++){
@@ -383,24 +464,39 @@ public class TemplateActivity extends Activity implements OnClickListener {
 
 			listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_PROGRESS_MAX, totalLength, 0));
 
-			int curTime = 0;
-			int segmentedTime = 0;
-			int segmentTime = 0;
-			
-			for (int section = 0; section < count; section++){
-				listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_SECTION, section, 0));
+			int totalTime = 0;     // running count of total time
+			int segmentedTime = 0; // total time, broken up into segment chunks
+
+			boolean isFirstSegment = true;
+
+			for (int segment = 0; segment < count; segment++){
+				final CastMediaInProgress item = adapter.getItem(segment);
+				if (item.localUri != null){
+					totalTime += item.elapsedDuration * 1000;
+					segmentedTime += item.elapsedDuration * 1000;
+					// skip over already recorded sections
+					continue;
+				}
+				listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_SECTION, segment, count));
 				// don't pause on the first one
-				if (section > 0){
+				if (! isFirstSegment){
 					pause();
 				}
-				listHandler.sendMessage(Message.obtain(listHandler, MSG_START_SECTION, section, 0));
+				isFirstSegment = false;
+				listHandler.sendMessage(Message.obtain(listHandler, MSG_START_SECTION, segment, count));
 
-				segmentTime = adapter.getTotalTime(section);
-				for (int remainingTime = segmentTime; remainingTime >= 0; remainingTime -= 100){
-					curTime += 100;
-					
-					listHandler.sendMessage(Message.obtain(listHandler, MSG_UPDATE_TIME, section, remainingTime));
-					listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_PROGRESS, segmentedTime, curTime));
+				int segmentTime = 0;   // time for the given segment
+				segmentTime = adapter.getTotalTime(segment);
+				stoppable = (segmentTime == 0); // this allows for recording a segment of unlimited length. call stop() to stop
+				int elapsedTime = 0;
+				for (elapsedTime = 0; (stoppable && !stop) || elapsedTime <= segmentTime; elapsedTime += 100){
+					totalTime += 100;
+
+					if (elapsedTime % 1000 == 0){
+						listHandler.sendMessage(Message.obtain(listHandler, MSG_UPDATE_TIME, segment, elapsedTime/1000));
+					}
+
+					listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_PROGRESS, segmentedTime, totalTime));
 
 					try {
 						Thread.sleep(100);
@@ -408,115 +504,215 @@ public class TemplateActivity extends Activity implements OnClickListener {
 						break;
 					}
 				}
-				segmentedTime += segmentTime;
-				listHandler.sendMessage(Message.obtain(listHandler, MSG_END_SECTION, section, 0));
-				
+				segmentedTime += elapsedTime;
+				listHandler.sendMessage(Message.obtain(listHandler, MSG_END_SECTION, segment, count));
+
 			}
 			listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_PROGRESS, totalLength, totalLength));
 			finished = true;
+			listHandler.sendEmptyMessage(MSG_FINISHED_LAST_SECTION);
 		}
 	}
 
-	private static String[] TEMPLATE_FROM = {ShotList._DIRECTION, ShotList._DURATION};
-	private static int[]    TEMPLATE_TO   = {android.R.id.text1, R.id.time_remaining};
-	
-	private class TemplateAdapter extends SimpleCursorAdapter {
+	private class TemplateAdapter extends ArrayAdapter<CastMediaInProgress> {
 		private final NumberFormat timeFormat  = NumberFormat.getInstance();
+		private final int mItemLayout;
 
-		public TemplateAdapter(Context context, Cursor c) {
-			super(context, R.layout.template_item, c, TEMPLATE_FROM, TEMPLATE_TO);
-			setStringConversionColumn(c.getColumnIndex(ShotList._DIRECTION));
-			
+		public TemplateAdapter(Context context, List<CastMediaInProgress> array, int itemLayout) {
+			super(context, R.layout.template_item, array);
+			this.mItemLayout = itemLayout;
+
 			timeFormat.setMinimumFractionDigits(1);
 			timeFormat.setMaximumFractionDigits(1);
-			
-			
 		}
-		
+
 		@Override
-		public void setViewText(TextView v, String text) {
-			switch (v.getId()){
-			case R.id.time_remaining:
-				//v.setText(timeFormat.format(Integer.valueOf(text)/.0));
-				//break;
-				default:
-					super.setViewText(v, text);
+		public View getView(int position, View convertView, ViewGroup parent) {
+			final CastMediaInProgress item = getItem(position);
+
+			if (convertView == null){
+				convertView = getLayoutInflater().inflate(mItemLayout, parent, false);
 			}
+
+			((TextView)(convertView.findViewById(R.id.template_item_numeral))).setText(item.index + 1 + ".");
+			((TextView)(convertView.findViewById(android.R.id.text1))).setText(item.direction);
+			final int shownSeconds = Math.abs(item.duration - item.elapsedDuration);
+			final String secondsString = (shownSeconds == 0 && item.duration == 0) ? "∞" :  Integer.toString(shownSeconds)+"s";
+
+			((TextView)(convertView.findViewById(R.id.time_remaining))).setText(secondsString);
+
+			if (mItemLayout == R.layout.template_item_full){
+				final Button delete = (Button)convertView.findViewById(R.id.delete);
+				delete.setTag(position);
+				delete.setOnClickListener(TemplateActivity.this);
+				delete.setVisibility(item.localUri != null ? View.VISIBLE : View.GONE);
+			}
+			return convertView;
 		}
-		
+
 		public int getTotalTime(int position){
-			final Cursor c = getCursor();
-			c.moveToPosition(position);
-			return c.getInt(c.getColumnIndex(ShotList._DURATION)) * 1000;
+			final CastMediaInProgress item = getItem(position);
+
+			return item.duration * 1000;
 		}
 	}
 
 	TemplateRunnable templateRunnable;
+
+
 	public void onClick(View v) {
 		switch (v.getId()){
-		case R.id.camera_view:
-			if (templateRunnable == null || templateRunnable.isFinished()){
+		case R.id.indicator:
+			if (templateRunnable == null){
 				templateRunnable = new TemplateRunnable(lv);
 				new Thread(templateRunnable).start();
-			}else{
+
+			}else if (templateRunnable.isStoppable() && mIndicatorState == INDICATOR_STOP){
+				templateRunnable.stop();
+
+			}else if(! templateRunnable.isFinished()){
+
 				templateRunnable.advanceToNextSection();
+			}else{
+				// we've finished recording, but the user tapped the screen, probably accidentally. Ignore them.
 			}
+			break;
+		case R.id.delete:
+			whichToDelete = (Integer)v.getTag();
+			showDialog(DIALOG_CONFIRM_DELETE);
+			break;
+
+		case R.id.done:
+			save();
+			break;
+
+		case R.id.cancel:
 			break;
 		}
 	}
 
-	private final static int 
+	private final static int
 		MSG_SET_SECTION = 0,
 		MSG_UPDATE_TIME = 1,
 		MSG_SET_PROGRESS = 2,
 		MSG_SET_PROGRESS_MAX = 3,
 		MSG_START_SECTION = 4,
 		MSG_END_SECTION = 5,
-		MSG_INIT_RECORDER = 6;
+		MSG_FINISHED_LAST_SECTION = 6;
 
-	private class ListHandler extends Handler {
+	private final Handler listHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
 			super.handleMessage(msg);
 			switch(msg.what){
 			case MSG_SET_SECTION:
 				lv.setSelectionFromTop(msg.arg1, 0);
-				
+
 				break;
 
 			case MSG_UPDATE_TIME:
 				//templateAdapter.setItemProperty(msg.arg1, "remainingtime", msg.arg2);
+				mCastMediaInProgressList.get(msg.arg1).elapsedDuration = msg.arg2;
+				templateAdapter.notifyDataSetChanged();
+
 				break;
-				
+
 			case MSG_SET_PROGRESS:
 				progressBar.setProgress(msg.arg1);
 				progressBar.setSecondaryProgress(msg.arg2);
 				break;
-				
+
 			case MSG_SET_PROGRESS_MAX:
 				progressBar.setMax(msg.arg1);
-				
+
 				break;
-				
-			case MSG_START_SECTION:
-				recorder.start();
-				break;
-				
-			case MSG_END_SECTION:
-				recorder.stop();
-				//recorder.reset();
-				Log.d("template", "recorder stopped and reset");
-				//cameraSHListener.unlockCamera();
-				Log.d("template", "waiting for camera to settle");
-				
-				initRecorder();
-				
-				break;
-				
-			case MSG_INIT_RECORDER:
-				initRecorder();
-				break;
+
+			case MSG_START_SECTION:{
+				if (templateRunnable.isStoppable()){
+					setIndicator(INDICATOR_STOP);
+				}else{
+					setIndicator(INDICATOR_NONE);
+				}
+				startRecorder();
+			} break;
+
+			case MSG_END_SECTION:{
+				stopRecorder();
+				final CastMediaInProgress inProgressItem = mCastMediaInProgressList.get(msg.arg1);
+				inProgressItem.localUri = getFullOutputFilename();
+				fullTemplateAdapter.notifyDataSetChanged();
+				Log.d(TAG, "Video recorded to " + getFullOutputFilename());
+
+				if (msg.arg1 < msg.arg2 - 1){
+					setIndicator(INDICATOR_RECORD_PAUSE);
+					initRecorder();
+					setOutputFilename(filePrefix + "-" + (msg.arg1 + 1) +"-"+instanceId);
+					prepareRecorder();
+				}
+
+			}break;
+
+			case MSG_FINISHED_LAST_SECTION:{
+				setIndicator(INDICATOR_NONE);
+				shotlistSwitch.setDisplayedChild(SHOTLIST_SWITCH_FULL_LIST);
+			}
 			}
 		}
+	};
+
+	public void onLocationChanged(Location location) {
+		this.location = location;
+		((LocationLink)findViewById(R.id.location)).setLocation(location);
+	}
+
+	public void onProviderDisabled(String provider) {}
+
+	public void onProviderEnabled(String provider) {}
+
+	public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+	private static class CastMediaInProgress implements Parcelable {
+		public CastMediaInProgress(String direction, int duration, int index){
+			this.duration = duration;
+			this.direction = direction;
+			this.index = index;
+		}
+		protected String localUri = null;
+		protected int duration = 0;
+		protected int elapsedDuration = 0;
+		protected String direction = null;
+		protected int index = 0;
+
+		public int describeContents() {
+			return 0;
+		}
+
+		public CastMediaInProgress(Parcel p){
+			localUri = p.readString();
+			duration = p.readInt();
+			elapsedDuration = p.readInt();
+			direction = p.readString();
+			index = p.readInt();
+		}
+		public void writeToParcel(Parcel dest, int flags) {
+
+			dest.writeString(localUri);
+			dest.writeInt(duration);
+			dest.writeInt(elapsedDuration);
+			dest.writeString(direction);
+			dest.writeInt(index);
+		}
+
+		public static final Parcelable.Creator<CastMediaInProgress> CREATOR
+			= new Creator<CastMediaInProgress>() {
+
+				public CastMediaInProgress[] newArray(int size) {
+					return new CastMediaInProgress[size];
+				}
+
+				public CastMediaInProgress createFromParcel(Parcel source) {
+					return new CastMediaInProgress(source);
+				}
+			};
 	}
 }

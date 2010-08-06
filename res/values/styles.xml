@@ -30,13 +30,7 @@
  	
  	</style>
 
- 	<style name="WindowTitleThickBackground">
-        <item name="android:background">@drawable/window_title_background</item>
-        <item name="android:padding">3dip</item>
-<!--         <item name="android:background">@android:drawable/title_bar</item> -->
- 	</style>
- 	
- 	<style name="WindowTitleThick" parent="@android:style/WindowTitle">
+ 	<style name="WindowTitleThick">
         <item name="android:singleLine">true</item>
         <item name="android:shadowColor">#DD000000</item>
         <item name="android:shadowRadius">2.75</item>
@@ -46,6 +40,13 @@
  		<item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
  		<item name="android:textColor">#fff</item>
  	</style>
+
+ 	<style name="WindowTitleThick.Background">
+        <item name="android:background">@drawable/window_title_background</item>
+        <item name="android:padding">3dip</item>
+<!--         <item name="android:background">@android:drawable/title_bar</item> -->
+ 	</style>
+ 	
  	
  	<style name="WindowTitleThick.Subtitle">
 		<item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
@@ -65,6 +66,5 @@
  		<item name="android:adjustViewBounds">true</item>
  		<item name="android:src">@drawable/icon_default_user</item>
  	</style>
- 	
 
 </resources>

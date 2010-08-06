@@ -31,6 +31,7 @@
 	>
 	
 	<AutoCompleteTextView android:id="@+id/tag_add_text" 
+	style="@style/AutoCompleteTextView"
 	android:hint="@string/tag_add_tag"
 	android:layout_width="fill_parent"
 	android:layout_height="wrap_content"

@@ -18,7 +18,12 @@
 		    android:textAppearance="?android:attr/textAppearanceMedium"
           	style="TextView1" 
         />
-    
+    <TextView android:id="@+id/author" 
+	      android:text="author" 
+	      android:layout_width="fill_parent" 
+	      android:layout_height="wrap_content"
+	      android:layout_marginLeft="4dip"
+	      android:singleLine="true" />
     <LinearLayout
     	android:orientation="horizontal"
 	    android:layout_width="fill_parent"
@@ -29,18 +34,15 @@
 		android:layout_height="wrap_content"
 		android:layout_marginRight="6dip"
 		android:layout_marginLeft="4dip">
-		  
+		        	
+	      
     		<ImageView android:id="@+id/media_thumbnail" 
     		android:layout_height="wrap_content" 
     		android:layout_width="wrap_content" 
     		style="@style/CastIcon"
     		android:src="@drawable/icon_default_cast" />
     		
-      	<TextView android:id="@+id/author" 
-	      android:text="author" 
-	      android:layout_width="fill_parent" 
-	      android:layout_height="wrap_content"
-	      android:singleLine="true" />
+
 	      
      </LinearLayout>
 

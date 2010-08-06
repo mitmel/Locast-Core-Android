@@ -29,7 +29,7 @@
 		
 		<EditTextPreference android:title="Server URL"
 		android:key="server_url"
-		android:singleLine="true" android:defaultValue="http://18.85.23.110:8888/api"/>
+		android:singleLine="true" android:defaultValue="@string/default_api_url"/>
 		<!-- 
 		<CheckBoxPreference android:defaultValue="true"
 			android:title="Unpair Mobile Device" android:key="unpair" />

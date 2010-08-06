@@ -2,7 +2,6 @@
 <resources>
 	<string-array name="privacy">
 		<item>Public</item>
-		<item>Protected</item>
 		<item>Private</item>
 	</string-array>
 </resources>

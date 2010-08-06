@@ -16,6 +16,8 @@ package edu.mit.mel.locast.mobile.casts;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import java.util.ArrayList;
+
 import android.app.TabActivity;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -26,13 +28,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.Window;
+import android.widget.Gallery;
 import android.widget.ImageView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TabHost;
 import android.widget.TextView;
 import edu.mit.mel.locast.mobile.Application;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.WebImageLoader;
 import edu.mit.mel.locast.mobile.data.Cast;
+import edu.mit.mel.locast.mobile.data.CastMedia;
 import edu.mit.mel.locast.mobile.data.Comment;
 
 public class ViewCastActivity extends TabActivity {
@@ -68,6 +73,7 @@ public class ViewCastActivity extends TabActivity {
 				}
 			}
 		});
+
 	}
 
 	private void loadFromCursors(Cursor c){

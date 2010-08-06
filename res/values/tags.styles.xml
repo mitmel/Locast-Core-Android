@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AutoCompleteTextView" parent="@android:style/Widget.AutoCompleteTextView">
+        <!-- XXX This corrects for a bug in Android -->
+        <item name="android:textColor">@android:color/primary_text_light</item>
+    </style>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<!--  tags -->
+	<string name="tag_add_tag">Add Tag</string>
+	<string name="tag_no_tags">no tags</string>
+	<string name="tag_recommended">Recommended:</string>
+</resources>

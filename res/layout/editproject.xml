@@ -23,18 +23,9 @@
 	 android:layout_height="wrap_content"
 	/>
 	
-	<TextView
-	 android:text="@string/project_members_label"
-	 android:layout_width="fill_parent"
-	 android:layout_height="wrap_content"
-	/>
 	
-	<Button android:id="@+id/people"
-	 android:layout_width="fill_parent"
-	 android:layout_height="wrap_content"
-	 android:lines="1"
-	 android:ellipsize="end"
-	/>
+	
+	
 	
 	<TextView
 	 android:text="@string/privacy_header"
@@ -47,27 +38,13 @@
 	 android:prompt="@string/privacy_spinner" 
 	 android:entries="@array/privacy" />
 	
-	<TextView
-	 android:text="@string/project_start_date"
-	 android:layout_width="fill_parent"
-	 android:layout_height="wrap_content"
-	/>
 	
-	<Button android:id="@+id/projectStartDate"
-	 android:layout_width="fill_parent"
-	 android:layout_height="wrap_content"
-	/>
 	
-	<TextView
-	 android:text="@string/project_end_date"
-	 android:layout_width="fill_parent"
-	 android:layout_height="wrap_content"
-	/>
+	
+	
+	
 
-	<Button android:id="@+id/projectEndDate"
-	 android:layout_width="fill_parent"
-	 android:layout_height="wrap_content"
-	/>
+	
 	
 	<EditText android:id="@+id/projectDescription"
 	 android:hint="@string/project_description"

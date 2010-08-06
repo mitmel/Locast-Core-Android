@@ -39,7 +39,7 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 	public final static Uri CONTENT_URI = Uri
 			.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
 	
-	public final static String SERVER_PATH = "/project/";
+	public final static String SERVER_PATH = "project/";
 	
 
 	

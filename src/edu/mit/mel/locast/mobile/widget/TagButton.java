@@ -17,6 +17,7 @@ package edu.mit.mel.locast.mobile.widget;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import android.content.Context;
+import android.util.AttributeSet;
 import android.widget.Button;
 import edu.mit.mel.locast.mobile.R;
 
@@ -26,27 +27,39 @@ import edu.mit.mel.locast.mobile.R;
  */
 public class TagButton extends Button {
 	private boolean added;
-	private final boolean editable;
-	
+	private boolean editable = false;
+
 	public TagButton(Context context) {
 		this(context, null, false, true);
 	}
-	
+
+
+    public TagButton(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+        updateResource();
+    }
+
+    public TagButton(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        updateResource();
+    }
+
+
 	public TagButton(Context context, String text, boolean added, boolean editable){
 		super(context);
 		this.setText(text);
 		this.setTag(text);
-		
+
 		this.editable = editable;
 		this.added = added;
-		
+
 		updateResource();
 	}
 
 	/**
 	 * Sets the state of the button to reflect whether or not the tag
 	 * has been added to the set of tags on an item.
-	 * 
+	 *
 	 * @param added
 	 */
 	public void setAdded(boolean added){
@@ -54,7 +67,7 @@ public class TagButton extends Button {
 		this.added = added;
 		updateResource();
 	}
-	
+
 	private void updateResource(){
 		if (isEditable()){
 			if (isAdded()){
@@ -66,15 +79,15 @@ public class TagButton extends Button {
 			this.setBackgroundResource(R.drawable.btn_tag_normal);
 		}
 	}
-	
+
 	public boolean isAdded(){
 		return added;
 	}
-	
+
 	public boolean isEditable() {
 		return editable;
 	}
-	
+
 	public void setTagName(String name){
 		setText(name);
 		setTag(name);
