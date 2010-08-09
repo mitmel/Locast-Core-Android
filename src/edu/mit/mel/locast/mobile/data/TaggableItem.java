@@ -40,7 +40,7 @@ import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 
 /**
  * DB entry for an item that can be tagged.
- * 
+ *
  * @author stevep
  *
  */
@@ -48,22 +48,22 @@ public abstract class TaggableItem extends JsonSyncableItem {
 
 	public static final String _PRIVACY = "privacy",
 								_AUTHOR = "author";
-	
+
 	public static final String  PRIVACY_PUBLIC    = "public",
 								PRIVACY_PROTECTED = "protected",
 								PRIVACY_PRIVATE   = "private";
 
 	// the ordering of this must match the arrays.xml
 	public static final String[] PRIVACY_LIST = {PRIVACY_PUBLIC, PRIVACY_PRIVATE};
-	
+
 	// key for ContentValues to temporarily store tags as a delimited list
 	public static final String TEMP_TAGS = "_tags";
-	
+
 	public static final Map<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem> (JsonSyncableItem.SYNC_MAP);
-	
+
 	static {
 		SYNC_MAP.put(Tag.PATH, new SyncCustomArray("tags") {
-			
+
 			@Override
 			public JSONArray toJSON(Context context, Uri localItem, Cursor c) throws JSONException {
 				if (localItem == null || context.getContentResolver().getType(localItem).startsWith("vnd.android.cursor.dir")){
@@ -75,7 +75,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 				}
 				return jo;
 			}
-			
+
 			@Override
 			public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
 					throws JSONException {
@@ -88,11 +88,11 @@ public abstract class TaggableItem extends JsonSyncableItem {
 				return cv;
 			}
 		});
-		
+
 		final HashMap<String,SyncItem> authorSync = new HashMap<String, SyncItem>();
 		authorSync.put(_AUTHOR, new SyncMap("username", SyncMap.STRING));
 		SYNC_MAP.put("_author", 			new SyncMapChain("author", authorSync, SyncItem.SYNC_FROM));
-		
+
 		SYNC_MAP.put(_PRIVACY,          	new SyncMap("privacy", SyncMap.STRING));
 	}
 	@Override
@@ -106,31 +106,33 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 */
 	public static boolean canEdit(Cursor c){
 		final String privacy = c.getString(c.getColumnIndex(_PRIVACY));
-		return privacy == null ||
-		AndroidNetworkClient.getInstance(null).getUsername().equals(c.getString(c.getColumnIndex(_AUTHOR)));
+		final String username = AndroidNetworkClient.getInstance(null).getUsername();
+		return privacy == null || username == null || username.length() == 0 ||
+			username.equals(c.getString(c.getColumnIndex(_AUTHOR)));
 	}
-	
+
 	/**
 	 * @param c
 	 * @return true if the authenticated user can change the item's privacy level.
 	 */
 	public static boolean canChangePrivacyLevel(Cursor c){
-		return AndroidNetworkClient.getInstance(null).getUsername().equals(c.getString(c.getColumnIndex(_AUTHOR)));
+		final String username = AndroidNetworkClient.getInstance(null).getUsername();
+		return username == null || username.equals(c.getString(c.getColumnIndex(_AUTHOR)));
 	}
-	
-	
+
+
 	@Override
 	public void onPreSyncItem(ContentResolver cr, Uri uri, Cursor c)
 			throws SyncException {
-		
+
 	}
-	
+
 	@Override
 	public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException,
 			IOException {
 
 	}
-	
+
 	/**
 	 * @param c
 	 * @return a list of all the tags attached to a given item
@@ -145,7 +147,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 		tags.close();
 		return tagSet;
 	}
-	
+
 	/**
 	 * Set the tags of the given item
 	 * @param cv
@@ -156,26 +158,26 @@ public abstract class TaggableItem extends JsonSyncableItem {
 		cv.put(Tag.PATH, TaggableItem.toListString(tags));
 		cr.update(Uri.withAppendedPath(item, Tag.PATH), cv, null, null);
 	}
-	
-	public static int MAX_POPULAR_TAGS = 10; 
-	
+
+	public static int MAX_POPULAR_TAGS = 10;
+
 	/**
 	 * TODO make this pick the set of tags of a set of content.
-	 * 
+	 *
 	 * @param cr a content resolver
 	 * @return the top MAX_POPULAR_TAGS most popular tags in the set.
 	 */
 	public static List<String> getPopularTags(ContentResolver cr){
-		
+
 		final Map<String, Integer> tagPop = new HashMap<String, Integer>();
 		final List<String> popTags;
-		
+
 		final Cursor c = cr.query(Tag.CONTENT_URI, Tag.DEFAULT_PROJECTION, null, null, null);
 		final int tagColumn = c.getColumnIndex(Tag._NAME);
-		
+
 		for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
 			final String tag = c.getString(tagColumn);
-			
+
 			final Integer count = tagPop.get(tag);
 			if (count == null){
 				tagPop.put(tag, 1);
@@ -184,14 +186,14 @@ public abstract class TaggableItem extends JsonSyncableItem {
 			}
 		}
 		c.close();
-		
+
 		popTags = new ArrayList<String>(tagPop.keySet());
-		
+
 		Collections.sort(popTags, new Comparator<String>() {
 			public int compare(String object1, String object2) {
 				return tagPop.get(object2).compareTo(tagPop.get(object1));
 			}
-			
+
 		});
 		int limit;
 		if (popTags.size() < MAX_POPULAR_TAGS){
@@ -201,7 +203,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 		}
 		return popTags.subList(0, limit);
 	}
-	
+
 	/**
 	 * A hack to work around duplicate column names when selecting with tags.
 	 * @param projection The TaggableItem's projection
@@ -219,12 +221,12 @@ public abstract class TaggableItem extends JsonSyncableItem {
 		}
 		return l.toArray(new String[]{});
 	}
-	
+
 	public static Uri getTagUri(Uri baseUri, Collection<String> tags){
 		if (tags.isEmpty()){
 			return baseUri;
 		}
-		
+
 		return Uri.withAppendedPath(Uri.withAppendedPath(baseUri, Tag.PATH), Tag.toTagString(tags));
 	}
 }

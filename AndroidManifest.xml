@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="edu.mit.mel.locast.mobile" android:versionCode="6"
-	android:versionName="1.2.3">
+	package="edu.mit.mel.locast.mobile" android:versionCode="7"
+	android:versionName="1.2.4">
 	
 	<uses-sdk android:minSdkVersion="4" android:targetSdkVersion="4"/>
 	<supports-screens android:largeScreens="true" />

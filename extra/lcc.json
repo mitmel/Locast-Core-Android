@@ -3,6 +3,10 @@
         "downloadUrl": "http://locast.mit.edu/connects/lcc.apk"
     },
 
+    "1.2.4": {
+    "versionCode": 7,
+    "changelog": ["minor bugfixes"]
+    },
     "1.2.3": {
     "versionCode": 6,
     "changelog": ["Updated location finding ability."]

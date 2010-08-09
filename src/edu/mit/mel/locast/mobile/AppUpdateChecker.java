@@ -41,6 +41,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 /**
@@ -125,9 +127,29 @@ public class AppUpdateChecker {
     	private final Context mContext;
     	private final CharSequence mAppName;
     	private Uri downloadUri;
+    	private final Handler mHandler;
+    	private static final int MSG_SHOW_DIALOG = 1;
+    	private Dialog mDialog;
+
     	public OnUpdateDialog(Context context, CharSequence appName) {
     		mContext = context;
     		mAppName = appName;
+    		mHandler = new Handler(){
+    			@Override
+    			public void handleMessage(Message msg) {
+    				switch (msg.what){
+    				case MSG_SHOW_DIALOG:
+    					try{
+    						// TODO fix this so it'll pop up appropriately
+    						mDialog.show();
+    					}catch (final Exception e){
+    						// XXX ignore for the moment
+    					}
+
+    					break;
+    				}
+    			}
+    		};
     	}
 
     	public void appUpdateStatus(boolean isLatestVersion,
@@ -149,9 +171,14 @@ public class AppUpdateChecker {
 
     			db.setPositiveButton(R.string.upgrade, dialogOnClickListener);
     			db.setNegativeButton(android.R.string.cancel, dialogOnClickListener);
-    			db.create().show();
+    			mDialog = db.create();
+    			mHandler.sendEmptyMessage(MSG_SHOW_DIALOG);
+
     		}
     	}
+
+
+
     	private final DialogInterface.OnClickListener dialogOnClickListener = new DialogInterface.OnClickListener() {
 
     		public void onClick(DialogInterface dialog, int which) {

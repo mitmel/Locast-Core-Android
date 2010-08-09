@@ -170,7 +170,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	/************************* credentials and pairing **********************/
 
 	public String getUsername() {
-		String username = "";
+		String username = null;
 		final Credentials credentials = getCredentialsProvider().getCredentials(authScope);
 		if (credentials != null){
 			username = credentials.getUserPrincipal().getName();
@@ -560,6 +560,9 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @throws IOException
 	 */
 	public User getUser(String username) throws NetworkProtocolException, IOException {
+		if (username == null){
+			return null;
+		}
 
 		User u;
 		try{
