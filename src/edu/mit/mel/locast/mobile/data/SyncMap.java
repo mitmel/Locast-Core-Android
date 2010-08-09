@@ -26,14 +26,6 @@ public class SyncMap extends HashMap<String, SyncItem> {
 	}
 
 	/**
-	 * Hook called after an item has been updated on the server.
-	 * @param uri Local URI pointing to the newly-updated item.
-	 * @throws SyncException
-	 * @throws IOException
-	 */
-	public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException, IOException {}
-
-	/**
 	 * Called just before an item is sync'd.
 	 * @param c Cursor pointing to the given item.
 	 *
@@ -43,9 +35,15 @@ public class SyncMap extends HashMap<String, SyncItem> {
 
 	/**
 	 * Hook called after an item has been synchronized on the server. Called each time the sync request is made.
+	 * Make sure to call through when subclassing.
 	 * @param uri Local URI pointing to the item.
+	 * @param updated true if the item was updated during the sync.
 	 * @throws SyncException
 	 * @throws IOException
 	 */
-	public void onPostSyncItem(Context context, Uri uri, JSONObject item) throws SyncException, IOException {}
+	public void onPostSyncItem(Context context, Uri uri, JSONObject item, boolean updated) throws SyncException, IOException {
+		for (final SyncItem childItem: this.values()){
+			childItem.onPostSyncItem(context, uri, item, updated);
+		}
+	}
 }

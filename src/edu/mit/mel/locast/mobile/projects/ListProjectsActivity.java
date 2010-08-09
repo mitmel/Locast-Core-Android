@@ -61,10 +61,10 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
 /*    	separatedList.addSection("unpublished", "Unpublished", new ProjectListAdapter(getApplicationContext(),
     			managedQuery(Project.CONTENT_URI, ProjectListAdapter.PROJECTION, Project._PUBLIC_ID+"=null", null, null), this));
     			*/
-    	final ArrayList<String> tag = new ArrayList<String>();
-    	tag.add("featured");
+    	final ArrayList<String> featuredTag = new ArrayList<String>();
+    	featuredTag.add(TaggableItem.addPrefixToTag(TaggableItem.SYSTEM_PREFIX, "_featured"));
     	separatedList.addSection("featured", "Featured", new ProjectListAdapter(getApplicationContext(),
-    			managedQuery(TaggableItem.getTagUri(Project.CONTENT_URI, tag), TaggableItem.getTagProjection(ProjectListAdapter.PROJECTION), null, null, null), this));
+    			managedQuery(TaggableItem.getTagUri(Project.CONTENT_URI, featuredTag), TaggableItem.getTagProjection(ProjectListAdapter.PROJECTION), null, null, Project.SORT_ORDER_DEFAULT), this));
     	// need nearby
     	separatedList.addSection("nearby", "All", new ProjectListAdapter(getApplicationContext(),
     			managedQuery(Project.CONTENT_URI, ProjectListAdapter.PROJECTION, null, null, Project.SORT_ORDER_DEFAULT), this));

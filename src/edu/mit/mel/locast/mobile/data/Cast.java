@@ -126,8 +126,8 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		}
 
 		@Override
-		public void onPostSyncItem(Context context, Uri uri, JSONObject item) throws SyncException ,IOException {
-			super.onPostSyncItem(context, uri, item);
+		public void onPostSyncItem(Context context, Uri uri, JSONObject item, boolean updated) throws SyncException ,IOException {
+			super.onPostSyncItem(context, uri, item, updated);
 
 			final ContentResolver cr = context.getContentResolver();
 			//final Cursor c = cr.query(uri, PROJECTION, null, null, null);

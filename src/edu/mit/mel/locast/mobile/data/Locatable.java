@@ -18,13 +18,14 @@ package edu.mit.mel.locast.mobile.data;
  */
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.location.Location;
 import android.net.Uri;
-import edu.mit.mel.locast.mobile.data.JsonSyncableItem.SyncCustomArray;
+import edu.mit.mel.locast.mobile.data.JsonSyncableItem.SyncCustom;
 import edu.mit.mel.locast.mobile.data.JsonSyncableItem.SyncItem;
 
 /**
@@ -71,10 +72,10 @@ public abstract class Locatable {
 	public static final SyncMap SYNC_MAP = new SyncMap();
 
 	static {
-		SYNC_MAP.put("_location", new SyncCustomArray("location", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_BOTH) {
+		SYNC_MAP.put("_location", new SyncCustom("location", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_BOTH) {
 
 			@Override
-			public JSONArray toJSON(Context context, Uri localItem, Cursor c)
+			public JSONArray toJSON(Context context, Uri localItem, Cursor c, String lProp)
 					throws JSONException {
 
 				final int latCol = c.getColumnIndex(Columns._LATITUDE);
@@ -91,11 +92,12 @@ public abstract class Locatable {
 			}
 
 			@Override
-			public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
+			public ContentValues fromJSON(Context context, Uri localItem, JSONObject item, String lProp)
 					throws JSONException {
+				final JSONArray ja = item.getJSONArray(remoteKey);
 				final ContentValues cv = new ContentValues();
-				cv.put(Columns._LONGITUDE, item.getDouble(0));
-				cv.put(Columns._LATITUDE, item.getDouble(1));
+				cv.put(Columns._LONGITUDE, ja.getDouble(0));
+				cv.put(Columns._LATITUDE, ja.getDouble(1));
 				return cv;
 			}
 		});

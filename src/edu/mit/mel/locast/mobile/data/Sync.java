@@ -22,8 +22,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.json.JSONArray;
@@ -51,9 +49,7 @@ import android.util.Log;
 import android.widget.Toast;
 import edu.mit.mel.locast.mobile.MainActivity;
 import edu.mit.mel.locast.mobile.R;
-import edu.mit.mel.locast.mobile.StreamUtils;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
-import edu.mit.mel.locast.mobile.net.NetworkClient;
 import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
 import edu.mit.mel.locast.mobile.notifications.ProgressNotification;
 
@@ -257,31 +253,21 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 
 				final String publicPath = MediaProvider.getPostPath(cr, locUri);
 				Log.d(TAG, "Posting "+locUri + " to " + publicPath);
-				final HttpResponse hr = nc.post(publicPath, jsonObject.toString());
-
-				if (! hr.containsHeader("Content-Type")
-						|| ! hr.getHeaders("Content-Type")[0].getValue().startsWith(NetworkClient.JSON_MIME_TYPE)) {
-					throw new NetworkProtocolException("Got wrong response content-type from posting a sync'd item. Got "+(hr.containsHeader("Content-Type")? "'" + hr.getHeaders("Content-Type")[0].getValue() + "'" : "no header")+"; was expecting "+NetworkClient.JSON_MIME_TYPE, hr);
-				}
 
 				// The response from a post to create a new item should be the newly created item,
 				// which contains the public ID that we need.
-				final HttpEntity entity = hr.getEntity();
-				try {
-					jsonObject = new JSONObject(StreamUtils.inputStreamToString(entity.getContent()));
-					final ContentValues cvUpdate = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, syncMap);
-					if (cr.update(locUri, cvUpdate, null, null) == 1){
-						// at this point, server and client should be in sync.
-						syncdItems.add(locUri);
-						Log.i(TAG, "Hooray! "+ locUri + " has been posted succesfully.");
+				jsonObject = nc.postJson(publicPath, jsonObject);
 
-					}else{
-						Log.e(TAG, "update of "+locUri+" failed");
-					}
-					modified = true;
-				}finally{
-					entity.consumeContent();
+				final ContentValues cvUpdate = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, syncMap);
+				if (cr.update(locUri, cvUpdate, null, null) == 1){
+					// at this point, server and client should be in sync.
+					syncdItems.add(locUri);
+					Log.i(TAG, "Hooray! "+ locUri + " has been posted succesfully.");
+
+				}else{
+					Log.e(TAG, "update of "+locUri+" failed");
 				}
+				modified = true;
 
 			} catch (final Exception e) {
 				final SyncException se = new SyncException(getString(R.string.error_sync_no_post));
@@ -355,8 +341,8 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 
 				}else if (netLastModified.before(locLastModified)){
 					// local is more up to date, propagate!
-					final HttpResponse hr = nc.putJson(publicPath, JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, syncMap));
-					hr.getEntity().consumeContent();
+					jsonObject = nc.putJson(publicPath, JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, syncMap));
+
 					Log.d("LocastSync", cvNet + " is older than "+locUri);
 					modified = true;
 				}
@@ -385,10 +371,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			throw new RuntimeException("Never got a local URI for a sync'd item.");
 		}
 
-		if (modified){
-			syncMap.onUpdateItem(getApplicationContext(), locUri, jsonObject);
-		}
-		syncMap.onPostSyncItem(getApplicationContext(), locUri, jsonObject);
+		syncMap.onPostSyncItem(getApplicationContext(), locUri, jsonObject, modified);
 
 		syncdItems.add(locUri);
 

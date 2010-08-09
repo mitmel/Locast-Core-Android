@@ -47,9 +47,12 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 		_ID,
 		_PUBLIC_ID,
 		_MODIFIED_DATE,
+		_CREATED_DATE,
 		_TITLE,
 		_AUTHOR,
 		_DESCRIPTION,
+		_LATITUDE,
+		_LONGITUDE,
 		_PRIVACY,
 		_FAVORITED,
 };
@@ -96,13 +99,11 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 		}
 
 		@Override
-		public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException, IOException {
-			OrderedList.onUpdate(context, uri, item, "shotlist", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new ShotList(), ShotList.PATH);
+		public void onPostSyncItem(Context context, Uri uri, JSONObject item, boolean updated) throws SyncException, IOException {
+			super.onPostSyncItem(context, uri, item, updated);
+			if (updated){
+				OrderedList.onUpdate(context, uri, item, "shotlist", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new ShotList(), ShotList.PATH);
+			}
 		}
 	}
-
-	static {
-
-	}
-
 }

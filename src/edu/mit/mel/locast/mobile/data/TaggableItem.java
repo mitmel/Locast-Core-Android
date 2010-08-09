@@ -37,6 +37,10 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
+
+import com.stackoverflow.CollectionUtils;
+import com.stackoverflow.Predicate;
+
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 
 /**
@@ -62,27 +66,21 @@ public abstract class TaggableItem extends JsonSyncableItem {
 
 	public static final TaggableItemSyncMap SYNC_MAP = new TaggableItemSyncMap();
 
+	/**
+	 * An item that will sync "tags" and "system_tags" fields.
+	 * @author steve
+	 *
+	 */
 	public static class TaggableItemSyncMap extends JsonSyncableItem.ItemSyncMap {
 		public TaggableItemSyncMap() {
 			super();
-			put(Tag.PATH, new SyncCustomArray("tags", SyncItem.SYNC_TO) {
+			put(Tag.PATH, new SyncMapJoiner(
+					new TagSyncField("tags", SyncItem.SYNC_TO),
+					new TagSyncField("system_tags", SYSTEM_PREFIX, SyncItem.SYNC_TO)) {
 
 				@Override
-				public JSONArray toJSON(Context context, Uri localItem, Cursor c) throws JSONException {
-					if (localItem == null || context.getContentResolver().getType(localItem).startsWith("vnd.android.cursor.dir")){
-						return null;
-					}
-					JSONArray jo = null;
-					if (localItem != null){
-						jo = new JSONArray(getTags(context.getContentResolver(), localItem));
-					}
-					return jo;
-				}
-
-				@Override
-				public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
-						throws JSONException {
-					return null; // this shouldn't be called.
+				public ContentValues joinContentValues(ContentValues[] cv) {
+					return null;
 				}
 			});
 
@@ -97,29 +95,62 @@ public abstract class TaggableItem extends JsonSyncableItem {
 		 */
 		private static final long serialVersionUID = 1L;
 
-		@Override
-		public void onPostSyncItem(Context context, Uri uri, JSONObject item)
-				throws SyncException, IOException {
-			super.onPostSyncItem(context, uri, item);
-
-			// tags need to be loaded here, as they need a valid localUri in order to save.
-			final JSONArray ja = item.optJSONArray("tags");
-			final List<String> tags = new ArrayList<String>(ja.length());
-			for (int i = 0; i < ja.length(); i++){
-				tags.add(ja.optString(i));
-			}
-			Log.d("TaggableItem", uri + " has the following tags: "+ tags);
-			TaggableItem.putTags(context.getContentResolver(), uri, tags);
-
-		}
 	};
 
-	static {
-
-	}
 	@Override
 	public SyncMap getSyncMap() {
 		return SYNC_MAP;
+	}
+
+	public static class TagSyncField extends SyncCustom {
+		final private String prefix;
+
+		public TagSyncField(String remoteKey, int flags) {
+			super(remoteKey, flags);
+			prefix = null;
+		}
+
+		public TagSyncField(String remoteKey, String prefix, int flags) {
+			super(remoteKey, flags);
+			this.prefix = prefix;
+		}
+
+
+		@Override
+		public JSONArray toJSON(Context context, Uri localItem, Cursor c, String lProp) throws JSONException {
+			if (localItem == null || context.getContentResolver().getType(localItem).startsWith("vnd.android.cursor.dir")){
+				return null;
+			}
+			JSONArray jo = null;
+			if (localItem != null){
+				jo = new JSONArray(getTags(context.getContentResolver(), localItem, prefix));
+			}
+			return jo;
+		}
+
+		@Override
+		public ContentValues fromJSON(Context context, Uri localItem, JSONObject item, String lProp)
+				throws JSONException {
+			return null; // this shouldn't be called.
+		}
+
+		@Override
+		public void onPostSyncItem(Context context, Uri uri,
+				JSONObject item, boolean updated) throws SyncException,
+				IOException {
+			super.onPostSyncItem(context, uri, item, updated);
+			Log.d("TaggableItem", "called onPostSyncItem");
+			if (updated){
+				// tags need to be loaded here, as they need a valid localUri in order to save.
+				final JSONArray ja = item.optJSONArray(remoteKey);
+				final List<String> tags = new ArrayList<String>(ja.length());
+				for (int i = 0; i < ja.length(); i++){
+					tags.add(ja.optString(i));
+				}
+				Log.d("TaggableItem", uri + " has the following tags: "+ tags);
+				TaggableItem.putTags(context.getContentResolver(), uri, tags, prefix);
+			}
+		}
 	}
 
 
@@ -145,15 +176,29 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	}
 
 	/**
-	 * @param c
+	 * @param cr
 	 * @return a list of all the tags attached to a given item
 	 */
 	public static Set<String> getTags(ContentResolver cr, Uri item) {
+		return getTags(cr, item, null);
+	}
+
+	/**
+	 * @param cr
+	 * @param item
+	 * @param prefix
+	 * @return a list of all the tags attached to a given item
+	 */
+	public static Set<String> getTags(ContentResolver cr, Uri item, String prefix) {
 		final Cursor tags = cr.query(Uri.withAppendedPath(item, Tag.PATH), Tag.DEFAULT_PROJECTION, null, null, null);
 		final Set<String> tagSet = new HashSet<String>(tags.getCount());
 		final int tagColumn = tags.getColumnIndex(Tag._NAME);
+		final Predicate<String> predicate = getPrefixPredicate(prefix);
 		for (tags.moveToFirst(); !tags.isAfterLast(); tags.moveToNext()){
-			tagSet.add(tags.getString(tagColumn));
+			final String tag = tags.getString(tagColumn);
+			if (predicate.apply(tag)){
+				tagSet.add(tag);
+			}
 		}
 		tags.close();
 		return tagSet;
@@ -165,15 +210,21 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 * @param tags
 	 */
 	public static void putTags(ContentResolver cr, Uri item, Collection<String> tags) {
+		putTags(cr, item, tags, null);
+	}
+
+	public static String CV_TAG_PREFIX = "prefix";
+	public static void putTags(ContentResolver cr, Uri item, Collection<String> tags, String prefix) {
 		final ContentValues cv = new ContentValues();
-		cv.put(Tag.PATH, TaggableItem.toListString(tags));
+		cv.put(Tag.PATH, TaggableItem.toListString(addPrefixToTags(prefix, tags)));
+		cv.put(CV_TAG_PREFIX, prefix);
 		cr.update(Uri.withAppendedPath(item, Tag.PATH), cv, null, null);
 	}
 
 	public static int MAX_POPULAR_TAGS = 10;
 
 	/**
-	 * TODO make this pick the set of tags of a set of content.
+	 * TODO make this pick the set of tags for a set of content.
 	 *
 	 * @param cr a content resolver
 	 * @return the top MAX_POPULAR_TAGS most popular tags in the set.
@@ -239,5 +290,71 @@ public abstract class TaggableItem extends JsonSyncableItem {
 		}
 
 		return Uri.withAppendedPath(Uri.withAppendedPath(baseUri, Tag.PATH), Tag.toTagString(tags));
+	}
+
+	private final static char PREFIX_SEPARATOR = ':';
+	public final static String SYSTEM_PREFIX = "system";
+
+	// cache predicates so objects don't get created each time a query is made.
+	private static HashMap<String,HasPrefixPredicate> predicates = new HashMap<String, HasPrefixPredicate>();
+
+	private static HasPrefixPredicate getPrefixPredicate(String prefix){
+		if (predicates.containsKey(prefix)){
+			return predicates.get(prefix);
+		}else{
+			final HasPrefixPredicate predicate = new HasPrefixPredicate(prefix);
+			predicates.put(prefix, predicate);
+			return predicate;
+		}
+	}
+
+	public static Collection<String> filterTags(String prefix, Collection<String> tags){
+		final Predicate<String> predicate = getPrefixPredicate(prefix);
+		return CollectionUtils.filter(tags, predicate);
+	}
+
+	public static void filterTagsInPlace(String prefix, Collection<String> tags){
+		final Predicate<String> predicate = getPrefixPredicate(prefix);
+		CollectionUtils.filterInPlace(tags, predicate);
+	}
+
+	private static class HasPrefixPredicate implements Predicate<String> {
+		private final String mPrefix;
+
+		/**
+		 * @param prefix prefix string or null for un-prefixed tags.
+		 */
+		public HasPrefixPredicate(String prefix) {
+			mPrefix = prefix;
+		}
+		public boolean apply(String in) {
+			final int separatorIndex = in.indexOf(PREFIX_SEPARATOR);
+			if (separatorIndex == -1){
+				// we asked for a prefix, but this contains none.
+				if (mPrefix != null){
+					return false;
+				// a null prefix was requested, so it's good that we have no separator.
+				}else{
+					return true;
+				}
+			}
+			return in.substring(0, separatorIndex).equals(mPrefix);
+		}
+	}
+
+
+	public static String addPrefixToTag(String prefix, String tag){
+		return prefix + PREFIX_SEPARATOR + tag;
+	}
+
+	private static Collection<String> addPrefixToTags(String prefix, Collection<String> tags){
+		if (prefix == null){
+			return tags;
+		}
+		final ArrayList<String> prefixedTags = new ArrayList<String>(tags.size());
+		for (final String tag: tags){
+			prefixedTags.add(addPrefixToTag(prefix, tag));
+		}
+		return prefixedTags;
 	}
 }

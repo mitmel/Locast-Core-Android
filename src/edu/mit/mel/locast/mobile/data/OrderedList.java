@@ -42,7 +42,7 @@ public class OrderedList {
 		}
 	}
 
-	public static class SyncMapItem extends JsonSyncableItem.SyncCustomArray {
+	public static class SyncMapItem extends JsonSyncableItem.SyncCustom {
 		private final JsonSyncableItem mListItem;
 		private final String mItemPath;
 
@@ -57,13 +57,13 @@ public class OrderedList {
 
 		@Override
 		public ContentValues fromJSON(Context context, Uri parentItem,
-				JSONArray item) throws JSONException, NetworkProtocolException,
+				JSONObject item, String lProp) throws JSONException, NetworkProtocolException,
 				IOException {
 			return null;
 		}
 
 		@Override
-		public JSONArray toJSON(Context context, Uri parentItem, Cursor c)
+		public JSONArray toJSON(Context context, Uri parentItem, Cursor c, String lProp)
 				throws JSONException, NetworkProtocolException, IOException {
 			Log.d(TAG, "main toJSON");
 
@@ -77,7 +77,7 @@ public class OrderedList {
 		}
 	}
 
-	public static class SyncMapOnUpdate extends JsonSyncableItem.SyncCustomArray {
+	public static class SyncMapOnUpdate extends JsonSyncableItem.SyncCustom {
 		private final JsonSyncableItem mListItem;
 		private final String mItemPath;
 
@@ -93,19 +93,21 @@ public class OrderedList {
 		}
 
 		@Override
-		public JSONArray toJSON(Context context, Uri parentItem, Cursor c)
+		public JSONArray toJSON(Context context, Uri parentItem, Cursor c, String lProp)
 		throws JSONException, NetworkProtocolException, IOException {
 			return null;
 		}
 
 		@Override
-		public ContentValues fromJSON(Context context, Uri parentItem, JSONArray item)
+		public ContentValues fromJSON(Context context, Uri parentItem, JSONObject item, String lProp)
 		throws JSONException, NetworkProtocolException, IOException {
 			Log.d(TAG, "onUpdateItem fromJSON");
+			final JSONArray ja = item.getJSONArray(remoteKey);
+
 			final ContentResolver cr = context.getContentResolver();
 
-			for (int i = 0; i < item.length(); i++){
-				final ContentValues cv = JsonSyncableItem.fromJSON(context, null, item.getJSONObject(i), mListItem.getSyncMap());
+			for (int i = 0; i < ja.length(); i++){
+				final ContentValues cv = JsonSyncableItem.fromJSON(context, null, ja.getJSONObject(i), mListItem.getSyncMap());
 
 				cv.put(Columns._LIST_IDX, i);
 				cv.put(Columns._PARENT_ID, ContentUris.parseId(parentItem));
@@ -117,7 +119,7 @@ public class OrderedList {
 				}
 
 			}
-			return new ContentValues();
+			return null;
 		}
 	}
 }

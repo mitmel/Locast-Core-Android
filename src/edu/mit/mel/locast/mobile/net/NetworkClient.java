@@ -295,7 +295,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	public boolean pairDevice(String pairCode) throws IOException, JSONException, NetworkProtocolException{
 		final DefaultHttpClient hc = new DefaultHttpClient();
 		hc.addRequestInterceptor(REMOVE_EXPECTATIONS);
-		final HttpPost r = openPOST(PATH_PAIR);
+		final HttpPost r = new HttpPost(getFullUri(PATH_PAIR));
 
 		final List<BasicNameValuePair> parameters = new ArrayList<BasicNameValuePair>();
 		parameters.add(new BasicNameValuePair("auth_secret", pairCode));
@@ -304,32 +304,12 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		r.setHeader("Content-Type", URLEncodedUtils.CONTENT_TYPE);
 		final HttpResponse c = hc.execute(r);
 
-		final int responseCode = c.getStatusLine().getStatusCode();
-		final HttpEntity entity = c.getEntity();
-		try {
+		checkStatusCode(c, false);
 
-			if (responseCode == HttpStatus.SC_BAD_REQUEST){
-				// avoids any unpleasantly-large error messages.
-				String msg;
-				if (entity.getContentLength() > 40){
-					logDebug("Got long response");
-					msg = c.getStatusLine().getReasonPhrase();
-				}else{
-					msg = StreamUtils.inputStreamToString(entity.getContent());
-				}
-				throw new NetworkProtocolException("Incorrect pairing code (" + msg + ")", c);
+		final JSONObject creds = returnJsonObject(c);
+		saveCredentials(creds.getString("username"), creds.getString("auth_secret"));
+		isAuthenticated = true;
 
-			}else if(responseCode != HttpStatus.SC_OK) {
-				throw new NetworkProtocolException(c, HttpStatus.SC_OK);
-			}
-
-			final JSONObject creds = new JSONObject(StreamUtils.inputStreamToString(entity.getContent()));
-			saveCredentials(creds.getString("username"), creds.getString("auth_secret"));
-			isAuthenticated = true;
-
-		}finally{
-			entity.consumeContent();
-		}
 		return true;
 	}
 
@@ -341,9 +321,11 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @throws RecordStoreException
 	 */
 	public boolean unpairDevice() throws IOException, NetworkProtocolException{
-		final HttpPost r = openPOST(PATH_UNPAIR);
+		final HttpPost r = new HttpPost(getFullUri(PATH_UNPAIR));
 
 		final HttpResponse c = this.execute(r);
+		checkStatusCode(c, false);
+
 		if (c.getStatusLine().getStatusCode() == HttpStatus.SC_OK){
 			clearCredentials();
 			return true;
@@ -354,44 +336,109 @@ abstract public class NetworkClient extends DefaultHttpClient {
 
 	/*************************** all request methods ******************/
 
-	public HttpResponse head(String uri) throws IOException, JSONException, NetworkProtocolException {
-		final HttpHead req = openHEAD(uri);
+	public HttpResponse head(String path) throws IOException, JSONException, NetworkProtocolException {
+		final HttpHead req = new HttpHead(getFullUri(path));
 
 		return this.execute(req);
 	}
-	/************************************ GET *******************************/
-	public HttpResponse get(String uri) throws IOException, JSONException, NetworkProtocolException, HttpResponseException {
 
-		final HttpGet req = openGET(uri);
+	/**
+	 * Given a HttpResponse, checks that the return types are all correct and returns
+	 * a JSONObject from the response.
+	 *
+	 * @param res
+	 * @return the full response body as a JSONObject
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 * @throws JSONException
+	 */
+	private JSONObject returnJsonObject(HttpResponse res) throws IllegalStateException, IOException, NetworkProtocolException, JSONException {
+		checkContentType(res, JSON_MIME_TYPE, false);
 
-		final HttpResponse res = this.execute(req);
+		final HttpEntity ent = res.getEntity();
+		final JSONObject jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
+		ent.consumeContent();
+		return jo;
 
+	}
+
+	/**
+	 * Verifies that the HttpResponse has a good status code. Throws exceptions if they are not.
+	 *
+	 * @param res
+	 * @param createdOk true if a 201 (CREATED) code is ok. Otherwise, only 200 (OK) is allowed.
+	 * @throws HttpResponseException if the status code is 400 series.
+	 * @throws NetworkProtocolException for all status codes errors.
+	 * @throws IOException
+	 */
+	private boolean checkStatusCode(HttpResponse res, boolean createdOk) throws HttpResponseException, NetworkProtocolException, IOException {
 		final int statusCode = res.getStatusLine().getStatusCode();
-		if (statusCode == HttpStatus.SC_NOT_FOUND) {
+		if (statusCode == HttpStatus.SC_OK || (createdOk && statusCode == HttpStatus.SC_CREATED)){
+			return true;
+		}else if (statusCode >= HttpStatus.SC_BAD_REQUEST && statusCode < HttpStatus.SC_INTERNAL_SERVER_ERROR) {
 			throw new HttpResponseException(statusCode, res.getStatusLine().getReasonPhrase());
-		}
-		if (statusCode != HttpStatus.SC_OK){
+		}else{
 			final HttpEntity e = res.getEntity();
 			if (e.getContentType().getValue().equals("text/html") || e.getContentLength() > 40){
 				logDebug("Got long response body. Not showing.");
 			}else{
 				logDebug(StreamUtils.inputStreamToString(e.getContent()));
 			}
+			e.consumeContent();
 			throw new NetworkProtocolException("HTTP " + res.getStatusLine().getStatusCode() + " "+ res.getStatusLine().getReasonPhrase(), res);
 		}
+	}
+
+	/**
+	 * Verifies that the HttpResponse has a correct content type. Throws exceptions if not.
+	 * @param res
+	 * @param contentType
+	 * @param exact If false, will only check to see that the result content type starts with the desired contentType.
+	 * @return
+	 * @throws NetworkProtocolException
+	 * @throws IOException
+	 */
+	private boolean checkContentType(HttpResponse res, String contentType, boolean exact) throws NetworkProtocolException, IOException {
+		final String resContentType = res.getFirstHeader("Content-Type").getValue();
+		if (! (exact ? resContentType.equals(contentType) : resContentType.startsWith(contentType))) {
+			throw new NetworkProtocolException("Did not return content-type '"+contentType+"'. Got: '"+
+					resContentType + "'", res);
+		}
+		return true;
+	}
+
+	/************************************ GET *******************************/
+	/**
+	 * Gets an object and verifies that it got a successful response code.
+	 * @param path
+	 * @return
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws NetworkProtocolException
+	 * @throws HttpResponseException
+	 */
+	public HttpResponse get(String path) throws IOException, JSONException, NetworkProtocolException, HttpResponseException {
+
+		final HttpGet req = new HttpGet(getFullUri(path));
+
+		final HttpResponse res = this.execute(req);
+
+		checkStatusCode(res, false);
+
 		return res;
 	}
 	/**
 	 * Loads a JSON object from the given URI
 	 *
-	 * @param uri
+	 * @param path
 	 * @return
 	 * @throws IOException
 	 * @throws JSONException
 	 * @throws NetworkProtocolException
 	 */
-	public JSONObject getObject(String uri) throws IOException, JSONException, NetworkProtocolException{
-		final HttpEntity ent = getJson(uri);
+	public JSONObject getObject(String path) throws IOException, JSONException, NetworkProtocolException{
+		final HttpEntity ent = getJson(path);
 		final JSONObject jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
 		ent.consumeContent();
 		return jo;
@@ -400,28 +447,26 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	/**
 	 * GETs a JSON Array
 	 *
-	 * @param uri
+	 * @param path
 	 * @return
 	 * @throws IOException
 	 * @throws JSONException
 	 * @throws NetworkProtocolException
 	 */
-	public JSONArray getArray(String uri) throws IOException, JSONException, NetworkProtocolException{
+	public JSONArray getArray(String path) throws IOException, JSONException, NetworkProtocolException{
 
-		final HttpEntity ent = getJson(uri);
+		final HttpEntity ent = getJson(path);
 		final JSONArray ja = new JSONArray(StreamUtils.inputStreamToString(ent.getContent()));
 		ent.consumeContent();
 		return ja;
 	}
 
-	private synchronized HttpEntity getJson(String uri) throws IOException, JSONException, NetworkProtocolException {
+	private synchronized HttpEntity getJson(String path) throws IOException, JSONException, NetworkProtocolException {
 
-		final HttpResponse res = get(uri);
+		final HttpResponse res = get(path);
 
-		if (! res.getFirstHeader("Content-Type").getValue().startsWith(JSON_MIME_TYPE)) {
-			throw new NetworkProtocolException(uri + " did not return content-type JSON object. Got: "+
-					res.getFirstHeader("Content-Type").getValue(), res);
-		}
+		checkContentType(res, JSON_MIME_TYPE, false);
+
 		isAuthenticated = true; // this should only get set if we managed to make it here
 
 		return res.getEntity();
@@ -430,27 +475,36 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	/***************************** PUT ***********************************/
 
 	/**
-	 * PUTs a JSON object
+	 * PUTs a JSON object, returns an updated JSON object.
 	 *
-	 * @param uri
+	 * @param path
 	 * @param jsonObject
 	 * @return
 	 * @throws IOException
 	 * @throws NetworkProtocolException
+	 * @throws JSONException
+	 * @throws IllegalStateException
 	 */
-	public HttpResponse putJson(String uri, JSONObject jsonObject)  throws IOException,
-		NetworkProtocolException {
-		return put(uri, jsonObject.toString());
+	public JSONObject putJson(String path, JSONObject jsonObject)  throws IOException,
+		NetworkProtocolException, IllegalStateException, JSONException {
+		return returnJsonObject(put(path, jsonObject.toString()));
 	}
 
-	public HttpResponse putJson(String uri, boolean jsonValue)  throws IOException,
+	public HttpResponse putJson(String path, boolean jsonValue)  throws IOException,
 		NetworkProtocolException {
-		return put(uri, jsonValue ? "true" : "false");
+		return put(path, jsonValue ? "true" : "false");
 	}
 
-	protected synchronized HttpResponse put(String uri, String jsonString) throws IOException,
+	/**
+	 * @param path
+	 * @param jsonString
+	 * @return A HttpResponse that has been checked for improper response codes.
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 */
+	protected synchronized HttpResponse put(String path, String jsonString) throws IOException,
 		NetworkProtocolException{
-		final HttpPut r = openPUT(uri);
+		final HttpPut r = new HttpPut(getFullUri(path));
 
 		r.setEntity(new StringEntity(jsonString, "utf-8"));
 
@@ -459,17 +513,14 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		Log.d("NetworkClient", "PUTting: "+jsonString);
 		final HttpResponse c = this.execute(r);
 
-		if (c.getStatusLine().getStatusCode() >= 300){
-			logDebug("just sent:" + jsonString);
-			// TODO should revise this to say that HTTP_CREATED is ok too.
-			throw new NetworkProtocolException(c, HttpStatus.SC_OK);
-		}
+		checkStatusCode(c, true);
+
 		return c;
 	}
 
-	protected synchronized HttpResponse put(String uri, String contentType, InputStream is) throws IOException,
+	protected synchronized HttpResponse put(String path, String contentType, InputStream is) throws IOException,
 		NetworkProtocolException {
-		final HttpPut r = openPUT(uri);
+		final HttpPut r = new HttpPut(getFullUri(path));
 
 		r.setEntity(new InputStreamEntity(is, 0));
 
@@ -477,79 +528,35 @@ abstract public class NetworkClient extends DefaultHttpClient {
 
 		final HttpResponse c = this.execute(r);
 
-		if (c.getStatusLine().getStatusCode() >= 300) {
-			// TODO should revise this to say that HTTP_CREATED is ok too.
-			throw new NetworkProtocolException(c, HttpStatus.SC_OK);
-		}
+		checkStatusCode(c, true);
+
 		return c;
 	}
 
-	protected synchronized String getFullUri (String uri){
+	protected synchronized String getFullUri (String path){
 		String fullUri;
-		if (uri.startsWith("http")){
-			fullUri = uri;
+		if (path.startsWith("http")){
+			fullUri = path;
 
 		}else {
-			fullUri = baseurl + uri;
+			fullUri = baseurl + path;
 		}
 
 		return fullUri;
 	}
 
-	protected synchronized HttpHead openHEAD(String uri) throws IOException,
-	NetworkProtocolException {
-		final String fullUri = getFullUri(uri);
-		logDebug("HEADting "+ fullUri);
-		return new HttpHead(fullUri);
-	}
-
-	protected synchronized HttpGet openGET(String uri) throws IOException,
-	NetworkProtocolException {
-		final String fullUri = getFullUri(uri);
-		logDebug("GETting "+ fullUri);
-		if (getCredentialsProvider() != null && getCredentialsProvider().getCredentials(authScope) != null){
-			logDebug("Authenticating as " + getCredentialsProvider().getCredentials(authScope).getUserPrincipal().getName());
-		}else{
-			logDebug("No credentials");
-		}
-		return new HttpGet(fullUri);
-	}
-
-	protected synchronized HttpPost openPOST(String uri) throws IOException,
-	NetworkProtocolException {
-		logDebug("POSTing "+ baseurl + uri);
-		if (getCredentialsProvider() != null && getCredentialsProvider().getCredentials(authScope) != null){
-			logDebug("Authenticating as " + getCredentialsProvider().getCredentials(authScope).getUserPrincipal().getName());
-		}else{
-			logDebug("No credentials");
-		}
-		return new HttpPost(baseurl+uri);
-	}
-
-	protected synchronized HttpPut openPUT(String uri) throws IOException,
-	NetworkProtocolException {
-		logDebug("PUTting "+ baseurl + uri);
-		if (getCredentialsProvider() != null && getCredentialsProvider().getCredentials(authScope) != null){
-			logDebug("Authenticating as " + getCredentialsProvider().getCredentials(authScope).getUserPrincipal().getName());
-		}else{
-			logDebug("No credentials");
-		}
-		return new HttpPut(baseurl+uri);
-	}
-
-
 	/************************** POST ******************************/
 
 	/**
-	 * @param uri
+	 * @param path
 	 * @param jsonString
 	 * @return
 	 * @throws IOException
 	 * @throws NetworkProtocolException
 	 */
-	public synchronized HttpResponse post(String uri, String jsonString)
+	public synchronized HttpResponse post(String path, String jsonString)
 		throws IOException, NetworkProtocolException {
-		final HttpPost r = openPOST(uri);
+		final HttpPost r = new HttpPost(getFullUri(path));
 
 		r.setEntity(new StringEntity(jsonString, "utf-8"));
 
@@ -559,10 +566,16 @@ abstract public class NetworkClient extends DefaultHttpClient {
 
 		if (c.getStatusLine().getStatusCode() >= 300){
 			logDebug("just sent: " + jsonString);
+			c.getEntity().consumeContent();
 			// TODO should revise this to say that HTTP_CREATED is ok too.
 			throw new NetworkProtocolException(c, HttpStatus.SC_OK);
 		}
 		return c;
+	}
+
+	public JSONObject postJson(String path, JSONObject object) throws IllegalStateException, IOException, NetworkProtocolException, JSONException{
+		final HttpResponse res = post(path, object.toString());
+		return returnJsonObject(res);
 	}
 
 	/*********************************** User ******************************/
@@ -751,7 +764,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		final InputStream is = getFileStream(context, localFile);
 
 		// next step is to send the file contents.
-		final HttpPut r = openPUT(serverPath);
+		final HttpPut r = new HttpPut(getFullUri(serverPath));
 
 		r.setHeader("Content-Type", contentType);
 
@@ -762,14 +775,8 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		r.setEntity(new InputStreamEntity(isw, afd.getLength()));
 
 		final HttpResponse c = this.execute(r);
-		try {
-			final int status = c.getStatusLine().getStatusCode();
-			if (status != HttpStatus.SC_CREATED && status != HttpStatus.SC_OK) {
-				throw new NetworkProtocolException(c, HttpStatus.SC_CREATED);
-			}
-		}finally{
-			c.getEntity().consumeContent();
-		}
+		checkStatusCode(c, true);
+		c.getEntity().consumeContent();
 	}
 
 

@@ -60,12 +60,14 @@ public class ViewProjectActivity extends TabActivity {
 		mCursor = managedQuery(myUri, Project.PROJECTION, null, null, null);
 		mCursor.moveToFirst();
 		loadFromCursor();
+
 	}
 
 	@Override
 	protected void onResume() {
 		mCursor.registerContentObserver(mContentObserver);
 		super.onResume();
+		startService(new Intent(Intent.ACTION_SYNC, myUri));
 	};
 
 	@Override

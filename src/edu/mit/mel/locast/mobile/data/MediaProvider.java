@@ -818,6 +818,14 @@ public class MediaProvider extends ContentProvider {
 
 			final Set<String> newTags = new HashSet<String>(TaggableItem.getList(values.getAsString(Tag.PATH)));
 
+			// If the CV_TAG_PREFIX key is present, only work with tags that have that prefix.
+			if (values.containsKey(TaggableItem.CV_TAG_PREFIX)){
+				final String prefix = values.getAsString(TaggableItem.CV_TAG_PREFIX);
+				TaggableItem.filterTagsInPlace(prefix, newTags);
+				TaggableItem.filterTagsInPlace(prefix, existingTags);
+				values.remove(TaggableItem.CV_TAG_PREFIX);
+			}
+
 			// tags that need to be removed.
 			final Set<String> toDelete = new HashSet<String>(existingTags);
 			toDelete.removeAll(newTags);

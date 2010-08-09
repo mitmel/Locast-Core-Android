@@ -55,15 +55,16 @@ public class BrowseCastsActivity extends CastListActivity implements LocationLis
 
 		final SeparatedListAdapter adapter = new SeparatedListAdapter(this, R.layout.list_section_header);
 		final ArrayList<String> tag = new ArrayList<String>();
-    	tag.add("featured");
-    	//adapter.addSection("Unpublished", new CastCursorAdapter(this, managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._PUBLIC_ID + "=null", null, null)));
-		adapter.addSection("featured", new CastCursorAdapter(this, managedQuery(TaggableItem.getTagUri(Cast.CONTENT_URI, tag), TaggableItem.getTagProjection(Cast.PROJECTION), null, null, null)));
+		tag.add(TaggableItem.addPrefixToTag(TaggableItem.SYSTEM_PREFIX, "_featured"));
+
+		//adapter.addSection("Unpublished", new CastCursorAdapter(this, managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._PUBLIC_ID + "=null", null, null)));
+		adapter.addSection("featured", new CastCursorAdapter(this, managedQuery(TaggableItem.getTagUri(Cast.CONTENT_URI, tag), TaggableItem.getTagProjection(Cast.PROJECTION), null, null, Cast.SORT_ORDER_DEFAULT)));
 
 		nearbyCursorAdapter = new CastCursorAdapter(this, managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._ID + "=-1", null, null));
 
 		adapter.addSection("nearby", nearbyCursorAdapter);
 
-		//adapter.addSection("starred", new CastCursorAdapter(this, managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, null, null, null)));
+		adapter.addSection("starred", new CastCursorAdapter(this, managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._FAVORITED + " != 0", null, null)));
 		adapter.addSection("All", new CastCursorAdapter(this, managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, null, null, null)));
 		iloc = new IncrementalLocator(this);
 
