@@ -88,8 +88,8 @@ public class MainActivity extends TabActivity {
         		.setContent(new Intent(Intent.ACTION_VIEW, Cast.CONTENT_URI,
         						this, BrowseCastsActivity.class)));
 
-        updateChecker = new AppUpdateChecker(getApplicationContext(), getString(R.string.app_update_url),
-        		new AppUpdateChecker.OnUpdateDialog(getApplicationContext(), getText(R.string.app_name)));
+        updateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url),
+        		new AppUpdateChecker.OnUpdateDialog(this, getText(R.string.app_name)));
 
         updateChecker.checkForUpdates();
     }

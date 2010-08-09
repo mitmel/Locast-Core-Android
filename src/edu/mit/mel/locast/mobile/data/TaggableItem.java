@@ -60,56 +60,69 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	// key for ContentValues to temporarily store tags as a delimited list
 	public static final String TEMP_TAGS = "_tags";
 
-	public static final Map<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem> (JsonSyncableItem.SYNC_MAP);
+	public static final TaggableItemSyncMap SYNC_MAP = new TaggableItemSyncMap();
+
+	public static class TaggableItemSyncMap extends JsonSyncableItem.ItemSyncMap {
+		public TaggableItemSyncMap() {
+			super();
+			put(Tag.PATH, new SyncCustomArray("tags", SyncItem.SYNC_TO) {
+
+				@Override
+				public JSONArray toJSON(Context context, Uri localItem, Cursor c) throws JSONException {
+					if (localItem == null || context.getContentResolver().getType(localItem).startsWith("vnd.android.cursor.dir")){
+						return null;
+					}
+					JSONArray jo = null;
+					if (localItem != null){
+						jo = new JSONArray(getTags(context.getContentResolver(), localItem));
+					}
+					return jo;
+				}
+
+				@Override
+				public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
+						throws JSONException {
+					return null; // this shouldn't be called.
+				}
+			});
+
+			final SyncMap authorSync = new SyncMap();
+			authorSync.put(_AUTHOR, new SyncFieldMap("username", SyncFieldMap.STRING));
+			put("_author", 			new SyncMapChain("author", authorSync, SyncItem.SYNC_FROM));
+
+			put(_PRIVACY,          	new SyncFieldMap("privacy", SyncFieldMap.STRING));
+		}
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public void onPostSyncItem(Context context, Uri uri, JSONObject item)
+				throws SyncException, IOException {
+			super.onPostSyncItem(context, uri, item);
+
+			// tags need to be loaded here, as they need a valid localUri in order to save.
+			final JSONArray ja = item.optJSONArray("tags");
+			final List<String> tags = new ArrayList<String>(ja.length());
+			for (int i = 0; i < ja.length(); i++){
+				tags.add(ja.optString(i));
+			}
+			Log.d("TaggableItem", uri + " has the following tags: "+ tags);
+			TaggableItem.putTags(context.getContentResolver(), uri, tags);
+
+		}
+	};
 
 	static {
-		SYNC_MAP.put(Tag.PATH, new SyncCustomArray("tags", SyncItem.SYNC_TO) {
 
-			@Override
-			public JSONArray toJSON(Context context, Uri localItem, Cursor c) throws JSONException {
-				if (localItem == null || context.getContentResolver().getType(localItem).startsWith("vnd.android.cursor.dir")){
-					return null;
-				}
-				JSONArray jo = null;
-				if (localItem != null){
-					jo = new JSONArray(getTags(context.getContentResolver(), localItem));
-				}
-				return jo;
-			}
-
-			@Override
-			public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
-					throws JSONException {
-				return null; // this shouldn't be called.
-			}
-		});
-
-		final HashMap<String,SyncItem> authorSync = new HashMap<String, SyncItem>();
-		authorSync.put(_AUTHOR, new SyncMap("username", SyncMap.STRING));
-		SYNC_MAP.put("_author", 			new SyncMapChain("author", authorSync, SyncItem.SYNC_FROM));
-
-		SYNC_MAP.put(_PRIVACY,          	new SyncMap("privacy", SyncMap.STRING));
 	}
 	@Override
-	public Map<String, SyncItem> getSyncMap() {
+	public SyncMap getSyncMap() {
 		return SYNC_MAP;
 	}
 
-	@Override
-	public void onPostSyncItem(Context context, Uri uri, JSONObject item)
-			throws SyncException, IOException {
-		super.onPostSyncItem(context, uri, item);
 
-		// tags need to be loaded here, as they need a valid localUri in order to save.
-		final JSONArray ja = item.optJSONArray("tags");
-		final List<String> tags = new ArrayList<String>(ja.length());
-		for (int i = 0; i < ja.length(); i++){
-			tags.add(ja.optString(i));
-		}
-		Log.d("TaggableItem", uri + " has the following tags: "+ tags);
-		TaggableItem.putTags(context.getContentResolver(), uri, tags);
-
-	}
 
 	/**
 	 * @param c a cursor pointing at an item's row
@@ -129,19 +142,6 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	public static boolean canChangePrivacyLevel(Cursor c){
 		final String username = AndroidNetworkClient.getInstance(null).getUsername();
 		return username == null || username.equals(c.getString(c.getColumnIndex(_AUTHOR)));
-	}
-
-
-	@Override
-	public void onPreSyncItem(ContentResolver cr, Uri uri, Cursor c)
-			throws SyncException {
-
-	}
-
-	@Override
-	public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException,
-			IOException {
-
 	}
 
 	/**

@@ -1,8 +1,6 @@
 package edu.mit.mel.locast.mobile.data;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -31,8 +29,8 @@ public class OrderedList {
 	}
 
 	public static void onUpdate(Context context, Uri parentUri, JSONObject item, String remoteKey, JsonSyncableItem listItem, String itemPath) throws SyncException {
-		final Map<String, SyncItem> syncMap = new HashMap<String, SyncItem>();
-		syncMap.put("_contents", new OrderedList.SyncMapOnUpdate(remoteKey, true, listItem, itemPath));
+		final SyncMap syncMap = new SyncMap();
+		syncMap.put("_contents", new OrderedList.SyncMapOnUpdate(remoteKey, SyncItem.FLAG_OPTIONAL, listItem, itemPath));
 
 		try {
 			Log.d(TAG, "trying to load ordered list for "+ parentUri+"; remoteKey: " + remoteKey+ "; item path: " + itemPath + "; item type: "+ listItem.getClass().getSimpleName());
@@ -44,17 +42,17 @@ public class OrderedList {
 		}
 	}
 
-	public static class SyncMap extends JsonSyncableItem.SyncCustomArray {
+	public static class SyncMapItem extends JsonSyncableItem.SyncCustomArray {
 		private final JsonSyncableItem mListItem;
 		private final String mItemPath;
 
-		public SyncMap(String remoteKey, boolean optional, JsonSyncableItem listItem, String itemPath) {
-			super(remoteKey, optional, SyncItem.SYNC_TO);
+		public SyncMapItem(String remoteKey, int flags, JsonSyncableItem listItem, String itemPath) {
+			super(remoteKey, flags | SyncItem.SYNC_TO);
 			mListItem = listItem;
 			mItemPath = itemPath;
 		}
-		public SyncMap(String remoteKey, JsonSyncableItem listItem, String itemPath) {
-			this(remoteKey, false, listItem, itemPath);
+		public SyncMapItem(String remoteKey, JsonSyncableItem listItem, String itemPath) {
+			this(remoteKey, 0, listItem, itemPath);
 		}
 
 		@Override
@@ -83,14 +81,14 @@ public class OrderedList {
 		private final JsonSyncableItem mListItem;
 		private final String mItemPath;
 
-		public SyncMapOnUpdate(String remoteKey, boolean optional, JsonSyncableItem listItem, String itemPath) {
-			super(remoteKey, optional, SyncItem.SYNC_FROM);
+		public SyncMapOnUpdate(String remoteKey, int flags, JsonSyncableItem listItem, String itemPath) {
+			super(remoteKey, flags | SyncItem.SYNC_FROM);
 			mListItem = listItem;
 			mItemPath = itemPath;
 		}
 
 		public SyncMapOnUpdate(String remoteKey, JsonSyncableItem listItem, String itemPath) {
-			this(remoteKey, false, listItem, itemPath);
+			this(remoteKey, 0, listItem, itemPath);
 
 		}
 

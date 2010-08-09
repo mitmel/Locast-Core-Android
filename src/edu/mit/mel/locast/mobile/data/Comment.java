@@ -16,15 +16,12 @@ package edu.mit.mel.locast.mobile.data;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import java.util.HashMap;
-import java.util.Map;
-
 import android.net.Uri;
 
 /**
  * DB entry for a comment. Also contains a sync mapping for publishing
  * to the network.
- * 
+ *
  * @author I040854
  */
 
@@ -33,17 +30,17 @@ public class Comment extends JsonSyncableItem {
 	public final static Uri CONTENT_URI = Uri
 			.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
 	public final static String DEFAULT_SORT_BY = _MODIFIED_DATE + " DESC";
-	
+
 	public final static String SERVER_PATH = "comments/";
-	
-	public static final String 	
+
+	public static final String
 		_AUTHOR = "author",
 		_AUTHOR_ICON = "author_icon",
 		_PARENT_ID    = "parentid",
 		_PARENT_CLASS = "parentclass",
 		_DESCRIPTION  = "description",
 		_COMMENT_NUMBER    = "comment_number";
-	
+
 	public final static String[] PROJECTION = {
 			_ID,
 			_PUBLIC_ID,
@@ -64,20 +61,33 @@ public class Comment extends JsonSyncableItem {
 	public String[] getFullProjection() {
 		return PROJECTION;
 	}
-	
+
 	@Override
-	public Map<String, SyncItem> getSyncMap() {
-		final Map<String, SyncItem> syncMap = new HashMap<String, SyncItem>();
+	public SyncMap getSyncMap() {
+		return SYNC_MAP;
+	}
 
-		final Map<String, SyncItem> author = new HashMap<String, SyncItem>();
-		author.put(_AUTHOR, new SyncMap("username", SyncMap.STRING));
-		author.put(_AUTHOR_ICON, new SyncMap("icon", SyncMap.STRING, true));
-		syncMap.put("author_object", new SyncMapChain("author", author, SyncItem.SYNC_FROM));
-		
-		syncMap.put(_PUBLIC_ID, 		new SyncMap("id", SyncMap.INTEGER, SyncItem.SYNC_FROM));
-		syncMap.put(_MODIFIED_DATE,	new SyncMap("created", SyncMap.DATE, SyncItem.SYNC_FROM));
-		syncMap.put(_DESCRIPTION, 	new SyncMap("content", SyncMap.STRING));
 
-		return syncMap;
+	public static final SyncMap SYNC_MAP = new ItemSyncMap();
+
+	public static class ItemSyncMap extends SyncMap {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = -8410267481565950832L;
+
+		public ItemSyncMap() {
+			super();
+
+			final SyncMap author = new SyncMap();
+			author.put(_AUTHOR, new SyncFieldMap("username", SyncFieldMap.STRING));
+			author.put(_AUTHOR_ICON, new SyncFieldMap("icon", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL));
+			put("author_object", new SyncMapChain("author", author, SyncItem.SYNC_FROM));
+
+			put(_PUBLIC_ID, 		new SyncFieldMap("id", SyncFieldMap.INTEGER, SyncItem.SYNC_FROM));
+			put(_MODIFIED_DATE,	new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM));
+			put(_DESCRIPTION, 	new SyncFieldMap("content", SyncFieldMap.STRING));
+		}
 	}
 }

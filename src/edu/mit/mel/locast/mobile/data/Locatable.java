@@ -16,8 +16,6 @@ package edu.mit.mel.locast.mobile.data;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import java.util.HashMap;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 
@@ -35,7 +33,7 @@ import edu.mit.mel.locast.mobile.data.JsonSyncableItem.SyncItem;
  *
  */
 public abstract class Locatable {
-	
+
 	/**
 	 * implement this in order to inherit columns needed for becoming locatable.
 	 * @author steve
@@ -47,8 +45,8 @@ public abstract class Locatable {
 		_LONGITUDE = "lon";
 
 	};
-	
-	public static final String 
+
+	public static final String
 		SELECTION_LAT_LON = Columns._LATITUDE + " - ? < 1 and "+Columns._LONGITUDE + " - ? < 1";
 
 	public static Uri toGeoUri(Cursor c){
@@ -57,7 +55,7 @@ public abstract class Locatable {
 		}
 		return Uri.parse("geo:"+c.getDouble(c.getColumnIndex(Columns._LATITUDE))+","+c.getDouble(c.getColumnIndex(Columns._LONGITUDE)));
 	}
-	
+
 	public static Location toLocation(Cursor c){
 		final int lat_idx = c.getColumnIndex(Columns._LATITUDE);
 		final int lon_idx = c.getColumnIndex(Columns._LONGITUDE);
@@ -69,29 +67,29 @@ public abstract class Locatable {
 		l.setLongitude(c.getDouble(lon_idx));
 		return l;
 	}
-	
-	public static final HashMap<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem>();
-	
+
+	public static final SyncMap SYNC_MAP = new SyncMap();
+
 	static {
-		SYNC_MAP.put("_location", new SyncCustomArray("location", true) {
-			
+		SYNC_MAP.put("_location", new SyncCustomArray("location", SyncItem.FLAG_OPTIONAL) {
+
 			@Override
 			public JSONArray toJSON(Context context, Uri localItem, Cursor c)
 					throws JSONException {
-				
+
 				final int latCol = c.getColumnIndex(Columns._LATITUDE);
 				final int lonCol = c.getColumnIndex(Columns._LONGITUDE);
-				
+
 				if (c.isNull(latCol) || c.isNull(lonCol)){
 					return null;
 				}
-				
+
 				final JSONArray coords = new JSONArray();
 				coords.put(c.getDouble(lonCol));
 				coords.put(c.getDouble(latCol));
 				return coords;
 			}
-			
+
 			@Override
 			public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
 					throws JSONException {
@@ -101,5 +99,5 @@ public abstract class Locatable {
 				return cv;
 			}
 		});
-	}	
+	}
 }

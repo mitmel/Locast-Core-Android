@@ -23,19 +23,24 @@ import java.io.InputStream;
 import java.util.HashMap;
 
 import org.apache.http.params.HttpParams;
+import org.json.JSONObject;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.AssetFileDescriptor;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 import edu.mit.mel.locast.mobile.R;
-import edu.mit.mel.locast.mobile.data.User;
+import edu.mit.mel.locast.mobile.notifications.ProgressNotification;
 
 public class AndroidNetworkClient extends NetworkClient {
 	private final Context context;
@@ -187,7 +192,7 @@ public class AndroidNetworkClient extends NetworkClient {
 	public boolean isConnectionWorking(){
 		if (isPaired()){
 			try {
-				final User u = getUser();
+				final JSONObject u = getUser();
 				if(u != null) {
 					return true;
 				}
@@ -210,6 +215,49 @@ public class AndroidNetworkClient extends NetworkClient {
 
 	}
 
+	private final static int NOTIFICATION_UPLOAD = 0x2000;
+	public void uploadContentWithNotification(Context context, Uri localItem, String serverPath, Uri localFile, String contentType) throws NetworkProtocolException, IOException{
+		final ProgressNotification notification = new ProgressNotification(context, 0, "Uploading cast...", true);
+		notification.setType(ProgressNotification.TYPE_UPLOAD);
+		notification.contentIntent = PendingIntent.getActivity(context, 0, new Intent(Intent.ACTION_VIEW, localItem), 0);
+		final NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+		final AssetFileDescriptor afd = context.getContentResolver().openAssetFileDescriptor(localFile, "r");
+		final long max = afd.getLength();
+
+		final TransferProgressListener tpl = new TransferProgressListener() {
+			int completed;
+			public void publish(long bytes) {
+				completed = (int)((bytes * 1000) / max);
+				notification.setProgress(1000, completed);
+				nm.notify(NOTIFICATION_UPLOAD, notification);
+			}
+		};
+
+		try {
+			// assume fail: when successful, all will be reset.
+			notification.doneTitle = context.getText(R.string.sync_upload_fail);
+			notification.doneIntent = PendingIntent.getActivity(context, 0,
+					new Intent(Intent.ACTION_VIEW, localItem).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0);
+
+			uploadContent(context, tpl, serverPath, localFile, contentType);
+			notification.doneTitle = context.getText(R.string.sync_upload_success);
+		}catch (final NetworkProtocolException e){
+
+			notification.successful = false;
+			notification.doneText = e.getLocalizedMessage();
+			throw e;
+		}catch (final IOException e){
+			notification.successful = false;
+			notification.doneText = e.getLocalizedMessage();
+			throw e;
+		}finally{
+			nm.cancel(NOTIFICATION_UPLOAD);
+			notification.done(NOTIFICATION_UPLOAD);
+		}
+
+
+	}
 
 	/**
 	 * This is a work-around for Android's overzealous SSL verification.

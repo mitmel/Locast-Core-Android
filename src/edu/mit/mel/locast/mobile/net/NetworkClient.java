@@ -64,6 +64,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.location.Location;
 import android.net.Uri;
 import android.util.Log;
@@ -88,14 +89,14 @@ abstract public class NetworkClient extends DefaultHttpClient {
 
 	private final static String
 		PATH_PAIR = "/pair/",
-		PATH_UNPAIR = "/unpair/"
+		PATH_UNPAIR = "/un-pair/"
 		;
 
 	protected String baseurl;
 	// one of the formats from ISO 8601
 	public final static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
-	private User user;
+	private JSONObject user;
 
 	private boolean isAuthenticated = false;
 
@@ -224,8 +225,9 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @throws IllegalStateException
 	 * @throws NetworkProtocolException
 	 * @throws IOException
+	 * @throws JSONException
 	 */
-	public User getAuthenticatedUser() throws IllegalStateException, NetworkProtocolException, IOException{
+	public JSONObject getAuthenticatedUser() throws IllegalStateException, NetworkProtocolException, IOException, JSONException{
 		if (user == null){
 			user = getUser(getUsername());
 		}
@@ -339,7 +341,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @throws RecordStoreException
 	 */
 	public boolean unpairDevice() throws IOException, NetworkProtocolException{
-		final HttpPost r = openPOST("/un-pair");
+		final HttpPost r = openPOST(PATH_UNPAIR);
 
 		final HttpResponse c = this.execute(r);
 		if (c.getStatusLine().getStatusCode() == HttpStatus.SC_OK){
@@ -571,8 +573,9 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @return the User object for the authenticated user.
 	 * @throws NetworkProtocolException
 	 * @throws IOException
+	 * @throws JSONException
 	 */
-	public User getUser() throws NetworkProtocolException, IOException{
+	public JSONObject getUser() throws NetworkProtocolException, IOException, JSONException{
 		if (user == null){
 
 			user = getUser(getUsername());
@@ -586,20 +589,13 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @return a new instance of the user
 	 * @throws NetworkProtocolException
 	 * @throws IOException
+	 * @throws JSONException
 	 */
-	public User getUser(String username) throws NetworkProtocolException, IOException {
+	public JSONObject getUser(String username) throws NetworkProtocolException, IOException, JSONException {
 		if (username == null){
 			return null;
 		}
-
-		User u;
-		try{
-			u = loadUser(getObject("/user/"+username+"/"));
-		}catch(final JSONException e){
-			throw new NetworkProtocolException(e);
-		}
-
-		return u;
+		return getObject("/user/"+username+"/");
 	}
 
 	public Vector<User> getUsers() throws NetworkProtocolException, IOException {
@@ -658,28 +654,95 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	protected abstract InputStream getFileStream(Context context, Uri localFile) throws IOException;
 
 	public static interface TransferProgressListener {
-		public void publish(int bytes);
+		/**
+		 * @param bytes Total bytes transferred.
+		 */
+		public void publish(long bytes);
 	}
 
-	public static abstract class InputStreamWatcher extends InputStream {
+	public static class InputStreamWatcher extends InputStream {
+		private static final int GRANULARITY = 1024 * 100; // bytes; number needed to trigger a publish()
 		private final InputStream mInputStream;
 		private final TransferProgressListener mProgressListener;
-
+		private long mCount = 0;
+		private long mIncrementalCount = 0;
 
 		public InputStreamWatcher(InputStream wrappedStream, TransferProgressListener progressListener) {
 			mInputStream = wrappedStream;
 			mProgressListener = progressListener;
 		}
+		private void incrementAndNotify(long count){
+			mCount += count;
+			mIncrementalCount += count;
+			if (mIncrementalCount > GRANULARITY){
+				mProgressListener.publish(mCount);
+				mIncrementalCount = 0;
+			}
+		}
+
 		@Override
 		public int read() throws IOException {
-
-			return 0;
+			return mInputStream.read();
 		}
+
+		private int rcount;
+
+		@Override
+		public int read(byte[] b) throws IOException {
+			rcount = mInputStream.read(b);
+			incrementAndNotify(rcount);
+			return rcount;
+		}
+
+		@Override
+		public int read(byte[] b, int offset, int length) throws IOException {
+			rcount = mInputStream.read(b, offset, length);
+			incrementAndNotify(rcount);
+			return rcount;
+		}
+
+		@Override
+		public int available() throws IOException {
+			return mInputStream.available();
+		}
+		@Override
+		public void close() throws IOException {
+			mCount = 0;
+			mInputStream.close();
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			return mInputStream.equals(o);
+		}
+		@Override
+		public int hashCode() {
+			return mInputStream.hashCode();
+		}
+		@Override
+		public void mark(int readlimit) {
+			mInputStream.mark(readlimit);
+		}
+		@Override
+		public boolean markSupported() {
+			return mInputStream.markSupported();
+		}
+		@Override
+		public long skip(long n) throws IOException {
+			final long count = mInputStream.skip(n);
+			incrementAndNotify(count);
+			return count;
+		}
+		@Override
+		public synchronized void reset() throws IOException {
+			mInputStream.reset();
+		}
+
 	}
 
 
 
-	public void uploadContent(Context context, String serverPath, Uri localFile, String contentType) throws NetworkProtocolException, IOException{
+	public void uploadContent(Context context, TransferProgressListener progressListener, String serverPath, Uri localFile, String contentType) throws NetworkProtocolException, IOException{
 
 		if (localFile == null) {
 			throw new IOException("Cannot send. Content item does not reference a local file.");
@@ -692,7 +755,11 @@ abstract public class NetworkClient extends DefaultHttpClient {
 
 		r.setHeader("Content-Type", contentType);
 
-		r.setEntity(new InputStreamEntity(is, is.available()));
+		final AssetFileDescriptor afd = context.getContentResolver().openAssetFileDescriptor(localFile, "r");
+
+		final InputStreamWatcher isw = new InputStreamWatcher(is, progressListener);
+
+		r.setEntity(new InputStreamEntity(isw, afd.getLength()));
 
 		final HttpResponse c = this.execute(r);
 		try {

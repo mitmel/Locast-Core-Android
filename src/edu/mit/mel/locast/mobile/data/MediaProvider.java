@@ -513,7 +513,6 @@ public class MediaProvider extends ContentProvider {
 		return newItem;
 	}
 
-
 	@Override
 	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder) {
@@ -924,7 +923,11 @@ public class MediaProvider extends ContentProvider {
 			}
 			break;
 
+		case MATCHER_CHILD_COMMENT_ITEM:
 		case MATCHER_COMMENT_ITEM:
+			if (parent){
+				return getPublicPath(cr, removeLastPathSegment(uri), null);
+			}
 			// TODO this needs to handle Don't know how to get the public path for content://edu.mit.mobile.android.locast.provider/casts/20/comments/1 for getPostPath()
 			break;
 		case MATCHER_CHILD_COMMENT_DIR:{
@@ -1062,6 +1065,8 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Comment.PATH + "/#", MATCHER_CHILD_COMMENT_ITEM);
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#/" + Comment.PATH, MATCHER_CHILD_COMMENT_DIR);
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#/" + Comment.PATH + "/#", MATCHER_CHILD_COMMENT_ITEM);
+		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH + "/#/" + Comment.PATH, MATCHER_CHILD_COMMENT_DIR);
+		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH + "/#/" +Comment.PATH + "/#", MATCHER_CHILD_COMMENT_ITEM);
 
 		// /project/1/content, etc
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH, MATCHER_PROJECT_CAST_DIR);

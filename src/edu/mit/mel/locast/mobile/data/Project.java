@@ -17,14 +17,10 @@ package edu.mit.mel.locast.mobile.data;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.json.JSONObject;
 
-import android.content.ContentResolver;
 import android.content.Context;
-import android.database.Cursor;
 import android.net.Uri;
 
 /**
@@ -71,37 +67,41 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 		return Uri.withAppendedPath(projectUri, ShotList.PATH);
 	}
 
-	/* (non-Javadoc)
-	 *
-	 * Map internal casts to external casts.
-	 *
-	 * @see edu.mit.mel.locast.mobile.data.JsonSyncableItem#onPreSyncItem(android.content.ContentResolver, android.net.Uri, android.database.Cursor)
-	 */
-	@Override
-	public void onPreSyncItem(ContentResolver cr, Uri uri, Cursor c) throws SyncException {
 
-	}
 
 	@Override
-	public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException, IOException {
-		OrderedList.onUpdate(context, uri, item, "shotlist", new ShotList(), ShotList.PATH);
-	}
-
-	@Override
-	public Map<String, SyncItem> getSyncMap() {
+	public SyncMap getSyncMap() {
 		return SYNC_MAP;
 	}
 
-	public static final HashMap<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem>(TaggableItem.SYNC_MAP);
+	public static final ItemSyncMap SYNC_MAP = new ItemSyncMap();
+
+	public static class ItemSyncMap extends TaggableItemSyncMap {
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = -6270787415786212321L;
+
+		public ItemSyncMap() {
+			super();
+
+			put(_DESCRIPTION, 		new SyncFieldMap("description", SyncFieldMap.STRING));
+			put(_TITLE, 			new SyncFieldMap("title", SyncFieldMap.STRING));
+			putAll(Locatable.SYNC_MAP);
+			putAll(Favoritable.SYNC_MAP);
+			put("_shotlist",   new OrderedList.SyncMapItem("shotlist", SyncItem.FLAG_OPTIONAL, new ShotList(), ShotList.PATH));
+
+			remove(_PRIVACY);
+		}
+
+		@Override
+		public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException, IOException {
+			OrderedList.onUpdate(context, uri, item, "shotlist", new ShotList(), ShotList.PATH);
+		}
+	}
 
 	static {
-		SYNC_MAP.put(_DESCRIPTION, 		new SyncMap("description", SyncMap.STRING));
-		SYNC_MAP.put(_TITLE, 			new SyncMap("title", SyncMap.STRING));
-		SYNC_MAP.putAll(Locatable.SYNC_MAP);
-		SYNC_MAP.putAll(Favoritable.SYNC_MAP);
-		SYNC_MAP.put("_shotlist",   new OrderedList.SyncMap("shotlist", true, new ShotList(), ShotList.PATH));
 
-		SYNC_MAP.remove(_PRIVACY);
 	}
 
 }

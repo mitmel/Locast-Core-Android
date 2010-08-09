@@ -107,9 +107,12 @@
 	
 	<!-- Sync -->
 	<string name="sync_first">No local content detected. Starting first sync...</string>
-	<string name="sync_notification">Synchronizing with Locast server...</string>
+	<string name="sync_notification">Synchronizing Locast...</string>
 	<string name="sync_success">Sync successful.</string>
 	<string name="sync_menu">Synchronize</string>
+	
+	<string name="sync_upload_success">Cast uploaded successfully.</string>
+	<string name="sync_upload_fail">Error uploading cast.</string>
 
 	<string name="authority">edu.mit.mel.locast.mobile.provider</string>
 	<string name="type_content_item">vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content</string>

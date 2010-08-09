@@ -40,6 +40,7 @@ import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.CastMedia;
 import edu.mit.mel.locast.mobile.data.Locatable;
 import edu.mit.mel.locast.mobile.data.MediaProvider;
+import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.templates.TemplatePlayer;
 import edu.mit.mel.locast.mobile.widget.LocationLink;
 import edu.mit.mel.locast.mobile.widget.TagListView;
@@ -208,7 +209,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 		switch (v.getId()){
 		case R.id.media_thumbnail:{
 
-			if (publicUri != null && !hasLocalVids){
+			if (publicUri != null && !hasLocalVids && AndroidNetworkClient.getInstance(this).isConnectionWorking()){
 				final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
 				viewVideo.setDataAndType(publicUri, contentType);
 				startActivity(viewVideo);
@@ -218,7 +219,11 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 				startActivity(viewVideos);
 
 			}else{
-				Toast.makeText(this, "Cast video has not been uploaded yet.", Toast.LENGTH_SHORT).show();
+				if (publicUri != null){
+					Toast.makeText(this, "Could not play video.", Toast.LENGTH_SHORT).show();
+				}else{
+					Toast.makeText(this, "Cast video has not been uploaded yet.", Toast.LENGTH_SHORT).show();
+				}
 			}
 
 			/*

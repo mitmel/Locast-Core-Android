@@ -30,7 +30,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -45,7 +44,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 import edu.mit.mel.locast.mobile.MainActivity;
@@ -54,6 +55,7 @@ import edu.mit.mel.locast.mobile.StreamUtils;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.net.NetworkClient;
 import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
+import edu.mit.mel.locast.mobile.notifications.ProgressNotification;
 
 /**
  * A Simple Sync engine. Can do naive bi-directional sync with a server that exposes
@@ -116,7 +118,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
     	nc = AndroidNetworkClient.getInstance(getApplicationContext());
     }
 
-	private void sync(Uri toSync) throws SyncException, IOException {
+	private void sync(Uri toSync, SyncProgressNotifier syncProgress) throws SyncException, IOException {
 		JsonSyncableItem syncItem = null;
 		final String contentType = getApplicationContext().getContentResolver().getType(toSync);
 		if (MediaProvider.TYPE_COMMENT_DIR.equals(contentType)
@@ -131,7 +133,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 				|| MediaProvider.TYPE_PROJECT_ITEM.equals(contentType)){
 			syncItem = new Project();
 		}
-		sync(toSync, syncItem);
+		sync(toSync, syncItem, syncProgress);
 	}
 	/**
 	 * Sync the given URI to the server. Will compare dates and do a two-way sync.
@@ -143,11 +145,14 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 	 * serialization routine in it, as well as the sync map.
 	 * @throws IOException
 	 */
-	private void sync(Uri toSync, JsonSyncableItem sync) throws SyncException, IOException{
+	private void sync(Uri toSync, JsonSyncableItem sync, SyncProgressNotifier syncProgress) throws SyncException, IOException{
 		JSONArray remObjs;
 		syncdItems = new TreeSet<Uri>();
 
 		final String contentType = getApplicationContext().getContentResolver().getType(toSync);
+
+		final Cursor c = cr.query(toSync, sync.getFullProjection(), null, null, null);
+		syncProgress.addPendingTasks(c.getCount());
 
 		// Handle a list of items.
 		if (contentType.startsWith("vnd.android.cursor.dir")){
@@ -156,10 +161,12 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			try {
 				remObjs = nc.getArray(MediaProvider.getPublicPath(cr, toSync));
 				// TODO figure out how to use getContentResolver().bulkInsert(url, values); for this:
+				syncProgress.addPendingTasks(remObjs.length());
 
 				for (int i = 0; i < remObjs.length(); i++){
 					final JSONObject jo = remObjs.getJSONObject(i);
-					syncItem(toSync, null, jo, sync);
+					syncItem(toSync, null, jo, sync, syncProgress);
+					syncProgress.completeTask();
 				}
 			} catch (final SyncException se){
 				throw se;
@@ -172,15 +179,17 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 
 		// then load locally.
 
-		final Cursor c = cr.query(toSync, sync.getFullProjection(), null, null, null);
+
 		try {
 			Log.d(TAG, "have " + c.getCount() + " local items to sync");
 			for (c.moveToFirst(); ! c.isAfterLast(); c.moveToNext()){
 				try {
-					syncItem(toSync, c, null, sync);
+					syncItem(toSync, c, null, sync, syncProgress);
+					syncProgress.completeTask();
 
 				}catch (final SyncItemDeletedException side){
 					side.printStackTrace();
+					syncProgress.completeTask();
 					continue;
 				}
 			}
@@ -200,16 +209,17 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 	 * @return True if the item has been modified on either end.
 	 * @throws IOException
 	 */
-	private boolean syncItem(Uri toSync, Cursor c, JSONObject jsonObject, JsonSyncableItem sync) throws SyncException, IOException {
+	private boolean syncItem(Uri toSync, Cursor c, JSONObject jsonObject, JsonSyncableItem sync, SyncProgressNotifier syncProgress) throws SyncException, IOException {
 		boolean modified = false;
 		boolean needToCloseCursor = false;
 		boolean toSyncIsIndex = false;
+		final SyncMap syncMap = sync.getSyncMap();
 
 		Uri locUri = null;
 		ContentValues cvNet = null;
 		if (jsonObject != null){
 			try {
-				cvNet = JsonSyncableItem.fromJSON(getApplicationContext(), null, jsonObject, sync.getSyncMap());
+				cvNet = JsonSyncableItem.fromJSON(getApplicationContext(), null, jsonObject, syncMap);
 			}catch (final Exception e){
 				final SyncException se = new SyncException("Problem loading JSON object.");
 				se.initCause(e);
@@ -234,7 +244,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			}
 
 
-			sync.onPreSyncItem(cr, locUri, c);
+			syncMap.onPreSyncItem(cr, locUri, c);
 		}
 
 		// when the PUBLIC_ID is null, that means it's only local
@@ -243,7 +253,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			// new content on the local side only. Gotta publish.
 
 			try {
-				jsonObject = JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, sync.getSyncMap());
+				jsonObject = JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, syncMap);
 
 				final String publicPath = MediaProvider.getPostPath(cr, locUri);
 				Log.d(TAG, "Posting "+locUri + " to " + publicPath);
@@ -259,7 +269,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 				final HttpEntity entity = hr.getEntity();
 				try {
 					jsonObject = new JSONObject(StreamUtils.inputStreamToString(entity.getContent()));
-					final ContentValues cvUpdate = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, sync.getSyncMap());
+					final ContentValues cvUpdate = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, syncMap);
 					if (cr.update(locUri, cvUpdate, null, null) == 1){
 						// at this point, server and client should be in sync.
 						syncdItems.add(locUri);
@@ -292,7 +302,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			}else {
 				locUri = ContentUris.withAppendedId(toSync,
 						c.getLong(c.getColumnIndex(JsonSyncableItem._ID)));
-				sync.onPreSyncItem(cr, locUri, c);
+				syncMap.onPreSyncItem(cr, locUri, c);
 			}
 		}
 
@@ -316,7 +326,8 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 							if (jsonObject == null){
 								jsonObject = nc.getObject(publicPath);
 							}
-							cvNet = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, sync.getSyncMap());
+							cvNet = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, syncMap);
+
 						}
 					}catch (final HttpResponseException hre){
 						if (hre.getStatusCode() == HttpStatus.SC_NOT_FOUND){
@@ -325,6 +336,10 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 							throw side;
 						}
 					}
+				}
+				if (cvNet == null){
+					Log.e(TAG, "got null values from fromJSON() on item " + locUri +": " +jsonObject.toString());
+					return false;
 				}
 				final Date netLastModified = new Date(cvNet.getAsLong(JsonSyncableItem._MODIFIED_DATE));
 				final Date locLastModified = new Date(c.getLong(c.getColumnIndex(JsonSyncableItem._MODIFIED_DATE)));
@@ -340,7 +355,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 
 				}else if (netLastModified.before(locLastModified)){
 					// local is more up to date, propagate!
-					final HttpResponse hr = nc.putJson(publicPath, JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, sync.getSyncMap()));
+					final HttpResponse hr = nc.putJson(publicPath, JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, syncMap));
 					hr.getEntity().consumeContent();
 					Log.d("LocastSync", cvNet + " is older than "+locUri);
 					modified = true;
@@ -371,9 +386,9 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 		}
 
 		if (modified){
-			sync.onUpdateItem(getApplicationContext(), locUri, jsonObject);
+			syncMap.onUpdateItem(getApplicationContext(), locUri, jsonObject);
 		}
-		sync.onPostSyncItem(getApplicationContext(), locUri, jsonObject);
+		syncMap.onPostSyncItem(getApplicationContext(), locUri, jsonObject);
 
 		syncdItems.add(locUri);
 
@@ -429,28 +444,57 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
     	startSync();
     }
 
-	private class SyncTask extends AsyncTask<Void, Integer, Boolean> {
-		Exception e;
-		Notification notification;
-		NotificationManager nm;
-		PendingIntent showMainScreen;
+	private class SyncTask extends AsyncTask<Void, Void, Boolean> implements SyncProgressNotifier {
+		private Exception e;
+		private ProgressNotification notification;
+		private NotificationManager nm;
 		private Date startTime;
+
+		private int mTaskTotal = 0;
+		private int mTaskCompleted = 0;
+
+		private static final int
+			MSG_PROGRESS_ADD_TASKS      = 0,
+			MSG_PROGRESS_COMPLETE_TASKS = 1;
+
+		// this is used, as publishProgress is not very good about garbage collector churn.
+		private final Handler mProgressHandler = new Handler(){
+			@Override
+			public void handleMessage(Message msg) {
+				switch(msg.what){
+				case MSG_PROGRESS_ADD_TASKS:
+					mTaskTotal += msg.arg1;
+					break;
+
+				case MSG_PROGRESS_COMPLETE_TASKS:
+					mTaskCompleted += msg.arg1;
+					break;
+				}
+				updateProgressBars();
+			};
+		};
+
+		private void updateProgressBars(){
+			notification.setProgress(mTaskTotal, mTaskCompleted);
+			nm.notify(NOTIFICATION_SYNC, notification);
+		}
+
 
 		@Override
 		protected void onPreExecute() {
 			super.onPreExecute();
 			startTime = new Date();
-			notification = new Notification(R.drawable.ico_notification, null, System.currentTimeMillis());
-			//notification.FLAG_ONGOING_EVENT;
-			notification.flags = Notification.FLAG_ONGOING_EVENT;
+			final Context context = getApplicationContext();
+			notification = new ProgressNotification(getApplicationContext(), R.drawable.ico_notification);
 
-
-			//notification = new Notification(R.drawable.ico_notification, getText(R.string.sync_notification), System.currentTimeMillis());
-			showMainScreen = PendingIntent.getActivity(getApplicationContext(), 0, new Intent(getApplicationContext(), MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK), PendingIntent.FLAG_UPDATE_CURRENT);
-			notification.setLatestEventInfo(getApplicationContext(), getText(R.string.sync_notification), "Starting sync...", showMainScreen);
-
+			notification.contentIntent = PendingIntent.getActivity(context, 0,
+					new Intent(context, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+					PendingIntent.FLAG_UPDATE_CURRENT);
+			notification.setProgress(0, 0);
+			notification.setTitle(getText(R.string.sync_notification));
 			nm = (NotificationManager) getApplication().getSystemService(NOTIFICATION_SERVICE);
 			nm.notify(NOTIFICATION_SYNC, notification);
+
 		}
 
 		@Override
@@ -460,10 +504,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 				while (!syncQueue.isEmpty()){
 					Log.d(TAG, syncQueue.size() + " items in the sync queue");
 					final Uri toSync = syncQueue.remove();
-					notification.setLatestEventInfo(getApplicationContext(), getText(R.string.sync_notification), "Syncing " + toSync.getPath(), showMainScreen);
-
-					nm.notify(NOTIFICATION_SYNC, notification);
-					Sync.this.sync(toSync);
+					Sync.this.sync(toSync, this);
 
 				}
 			} catch (final SyncException e) {
@@ -497,5 +538,26 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 
 			nm.cancel(NOTIFICATION_SYNC);
 		}
+
+		public void addPendingTasks(int taskCount) {
+			mProgressHandler.obtainMessage(MSG_PROGRESS_ADD_TASKS, taskCount, 0).sendToTarget();
+		}
+
+		public void completeTask() {
+			mProgressHandler.obtainMessage(MSG_PROGRESS_COMPLETE_TASKS, 1, 0).sendToTarget();
+		}
+
+	}
+
+	public interface SyncProgressNotifier {
+		/**
+		 * Mark an added task as completed.
+		 */
+		public void completeTask();
+		/**
+		 * Adds a number of tasks to be completed.
+		 * @param taskCount
+		 */
+		public void addPendingTasks(int taskCount);
 	}
 }

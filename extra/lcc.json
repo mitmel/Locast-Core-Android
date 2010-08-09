@@ -3,6 +3,10 @@
         "downloadUrl": "http://locast.mit.edu/connects/lcc.apk"
     },
 
+    "1.2.5": {
+        "versionCode": 8,
+        "changelog": ["Added upload notification", "improved sync reliability", "improved templated interaction"]
+    },
     "1.2.4": {
     "versionCode": 7,
     "changelog": ["minor bugfixes"]

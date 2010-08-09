@@ -1,8 +1,5 @@
 package edu.mit.mel.locast.mobile.data;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import android.net.Uri;
 
 public class ShotList extends JsonSyncableItem {
@@ -13,9 +10,9 @@ public class ShotList extends JsonSyncableItem {
 		_PARENT_ID   = "parent_id",
 		_LIST_IDX    = "list_idx"
 		;
-	
+
 	public final static String PATH = "shotlist";
-	public final static Uri CONTENT_URI = Uri.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH); 
+	public final static Uri CONTENT_URI = Uri.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
 	public final static String[] PROJECTION = {
 		_ID,
 		_PUBLIC_ID,
@@ -35,16 +32,16 @@ public class ShotList extends JsonSyncableItem {
 		return PROJECTION;
 	}
 
-	public static final HashMap<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem>();
-	
+	public static final SyncMap SYNC_MAP = new SyncMap();
+
 	static {
-		SYNC_MAP.put(_DURATION,  new SyncMap("duration", SyncMap.DURATION));
-		SYNC_MAP.put(_DIRECTION, new SyncMap("direction", SyncMap.STRING));
-		SYNC_MAP.put(_PUBLIC_ID, new SyncMap("id", SyncMap.INTEGER, SyncMap.SYNC_FROM));
+		SYNC_MAP.put(_DURATION,  new SyncFieldMap("duration", SyncFieldMap.DURATION));
+		SYNC_MAP.put(_DIRECTION, new SyncFieldMap("direction", SyncFieldMap.STRING));
+		SYNC_MAP.put(_PUBLIC_ID, new SyncFieldMap("id", SyncFieldMap.INTEGER, SyncFieldMap.SYNC_FROM));
 	}
-	
+
 	@Override
-	public Map<String, SyncItem> getSyncMap() {
+	public SyncMap getSyncMap() {
 		return SYNC_MAP;
 	}
 
