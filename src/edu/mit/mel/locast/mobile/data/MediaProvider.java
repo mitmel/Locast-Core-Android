@@ -92,8 +92,9 @@ public class MediaProvider extends ContentProvider {
 		MATCHER_CAST_MEDIA_ITEM      = 16,
 		MATCHER_PROJECT_SHOTLIST_DIR = 17,
 		MATCHER_PROJECT_SHOTLIST_ITEM= 18,
-		MATCHER_PROJECT_CAST_CASTMEDIA_DIR = 19,
-		MATCHER_PROJECT_CAST_CASTMEDIA_ITEM= 20; // wow...
+		MATCHER_SHOTLIST_DIR         = 19,
+		MATCHER_PROJECT_CAST_CASTMEDIA_DIR = 20,
+		MATCHER_PROJECT_CAST_CASTMEDIA_ITEM= 21; // wow...
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
@@ -280,10 +281,10 @@ public class MediaProvider extends ContentProvider {
 			break;
 		}
 
-		case MATCHER_PROJECT_SHOTLIST_DIR:{
+		case MATCHER_SHOTLIST_DIR:{
 
 			db.delete(SHOTLIST_TABLE_NAME, where, whereArgs);
-		}
+		}break;
 
 			default:
 				throw new IllegalArgumentException("Unknown URI: "+uri);
@@ -381,6 +382,7 @@ public class MediaProvider extends ContentProvider {
 			return TYPE_PROJECT_DIR;
 
 
+		case MATCHER_SHOTLIST_DIR:
 		case MATCHER_PROJECT_SHOTLIST_DIR:
 			return TYPE_SHOTLIST_DIR;
 
@@ -1036,6 +1038,8 @@ public class MediaProvider extends ContentProvider {
 
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + ShotList.PATH, MATCHER_PROJECT_SHOTLIST_DIR);
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + ShotList.PATH + "/#", MATCHER_PROJECT_SHOTLIST_ITEM);
+
+		uriMatcher.addURI(AUTHORITY, ShotList.PATH, MATCHER_SHOTLIST_DIR);
 
 		// /content/1/tags
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);

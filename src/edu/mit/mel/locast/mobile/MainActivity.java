@@ -37,6 +37,7 @@ import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.CastMedia;
 import edu.mit.mel.locast.mobile.data.Comment;
 import edu.mit.mel.locast.mobile.data.Project;
+import edu.mit.mel.locast.mobile.data.ShotList;
 import edu.mit.mel.locast.mobile.data.Tag;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.projects.ListProjectsActivity;
@@ -181,6 +182,7 @@ public class MainActivity extends TabActivity {
 				cr.delete(Comment.CONTENT_URI, null, null);
 				cr.delete(Tag.CONTENT_URI, null, null);
 				cr.delete(CastMedia.CONTENT_URI, null, null);
+				cr.delete(ShotList.CONTENT_URI, null, null);
 				Toast.makeText(context.getApplicationContext(), "Databases reset.", Toast.LENGTH_LONG).show();
 
 			}
