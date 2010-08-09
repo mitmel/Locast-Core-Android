@@ -17,7 +17,6 @@ import android.widget.Toast;
  *
  */
 public class IncrementalLocator implements LocationListener {
-	@SuppressWarnings("unused")
 	private final static String TAG = IncrementalLocator.class.getSimpleName();
 
 	private final LocationManager lm;

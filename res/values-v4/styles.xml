@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<!-- This exists to work around a bug with the tabs in 1.6.  -->
+
+	 <style name="LightTheme" parent="@android:style/Theme.Light">
+        <item name="android:tabWidgetStyle">@style/LightTabWidget</item>
+	 </style>
+
+	 <style name="LightTabWidget" parent="@android:style/Widget.TabWidget">
+        <item name="android:textColor">@color/tab_indicator_text_v4</item>
+	 </style>
+</resources>

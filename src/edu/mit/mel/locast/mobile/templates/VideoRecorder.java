@@ -39,6 +39,7 @@ import java.lang.reflect.Method;
 import android.app.Activity;
 import android.hardware.Camera;
 import android.media.MediaRecorder;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
@@ -348,8 +349,7 @@ public abstract class VideoRecorder extends Activity {
 			unlockCamera();
 		}
 		try {
-			//final SurfaceView sv = ((SurfaceView)findViewById(R.id.camera_view));
-			//sv.setLayoutParams(new FrameLayout.LayoutParams((int) (sv.getHeight() * (320.0/240)), FrameLayout.LayoutParams.FILL_PARENT));
+
 			recorder.setCamera(mCamera);
 			recorder.setPreviewDisplay(mSurfaceHolder.getSurface());
 
@@ -359,14 +359,29 @@ public abstract class VideoRecorder extends Activity {
 			recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
 			//recorder.setMaxDuration(5000); // XXX
 
-			recorder.setVideoSize(640, 480);
-			recorder.setVideoFrameRate(15);
+			Log.i(TAG, "Build: "+ Build.MODEL);
 
-			/*recorder.setVideoSize(720, 480); // N1-specific
-			recorder.setVideoFrameRate(25);*/
+			if (Build.MODEL.equals("Milestone")){
+				recorder.setVideoSize(640, 480);
+				recorder.setVideoFrameRate(15);
+				recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+
+			}else if (Build.MODEL.equals("Nexus One")) {
+				recorder.setVideoSize(720, 480); // N1-specific
+				recorder.setVideoFrameRate(24);
+				recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H263);
+
+			}else{ // for all other devices, fall back on a well-known default.
+				// CIF size, Android 1.6; "high quality" on the G1.
+				recorder.setVideoSize(352, 288);
+				recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H263);
+			}
+
+			// this would be for setting the aspect ratio properly, but causes occasional white screens
+			//final SurfaceView sv = ((SurfaceView)findViewById(R.id.camera_view));
+			//sv.setLayoutParams(new FrameLayout.LayoutParams((int)(sv.getHeight() * (720.0/480)), sv.getHeight()));
 
 			recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-			recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 
 			if (recorderStateHandler != null){
 				recorderStateHandler.sendEmptyMessage(MSG_RECORDER_INITIALIZED);
