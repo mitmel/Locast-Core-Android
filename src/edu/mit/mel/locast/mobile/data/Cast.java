@@ -131,12 +131,33 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	 * @param maybeUri Either a uri or a local filesystem path.
 	 * @return
 	 */
-	private static Uri parseMaybeUri(String maybeUri){
+	public static Uri parseMaybeUri(String maybeUri){
 		if (maybeUri.startsWith("/")){
 			return Uri.fromFile(new File(maybeUri));
 		}else{
 			return Uri.parse(maybeUri);
 		}
+	}
+
+	/**
+	 * @param castUri uri for the cast.
+	 * @return The CastMedia URI of the given cast.
+	 */
+	public static final Uri getCastMediaUri(Uri castUri){
+		return Uri.withAppendedPath(castUri, CastMedia.PATH);
+	}
+
+	/**
+	 * @param cast a cursor pointing to a cast.
+	 * @return the uri of the project associated with this cast, or null if there is none.
+	 */
+	public static final Uri getProjectUri(Cursor cast){
+		final int projectIdx = cast.getColumnIndex(Cast._PROJECT_ID);
+		if (cast.isNull(projectIdx)){
+			return null;
+		}
+
+		return ContentUris.withAppendedId(Project.CONTENT_URI, cast.getLong(projectIdx));
 	}
 
 	@Override

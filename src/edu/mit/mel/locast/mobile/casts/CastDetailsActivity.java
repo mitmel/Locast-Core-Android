@@ -18,8 +18,6 @@ package edu.mit.mel.locast.mobile.casts;
  */
 import java.util.ArrayList;
 
-import org.apache.http.HttpResponse;
-
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -46,8 +44,7 @@ import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.CastMedia;
 import edu.mit.mel.locast.mobile.data.Locatable;
 import edu.mit.mel.locast.mobile.data.MediaProvider;
-import edu.mit.mel.locast.mobile.data.SyncException;
-import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
+import edu.mit.mel.locast.mobile.templates.TemplatePlayer;
 import edu.mit.mel.locast.mobile.widget.LocationLink;
 import edu.mit.mel.locast.mobile.widget.TagListView;
 
@@ -99,6 +96,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 
 		locCastMedia = new ArrayList<Uri>(castMedia.getCount());
 
+		Log.d("CastDetails", "Cast Media:");
 		for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
 			MediaProvider.dumpCursorToLog(castMedia, CastMedia.PROJECTION);
 			final int colIdx = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
@@ -227,6 +225,21 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 	public void onClick(View v) {
 		switch (v.getId()){
 		case R.id.media_thumbnail:{
+
+			if (publicUri != null && localUri == null){
+				final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
+				viewVideo.setDataAndType(publicUri, contentType);
+				startActivity(viewVideo);
+
+			}else if (localUri != null){
+				final Intent viewVideos = new Intent(Intent.ACTION_VIEW, castUri, this, TemplatePlayer.class);
+				startActivity(viewVideos);
+
+			}else{
+				Toast.makeText(this, "Cast video has not been uploaded yet.", Toast.LENGTH_SHORT).show();
+			}
+
+			/*
 			if (localUri == null){
 				try {
 					if (publicUri != null){
@@ -251,8 +264,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-			}
-			if (localUri != null){
+			}else{
 				if (localUri.getScheme() == null){
 					// XXX
 					Toast.makeText(getApplicationContext(), "Sorry, viewing of un-published casts is not fully implemented yet.", Toast.LENGTH_SHORT).show();
@@ -264,14 +276,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 					startActivity(viewVideo);
 				}
 
-			}else if (publicUri != null){
-
-				// stream the video!
-				//Toast.makeText(this, "This video still needs to be downloaded before it can be played.", Toast.LENGTH_LONG).show();
-
-			}else {
-				Toast.makeText(this, "Cannot find a local or remote copy of this video :-(", Toast.LENGTH_LONG).show();
-			}
+			}*/
 
 			break;
 		}

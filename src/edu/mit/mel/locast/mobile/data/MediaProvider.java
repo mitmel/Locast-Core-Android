@@ -92,7 +92,8 @@ public class MediaProvider extends ContentProvider {
 		MATCHER_CAST_MEDIA_ITEM      = 16,
 		MATCHER_PROJECT_SHOTLIST_DIR = 17,
 		MATCHER_PROJECT_SHOTLIST_ITEM= 18,
-		MATCHER_PROJECT_CAST_CASTMEDIA_DIR = 19; // wow...
+		MATCHER_PROJECT_CAST_CASTMEDIA_DIR = 19,
+		MATCHER_PROJECT_CAST_CASTMEDIA_ITEM= 20; // wow...
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
@@ -304,10 +305,13 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CAST_MEDIA_DIR:
 		case MATCHER_CAST_MEDIA_ITEM:
 		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:
+		case MATCHER_PROJECT_CAST_CASTMEDIA_ITEM:
 
 		case MATCHER_COMMENT_ITEM:
 		case MATCHER_CHILD_COMMENT_ITEM:
+
 		case MATCHER_PROJECT_SHOTLIST_DIR:
+		case MATCHER_PROJECT_SHOTLIST_ITEM:
 
 			return false;
 
@@ -711,10 +715,23 @@ public class MediaProvider extends ContentProvider {
 			break;
 		}
 
-		case MATCHER_CAST_MEDIA_DIR:{
+		case MATCHER_CAST_MEDIA_ITEM:{
 			final String castId = uri.getPathSegments().get(1);
+			final String castMediaId = uri.getPathSegments().get(3);
 			count = db.update(CAST_MEDIA_TABLE_NAME, values,
-					CastMedia._PARENT_ID+"="+castId+ (where != null && where.length() > 0 ? " AND ("+where+")":""),
+					CastMedia._PARENT_ID+"="+castId
+						+ " AND " + CastMedia._LIST_IDX+"=" + castMediaId
+						+ (where != null && where.length() > 0 ? " AND ("+where+")":""),
+					whereArgs);
+		} break;
+
+		case MATCHER_PROJECT_CAST_CASTMEDIA_ITEM:{
+			final String castId = uri.getPathSegments().get(3);
+			final String castMediaId = uri.getPathSegments().get(5);
+			count = db.update(CAST_MEDIA_TABLE_NAME, values,
+					CastMedia._PARENT_ID+"="+castId
+						+ " AND " + CastMedia._LIST_IDX+"=" + castMediaId
+						+ (where != null && where.length() > 0 ? " AND ("+where+")":""),
 					whereArgs);
 		} break;
 
@@ -984,6 +1001,7 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, CastMedia.PATH+"/#", MATCHER_CAST_MEDIA_ITEM);
 
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH, MATCHER_PROJECT_CAST_CASTMEDIA_DIR);
+		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH + "/#/", MATCHER_PROJECT_CAST_CASTMEDIA_ITEM);
 
 		uriMatcher.addURI(AUTHORITY, Project.PATH, MATCHER_PROJECT_DIR);
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#", MATCHER_PROJECT_ITEM);

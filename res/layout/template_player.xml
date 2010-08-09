@@ -12,4 +12,27 @@
   android:layout_centerInParent="true"
   />
   
+  <ViewSwitcher android:id="@+id/osd_switcher"
+  	android:layout_width="fill_parent"
+  	android:layout_height="wrap_content"
+   	android:layout_alignParentBottom="true"
+  	android:layout_alignParentLeft="true"
+  	android:inAnimation="@anim/push_up_in"
+  	android:outAnimation="@anim/push_down_out"
+  >
+  <edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/osd_text"
+  	android:layout_width="wrap_content"
+  	android:layout_height="wrap_content"
+  	android:textSize="30sp"
+  	android:textStyle="bold"
+  	android:textColor="#fff" />
+  	
+  	<edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/osd_text2"
+  	android:layout_width="wrap_content"
+  	android:layout_height="wrap_content"
+  	android:textSize="30sp"
+  	android:textStyle="bold"
+  	android:textColor="#fff" />
+  	</ViewSwitcher>
+  
 </RelativeLayout>

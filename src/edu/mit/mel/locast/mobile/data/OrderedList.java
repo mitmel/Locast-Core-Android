@@ -20,20 +20,20 @@ import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
 
 public class OrderedList {
 	public static final String TAG = OrderedList.class.getSimpleName();
-	
+
 	public static interface Columns {
-		public final static String 
+		public final static String
 			_LIST_IDX     = "list_idx",
 			_PARENT_ID    = "parent_id";
-		
-		public final static String 
+
+		public final static String
 			DEFAULT_SORT = _LIST_IDX + " ASC";
 	}
-	
+
 	public static void onUpdate(Context context, Uri parentUri, JSONObject item, String remoteKey, JsonSyncableItem listItem, String itemPath) throws SyncException {
 		final Map<String, SyncItem> syncMap = new HashMap<String, SyncItem>();
 		syncMap.put("_contents", new OrderedList.SyncMapOnUpdate(remoteKey, true, listItem, itemPath));
-		
+
 		try {
 			Log.d(TAG, "trying to load ordered list for "+ parentUri+"; remoteKey: " + remoteKey+ "; item path: " + itemPath + "; item type: "+ listItem.getClass().getSimpleName());
 			JsonSyncableItem.fromJSON(context, parentUri, item, syncMap);
@@ -43,11 +43,11 @@ public class OrderedList {
 			throw e;
 		}
 	}
-	
+
 	public static class SyncMap extends JsonSyncableItem.SyncCustomArray {
 		private final JsonSyncableItem mListItem;
 		private final String mItemPath;
-		
+
 		public SyncMap(String remoteKey, boolean optional, JsonSyncableItem listItem, String itemPath) {
 			super(remoteKey, optional, SyncItem.SYNC_TO);
 			mListItem = listItem;
@@ -56,19 +56,19 @@ public class OrderedList {
 		public SyncMap(String remoteKey, JsonSyncableItem listItem, String itemPath) {
 			this(remoteKey, false, listItem, itemPath);
 		}
-		
+
 		@Override
 		public ContentValues fromJSON(Context context, Uri parentItem,
 				JSONArray item) throws JSONException, NetworkProtocolException,
 				IOException {
 			return null;
 		}
-		
+
 		@Override
 		public JSONArray toJSON(Context context, Uri parentItem, Cursor c)
 				throws JSONException, NetworkProtocolException, IOException {
 			Log.d(TAG, "main toJSON");
-			
+
 			final Cursor item_c = context.getContentResolver().query(Uri.withAppendedPath(parentItem, mItemPath), mListItem.getFullProjection(), null, null, null);
 			final JSONArray ja = new JSONArray();
 			for (item_c.moveToFirst(); !item_c.isAfterLast(); item_c.moveToNext()){
@@ -78,17 +78,17 @@ public class OrderedList {
 			return ja;
 		}
 	}
-	
+
 	public static class SyncMapOnUpdate extends JsonSyncableItem.SyncCustomArray {
 		private final JsonSyncableItem mListItem;
 		private final String mItemPath;
-		
+
 		public SyncMapOnUpdate(String remoteKey, boolean optional, JsonSyncableItem listItem, String itemPath) {
 			super(remoteKey, optional, SyncItem.SYNC_FROM);
 			mListItem = listItem;
 			mItemPath = itemPath;
 		}
-		
+
 		public SyncMapOnUpdate(String remoteKey, JsonSyncableItem listItem, String itemPath) {
 			this(remoteKey, false, listItem, itemPath);
 
@@ -111,8 +111,13 @@ public class OrderedList {
 
 				cv.put(Columns._LIST_IDX, i);
 				cv.put(Columns._PARENT_ID, ContentUris.parseId(parentItem));
-				// this will actually overwrite any existing entries in the same index.
-				cr.insert(Uri.withAppendedPath(parentItem, mItemPath), cv);
+				final Uri itemDirUri = Uri.withAppendedPath(parentItem, mItemPath);
+				final int updated = cr.update(ContentUris.withAppendedId(itemDirUri, i), cv, null, null);
+				// if the update failed, we should probably add it.
+				if (updated == 0){
+					cr.insert(itemDirUri, cv);
+				}
+
 			}
 			return new ContentValues();
 		}

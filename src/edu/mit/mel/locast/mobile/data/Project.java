@@ -30,7 +30,7 @@ import android.net.Uri;
 /**
  * DB entry for a project. Also contains a sync mapping for publishing
  * to the network.
- * 
+ *
  * @author stevep
  *
  */
@@ -38,12 +38,12 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 	public final static String PATH = "projects";
 	public final static Uri CONTENT_URI = Uri
 			.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
-	
-	public final static String SERVER_PATH = "project/";
-	
 
-	
-	public static final String 	
+	public final static String SERVER_PATH = "project/";
+
+
+
+	public static final String
 		_TITLE = "title",
 		_DESCRIPTION = "description";
 
@@ -56,7 +56,7 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 		_DESCRIPTION,
 		_PRIVACY,
 };
-	
+
 	@Override
 	public Uri getContentUri() {
 		return CONTENT_URI;
@@ -66,18 +66,22 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 	public String[] getFullProjection() {
 		return PROJECTION;
 	}
-	
+
+	public static Uri getShotListUri(Uri projectUri){
+		return Uri.withAppendedPath(projectUri, ShotList.PATH);
+	}
+
 	/* (non-Javadoc)
-	 * 
+	 *
 	 * Map internal casts to external casts.
-	 * 
+	 *
 	 * @see edu.mit.mel.locast.mobile.data.JsonSyncableItem#onPreSyncItem(android.content.ContentResolver, android.net.Uri, android.database.Cursor)
 	 */
 	@Override
 	public void onPreSyncItem(ContentResolver cr, Uri uri, Cursor c) throws SyncException {
 
 	}
-	
+
 	@Override
 	public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException, IOException {
 		OrderedList.onUpdate(context, uri, item, "shotlist", new ShotList(), ShotList.PATH);
@@ -87,16 +91,16 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 	public Map<String, SyncItem> getSyncMap() {
 		return SYNC_MAP;
 	}
-	
+
 	public static final HashMap<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem>(TaggableItem.SYNC_MAP);
-	
+
 	static {
 		SYNC_MAP.put(_DESCRIPTION, 		new SyncMap("description", SyncMap.STRING));
 		SYNC_MAP.put(_TITLE, 			new SyncMap("title", SyncMap.STRING));
 		SYNC_MAP.putAll(Locatable.SYNC_MAP);
 		SYNC_MAP.putAll(Favoritable.SYNC_MAP);
 		SYNC_MAP.put("_shotlist",   new OrderedList.SyncMap("shotlist", true, new ShotList(), ShotList.PATH));
-		
+
 		SYNC_MAP.remove(_PRIVACY);
 	}
 
