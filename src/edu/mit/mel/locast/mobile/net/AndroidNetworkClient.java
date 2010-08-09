@@ -109,6 +109,11 @@ public class AndroidNetworkClient extends NetworkClient {
 		}
 	}
 
+	@Override
+	protected InputStream getFileStream(Context context, Uri localFileUri) throws IOException {
+		return context.getContentResolver().openInputStream(localFileUri);
+	}
+
 	protected synchronized void loadBaseUri(){
 		this.baseurl = prefs.getString(PREF_SERVER_URL, context.getString(R.string.default_api_url));
 	}

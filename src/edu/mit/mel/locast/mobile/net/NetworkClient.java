@@ -62,7 +62,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.Context;
 import android.location.Location;
+import android.net.Uri;
 import android.util.Log;
 import edu.mit.mel.locast.mobile.StreamUtils;
 import edu.mit.mel.locast.mobile.data.JSONSerializable;
@@ -627,14 +629,15 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	}
 
 	protected abstract InputStream getFileStream(String localFile) throws IOException;
+	protected abstract InputStream getFileStream(Context context, Uri localFile) throws IOException;
 
-	public void uploadContent(String serverPath, String localFile, String contentType) throws NetworkProtocolException, IOException{
+	public void uploadContent(Context context, String serverPath, Uri localFile, String contentType) throws NetworkProtocolException, IOException{
 
 		if (localFile == null) {
 			throw new IOException("Cannot send. Content item does not reference a local file.");
 		}
 
-		final InputStream is = getFileStream(localFile);
+		final InputStream is = getFileStream(context, localFile);
 
 		// next step is to send the file contents.
 		final HttpPut r = openPUT(serverPath);

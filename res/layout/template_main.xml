@@ -90,7 +90,9 @@
     >
     	<EditText android:id="@+id/cast_title"
     	android:layout_width="fill_parent" 
-		    android:layout_height="wrap_content" android:hint="Cast title" />
+		    android:layout_height="wrap_content" android:hint="Cast title"
+		    android:inputType="text|textCapWords"
+		     />
  
     	<ListView android:id="@+id/instructions_list_full" 
 		    android:background="#a0000000"

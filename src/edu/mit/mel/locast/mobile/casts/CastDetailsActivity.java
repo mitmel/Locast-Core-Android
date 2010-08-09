@@ -255,7 +255,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 			if (localUri != null){
 				if (localUri.getScheme() == null){
 					// XXX
-					Toast.makeText(getApplicationContext(), "Sorry, viewing of un-published casts is not fully implemented yet.", Toast.LENGTH_SHORT);
+					Toast.makeText(getApplicationContext(), "Sorry, viewing of un-published casts is not fully implemented yet.", Toast.LENGTH_SHORT).show();
 				}else{
 
 					final Intent viewVideo = new Intent(Intent.ACTION_VIEW);

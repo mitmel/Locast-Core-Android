@@ -124,6 +124,21 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		return SYNC_MAP;
 	}
 
+	/**
+	 * A wrapper to catch any instances of paths stored in the database.
+	 * XXX Deprecate after any database upgrades.
+	 *
+	 * @param maybeUri Either a uri or a local filesystem path.
+	 * @return
+	 */
+	private static Uri parseMaybeUri(String maybeUri){
+		if (maybeUri.startsWith("/")){
+			return Uri.fromFile(new File(maybeUri));
+		}else{
+			return Uri.parse(maybeUri);
+		}
+	}
+
 	@Override
 	public void onPostSyncItem(Context context, Uri uri, JSONObject item) throws SyncException {
 		this.context = context;
@@ -144,14 +159,14 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		final int mediaContentTypeCol = castMedia.getColumnIndex(CastMedia._MIME_TYPE);
 		final int locIdCol = castMedia.getColumnIndex(CastMedia._ID);
 		for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
-			final String locMediaUri = castMedia.getString(localUriCol);
+			final Uri locMediaUri = castMedia.isNull(localUriCol) ? null : parseMaybeUri(castMedia.getString(localUriCol));
 			final String pubMediaUri = castMedia.getString(mediaUrlCol);
-			final boolean hasLocMediaUri = locMediaUri != null && locMediaUri.length() > 0;
+			final boolean hasLocMediaUri = locMediaUri != null;
 			final boolean hasPubMediaUri = pubMediaUri != null && pubMediaUri.length() > 0;
 			if (hasLocMediaUri && !hasPubMediaUri){
 				// upload
 				try {
-					nc.uploadContent(pubCastMediaUri + castMedia.getLong(idxCol)+"/", locMediaUri, castMedia.getString(mediaContentTypeCol));
+					nc.uploadContent(context, pubCastMediaUri + castMedia.getLong(idxCol)+"/", locMediaUri, castMedia.getString(mediaContentTypeCol));
 				} catch (final Exception e){
 					final SyncException se = new SyncException("Error uploading content item.");
 					se.initCause(e);

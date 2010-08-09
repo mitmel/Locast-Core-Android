@@ -38,6 +38,7 @@ import java.lang.reflect.Method;
 
 import android.app.Activity;
 import android.hardware.Camera;
+import android.hardware.Camera.Size;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Environment;
@@ -45,6 +46,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.SurfaceHolder;
+import android.widget.Toast;
 
 public abstract class VideoRecorder extends Activity {
 
@@ -52,7 +54,7 @@ public abstract class VideoRecorder extends Activity {
 	private Camera mCamera;
 	private SurfaceHolder mSurfaceHolder;
 	private boolean mIsPreviewing = false;
-	private final MediaRecorder recorder = new MediaRecorder();
+	private MediaRecorder recorder = null;
 
 	private static final int
 		MSG_INIT_RECORDER  = 1,
@@ -81,7 +83,8 @@ public abstract class VideoRecorder extends Activity {
 
 	private Handler recorderStateHandler;
 
-	public final static int MSG_RECORDER_INITIALIZED = 100;
+	public final static int MSG_RECORDER_INITIALIZED = 100,
+							MSG_RECORDER_SHUTDOWN = 101;
 	public void setRecorderStateHandler(Handler recorderStateHandler) {
 		this.recorderStateHandler = recorderStateHandler;
 	}
@@ -168,6 +171,32 @@ public abstract class VideoRecorder extends Activity {
 		super.onDestroy();
 	}
 
+	/**
+	 * Parameters must be set for the camera to the same settings as the media recorder.
+	 */
+	private void setCameraParameters(){
+
+		final Camera.Parameters params = mCamera.getParameters();
+		Log.i(TAG, "Build: "+ Build.MODEL);
+
+		if (Build.MODEL.equals("Milestone")){
+			params.setPreviewSize(640, 480);
+			params.setPreviewFrameRate(15);
+
+		}else if (Build.MODEL.equals("Nexus One")) {
+			// verified good 2010-07-06; API level 8
+			params.setPreviewSize(720, 480);
+			params.setPreviewFrameRate(15);
+
+		}else{ // for all other devices, fall back on a well-known default.
+			// CIF size, Android 1.6; "high quality" on the G1.
+			params.setPreviewSize(352, 288);
+			params.setPreviewFrameRate(10);
+		}
+
+		mCamera.setParameters(params);
+	}
+
 	protected void startPreview() {
 		if (mIsPreviewing){
 			// already rolling...
@@ -176,19 +205,24 @@ public abstract class VideoRecorder extends Activity {
 		if (mCamera == null){
 			mCamera = Camera.open();
 		}
+
+
 		try {
 			lockCamera();
+
+			setCameraParameters();
+
 			mCamera.setPreviewDisplay(mSurfaceHolder);
 		} catch (final IOException e) {
-			throw new RuntimeException(e);
+			alertFailSetup(e);
 		}
 
 	    try {
 			mCamera.startPreview();
 			mIsPreviewing = true;
 	    } catch (final Throwable ex) {
-	        closeCamera();
-	        throw new RuntimeException("startPreview failed", ex);
+	    	alertFailSetup(ex);
+	    	return;
 	    }
 	    if (mSurfaceHolder != null){
 	    	unlockCamera();
@@ -200,6 +234,7 @@ public abstract class VideoRecorder extends Activity {
 			return;
 		}
 		recorder.release();
+		recorder = null;
 		Log.d(TAG, "closing camera");
 		lockCamera();
 		//mCamera.stopPreview();
@@ -285,29 +320,33 @@ public abstract class VideoRecorder extends Activity {
 		try {
 			recorder.prepare();
 		} catch (final IllegalStateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			alertFailSetup(e);
 		} catch (final IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			alertFailSetup(e);
 		}
 	}
 	private void startRecorderActual(){
 		try {
-			//unlockCamera();
-			//recorder.prepare();
 			recorder.start();
 		} catch (final IllegalStateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			alertFailSetup(e);
 		}
 	}
 
 	public void stopRecorder(){
-		recorder.stop();
+		if (recorder != null){
+			recorder.stop();
+		}
 	}
 
-	private String mFullOutputFilename;
+	public void alertFailSetup(Throwable e){
+		closeCamera();
+		Toast.makeText(getApplicationContext(), edu.mit.mel.locast.mobile.R.string.template_error_setup_fail, Toast.LENGTH_SHORT).show();
+		e.printStackTrace();
+		finish();
+	}
+
+	private File mFullOutputFile;
 	/**
 	 * @param filename A pathless filename for this recording.
 	 */
@@ -327,16 +366,16 @@ public abstract class VideoRecorder extends Activity {
 			}
 		}
 
-		mFullOutputFilename = new File(locastBase, filename +".3gp").getAbsolutePath();
+		mFullOutputFile = new File(locastBase, filename +".3gp");
 		try {
-			recorder.setOutputFile(mFullOutputFilename);
+			recorder.setOutputFile(mFullOutputFile.getAbsolutePath());
 		}catch (final IllegalStateException ise){
 			Log.e(TAG, "Couldn't set output filename. Attempting to continue.", ise);
 		}
 	}
 
-	public String getFullOutputFilename(){
-		return mFullOutputFilename;
+	public File getFullOutputFile(){
+		return mFullOutputFile;
 	}
 
 	protected void initRecorder() {
@@ -345,11 +384,16 @@ public abstract class VideoRecorder extends Activity {
 			Log.d(TAG, "Camera was null. Starting preview...");
 			startPreview();
 		}
+
 		if (isLocked){
 			unlockCamera();
 		}
 		try {
-
+			if (recorder == null){
+				recorder = new MediaRecorder();
+			}else{
+				recorder.reset();
+			}
 			recorder.setCamera(mCamera);
 			recorder.setPreviewDisplay(mSurfaceHolder.getSurface());
 
@@ -359,23 +403,13 @@ public abstract class VideoRecorder extends Activity {
 			recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
 			//recorder.setMaxDuration(5000); // XXX
 
-			Log.i(TAG, "Build: "+ Build.MODEL);
+			// set the recorder parameters from the settings detected in setCameraParameters()
+			final Camera.Parameters params = mCamera.getParameters();
+			final Size vidSize = params.getPreviewSize();
+			recorder.setVideoSize(vidSize.width, vidSize.height);
+			recorder.setVideoFrameRate(params.getPreviewFrameRate());
 
-			if (Build.MODEL.equals("Milestone")){
-				recorder.setVideoSize(640, 480);
-				recorder.setVideoFrameRate(15);
-				recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-
-			}else if (Build.MODEL.equals("Nexus One")) {
-				recorder.setVideoSize(720, 480); // N1-specific
-				recorder.setVideoFrameRate(24);
-				recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H263);
-
-			}else{ // for all other devices, fall back on a well-known default.
-				// CIF size, Android 1.6; "high quality" on the G1.
-				recorder.setVideoSize(352, 288);
-				recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H263);
-			}
+			recorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
 
 			// this would be for setting the aspect ratio properly, but causes occasional white screens
 			//final SurfaceView sv = ((SurfaceView)findViewById(R.id.camera_view));
@@ -383,12 +417,12 @@ public abstract class VideoRecorder extends Activity {
 
 			recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 
+			Log.d(TAG, "done setting recorder parameters");
 			if (recorderStateHandler != null){
 				recorderStateHandler.sendEmptyMessage(MSG_RECORDER_INITIALIZED);
 			}
 		} catch (final IllegalStateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			alertFailSetup(e);
 			return;
 		}
 	}

@@ -28,6 +28,7 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.location.Location;
 import android.location.LocationListener;
@@ -48,6 +49,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.view.animation.AnimationUtils;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -168,7 +170,20 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		templateAdapter = new TemplateAdapter(this, mCastMediaInProgressList, R.layout.template_item);
 		lv.setAdapter(templateAdapter);
 		fullTemplateAdapter = new TemplateAdapter(this, mCastMediaInProgressList, R.layout.template_item_full);
-		((ListView)findViewById(R.id.instructions_list_full)).setAdapter(fullTemplateAdapter);
+		final ListView instructionListFull = ((ListView)findViewById(R.id.instructions_list_full));
+		instructionListFull.setAdapter(fullTemplateAdapter);
+		instructionListFull.setOnItemClickListener(new ListView.OnItemClickListener() {
+
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+				final CastMediaInProgress castMedia = fullTemplateAdapter.getItem(position);
+				if (castMedia.localUri != null){
+					final Intent viewCastPart = new Intent(Intent.ACTION_VIEW, null, getApplicationContext(), TemplatePlayer.class);
+					viewCastPart.setDataAndType(castMedia.localUri, "video/3gpp");
+					startActivity(viewCastPart);
+				}
+			}
+		});
+
 
 		lv.setEnabled(false);
 
@@ -187,31 +202,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		final List<String> path = data.getPathSegments();
 		filePrefix = ListUtils.join(path, "-");
 
-		hasDoneFirstInit = false;
-		setRecorderStateHandler(new Handler(){
-			@Override
-			public void handleMessage(Message msg) {
-				switch (msg.what){
-				case MSG_RECORDER_INITIALIZED:
-					if (!hasDoneFirstInit){
-						setOutputFilename(filePrefix + "-0-"+instanceId);
-						prepareRecorder();
-						hasDoneFirstInit = true;
-						setIndicator(INDICATOR_RECORD);
-						final Toast t = Toast.makeText(TemplateActivity.this, R.string.template_toast_start_record, Toast.LENGTH_LONG);
-						final DisplayMetrics metrics = new DisplayMetrics();
-						getWindowManager().getDefaultDisplay().getMetrics(metrics);
-						// position it above the red circle.
-						t.setGravity(Gravity.CENTER, 0, (int)(-50.0 * metrics.density));
-
-						t.show();
-
-					}
-
-					break;
-				}
-			}
-		});
+		setRecorderStateHandler(recorderStateHandler);
 
 		iloc = new IncrementalLocator(this);
 
@@ -221,14 +212,42 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	@Override
 	protected void onPause() {
 		super.onPause();
+		hasDoneFirstInit = false;
 		iloc.removeLocationUpdates(this);
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
+
 		iloc.requestLocationUpdates(this);
 	}
+
+	private final Handler recorderStateHandler = new Handler(){
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what){
+			case MSG_RECORDER_INITIALIZED:
+				if (!hasDoneFirstInit){
+					final int nextId = getNextCastVideo();
+					if (nextId < 0){
+						// done!
+						return;
+					}
+					setOutputFilename(filePrefix + "-"+nextId+"-"+instanceId);
+					prepareRecorder();
+					hasDoneFirstInit = true;
+					setIndicator(INDICATOR_RECORD);
+					if (nextId == 0){
+						showRecordHelp();
+					}
+
+				}
+
+				break;
+			}
+		}
+	};
 
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
@@ -351,10 +370,30 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			}
 		}
 	};
+	
+	private void showRecordHelp(){
+		final Toast t = Toast.makeText(TemplateActivity.this, R.string.template_toast_start_record, Toast.LENGTH_LONG);
+		final DisplayMetrics metrics = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(metrics);
+		// position it above the red circle.
+		t.setGravity(Gravity.CENTER, 0, (int)(-50.0 * metrics.density));
+
+		t.show();
+	}
+
+	private int getNextCastVideo(){
+		for (final CastMediaInProgress castMedia : mCastMediaInProgressList){
+			if (castMedia.localUri == null){
+				return castMedia.index;
+			}
+		}
+		return -1;
+	}
 
 	private void deleteCastVideo(int index){
 		final CastMediaInProgress item = mCastMediaInProgressList.get(index);
-		final File localUri = new File(item.localUri);
+		// TODO check to ensure that it's a file:/// uri
+		final File localUri = new File(item.localUri.getPath());
 		if (localUri.delete()){
 			item.localUri = null;
 			fullTemplateAdapter.notifyDataSetChanged();
@@ -393,7 +432,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			final CastMediaInProgress item = mCastMediaInProgressList.get(i);
 			castMedia[i] = new ContentValues();
 			castMedia[i].put(CastMedia._LIST_IDX, i);
-			castMedia[i].put(CastMedia._LOCAL_URI, item.localUri);
+			castMedia[i].put(CastMedia._LOCAL_URI, item.localUri.toString());
 			castMedia[i].put(CastMedia._DURATION, item.duration);
 			castMedia[i].put(CastMedia._MIME_TYPE, "video/3gpp");
 		}
@@ -639,9 +678,9 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			case MSG_END_SECTION:{
 				stopRecorder();
 				final CastMediaInProgress inProgressItem = mCastMediaInProgressList.get(msg.arg1);
-				inProgressItem.localUri = getFullOutputFilename();
+				inProgressItem.localUri = Uri.fromFile(getFullOutputFile());
 				fullTemplateAdapter.notifyDataSetChanged();
-				Log.d(TAG, "Video recorded to " + getFullOutputFilename());
+				Log.d(TAG, "Video recorded to " + getFullOutputFile());
 
 				if (msg.arg1 < msg.arg2 - 1){
 					setIndicator(INDICATOR_RECORD_PAUSE);
@@ -677,7 +716,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			this.direction = direction;
 			this.index = index;
 		}
-		protected String localUri = null;
+		protected Uri localUri = null;
 		protected int duration = 0;
 		protected int elapsedDuration = 0;
 		protected String direction = null;
@@ -688,7 +727,8 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 
 		public CastMediaInProgress(Parcel p){
-			localUri = p.readString();
+
+			localUri = Uri.CREATOR.createFromParcel(p);
 			duration = p.readInt();
 			elapsedDuration = p.readInt();
 			direction = p.readString();
@@ -696,13 +736,14 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 		public void writeToParcel(Parcel dest, int flags) {
 
-			dest.writeString(localUri);
+			Uri.writeToParcel(dest, localUri);
 			dest.writeInt(duration);
 			dest.writeInt(elapsedDuration);
 			dest.writeString(direction);
 			dest.writeInt(index);
 		}
 
+		@SuppressWarnings("unused")
 		public static final Parcelable.Creator<CastMediaInProgress> CREATOR
 			= new Creator<CastMediaInProgress>() {
 
@@ -715,4 +756,5 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 				}
 			};
 	}
+
 }

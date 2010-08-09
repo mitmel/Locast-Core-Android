@@ -84,17 +84,21 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 
 	@Override
 	public void onStart(Intent intent, int startId) {
+		if (intent != null){
+			if (Intent.ACTION_SYNC.equals(intent.getAction())){
 
-		if (Intent.ACTION_SYNC.equals(intent.getAction())){
-
-			startSync(intent.getData());
-		}else if (ACTION_CANCEL_SYNC.equals(intent.getAction())){
-			if(currentSyncTask != null){
-				currentSyncTask.cancel(true);
-				Toast.makeText(getApplicationContext(), "Sync cancelled.", Toast.LENGTH_LONG).show();
-			}else{
-				Toast.makeText(getApplicationContext(), "Does not appear to currently be syncing", Toast.LENGTH_LONG).show();
+				startSync(intent.getData());
+			}else if (ACTION_CANCEL_SYNC.equals(intent.getAction())){
+				if(currentSyncTask != null){
+					currentSyncTask.cancel(true);
+					Toast.makeText(getApplicationContext(), "Sync cancelled.", Toast.LENGTH_LONG).show();
+				}else{
+					Toast.makeText(getApplicationContext(), "Does not appear to currently be syncing", Toast.LENGTH_LONG).show();
+				}
 			}
+		}else{
+			// restarted by system.
+			startSync();
 		}
 	}
 
@@ -395,7 +399,13 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
         }
     }
 
+    public void startSync(){
 
+    	if (currentSyncTask == null || currentSyncTask.getStatus() == AsyncTask.Status.FINISHED){
+    		currentSyncTask = new SyncTask();
+    		currentSyncTask.execute();
+    	}
+    }
 
     public void startSync(Uri uri){
     	if (! syncQueue.contains(uri)){
@@ -405,13 +415,10 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
     		Log.d(TAG, "NOT enqueing " + uri + " to sync queue, as it's already present");
     	}
 
-    	if (currentSyncTask == null || currentSyncTask.getStatus() == AsyncTask.Status.FINISHED){
-    		currentSyncTask = new SyncTask();
-    		currentSyncTask.execute(uri);
-    	}
+    	startSync();
     }
 
-	private class SyncTask extends AsyncTask<Uri, Integer, Boolean> {
+	private class SyncTask extends AsyncTask<Void, Integer, Boolean> {
 		Exception e;
 		Notification notification;
 		NotificationManager nm;
@@ -436,7 +443,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 		}
 
 		@Override
-		protected Boolean doInBackground(Uri... params) {
+		protected Boolean doInBackground(Void... params) {
 
 			try {
 				while (!syncQueue.isEmpty()){
@@ -478,6 +485,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			}
 
 			nm.cancel(NOTIFICATION_SYNC);
+			stopSelf();
 		}
 	}
 }
