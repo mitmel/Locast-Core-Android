@@ -56,6 +56,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
@@ -142,6 +143,11 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		super();
 
 		this.addRequestInterceptor(PREEMPTIVE_AUTH, 0);
+
+		final HttpParams p = this.getParams();
+		p.setParameter("http.socket.timeout", new Integer(60000));
+		p.setParameter("http.protocol.expect-continue", true);
+
 		//this.addRequestInterceptor(removeExpectations);
 	}
 
@@ -510,12 +516,22 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	protected synchronized HttpPost openPOST(String uri) throws IOException,
 	NetworkProtocolException {
 		logDebug("POSTing "+ baseurl + uri);
+		if (getCredentialsProvider() != null && getCredentialsProvider().getCredentials(authScope) != null){
+			logDebug("Authenticating as " + getCredentialsProvider().getCredentials(authScope).getUserPrincipal().getName());
+		}else{
+			logDebug("No credentials");
+		}
 		return new HttpPost(baseurl+uri);
 	}
 
 	protected synchronized HttpPut openPUT(String uri) throws IOException,
 	NetworkProtocolException {
 		logDebug("PUTting "+ baseurl + uri);
+		if (getCredentialsProvider() != null && getCredentialsProvider().getCredentials(authScope) != null){
+			logDebug("Authenticating as " + getCredentialsProvider().getCredentials(authScope).getUserPrincipal().getName());
+		}else{
+			logDebug("No credentials");
+		}
 		return new HttpPut(baseurl+uri);
 	}
 

@@ -18,6 +18,7 @@ package edu.mit.mel.locast.mobile.data;
  */
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -161,7 +162,8 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	}
 
 	@Override
-	public void onPostSyncItem(Context context, Uri uri, JSONObject item) throws SyncException {
+	public void onPostSyncItem(Context context, Uri uri, JSONObject item) throws SyncException, IOException {
+		super.onPostSyncItem(context, uri, item);
 		this.context = context;
 		final ContentResolver cr = context.getContentResolver();
 		//final Cursor c = cr.query(uri, PROJECTION, null, null, null);

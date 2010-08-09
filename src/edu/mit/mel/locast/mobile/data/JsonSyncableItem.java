@@ -44,24 +44,24 @@ import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
 
 /**
  * This type of object row can be serialized to/from JSON and synchronized to a server.
- * 
+ *
  * @author stevep
  *
  */
 public abstract class JsonSyncableItem implements BaseColumns {
-	public static final String 
+	public static final String
 		_PUBLIC_ID      = "id",
 		_MODIFIED_DATE  = "modified",
 		_CREATED_DATE 	= "created";
-	
+
 	public static final String[] SYNC_PROJECTION = {
 		_ID,
 		_PUBLIC_ID,
 		_MODIFIED_DATE,
 		_CREATED_DATE,
-		
+
 	};
-	
+
 	/**
 	 * @return the complete DB projection for the local object. Really only needs to
 	 * contain all the fields that are used in the sync map.
@@ -78,7 +78,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	public Map<String, SyncItem> getSyncMap(){
 		return SYNC_MAP;
 	};
-	
+
 	public static final HashMap<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem>();
 	static {
 		SYNC_MAP.put(_PUBLIC_ID, 		new SyncMap("id", SyncMap.INTEGER, true));
@@ -86,38 +86,38 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		SYNC_MAP.put(_CREATED_DATE,		new SyncMap("created", SyncMap.DATE, true, SyncItem.SYNC_FROM));
 
 	}
-	
+
 	/**
 	 * Hook called after an item has been updated on the server.
 	 * @param uri Local URI pointing to the newly-updated item.
 	 * @throws SyncException
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException, IOException {}
-	
+
 	/**
-	 * Called just before an item is sync'd.  
+	 * Called just before an item is sync'd.
 	 * @param c Cursor pointing to the given item.
-	 * 
+	 *
 	 * @throws SyncException
 	 */
 	public void onPreSyncItem(ContentResolver cr, Uri uri, Cursor c) throws SyncException {}
-	
+
 	/**
 	 * Hook called after an item has been synchronized on the server. Called each time the sync request is made.
 	 * @param uri Local URI pointing to the item.
 	 * @throws SyncException
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public void onPostSyncItem(Context context, Uri uri, JSONObject item) throws SyncException, IOException {}
-	
+
 	public static final String LIST_DELIM = "|";
 	// the below splits "tag1|tag2" but not "tag1\|tag2"
 	public static final String LIST_SPLIT = "(?<!\\\\)\\|";
-	
+
 	/**
 	 * Gets a list for the current item in the cursor.
-	 * 
+	 *
 	 * @param c
 	 * @return
 	 */
@@ -125,7 +125,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		final String t = c.getString(column);
 		return getList(t);
 	}
-	
+
 	public static List<String> getList(String listString){
 		if (listString != null && listString.length() > 0){
 			final String[] split = listString.split(LIST_SPLIT);
@@ -137,16 +137,16 @@ public abstract class JsonSyncableItem implements BaseColumns {
 			return new Vector<String>();
 		}
 	}
-	
+
 	/**
 	 * Gets a list for the current item in the cursor.
-	 * 
+	 *
 	 * @param c
 	 * @return
 	 */
 	public static List<Long> getListLong(int column, Cursor c){
 		final String t = c.getString(column);
-		
+
 		if (t != null && t.length() > 0){
 			final String[] split = t.split(LIST_SPLIT);
 			final List<Long> r = new Vector<Long>(split.length);
@@ -158,7 +158,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 			return new Vector<Long>();
 		}
 	}
-	
+
 	/**
 	 * @param v
 	 * @param tags
@@ -167,13 +167,13 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	public static ContentValues putList(String columnName, ContentValues v, List<?> list){
 		v.put(columnName, toListString(list));
 		return v;
-		
+
 	}
-	
+
 	public static String toListString(Collection<?> list){
-		
+
 		final List<String> tempList = new Vector<String>(list.size());
-		
+
 		for (final Object ob : list){
 			String s = ob.toString();
 			// escape all of the delimiters in the individual strings
@@ -183,14 +183,14 @@ public abstract class JsonSyncableItem implements BaseColumns {
 
 		return ListUtils.join(tempList, LIST_DELIM);
 	}
-	
+
 	private static Pattern durationPattern = Pattern.compile("(\\d{1,2}):(\\d{1,2}):(\\d{1,2})");
 	/**
 	 * Given a JSON item and a sync map, create a ContentValues map to be inserted into the DB.
-	 *  
+	 *
 	 * @param context
 	 * @param localItem will be null if item is new to mobile. If it's been sync'd before, will point to local entry.
-	 * @param item incoming JSON item. 
+	 * @param item incoming JSON item.
 	 * @param mySyncMap A mapping between the JSON object and the content values.
 	 * @return new ContentValues, ready to be inserted into the database.
 	 * @throws JSONException
@@ -200,17 +200,17 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	public final static ContentValues fromJSON(Context context, Uri localItem, JSONObject item, Map<String, SyncItem> mySyncMap) throws JSONException, IOException,
 			NetworkProtocolException {
 		final ContentValues cv = new ContentValues();
-		
+
 		for (final String propName: mySyncMap.keySet()){
 			final SyncItem map = mySyncMap.get(propName);
 			if (map.getDirection() == SyncItem.SYNC_TO){
 				continue;
 			}
-			if (map.isOptional() && 
+			if (map.isOptional() &&
 					(!item.has(map.remoteKey) || item.isNull(map.remoteKey))){
 				continue;
 			}
-			
+
 			//item.get
 			if (map instanceof SyncMap){
 				final SyncMap m2 = (SyncMap)map;
@@ -219,19 +219,19 @@ public abstract class JsonSyncableItem implements BaseColumns {
 				case SyncMap.STRING:
 					cv.put(propName, item.getString(map.remoteKey));
 					break;
-				
+
 				case SyncMap.INTEGER:
 					cv.put(propName, item.getInt(map.remoteKey));
 					break;
-					
+
 				case SyncMap.DOUBLE:
 					cv.put(propName, item.getDouble(map.remoteKey));
-					break;			
-					
+					break;
+
 				case SyncMap.BOOLEAN:
 					cv.put(propName, item.getBoolean(map.remoteKey));
 					break;
-					
+
 				case SyncMap.LIST_INTEGER:
 				case SyncMap.LIST_STRING:
 				case SyncMap.LIST_DOUBLE:{
@@ -242,11 +242,11 @@ public abstract class JsonSyncableItem implements BaseColumns {
 						case SyncMap.LIST_STRING:
 							l.add(ar.getString(i));
 							break;
-							
+
 						case SyncMap.LIST_DOUBLE:
 							l.add(String.valueOf(ar.getDouble(i)));
 							break;
-							
+
 						case SyncMap.LIST_INTEGER:
 							l.add(String.valueOf(ar.getInt(i)));
 							break;
@@ -255,7 +255,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 					cv.put(propName, ListUtils.join(l, LIST_DELIM));
 				}
 					break;
-					
+
 				case SyncMap.DATE:
 					try {
 						cv.put(propName, NetworkClient.parseDate(item.getString(map.remoteKey)).getTime());
@@ -265,7 +265,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 						throw ne;
 					}
 					break;
-					
+
 				case SyncMap.DURATION:{
 					final Matcher m = durationPattern.matcher(item.getString(map.remoteKey));
 					if (! m.matches()){
@@ -277,13 +277,13 @@ public abstract class JsonSyncableItem implements BaseColumns {
 				}
 			}else if (map instanceof SyncLiteral){
 				// don't need to load these
-				
+
 			}else if (map instanceof SyncMapChain){
 				cv.putAll(fromJSON(context, localItem, item.getJSONObject(map.remoteKey),((SyncMapChain)map).getChain()));
-				
+
 			}else if (map instanceof SyncCustom){
 				cv.putAll(((SyncCustom)map).fromJSON(localItem, item.getJSONObject(map.remoteKey)));
-				
+
 			}else if (map instanceof SyncCustomArray){
 				cv.putAll(((SyncCustomArray)map).fromJSON(context, localItem, item.getJSONArray(map.remoteKey)));
 			}
@@ -295,7 +295,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 * @param context
 	 * @param localItem Will contain the URI of the local item being referenced in the cursor
 	 * @param c active cursor with the item to sync selected.
-	 * @param mySyncMap 
+	 * @param mySyncMap
 	 * @return a new JSONObject representing the item
 	 * @throws JSONException
 	 * @throws NetworkProtocolException
@@ -303,51 +303,51 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 */
 	public final static JSONObject toJSON(Context context, Uri localItem, Cursor c, Map<String, SyncItem> mySyncMap) throws JSONException, NetworkProtocolException, IOException {
 		final JSONObject jo = new JSONObject();
-		
+
 		for (final String lProp: mySyncMap.keySet()){
 			final SyncItem map = mySyncMap.get(lProp);
 			final int columnIndex = c.getColumnIndex(lProp);
 
-			if (map.isOptional() && c.isNull(columnIndex) && !lProp.startsWith("_")){
+			if (!lProp.startsWith("_") && map.isOptional() && c.isNull(columnIndex)){
 				continue;
 			}
-			
+
 			if (map.getDirection() == SyncItem.SYNC_FROM){
 				continue;
 			}
             if (map instanceof SyncLiteral){
             	jo.put(map.remoteKey, ((SyncLiteral)map).getLiteral());
-            	
+
             }else if (map instanceof SyncMapChain){
             		jo.put(map.remoteKey, toJSON(context, localItem, c, ((SyncMapChain)map).getChain()));
-            
+
             }else if (map instanceof SyncCustom){
             	jo.put(map.remoteKey, ((SyncCustom)map).toJSON(localItem, c));
-            	
+
             }else if (map instanceof SyncCustomArray){
             	jo.put(map.remoteKey, ((SyncCustomArray)map).toJSON(context, localItem, c));
-				
+
             }else if (map instanceof SyncMap){
-            	
+
             	final SyncMap m2 = (SyncMap)map;
-            	
+
             	switch (m2.getType()){
             	case SyncMap.STRING:
             		jo.put(map.remoteKey, c.getString(columnIndex));
             		break;
-				
+
             	case SyncMap.INTEGER:
             		jo.put(map.remoteKey, c.getInt(columnIndex));
             		break;
-            		
+
             	case SyncMap.DOUBLE:
             		jo.put(map.remoteKey, c.getDouble(columnIndex));
             		break;
-            		
+
             	case SyncMap.BOOLEAN:
 				jo.put(map.remoteKey, c.getInt(columnIndex) != 0);
 				break;
-				
+
             	case SyncMap.LIST_STRING:
             	case SyncMap.LIST_DOUBLE:
             	case SyncMap.LIST_INTEGER:
@@ -375,13 +375,13 @@ public abstract class JsonSyncableItem implements BaseColumns {
 					jo.put(map.remoteKey, ar);
             	}
 				break;
-				
+
             	case SyncMap.DATE:
 
-            		jo.put(map.remoteKey, 
+            		jo.put(map.remoteKey,
 						NetworkClient.dateFormat.format(new Date(c.getLong(columnIndex))));
 				break;
-				
+
             	case SyncMap.DURATION:{
             		final int durationSeconds = c.getInt(columnIndex);
             		// hh:mm:ss
@@ -390,12 +390,12 @@ public abstract class JsonSyncableItem implements BaseColumns {
             	}
             }
 		}
-		
+
 		return jo;
 	}
-	
-	
-	
+
+
+
 	public static abstract class SyncItem {
 		private final String remoteKey;
 		public static final int SYNC_BOTH = 0,
@@ -403,7 +403,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 								SYNC_FROM = 2;
 		private final int direction;
 		private final boolean optional;
-		
+
 		public SyncItem(String remoteKey) {
 			this(remoteKey, SYNC_BOTH);
 		}
@@ -428,11 +428,11 @@ public abstract class JsonSyncableItem implements BaseColumns {
 			return optional;
 		}
 	}
-	
+
 	/**
 	 * A custom sync item. Use this if the automatic field mappers aren't
 	 * flexible enough to read/write from JSON.
-	 * 
+	 *
 	 * @author steve
 	 *
 	 */
@@ -447,11 +447,11 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		public abstract JSONObject toJSON(Uri localItem, Cursor c) throws JSONException;
 		public abstract ContentValues fromJSON(Uri localItem, JSONObject item) throws JSONException;
 	}
-	
+
 	/**
 	 * A custom sync item. Use this if the automatic field mappers aren't
 	 * flexible enough to read/write from JSON.
-	 * 
+	 *
 	 * @author steve
 	 *
 	 */
@@ -472,7 +472,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		public abstract JSONArray toJSON(Context context, Uri localItem, Cursor c) throws JSONException, NetworkProtocolException, IOException;
 		public abstract ContentValues fromJSON(Context context, Uri localItem, JSONArray item) throws JSONException, NetworkProtocolException, IOException;
 	}
-	
+
 	/**
 	 * A simple field mapper. This maps a JSON object key to a local DB field.
 	 * @author steve
@@ -494,11 +494,11 @@ public abstract class JsonSyncableItem implements BaseColumns {
 			super(remoteKey, optional, direction);
 			this.type = type;
 		}
-		
+
 		public int getType(){
 			return type;
 		}
-		
+
 		public final static int
 			STRING  = 0,
 			INTEGER = 1,
@@ -512,18 +512,18 @@ public abstract class JsonSyncableItem implements BaseColumns {
 			DURATION = 9;
 
 	}
-	
+
 	/**
 	 * An item that recursively goes into a JSON object and can map
 	 * properties from that. When outputting JSON, will create the object
 	 * again.
-	 * 
+	 *
 	 * @author stevep
 	 *
 	 */
 	public static class SyncMapChain extends SyncItem {
 		private final Map<String, SyncItem> chain;
-		
+
 		public SyncMapChain(String remoteKey, Map<String, SyncItem> chain) {
 			super(remoteKey);
 			this.chain = chain;
@@ -536,25 +536,25 @@ public abstract class JsonSyncableItem implements BaseColumns {
 			return chain;
 		}
 	}
-	
+
 	/**
 	 * Used for outputting a literal into a JSON object. If the format requires
 	 * some strange literal, like
 	 *   "type": "point"
 	 * this can add it.
-	 * 
+	 *
 	 * @author steve
 	 *
 	 */
 	public static class SyncLiteral extends SyncItem {
 		private final Object literal;
-		
-		
+
+
 		public SyncLiteral(String remoteKey, Object literal) {
 			super(remoteKey);
 			this.literal = literal;
 		}
-		
+
 		public Object getLiteral() {
 			return literal;
 		}

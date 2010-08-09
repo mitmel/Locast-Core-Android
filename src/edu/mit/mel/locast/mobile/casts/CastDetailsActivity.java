@@ -16,8 +16,6 @@ package edu.mit.mel.locast.mobile.casts;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import java.util.ArrayList;
-
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -31,10 +29,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.Gallery;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.mit.mel.locast.mobile.Application;
@@ -55,8 +51,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 	private ImageView mediaThumbView;
 	private String contentType;
 	private Uri publicUri;
-	private Uri localUri;
-	private ArrayList<Uri> locCastMedia = new ArrayList<Uri>();
+	private boolean hasLocalVids = false;
 	private Uri geoUri;
 	private int publicId = -1;
 
@@ -88,32 +83,15 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 		c.moveToFirst();
 		castUri = data;
 
-		final Cursor castMedia = managedQuery(Uri.withAppendedPath(castUri, CastMedia.PATH), CastMedia.PROJECTION, null, null, null);
-
-		final String[] FROM = {CastMedia._LIST_IDX};
-		final int[] TO = { android.R.id.text1};
-		((Gallery)findViewById(R.id.gallery)).setAdapter(new SimpleCursorAdapter(this, android.R.layout.simple_gallery_item, castMedia, FROM, TO));
-
-		locCastMedia = new ArrayList<Uri>(castMedia.getCount());
+		final Cursor castMedia = managedQuery(Cast.getCastMediaUri(castUri), CastMedia.PROJECTION, null, null, null);
 
 		Log.d("CastDetails", "Cast Media:");
+		final int localUriIdx = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
 		for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
+			if (!castMedia.isNull(localUriIdx) && castMedia.getString(localUriIdx).length() > 0){
+				hasLocalVids = true;
+			}
 			MediaProvider.dumpCursorToLog(castMedia, CastMedia.PROJECTION);
-			final int colIdx = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
-			if (!castMedia.isNull(colIdx)){
-				locCastMedia.add(Uri.parse(castMedia.getString(colIdx)));
-			}
-		}
-		if (locCastMedia.size() > 0){
-			localUri = locCastMedia.get(0);
-			if (localUri.getScheme() == null){
-				//localUri = localUri.buildUpon().scheme("file").build();
-
-			}
-			if (contentType == null || contentType.equals("")){
-				contentType = "video/3gpp";
-			}
-			Log.d("cast details", "local uri is: "+localUri);
 		}
 	}
 
@@ -133,8 +111,12 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 			.setText(c.getString(c.getColumnIndex(Cast._AUTHOR)));
 
 
+		if (!c.isNull(c.getColumnIndex(Cast._CONTENT_TYPE))){
+			contentType = c.getString(c.getColumnIndex(Cast._CONTENT_TYPE));
+		}else{
+			contentType = "video/3gpp";
+		}
 
-		contentType = c.getString(c.getColumnIndex(Cast._CONTENT_TYPE));
 		if (!c.isNull(c.getColumnIndex(Cast._PUBLIC_URI))){
 			publicUri = Uri.parse(c.getString(c.getColumnIndex(Cast._PUBLIC_URI)));
 		}
@@ -226,12 +208,12 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 		switch (v.getId()){
 		case R.id.media_thumbnail:{
 
-			if (publicUri != null && localUri == null){
+			if (publicUri != null && !hasLocalVids){
 				final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
 				viewVideo.setDataAndType(publicUri, contentType);
 				startActivity(viewVideo);
 
-			}else if (localUri != null){
+			}else if (hasLocalVids){
 				final Intent viewVideos = new Intent(Intent.ACTION_VIEW, castUri, this, TemplatePlayer.class);
 				startActivity(viewVideos);
 
@@ -291,11 +273,8 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 			break;
 
 		case R.id.refresh:
-			if (publicUri == null && localUri != null){
-				Toast.makeText(this, "Uploading cast...", Toast.LENGTH_SHORT).show();
-			}else{
-				Toast.makeText(this, "Synchronizing cast...", Toast.LENGTH_SHORT).show();
-			}
+			Toast.makeText(this, "Synchronizing cast...", Toast.LENGTH_SHORT).show();
+
 			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()));
 			break;
 		}

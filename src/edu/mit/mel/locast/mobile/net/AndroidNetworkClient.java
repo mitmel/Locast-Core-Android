@@ -22,11 +22,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 
+import org.apache.http.params.HttpParams;
+
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -56,6 +59,15 @@ public class AndroidNetworkClient extends NetworkClient {
 	public AndroidNetworkClient(Context context){
 		super();
 		this.context = context;
+
+		final HttpParams p = this.getParams();
+		String appVersion = "unknown";
+		try {
+			appVersion = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+		} catch (final NameNotFoundException e) {
+			e.printStackTrace();
+		}
+		p.setParameter("http.useragent", context.getString(R.string.app_name) + "/"+appVersion);
 
 		prefs = PreferenceManager.getDefaultSharedPreferences(context);
 		Log.i(TAG, prefs.getString(PREF_SERVER_URL, ""));

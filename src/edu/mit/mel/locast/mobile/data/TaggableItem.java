@@ -36,6 +36,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 
 /**
@@ -62,7 +63,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	public static final Map<String, SyncItem> SYNC_MAP = new HashMap<String, SyncItem> (JsonSyncableItem.SYNC_MAP);
 
 	static {
-		SYNC_MAP.put(Tag.PATH, new SyncCustomArray("tags") {
+		SYNC_MAP.put(Tag.PATH, new SyncCustomArray("tags", SyncItem.SYNC_TO) {
 
 			@Override
 			public JSONArray toJSON(Context context, Uri localItem, Cursor c) throws JSONException {
@@ -79,13 +80,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 			@Override
 			public ContentValues fromJSON(Context context, Uri localItem, JSONArray item)
 					throws JSONException {
-				final ContentValues cv = new ContentValues();
-				final List<String> tags = new ArrayList<String>(item.length());
-				for (int i = 0; i < item.length(); i++){
-					tags.add(item.getString(i));
-				}
-				//TaggableItem.putTags(context.getContentResolver(), localItem, tags);
-				return cv;
+				return null; // this shouldn't be called.
 			}
 		});
 
@@ -98,6 +93,22 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	@Override
 	public Map<String, SyncItem> getSyncMap() {
 		return SYNC_MAP;
+	}
+
+	@Override
+	public void onPostSyncItem(Context context, Uri uri, JSONObject item)
+			throws SyncException, IOException {
+		super.onPostSyncItem(context, uri, item);
+
+		// tags need to be loaded here, as they need a valid localUri in order to save.
+		final JSONArray ja = item.optJSONArray("tags");
+		final List<String> tags = new ArrayList<String>(ja.length());
+		for (int i = 0; i < ja.length(); i++){
+			tags.add(ja.optString(i));
+		}
+		Log.d("TaggableItem", uri + " has the following tags: "+ tags);
+		TaggableItem.putTags(context.getContentResolver(), uri, tags);
+
 	}
 
 	/**

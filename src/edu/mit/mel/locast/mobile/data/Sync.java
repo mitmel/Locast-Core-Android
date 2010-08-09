@@ -243,14 +243,11 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			// new content on the local side only. Gotta publish.
 
 			try {
-				Uri postHereUri;
-				if (contentType.startsWith("vnd.android.cursor.item")){
-					postHereUri = MediaProvider.removeLastPathSegment(toSync); // XXX perhaps not the best way
-				}else{
-					postHereUri = toSync;
-				}
 				jsonObject = JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, sync.getSyncMap());
-				final HttpResponse hr = nc.post(MediaProvider.getPublicPath(cr, postHereUri), jsonObject.toString());
+
+				final String publicPath = MediaProvider.getPostPath(cr, locUri);
+				Log.d(TAG, "Posting "+locUri + " to " + publicPath);
+				final HttpResponse hr = nc.post(publicPath, jsonObject.toString());
 
 				if (! hr.containsHeader("Content-Type")
 						|| ! hr.getHeaders("Content-Type")[0].getValue().startsWith(NetworkClient.JSON_MIME_TYPE)) {

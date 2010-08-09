@@ -493,7 +493,6 @@ public class MediaProvider extends ContentProvider {
 		} break;
 
 		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:{
-			final String projectId = uri.getPathSegments().get(1);
 			final String castId = uri.getPathSegments().get(3);
 			values.put(CastMedia._PARENT_ID, castId);
 			rowid = db.insert(CAST_MEDIA_TABLE_NAME, null, values);
@@ -844,22 +843,46 @@ public class MediaProvider extends ContentProvider {
 		return count;
 	}
 
+	/**
+	 * @param cr
+	 * @param uri
+	 * @return The path that one should post to for the given content item. Should always point to an item, not a dir.
+	 */
+	public static String getPostPath(ContentResolver cr, Uri uri){
+		return getPublicPath(cr, uri, null, true);
+	}
+
 	public static String getPublicPath(ContentResolver cr, Uri uri){
-		return getPublicPath(cr, uri, null);
+		return getPublicPath(cr, uri, null, false);
 	}
 
 	public static String getPublicPath(ContentResolver cr, Uri uri, Long publicId){
+		return getPublicPath(cr, uri, publicId, false);
+	}
+
+	/**
+	 * Given a local content item, returns the public path (on the API) for that item.
+	 * If the item has not been published yet, cannot get the public path of the item, but can get the path of its parent.
+	 *
+	 * @param cr A content resolver.
+	 * @param uri The URI of the object.
+	 * @param publicId Append the given publicId to this path. Null if undesired.
+	 * @param parent If this should return the path to the parent of the item instead of the item itself.
+	 * @return
+	 */
+	public static String getPublicPath(ContentResolver cr, Uri uri, Long publicId, boolean parent){
 		final String[] generalProjection = {JsonSyncableItem._ID, JsonSyncableItem._PUBLIC_ID};
 		final String[] castProjection = {JsonSyncableItem._ID, JsonSyncableItem._PUBLIC_ID, Cast._PROJECT_ID};
 
 		String[] projection = generalProjection;
-		Cursor c;
 		String path = null;
+		// TODO change this to switch on item type, not path. Path is breaking everything...
 		final int match = uriMatcher.match(uri);
 		switch (match){
 		case MATCHER_CAST_ITEM:
 			projection = castProjection;
-		case MATCHER_PROJECT_ITEM:
+		case MATCHER_PROJECT_ITEM:{
+			Cursor c;
 			c = cr.query(uri, projection, null, null, null);
 			if (c.moveToFirst()){
 				if (match == MATCHER_PROJECT_ITEM){
@@ -872,16 +895,20 @@ public class MediaProvider extends ContentProvider {
 					}
 				}
 
-				if (!c.isNull(c.getColumnIndex(JsonSyncableItem._PUBLIC_ID))){
+				if (parent){
+					// we won't add anything to the path. We've already got what we want.
+				}else if(!c.isNull(c.getColumnIndex(JsonSyncableItem._PUBLIC_ID))){
 					path += c.getLong(c.getColumnIndex(JsonSyncableItem._PUBLIC_ID)) + "/";
+
 				}else if (publicId != null && publicId > 0){
 					path += publicId + "/";
+
 				}else {
 					throw new RuntimeException("Asked for public path of "+uri+", but it has no public ID");
 				}
 			}
 			c.close();
-			break;
+		}break;
 
 		case MATCHER_CAST_DIR:
 			path = "/"+Cast.SERVER_PATH;
@@ -897,6 +924,9 @@ public class MediaProvider extends ContentProvider {
 			}
 			break;
 
+		case MATCHER_COMMENT_ITEM:
+			// TODO this needs to handle Don't know how to get the public path for content://edu.mit.mobile.android.locast.provider/casts/20/comments/1 for getPostPath()
+			break;
 		case MATCHER_CHILD_COMMENT_DIR:{
 			if (publicId != null){
 				return null;
@@ -914,7 +944,8 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_PROJECT_CAST_ITEM:{
 			final List<String> pathSegments = uri.getPathSegments();
 			final Uri castPart = (uri.buildUpon().path(pathSegments.get(pathSegments.size() - 2) + "/" + pathSegments.get(pathSegments.size() - 1))).build();
-			path = getPublicPath(cr, castPart);
+
+			path = getPublicPath(cr, castPart, publicId, parent);
 
 		} break;
 
@@ -931,10 +962,10 @@ public class MediaProvider extends ContentProvider {
 			throw new IllegalArgumentException("Don't know how to get the public path for "+uri);
 
 		}
-
 		path = path.replaceAll("//", "/"); // hack to get around a tedious problem
 		Log.d("MediaProvider", "gave "+path+" for a public path for "+uri);
 		return path;
+
 	}
 
 	public static UriMatcher getUriMatcher(){
