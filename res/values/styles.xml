@@ -2,16 +2,11 @@
 <resources>
 
   <!--  MAIN -->
-  <!-- 
-   	<style name="TabWidgetTextOnly" parent="@android:style/Widget.TabWidget">
- 		<item name="android:textSize">18sp</item>
- 		<item name="android:textStyle">bold</item>
- 		<item name="android:textColor">#f00</item>
- 		<item name="android:shadowColor">#BB000000</item>
-        <item name="android:shadowRadius">2.75</item>
-        <item name="android:layout_gravity">center_vertical</item>
- 	</style>
- 	 -->
+ 	 
+ 	<!-- This is needed as API level 5 doesn't seem to respect the API-level qualifier. -->
+ 	<style name="LightTheme" parent="@android:style/Theme.Light">
+        <item name="android:tabWidgetStyle">@android:style/Widget.TabWidget</item>
+	 </style>
  	
     <style name="Theme.NoBackground" parent="@android:style/Theme.Light">
         <item name="android:windowBackground">@null</item>

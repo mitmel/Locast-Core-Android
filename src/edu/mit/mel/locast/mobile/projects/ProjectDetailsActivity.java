@@ -18,14 +18,11 @@ package edu.mit.mel.locast.mobile.projects;
  */
 
 import android.app.ListActivity;
-import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Intent;
-import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -38,14 +35,15 @@ import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
 import com.commonsware.cwac.thumbnail.ThumbnailAdapter;
 
 import edu.mit.mel.locast.mobile.Application;
 import edu.mit.mel.locast.mobile.R;
+import edu.mit.mel.locast.mobile.casts.BasicCursorContentObserver;
 import edu.mit.mel.locast.mobile.casts.CastCursorAdapter;
+import edu.mit.mel.locast.mobile.casts.BasicCursorContentObserver.BasicCursorContentObserverWatcher;
 import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.Project;
 import edu.mit.mel.locast.mobile.data.ShotList;
@@ -53,7 +51,7 @@ import edu.mit.mel.locast.mobile.templates.TemplateActivity;
 import edu.mit.mel.locast.mobile.widget.TagListView;
 
 	public class ProjectDetailsActivity extends ListActivity
-		implements OnClickListener, OnItemClickListener, OnCreateContextMenuListener {
+		implements OnClickListener, OnItemClickListener, OnCreateContextMenuListener, BasicCursorContentObserverWatcher {
 		private TagListView tagList;
 
 		private final static int MENU_ITEM_VIEW_CAST = 0,
@@ -61,6 +59,9 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 
 		private BaseAdapter castAdapter;
 		private Cursor c;
+		private Uri mProjectUri;
+
+		private final BasicCursorContentObserver mContentObserver = new BasicCursorContentObserver(this);
 
 		@Override
 		public void onCreate(Bundle savedInstanceState) {
@@ -84,7 +85,7 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	        castAdapter = new ThumbnailAdapter(this,
 	        		new CastCursorAdapter(this,
 	        				managedQuery(projectCasts,
-	        						Cast.PROJECTION, null, null, Cast.DEFAULT_SORT)),
+	        						Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT)),
 	        		((Application)getApplication()).getImageCache(), IMAGE_IDS);
 
 	        setListAdapter(castAdapter);
@@ -98,39 +99,30 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	        final String action = getIntent().getAction();
 
 	        if (Intent.ACTION_VIEW.equals(action)){
-	        	final Uri projectUri = getIntent().getData();
-	        	c = managedQuery(projectUri, Project.PROJECTION, null, null, null);
-
-	        	loadFirstFromCursor(projectUri, c);
-
-	        	final ContentResolver cr = getContentResolver();
-	        	cr.registerContentObserver(getIntent().getData(), false, new ContentObserver(new Handler()) {
-	    			@Override
-	    			public void onChange(boolean selfChange) {
-	    				super.onChange(selfChange);
-	    				if (!c.isClosed()){
-		    				c.requery();
-		    				loadFirstFromCursor(projectUri, c);
-	    				}
-	    			}
-	    			@Override
-	    			public boolean deliverSelfNotifications() {
-	    				return true;
-	    			}
-	    		});
+	        	mProjectUri = getIntent().getData();
+	        	c = managedQuery(mProjectUri, Project.PROJECTION, null, null, null);
+	        	c.moveToFirst();
+	        	loadFromCursor();
 	        }
 	    }
 
-		protected void loadFirstFromCursor(Uri projectUri, Cursor c){
-        	if (c.moveToFirst()){
-        		loadFromCursor(projectUri, c);
-        	}else{
-        		Toast.makeText(this, getString(R.string.error_no_project, projectUri.toString()), Toast.LENGTH_LONG).show();
-        		finish();
-        	}
+		@Override
+		protected void onPause() {
+			super.onPause();
+			c.unregisterContentObserver(mContentObserver);
 		}
 
-		protected void loadFromCursor(Uri projectUri, Cursor c){
+		@Override
+		protected void onResume() {
+			c.registerContentObserver(mContentObserver);
+			super.onResume();
+		}
+
+		public Cursor getCursor() {
+			return c;
+		}
+
+		public void loadFromCursor(){
 			((TextView)findViewById(R.id.item_title)).setText(c.getString(c.getColumnIndex(Project._TITLE)));
 			((TextView)findViewById(R.id.description)).setText(c.getString(c.getColumnIndex(Project._DESCRIPTION)));
 
@@ -150,9 +142,9 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 				+ ((toDate != null) ? df.format(toDate.getTime()) : "");
 			((TextView)findViewById(R.id.date)).setText(dateString);
 			*/
-			tagList.addTags(Project.getTags(getContentResolver(), projectUri));
+			tagList.addTags(Project.getTags(getContentResolver(), mProjectUri));
 
-			castAdapter.notifyDataSetChanged();
+			//castAdapter.notifyDataSetChanged();
 
 			/* membership members = new TreeSet<String>(Project.getList(c.getColumnIndex(Project._MEMBERS), c));
 			final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(this);

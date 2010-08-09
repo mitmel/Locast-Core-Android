@@ -28,6 +28,7 @@ import org.json.JSONObject;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -253,7 +254,7 @@ public class AndroidNetworkClient extends NetworkClient {
 			throw e;
 		}finally{
 			nm.cancel(NOTIFICATION_UPLOAD);
-			notification.done(NOTIFICATION_UPLOAD);
+			notification.done((int) (NOTIFICATION_UPLOAD + ContentUris.parseId(localItem)));
 		}
 
 

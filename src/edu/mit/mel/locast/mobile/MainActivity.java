@@ -68,7 +68,6 @@ public class MainActivity extends TabActivity {
 	public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
         this.nc = AndroidNetworkClient.getInstance(this);
 
         requestWindowFeature(Window.FEATURE_LEFT_ICON);

@@ -37,7 +37,7 @@
 	<string name="error_cannot_edit">Sorry, you don\'t have permission to edit this item.</string>
 	<string name="error_no_project">Error: project %s could not be found in local database.</string>
 	<string name="error_sync_no_post">Sorry, there was a problem uploading your media to the server. Please try synchronizing again.</string>
-	<string name="error_cast_no_videos">Sorry, there aren't any videos for this cast yet.</string>
+	<string name="error_cast_no_videos">Sorry, there aren\'t any videos for this cast yet.</string>
 
 	
 	<!-- user-facing alerts -->

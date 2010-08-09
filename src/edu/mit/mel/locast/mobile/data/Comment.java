@@ -82,7 +82,7 @@ public class Comment extends JsonSyncableItem {
 
 			final SyncMap author = new SyncMap();
 			author.put(_AUTHOR, new SyncFieldMap("username", SyncFieldMap.STRING));
-			author.put(_AUTHOR_ICON, new SyncFieldMap("icon", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL));
+			author.put(_AUTHOR_ICON, new SyncFieldMap("icon", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_BOTH));
 			put("author_object", new SyncMapChain("author", author, SyncItem.SYNC_FROM));
 
 			put(_PUBLIC_ID, 		new SyncFieldMap("id", SyncFieldMap.INTEGER, SyncItem.SYNC_FROM));

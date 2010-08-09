@@ -37,7 +37,7 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 
 	public final static String SERVER_PATH = "project/";
 
-
+	public final static String SORT_ORDER_DEFAULT = _FAVORITED + " DESC," +  _MODIFIED_DATE + " DESC";
 
 	public static final String
 		_TITLE = "title",
@@ -51,6 +51,7 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 		_AUTHOR,
 		_DESCRIPTION,
 		_PRIVACY,
+		_FAVORITED,
 };
 
 	@Override
@@ -89,14 +90,14 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 			put(_TITLE, 			new SyncFieldMap("title", SyncFieldMap.STRING));
 			putAll(Locatable.SYNC_MAP);
 			putAll(Favoritable.SYNC_MAP);
-			put("_shotlist",   new OrderedList.SyncMapItem("shotlist", SyncItem.FLAG_OPTIONAL, new ShotList(), ShotList.PATH));
+			put("_shotlist",   new OrderedList.SyncMapItem("shotlist", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new ShotList(), ShotList.PATH));
 
 			remove(_PRIVACY);
 		}
 
 		@Override
 		public void onUpdateItem(Context context, Uri uri, JSONObject item) throws SyncException, IOException {
-			OrderedList.onUpdate(context, uri, item, "shotlist", new ShotList(), ShotList.PATH);
+			OrderedList.onUpdate(context, uri, item, "shotlist", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new ShotList(), ShotList.PATH);
 		}
 	}
 

@@ -85,7 +85,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		public ItemSyncMap() {
 			super();
 
-			put(_PUBLIC_ID, 		new SyncFieldMap("id", SyncFieldMap.INTEGER, SyncItem.FLAG_OPTIONAL));
+			put(_PUBLIC_ID, 		new SyncFieldMap("id", SyncFieldMap.INTEGER, SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_BOTH));
 			put(_MODIFIED_DATE,	new SyncFieldMap("modified", SyncFieldMap.DATE, SyncItem.SYNC_FROM));
 			put(_CREATED_DATE,		new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 		}
@@ -185,7 +185,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 
 		for (final String propName: mySyncMap.keySet()){
 			final SyncItem map = mySyncMap.get(propName);
-			if (map.getDirection() == SyncItem.SYNC_TO){
+			if ((map.getDirection() & SyncItem.SYNC_FROM) == 0){
 				continue;
 			}
 			if (map.isOptional() &&
@@ -294,7 +294,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 				continue;
 			}
 
-			if (map.getDirection() == SyncItem.SYNC_FROM){
+			if ((map.getDirection() & SyncItem.SYNC_TO) == 0){
 				continue;
 			}
             if (map instanceof SyncLiteral){
@@ -381,6 +381,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		public static final int SYNC_BOTH = 0x3,
 								SYNC_TO   = 0x1,
 								SYNC_FROM = 0x2,
+								SYNC_NONE = 0x0,
 								FLAG_OPTIONAL = 0x10;
 		private final int flags;
 
@@ -395,17 +396,41 @@ public abstract class JsonSyncableItem implements BaseColumns {
 			return remoteKey;
 		}
 		/**
-		 * @return SYNC_BOTH, SYNC_TO, or SYNC_FROM
+		 * @return SYNC_BOTH, SYNC_NONE, SYNC_TO, or SYNC_FROM
 		 */
 		public int getDirection() {
-			int directionFlags = flags & 0x3;
-			if (directionFlags == 0){
-				directionFlags = SYNC_BOTH;
-			}
+			final int directionFlags = flags & 0x3;
 			return directionFlags;
 		}
 		public boolean isOptional() {
 			return (flags & FLAG_OPTIONAL) != 0;
+		}
+
+		@Override
+		public String toString() {
+			final StringBuilder sb = new StringBuilder();
+			sb.append('"');
+			sb.append(remoteKey);
+			sb.append('"');
+
+			sb.append("; direction: ");
+			switch (getDirection()){
+			case SYNC_BOTH:
+				sb.append("SYNC_BOTH");
+				break;
+			case SYNC_FROM:
+				sb.append("SYNC_FROM");
+				break;
+			case SYNC_TO:
+				sb.append("SYNC_TO");
+				break;
+			case SYNC_NONE:
+				sb.append("SYNC_NONE");
+				break;
+			}
+			sb.append(isOptional() ? "; optional ": "; not optional ");
+			sb.append(String.format("(flags %x)", flags));
+			return sb.toString();
 		}
 	}
 

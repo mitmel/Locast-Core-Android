@@ -78,11 +78,12 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		_CONTENT_TYPE,
 		_MODIFIED_DATE,
 		_THUMBNAIL_URI,
+		_FAVORITED,
 		_LATITUDE,
 		_LONGITUDE };
 
 	public static final String
-		DEFAULT_SORT = Cast._MODIFIED_DATE+" DESC";
+		SORT_ORDER_DEFAULT = Cast._FAVORITED + " DESC," + Cast._MODIFIED_DATE+" DESC";
 
 	private Context context;
 	private AndroidNetworkClient nc;
@@ -103,6 +104,11 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	public static final ItemSyncMap SYNC_MAP = new ItemSyncMap();
 
 	public static class ItemSyncMap extends TaggableItem.TaggableItemSyncMap {
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = -6513174961005635755L;
+
 		public ItemSyncMap() {
 			super();
 			putAll(Favoritable.SYNC_MAP);
@@ -128,7 +134,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 			//c.moveToFirst();
 			final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(context);
 
-			OrderedList.onUpdate(context, uri, item, "castvideos", new CastMedia(), CastMedia.PATH);
+			OrderedList.onUpdate(context, uri, item, "castvideos", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new CastMedia(), CastMedia.PATH);
 			final Uri castMediaDirUri = Uri.withAppendedPath(uri, CastMedia.PATH);
 			final String pubCastMediaUri = MediaProvider.getPublicPath(cr, castMediaDirUri);
 

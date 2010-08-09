@@ -67,7 +67,7 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
     			managedQuery(TaggableItem.getTagUri(Project.CONTENT_URI, tag), TaggableItem.getTagProjection(ProjectListAdapter.PROJECTION), null, null, null), this));
     	// need nearby
     	separatedList.addSection("nearby", "All", new ProjectListAdapter(getApplicationContext(),
-    			managedQuery(Project.CONTENT_URI, ProjectListAdapter.PROJECTION, null, null, null), this));
+    			managedQuery(Project.CONTENT_URI, ProjectListAdapter.PROJECTION, null, null, Project.SORT_ORDER_DEFAULT), this));
 
 
         setListAdapter(separatedList);

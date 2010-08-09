@@ -28,9 +28,9 @@ public class OrderedList {
 			DEFAULT_SORT = _LIST_IDX + " ASC";
 	}
 
-	public static void onUpdate(Context context, Uri parentUri, JSONObject item, String remoteKey, JsonSyncableItem listItem, String itemPath) throws SyncException {
+	public static void onUpdate(Context context, Uri parentUri, JSONObject item, String remoteKey, int syncFlags, JsonSyncableItem listItem, String itemPath) throws SyncException {
 		final SyncMap syncMap = new SyncMap();
-		syncMap.put("_contents", new OrderedList.SyncMapOnUpdate(remoteKey, SyncItem.FLAG_OPTIONAL, listItem, itemPath));
+		syncMap.put("_contents", new OrderedList.SyncMapOnUpdate(remoteKey, syncFlags, listItem, itemPath));
 
 		try {
 			Log.d(TAG, "trying to load ordered list for "+ parentUri+"; remoteKey: " + remoteKey+ "; item path: " + itemPath + "; item type: "+ listItem.getClass().getSimpleName());
@@ -47,12 +47,12 @@ public class OrderedList {
 		private final String mItemPath;
 
 		public SyncMapItem(String remoteKey, int flags, JsonSyncableItem listItem, String itemPath) {
-			super(remoteKey, flags | SyncItem.SYNC_TO);
+			super(remoteKey, flags & ~SYNC_FROM);
 			mListItem = listItem;
 			mItemPath = itemPath;
 		}
 		public SyncMapItem(String remoteKey, JsonSyncableItem listItem, String itemPath) {
-			this(remoteKey, 0, listItem, itemPath);
+			this(remoteKey, SYNC_TO, listItem, itemPath);
 		}
 
 		@Override
@@ -82,13 +82,13 @@ public class OrderedList {
 		private final String mItemPath;
 
 		public SyncMapOnUpdate(String remoteKey, int flags, JsonSyncableItem listItem, String itemPath) {
-			super(remoteKey, flags | SyncItem.SYNC_FROM);
+			super(remoteKey, flags & ~SyncItem.SYNC_TO);
 			mListItem = listItem;
 			mItemPath = itemPath;
 		}
 
 		public SyncMapOnUpdate(String remoteKey, JsonSyncableItem listItem, String itemPath) {
-			this(remoteKey, 0, listItem, itemPath);
+			this(remoteKey, SYNC_FROM, listItem, itemPath);
 
 		}
 

@@ -485,7 +485,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			super.onPreExecute();
 			startTime = new Date();
 			final Context context = getApplicationContext();
-			notification = new ProgressNotification(getApplicationContext(), R.drawable.ico_notification);
+			notification = new ProgressNotification(getApplicationContext(), R.drawable.stat_notify_sync);
 
 			notification.contentIntent = PendingIntent.getActivity(context, 0,
 					new Intent(context, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK),

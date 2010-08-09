@@ -83,7 +83,8 @@ public class ProgressNotification extends Notification {
 	public void setType(int type){
 		switch (type){
 		case TYPE_UPLOAD:
-			doneIcon = android.R.drawable.stat_sys_upload_done;
+			//doneIcon = android.R.drawable.stat_sys_upload_done;
+			doneIcon = R.drawable.stat_notify_success;
 			icon = android.R.drawable.stat_sys_upload;
 			break;
 

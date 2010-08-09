@@ -16,108 +16,117 @@ package edu.mit.mel.locast.mobile.casts;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import java.util.ArrayList;
+
 
 import android.app.TabActivity;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
 import android.view.Window;
-import android.widget.Gallery;
 import android.widget.ImageView;
-import android.widget.SimpleCursorAdapter;
 import android.widget.TabHost;
 import android.widget.TextView;
 import edu.mit.mel.locast.mobile.Application;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.WebImageLoader;
+import edu.mit.mel.locast.mobile.casts.BasicCursorContentObserver.BasicCursorContentObserverWatcher;
 import edu.mit.mel.locast.mobile.data.Cast;
-import edu.mit.mel.locast.mobile.data.CastMedia;
 import edu.mit.mel.locast.mobile.data.Comment;
+import edu.mit.mel.locast.mobile.widget.FavoriteClickHandler;
 
-public class ViewCastActivity extends TabActivity {
+public class ViewCastActivity extends TabActivity implements BasicCursorContentObserverWatcher {
 	public static final String TAG = ViewCastActivity.class.getSimpleName();
 	private WebImageLoader imgLoader;
-	
+
+	private Uri myUri;
+	private Cursor mCursor;
+
+	private final BasicCursorContentObserver mContentObserver = new BasicCursorContentObserver(this);
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		getWindow().requestFeature(Window.FEATURE_NO_TITLE);
 		super.onCreate(savedInstanceState);
-		
+
 		setContentView(R.layout.window_title_thick);
-		
+
 		final String action = getIntent().getAction();
-		
+
 		imgLoader = ((Application)getApplication()).getImageLoader();
-		
+
 		if (Intent.ACTION_VIEW.equals(action)){
-			loadFromIntent();
+			myUri = getIntent().getData();
 		}
-	}
-	
-	private void loadFromIntent(){
-		final Cursor c = managedQuery(getIntent().getData(), Cast.PROJECTION, null, null, null);
-		c.moveToFirst();
-		loadFromCursors(c);
+		mCursor = managedQuery(myUri, Cast.PROJECTION, null, null, null);
+		mCursor.moveToFirst();
 
-		c.registerContentObserver(new ContentObserver(new Handler()) {
-			@Override
-			public void onChange(boolean selfChange) {
-				if (selfChange){
-					loadFromCursors(c);
-				}
-			}
-		});
-
+		loadFromCursor();
 	}
 
-	private void loadFromCursors(Cursor c){
+	@Override
+	protected void onResume() {
+		mCursor.registerContentObserver(mContentObserver);
+		super.onResume();
+	};
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		mCursor.unregisterContentObserver(mContentObserver);
+	};
+
+	public Cursor getCursor() {
+		return mCursor;
+	}
+
+	public void loadFromCursor(){
+		mCursor.moveToFirst();
 		final Intent intent = getIntent();
 		final TabHost tabHost = getTabHost();
 		final Uri data = intent.getData();
-		
+
 		final int currentTab = tabHost.getCurrentTab();
 		// workaround for TabWidget bug: http://code.google.com/p/android/issues/detail?id=2772
 		tabHost.setCurrentTab(0);
 		tabHost.clearAllTabs();
-		
+
 		final Resources r = getResources();
 		tabHost.addTab(tabHost.newTabSpec("cast")
 				.setContent(new Intent(Intent.ACTION_VIEW, data,
 										this, CastDetailsActivity.class))
 				.setIndicator(r.getString(R.string.tab_cast), r.getDrawable(R.drawable.icon_cast)));
-		
-		((TextView)(getWindow().findViewById(android.R.id.title))).setText(
-				c.getString(c.getColumnIndex(Cast._TITLE)));
-				
-		
-		setTitle(c.getString(c.getColumnIndex(Cast._TITLE)));
-		
-		((TextView)(getWindow().findViewById(R.id.item_author)))
-			.setText(c.getString(c.getColumnIndex(Cast._AUTHOR)));
 
-		final String thumbUrl = c.getString(c.getColumnIndex(Cast._THUMBNAIL_URI));
+		((TextView)(getWindow().findViewById(android.R.id.title))).setText(
+				mCursor.getString(mCursor.getColumnIndex(Cast._TITLE)));
+
+
+		setTitle(mCursor.getString(mCursor.getColumnIndex(Cast._TITLE)));
+
+		((TextView)(getWindow().findViewById(R.id.item_author)))
+			.setText(mCursor.getString(mCursor.getColumnIndex(Cast._AUTHOR)));
+
+		final String thumbUrl = mCursor.getString(mCursor.getColumnIndex(Cast._THUMBNAIL_URI));
+
+		FavoriteClickHandler.setStarred(this, mCursor, data);
 
 		if (thumbUrl != null){
 			Log.d("ViewCast", "found thumbnail " + thumbUrl);
 			final ImageView mediaThumbView = ((ImageView)findViewById(android.R.id.icon));
 			imgLoader.loadImage(mediaThumbView, thumbUrl);
 		}
-		
+
 		// only add the discussion tab if it is published already.
-		if (!c.isNull(c.getColumnIndex(Cast._PUBLIC_ID))){
+		if (!mCursor.isNull(mCursor.getColumnIndex(Cast._PUBLIC_ID))){
 			tabHost.addTab(tabHost.newTabSpec("discussion")
-					.setContent(new Intent(Intent.ACTION_VIEW, 
+					.setContent(new Intent(Intent.ACTION_VIEW,
 							Uri.withAppendedPath(data, Comment.PATH)))
 							.setIndicator(r.getString(R.string.tab_discussion), r.getDrawable(R.drawable.icon_discussion)));
 
 		}
-		
+
 		tabHost.setCurrentTab(currentTab);
 	}
 }

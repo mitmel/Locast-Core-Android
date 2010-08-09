@@ -59,10 +59,10 @@ public class BrowseByTagsActivity extends CastListActivity implements OnTagListC
 		Cursor c;
 		if (tags.isEmpty()){
 			thisUri = Cast.CONTENT_URI;
-			c = managedQuery(thisUri, CastCursorAdapter.projection, null, null, Cast.DEFAULT_SORT);
+			c = managedQuery(thisUri, CastCursorAdapter.projection, null, null, Cast.SORT_ORDER_DEFAULT);
 		}else{
 			thisUri = Cast.getTagUri(Cast.CONTENT_URI, tags);
-			c = managedQuery(thisUri, projection, null, null, Cast.DEFAULT_SORT);
+			c = managedQuery(thisUri, projection, null, null, Cast.SORT_ORDER_DEFAULT);
 		}
 		return c;
 	}

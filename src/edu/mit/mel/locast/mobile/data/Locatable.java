@@ -71,7 +71,7 @@ public abstract class Locatable {
 	public static final SyncMap SYNC_MAP = new SyncMap();
 
 	static {
-		SYNC_MAP.put("_location", new SyncCustomArray("location", SyncItem.FLAG_OPTIONAL) {
+		SYNC_MAP.put("_location", new SyncCustomArray("location", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_BOTH) {
 
 			@Override
 			public JSONArray toJSON(Context context, Uri localItem, Cursor c)

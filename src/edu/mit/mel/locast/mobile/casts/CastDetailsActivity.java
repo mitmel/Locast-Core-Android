@@ -36,6 +36,7 @@ import android.widget.Toast;
 import edu.mit.mel.locast.mobile.Application;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.WebImageLoader;
+import edu.mit.mel.locast.mobile.casts.BasicCursorContentObserver.BasicCursorContentObserverWatcher;
 import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.CastMedia;
 import edu.mit.mel.locast.mobile.data.Locatable;
@@ -45,7 +46,7 @@ import edu.mit.mel.locast.mobile.templates.TemplatePlayer;
 import edu.mit.mel.locast.mobile.widget.LocationLink;
 import edu.mit.mel.locast.mobile.widget.TagListView;
 
-public class CastDetailsActivity extends Activity implements OnClickListener {
+public class CastDetailsActivity extends Activity implements OnClickListener, BasicCursorContentObserverWatcher {
 	private Cursor c;
 	private Uri castUri;
 
@@ -57,6 +58,8 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 	private int publicId = -1;
 
 	private WebImageLoader imgLoader;
+
+	private final BasicCursorContentObserver mContentObserver = new BasicCursorContentObserver(this);
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +80,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 		if (Intent.ACTION_VIEW.equals(action)) {
         	loadFromUri(data);
         }
+		loadFromCursor();
 	}
 
 	private void loadFromUri(Uri data){
@@ -96,7 +100,23 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 		}
 	}
 
-	private void loadFromCursors(Cursor c){
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		c.unregisterContentObserver(mContentObserver);
+	}
+	@Override
+	protected void onResume() {
+		c.registerContentObserver(mContentObserver);
+		super.onResume();
+	}
+
+	public Cursor getCursor() {
+		return c;
+	}
+
+	public void loadFromCursor(){
 		MediaProvider.dumpCursorToLog(c, Cast.PROJECTION);
 
 		((TextView)findViewById(R.id.item_title)).setText(
@@ -195,15 +215,6 @@ public class CastDetailsActivity extends Activity implements OnClickListener {
 		return true;
 	}
 
-
-
-	@Override
-	protected void onResume() {
-		super.onResume();
-
-		c.moveToFirst();
-		loadFromCursors(c);
-	}
 
 	public void onClick(View v) {
 		switch (v.getId()){

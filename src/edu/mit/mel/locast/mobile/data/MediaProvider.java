@@ -707,6 +707,9 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CAST_ITEM:{
 			id = ContentUris.parseId(uri);
 			//final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
+			if ( values.size() == 2 && values.containsKey(Favoritable.Columns._FAVORITED)){
+				values.put(JsonSyncableItem._MODIFIED_DATE, 0);
+			}
 			count = db.update(CAST_TABLE_NAME, values,
 					Cast._ID+"="+id+ (where != null && where.length() > 0 ? " AND ("+where+")":""),
 					whereArgs);
@@ -741,9 +744,14 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_PROJECT_ITEM:{
 			id = ContentUris.parseId(uri);
 			//final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
+			if ( values.size() == 2 && values.containsKey(Favoritable.Columns._FAVORITED)){
+				values.put(JsonSyncableItem._MODIFIED_DATE, 0);
+			}
 			count = db.update(PROJECT_TABLE_NAME, values,
 					Project._ID+"="+id+ (where != null && where.length() > 0 ? " AND ("+where+")":""),
 					whereArgs);
+
+
 			//update(Uri.withAppendedPath(uri, Tag.PATH), cvTags, null, null);
 			break;
 		}

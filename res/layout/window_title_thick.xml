@@ -24,7 +24,7 @@
   	android:padding="2dip"
   	 />
   	 
-	<CheckBox android:id="@+id/star"
+	<edu.mit.mel.locast.mobile.widget.ValidatingCheckBox android:id="@+id/star"
 		 style="?android:attr/starStyle" 
 	  	 android:layout_height="wrap_content"
 	  	 android:layout_width="wrap_content"
