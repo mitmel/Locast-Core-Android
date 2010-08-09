@@ -203,10 +203,10 @@ public class MainActivity extends TabActivity {
 		}
 
 		@Override
-		protected void onPostExecute(Boolean result) {
+		protected void onPostExecute(Boolean hasNetwork) {
 			 final Cursor content = managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, null, null, null);
-			    if (content.getCount() == 0){
-			    	Toast.makeText(getApplicationContext(), getString(R.string.sync_first), Toast.LENGTH_LONG);
+			    if (hasNetwork && content.getCount() == 0){
+			    	Toast.makeText(getApplicationContext(), getString(R.string.sync_first), Toast.LENGTH_LONG).show();
 			    	startSync();
 			    }
 			    content.close();

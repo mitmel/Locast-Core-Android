@@ -706,11 +706,11 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_PROJECT_CAST_ITEM:
 		case MATCHER_CAST_ITEM:{
 			id = ContentUris.parseId(uri);
-			final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
+			//final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
 			count = db.update(CAST_TABLE_NAME, values,
 					Cast._ID+"="+id+ (where != null && where.length() > 0 ? " AND ("+where+")":""),
 					whereArgs);
-			update(Uri.withAppendedPath(uri, Tag.PATH), cvTags, null, null);
+			//update(Uri.withAppendedPath(uri, Tag.PATH), cvTags, null, null);
 
 			break;
 		}
@@ -740,13 +740,24 @@ public class MediaProvider extends ContentProvider {
 			break;
 		case MATCHER_PROJECT_ITEM:{
 			id = ContentUris.parseId(uri);
-			final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
+			//final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
 			count = db.update(PROJECT_TABLE_NAME, values,
 					Project._ID+"="+id+ (where != null && where.length() > 0 ? " AND ("+where+")":""),
 					whereArgs);
-			update(Uri.withAppendedPath(uri, Tag.PATH), cvTags, null, null);
+			//update(Uri.withAppendedPath(uri, Tag.PATH), cvTags, null, null);
 			break;
 		}
+
+		case MATCHER_PROJECT_SHOTLIST_ITEM: {
+			final String projectId = uri.getPathSegments().get(1);
+			final long shotIdx = ContentUris.parseId(uri);
+
+			count = db.update(SHOTLIST_TABLE_NAME, values,
+					ShotList._PARENT_ID+"="+projectId
+					+ " AND " + ShotList._LIST_IDX + "=" + shotIdx
+					+ (where != null && where.length() > 0 ? " AND ("+where+")":""),
+					whereArgs);
+		} break;
 
 		case MATCHER_COMMENT_DIR:
 			count = db.update(COMMENT_TABLE_NAME, values, where, whereArgs);
@@ -902,7 +913,7 @@ public class MediaProvider extends ContentProvider {
 			final List<String> pathSegments = uri.getPathSegments();
 			final Uri castPart = (uri.buildUpon().path(pathSegments.get(pathSegments.size() - 2) + "/" + pathSegments.get(pathSegments.size() - 1))).build();
 			path = getPublicPath(cr, castPart);
-			Log.d("MediaProvider", "gave "+path+" for a public path for "+uri);
+
 		} break;
 
 		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:
@@ -918,7 +929,10 @@ public class MediaProvider extends ContentProvider {
 			throw new IllegalArgumentException("Don't know how to get the public path for "+uri);
 
 		}
-		return path.replaceAll("//", "/"); // hack to get around a tedious problem
+
+		path = path.replaceAll("//", "/"); // hack to get around a tedious problem
+		Log.d("MediaProvider", "gave "+path+" for a public path for "+uri);
+		return path;
 	}
 
 	public static UriMatcher getUriMatcher(){
@@ -1021,7 +1035,7 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH + "/#", MATCHER_PROJECT_CAST_ITEM);
 
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + ShotList.PATH, MATCHER_PROJECT_SHOTLIST_DIR);
-		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + ShotList.PATH + "#", MATCHER_PROJECT_SHOTLIST_ITEM);
+		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + ShotList.PATH + "/#", MATCHER_PROJECT_SHOTLIST_ITEM);
 
 		// /content/1/tags
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);

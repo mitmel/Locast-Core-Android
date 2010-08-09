@@ -22,14 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 
-import org.apache.http.HttpConnectionMetrics;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.impl.conn.AbstractClientConnAdapter;
-import org.apache.http.protocol.ExecutionContext;
-import org.apache.http.protocol.HttpContext;
-
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -54,6 +46,7 @@ public class AndroidNetworkClient extends NetworkClient {
 	private static HashMap<Long, AndroidNetworkClient> instances = new HashMap<Long, AndroidNetworkClient>();
 	static public AndroidNetworkClient getInstance(Context context){
 		final long thisThread = Thread.currentThread().getId();
+
 		if (!instances.containsKey(thisThread)){
 			instances.put(thisThread, new AndroidNetworkClient(context));
 		}
@@ -61,6 +54,7 @@ public class AndroidNetworkClient extends NetworkClient {
 	}
 
 	public AndroidNetworkClient(Context context){
+		super();
 		this.context = context;
 
 		prefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -76,7 +70,7 @@ public class AndroidNetworkClient extends NetworkClient {
 
 		initClient();
 
-		addRequestInterceptor(new HttpRequestInterceptor() {
+		/*addRequestInterceptor(new HttpRequestInterceptor() {
 
 			public void process(HttpRequest request, HttpContext context)
 					throws HttpException, IOException {
@@ -86,7 +80,7 @@ public class AndroidNetworkClient extends NetworkClient {
 				final HttpConnectionMetrics metrics = connAdapter.getMetrics();
 				metrics.getSentBytesCount();
 			}
-		});
+		});*/
 	}
 
 	public void loadFromPreferences(){

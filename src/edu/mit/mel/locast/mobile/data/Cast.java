@@ -282,30 +282,34 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 				}else{
 					//Log.i(TAG, )
 				}
+				headRes.getEntity().consumeContent();
 			}
 			final HttpResponse res = nc.get(pubUri);
 			final HttpEntity ent = res.getEntity();
 			final InputStream is = ent.getContent();
+			try {
+				final FileOutputStream fos = new FileOutputStream(saveFile);
+				StreamUtils.inputStreamToOutputStream(is, fos);
+				fos.close();
+				is.close();
 
-			final FileOutputStream fos = new FileOutputStream(saveFile);
-			StreamUtils.inputStreamToOutputStream(is, fos);
-			fos.close();
-			is.close();
-
-			final String filePath = saveFile.getAbsolutePath();
-			final String contentType = ent.getContentType().getValue();
+				final String filePath = saveFile.getAbsolutePath();
+				final String contentType = ent.getContentType().getValue();
 
 
-			if (msc == null){
-				this.msc = new MediaScannerConnection(context, this);
-				this.msc.connect();
+				if (msc == null){
+					this.msc = new MediaScannerConnection(context, this);
+					this.msc.connect();
 
-			}else if (msc.isConnected()){
-				msc.scanFile(filePath, contentType);
+				}else if (msc.isConnected()){
+					msc.scanFile(filePath, contentType);
 
-			}else{
-				scanMap.put(filePath, new ScanQueueItem(castUri, contentType));
-				toScan.add(filePath);
+				}else{
+					scanMap.put(filePath, new ScanQueueItem(castUri, contentType));
+					toScan.add(filePath);
+				}
+			}finally{
+				ent.consumeContent();
 			}
 
 		} catch (final Exception e) {

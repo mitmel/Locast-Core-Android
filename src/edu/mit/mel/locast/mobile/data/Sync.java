@@ -171,18 +171,22 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 		}
 
 		// then load locally.
-		final Cursor c = cr.query(toSync, sync.getFullProjection(), null, null, null);
-		Log.d(TAG, "have " + c.getCount() + " local items to sync");
-		for (c.moveToFirst(); ! c.isAfterLast(); c.moveToNext()){
-			try {
-				syncItem(toSync, c, null, sync);
 
-			}catch (final SyncItemDeletedException side){
-				side.printStackTrace();
-				continue;
+		final Cursor c = cr.query(toSync, sync.getFullProjection(), null, null, null);
+		try {
+			Log.d(TAG, "have " + c.getCount() + " local items to sync");
+			for (c.moveToFirst(); ! c.isAfterLast(); c.moveToNext()){
+				try {
+					syncItem(toSync, c, null, sync);
+
+				}catch (final SyncItemDeletedException side){
+					side.printStackTrace();
+					continue;
+				}
 			}
+		}finally{
+			c.close();
 		}
-		c.close();
 	}
 
 	/**
@@ -256,17 +260,21 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 				// The response from a post to create a new item should be the newly created item,
 				// which contains the public ID that we need.
 				final HttpEntity entity = hr.getEntity();
-				jsonObject = new JSONObject(StreamUtils.inputStreamToString(entity.getContent()));
-				final ContentValues cvUpdate = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, sync.getSyncMap());
-				if (cr.update(locUri, cvUpdate, null, null) == 1){
-					// at this point, server and client should be in sync.
-					syncdItems.add(locUri);
-					Log.i(TAG, "Hooray! "+ locUri + " has been posted succesfully.");
+				try {
+					jsonObject = new JSONObject(StreamUtils.inputStreamToString(entity.getContent()));
+					final ContentValues cvUpdate = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, sync.getSyncMap());
+					if (cr.update(locUri, cvUpdate, null, null) == 1){
+						// at this point, server and client should be in sync.
+						syncdItems.add(locUri);
+						Log.i(TAG, "Hooray! "+ locUri + " has been posted succesfully.");
 
-				}else{
-					Log.e(TAG, "update of "+locUri+" failed");
+					}else{
+						Log.e(TAG, "update of "+locUri+" failed");
+					}
+					modified = true;
+				}finally{
+					entity.consumeContent();
 				}
-				modified = true;
 
 			} catch (final Exception e) {
 				final SyncException se = new SyncException(getString(R.string.error_sync_no_post));
@@ -335,7 +343,8 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 
 				}else if (netLastModified.before(locLastModified)){
 					// local is more up to date, propagate!
-					nc.putJson(publicPath, JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, sync.getSyncMap()));
+					final HttpResponse hr = nc.putJson(publicPath, JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, sync.getSyncMap()));
+					hr.getEntity().consumeContent();
 					Log.d("LocastSync", cvNet + " is older than "+locUri);
 					modified = true;
 				}
@@ -348,6 +357,11 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 				final SyncException se = new SyncException("Item sync error for path "+publicPath+": "+ e.getHttpResponseMessage());
 				se.initCause(e);
 				throw se;
+			}finally{
+				if (needToCloseCursor) {
+					c.close();
+					needToCloseCursor = false;
+				}
 			}
 		}
 
@@ -485,7 +499,6 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			}
 
 			nm.cancel(NOTIFICATION_SYNC);
-			stopSelf();
 		}
 	}
 }

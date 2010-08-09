@@ -99,7 +99,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	private boolean isAuthenticated = false;
 
 	private AuthScope authScope;
-	HttpRequestInterceptor preemptiveAuth = new HttpRequestInterceptor() {
+	protected final static HttpRequestInterceptor PREEMPTIVE_AUTH = new HttpRequestInterceptor() {
 	    public void process(
 	            final HttpRequest request,
 	            final HttpContext context) throws HttpException, IOException {
@@ -127,7 +127,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	    }
 	};
 
-	HttpRequestInterceptor removeExpectations = new HttpRequestInterceptor() {
+	protected final static HttpRequestInterceptor REMOVE_EXPECTATIONS = new HttpRequestInterceptor() {
 
 		public void process(HttpRequest request, HttpContext context)
 				throws HttpException, IOException {
@@ -137,8 +137,11 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		}
 	};
 
+
 	public NetworkClient() {
-		this.addRequestInterceptor(preemptiveAuth, 0);
+		super();
+
+		this.addRequestInterceptor(PREEMPTIVE_AUTH, 0);
 		//this.addRequestInterceptor(removeExpectations);
 	}
 
@@ -146,6 +149,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @param baseurl the base URL of the API. This should not end in a "/"
 	 */
 	public NetworkClient(String baseurl){
+		this();
 		this.baseurl = baseurl;
 
 
@@ -282,7 +286,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 */
 	public boolean pairDevice(String pairCode) throws IOException, JSONException, NetworkProtocolException{
 		final DefaultHttpClient hc = new DefaultHttpClient();
-		hc.addRequestInterceptor(removeExpectations);
+		hc.addRequestInterceptor(REMOVE_EXPECTATIONS);
 		final HttpPost r = openPOST(PATH_PAIR);
 
 		final List<BasicNameValuePair> parameters = new ArrayList<BasicNameValuePair>();
@@ -293,25 +297,31 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		final HttpResponse c = hc.execute(r);
 
 		final int responseCode = c.getStatusLine().getStatusCode();
+		final HttpEntity entity = c.getEntity();
+		try {
 
-		if (responseCode == HttpStatus.SC_BAD_REQUEST){
-			// avoids any unpleasantly-large error messages.
-			String msg;
-			if (c.getEntity().getContentLength() > 40){
-				logDebug("Got long response");
-				msg = c.getStatusLine().getReasonPhrase();
-			}else{
-				msg = StreamUtils.inputStreamToString(c.getEntity().getContent());
+			if (responseCode == HttpStatus.SC_BAD_REQUEST){
+				// avoids any unpleasantly-large error messages.
+				String msg;
+				if (entity.getContentLength() > 40){
+					logDebug("Got long response");
+					msg = c.getStatusLine().getReasonPhrase();
+				}else{
+					msg = StreamUtils.inputStreamToString(entity.getContent());
+				}
+				throw new NetworkProtocolException("Incorrect pairing code (" + msg + ")", c);
+
+			}else if(responseCode != HttpStatus.SC_OK) {
+				throw new NetworkProtocolException(c, HttpStatus.SC_OK);
 			}
-			throw new NetworkProtocolException("Incorrect pairing code (" + msg + ")", c);
 
-		}else if(responseCode != HttpStatus.SC_OK) {
-			throw new NetworkProtocolException(c, HttpStatus.SC_OK);
+			final JSONObject creds = new JSONObject(StreamUtils.inputStreamToString(entity.getContent()));
+			saveCredentials(creds.getString("username"), creds.getString("auth_secret"));
+			isAuthenticated = true;
+
+		}finally{
+			entity.consumeContent();
 		}
-
-		final JSONObject creds = new JSONObject(StreamUtils.inputStreamToString(c.getEntity().getContent()));
-		saveCredentials(creds.getString("username"), creds.getString("auth_secret"));
-		isAuthenticated = true;
 		return true;
 	}
 
@@ -631,6 +641,28 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	protected abstract InputStream getFileStream(String localFile) throws IOException;
 	protected abstract InputStream getFileStream(Context context, Uri localFile) throws IOException;
 
+	public static interface TransferProgressListener {
+		public void publish(int bytes);
+	}
+
+	public static abstract class InputStreamWatcher extends InputStream {
+		private final InputStream mInputStream;
+		private final TransferProgressListener mProgressListener;
+
+
+		public InputStreamWatcher(InputStream wrappedStream, TransferProgressListener progressListener) {
+			mInputStream = wrappedStream;
+			mProgressListener = progressListener;
+		}
+		@Override
+		public int read() throws IOException {
+
+			return 0;
+		}
+	}
+
+
+
 	public void uploadContent(Context context, String serverPath, Uri localFile, String contentType) throws NetworkProtocolException, IOException{
 
 		if (localFile == null) {
@@ -647,9 +679,13 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		r.setEntity(new InputStreamEntity(is, is.available()));
 
 		final HttpResponse c = this.execute(r);
-		final int status = c.getStatusLine().getStatusCode();
-		if (status != HttpStatus.SC_CREATED && status != HttpStatus.SC_OK) {
-			throw new NetworkProtocolException(c, HttpStatus.SC_CREATED);
+		try {
+			final int status = c.getStatusLine().getStatusCode();
+			if (status != HttpStatus.SC_CREATED && status != HttpStatus.SC_OK) {
+				throw new NetworkProtocolException(c, HttpStatus.SC_CREATED);
+			}
+		}finally{
+			c.getEntity().consumeContent();
 		}
 	}
 

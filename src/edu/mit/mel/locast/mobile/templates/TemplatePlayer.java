@@ -131,8 +131,12 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 		final Uri project = Cast.getProjectUri(castCursor);
 		if (project != null){
 			shotListCursor = managedQuery(Project.getShotListUri(project), ShotList.PROJECTION, null, null, null);
-			shotListCursor.moveToFirst();
-			MediaProvider.dumpCursorToLog(shotListCursor, ShotList.PROJECTION);
+			if (shotListCursor.getCount() > 0){
+				MediaProvider.dumpCursorToLog(shotListCursor, ShotList.PROJECTION);
+			}else{
+				shotListCursor = null;
+				Log.i(TAG, "no shot list");
+			}
 		}
 
 		setVideoFromCursor();
