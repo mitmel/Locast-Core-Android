@@ -180,7 +180,7 @@ public abstract class VideoRecorder extends Activity {
 		Log.i(TAG, "Build: "+ Build.MODEL);
 
 		if (Build.MODEL.equals("Milestone")){
-			params.setPreviewSize(640, 480);
+			params.setPreviewSize(720, 480);
 			params.setPreviewFrameRate(15);
 
 		}else if (Build.MODEL.equals("Nexus One")) {
@@ -233,8 +233,10 @@ public abstract class VideoRecorder extends Activity {
 		if (mCamera == null){
 			return;
 		}
-		recorder.release();
-		recorder = null;
+		if (recorder != null){
+			recorder.release();
+			recorder = null;
+		}
 		Log.d(TAG, "closing camera");
 		lockCamera();
 		//mCamera.stopPreview();
@@ -409,13 +411,23 @@ public abstract class VideoRecorder extends Activity {
 			recorder.setVideoSize(vidSize.width, vidSize.height);
 			recorder.setVideoFrameRate(params.getPreviewFrameRate());
 
-			recorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
 
 			// this would be for setting the aspect ratio properly, but causes occasional white screens
 			//final SurfaceView sv = ((SurfaceView)findViewById(R.id.camera_view));
 			//sv.setLayoutParams(new FrameLayout.LayoutParams((int)(sv.getHeight() * (720.0/480)), sv.getHeight()));
 
 			recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+
+			if (Build.MODEL.equals("Milestone")){
+				recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+
+			}else if (Build.MODEL.equals("Nexus One")) {
+				recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+
+			}else{ // for all other devices, fall back on a well-known default.
+				recorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
+			}
+
 
 			Log.d(TAG, "done setting recorder parameters");
 			if (recorderStateHandler != null){
