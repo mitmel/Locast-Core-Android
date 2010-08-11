@@ -68,8 +68,8 @@
 
 		    android:scrollbars="none"/> 
 	    
-	    <ProgressBar android:id="@+id/progress" 
-	    	android:layout_width="fill_parent" android:layout_height="4dp"
+	    <edu.mit.mel.locast.mobile.widget.ProgressBarWithMarkers android:id="@+id/progress" 
+	    	android:layout_width="fill_parent" android:layout_height="8dp"
 	     	android:layout_above="@id/instructions_list" android:max="100"
 	        style="?android:attr/progressBarStyleHorizontal"
 	       />
