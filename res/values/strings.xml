@@ -88,6 +88,7 @@
 	<string name="template_rerecord_video_body">Are you sure you want to rerecord this cast video?</string>
 	<string name="template_toast_start_record">Tap the red circle to start recording.</string>
 	<string name="template_default_direction">Record a cast video for this project.</string>
+	<string name="template_loading_dialog">Setting up camera for recording...</string>
 	
 	<string name="dialog_button_delete">Delete</string>
 	<string name="dialog_button_rerecord">Rerecord</string>

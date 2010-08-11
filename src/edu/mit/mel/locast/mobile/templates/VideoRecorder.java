@@ -411,7 +411,6 @@ public abstract class VideoRecorder extends Activity {
 			recorder.setVideoSize(vidSize.width, vidSize.height);
 			recorder.setVideoFrameRate(params.getPreviewFrameRate());
 
-
 			// this would be for setting the aspect ratio properly, but causes occasional white screens
 			//final SurfaceView sv = ((SurfaceView)findViewById(R.id.camera_view));
 			//sv.setLayoutParams(new FrameLayout.LayoutParams((int)(sv.getHeight() * (720.0/480)), sv.getHeight()));

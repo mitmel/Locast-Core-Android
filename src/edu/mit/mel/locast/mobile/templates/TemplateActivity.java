@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.app.AlertDialog.Builder;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -29,6 +30,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.DialogInterface.OnCancelListener;
 import android.database.Cursor;
 import android.location.Location;
 import android.location.LocationListener;
@@ -124,6 +126,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 		final SurfaceView sv = ((SurfaceView)findViewById(R.id.camera_view));
 
+		showDialog(DIALOG_LOADING);
 
 		// mSurfaceHolder is set from the callback so we can ensure
 		// that we have one initialized.
@@ -228,6 +231,11 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		public void handleMessage(Message msg) {
 			switch (msg.what){
 			case MSG_RECORDER_INITIALIZED:
+				try {
+					removeDialog(DIALOG_LOADING);
+				}catch (final IllegalArgumentException e) {
+					// This would happen if it's already dismissed. Which is fine.
+				}
 				if (!hasDoneFirstInit){
 					final int nextId = getNextCastVideo();
 					if (nextId < 0){
@@ -238,6 +246,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 					prepareRecorder();
 					hasDoneFirstInit = true;
 					setIndicator(INDICATOR_RECORD);
+
 					if (nextId == 0){
 						showRecordHelp();
 					}
@@ -321,7 +330,8 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 	private static final int
 		DIALOG_CONFIRM_DELETE = 0,
-		DIALOG_CONFIRM_RERECORD = 1;
+		DIALOG_CONFIRM_RERECORD = 1,
+		DIALOG_LOADING = 2;
 	// this is to work around the missing bundle API introduced in API level 5
 	private int whichToDelete = -1;
 
@@ -340,6 +350,22 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			dialogBuilder.setPositiveButton(R.string.dialog_button_rerecord, dialogRerecordOnClickListener);
 			dialogBuilder.setMessage(R.string.template_rerecord_video_body);
 			return dialogBuilder.create();
+
+		case DIALOG_LOADING:
+            final ProgressDialog dialog = new ProgressDialog(this);
+            dialog.setIndeterminate(true);
+            dialog.setMessage(getString(R.string.template_loading_dialog));
+            dialog.setCancelable(true);
+            dialog.setOnCancelListener(new OnCancelListener() {
+
+				@Override
+				public void onCancel(DialogInterface dialog) {
+					finish();
+
+				}
+			});
+            return dialog;
+
 
 			default:
 				return super.onCreateDialog(id);
@@ -370,7 +396,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			}
 		}
 	};
-	
+
 	private void showRecordHelp(){
 		final Toast t = Toast.makeText(TemplateActivity.this, R.string.template_toast_start_record, Toast.LENGTH_LONG);
 		final DisplayMetrics metrics = new DisplayMetrics();
