@@ -114,6 +114,7 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 
 		@Override
 		protected void onResume() {
+			c.moveToFirst();
 			c.registerContentObserver(mContentObserver);
 			super.onResume();
 		}

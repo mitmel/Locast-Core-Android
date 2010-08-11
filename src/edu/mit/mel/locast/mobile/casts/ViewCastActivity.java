@@ -68,6 +68,7 @@ public class ViewCastActivity extends TabActivity implements BasicCursorContentO
 
 	@Override
 	protected void onResume() {
+		mCursor.moveToFirst();
 		mCursor.registerContentObserver(mContentObserver);
 		super.onResume();
 	};

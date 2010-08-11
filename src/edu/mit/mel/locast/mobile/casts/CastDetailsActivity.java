@@ -47,6 +47,7 @@ import edu.mit.mel.locast.mobile.widget.LocationLink;
 import edu.mit.mel.locast.mobile.widget.TagListView;
 
 public class CastDetailsActivity extends Activity implements OnClickListener, BasicCursorContentObserverWatcher {
+	private static final String TAG = CastDetailsActivity.class.getSimpleName();
 	private Cursor c;
 	private Uri castUri;
 
@@ -108,6 +109,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 	}
 	@Override
 	protected void onResume() {
+		c.moveToFirst();
 		c.registerContentObserver(mContentObserver);
 		super.onResume();
 	}
@@ -168,14 +170,21 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-        final MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.cast_view, menu);
-        if (c != null){
-        	final MenuItem editItem = menu.findItem(R.id.menu_edit_cast);
-        	editItem.setEnabled(Cast.canEdit(c));
-        }
+		super.onCreateOptionsMenu(menu);
+		final MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.cast_view, menu);
+		return true;
+	}
 
-        return true;
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		super.onPrepareOptionsMenu(menu);
+		if (c != null){
+			final MenuItem editItem = menu.findItem(R.id.menu_edit_cast);
+			editItem.setEnabled(Cast.canEdit(c));
+		}
+
+		return true;
 	}
 
 	@Override

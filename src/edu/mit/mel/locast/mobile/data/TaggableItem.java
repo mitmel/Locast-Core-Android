@@ -50,6 +50,7 @@ import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
  *
  */
 public abstract class TaggableItem extends JsonSyncableItem {
+	private static final String TAG = TaggableItem.class.getSimpleName();
 
 	public static final String _PRIVACY = "privacy",
 								_AUTHOR = "author";
@@ -139,7 +140,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 				JSONObject item, boolean updated) throws SyncException,
 				IOException {
 			super.onPostSyncItem(context, uri, item, updated);
-			Log.d("TaggableItem", "called onPostSyncItem");
+			Log.d(TAG, "called onPostSyncItem");
 			if (updated){
 				// tags need to be loaded here, as they need a valid localUri in order to save.
 				final JSONArray ja = item.optJSONArray(remoteKey);
@@ -147,7 +148,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 				for (int i = 0; i < ja.length(); i++){
 					tags.add(ja.optString(i));
 				}
-				Log.d("TaggableItem", uri + " has the following tags: "+ tags);
+				Log.d(TAG, uri + " has the following tags: "+ tags);
 				TaggableItem.putTags(context.getContentResolver(), uri, tags, prefix);
 			}
 		}
