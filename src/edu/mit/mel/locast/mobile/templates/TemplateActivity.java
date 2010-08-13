@@ -38,12 +38,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -174,8 +173,8 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 		totalDuration = 0;
 		for (final CastMediaInProgress cmip: mCastMediaInProgressList){
-			totalDuration += cmip.duration;
 			progressBar.addMarker(totalDuration);
+			totalDuration += cmip.duration * 1000;
 		}
 		progressBar.setMax(totalDuration);
 
@@ -420,6 +419,8 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		t.show();
 	}
 
+	public static final int CAST_VIDEO_DONE = -1;
+
 	private int getNextCastVideo(){
 		for (final CastMediaInProgress castMedia : mCastMediaInProgressList){
 			if (castMedia.localUri == null){
@@ -442,7 +443,33 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	}
 
 	private void recordCastVideo(int index){
+		templateRunnable = new TemplateRunnable(templateAdapter, index);
+		new Thread(templateRunnable).start();
 
+	}
+
+	private void stopRecording(){
+		if (templateRunnable != null){
+			templateRunnable.stop();
+		}
+	}
+
+	private boolean isRecording(){
+		return templateRunnable != null;
+	}
+	/**
+	 * Records the next needed video.
+	 *
+	 * @return true if a video could be recorded.
+	 */
+	private boolean recordCastVideo(){
+		final int nextIndex = getNextCastVideo();
+		if (nextIndex == CAST_VIDEO_DONE){
+			return false;
+		}else{
+			recordCastVideo(nextIndex);
+			return true;
+		}
 	}
 
 	/**
@@ -484,36 +511,17 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 	}
 
+	private int recordedSum;
 	private class TemplateRunnable implements Runnable {
 		private final TemplateAdapter adapter;
-		private final ListView listView;
-		private boolean finished = false;
-		private Boolean paused = false;
 
 		private boolean stoppable = false;
 		private boolean stop = false;
-		private final Integer section = 0;
+		private final int section;
 
-		public TemplateRunnable(ListView listView) {
-			this.listView = listView;
-			this.adapter = (TemplateAdapter)listView.getAdapter();
-		}
-		public synchronized void advanceToNextSection(){
-			paused = false;
-			notify();
-		}
-
-		public boolean isFinished(){
-			return finished;
-		}
-
-		synchronized private void pause(){
-			paused = true;
-			while(paused){
-				try {
-					wait();
-				} catch (final InterruptedException e) {break;}
-			}
+		public TemplateRunnable(TemplateAdapter adapter, int section) {
+			this.adapter = adapter;
+			this.section = section;
 		}
 
 		synchronized public void stop(){
@@ -527,63 +535,39 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		public void run() {
 			final int count = adapter.getCount();
 
-			int totalLength = 0;
+			final CastMediaInProgress item = adapter.getItem(section);
 
-			for (int section = 0; section < count; section++){
-				totalLength += adapter.getTotalTime(section);
+			listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_SECTION, section, count));
+
+			listHandler.sendMessage(Message.obtain(listHandler, MSG_START_SECTION, section, count));
+
+			int segmentTime = 0;   // time for the given segment
+			segmentTime = adapter.getTotalTime(section);
+			stoppable = (segmentTime == 0); // this allows for recording a segment of unlimited length. call stop() to stop
+			int elapsedTime = 0;
+			for (elapsedTime = 0; (stoppable && !stop) || elapsedTime <= segmentTime; elapsedTime += 100){
+
+				if (elapsedTime % 1000 == 0){
+					listHandler.sendMessage(Message.obtain(listHandler, MSG_UPDATE_TIME, section, elapsedTime/1000));
+				}
+
+				listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_PROGRESS, recordedSum, recordedSum + elapsedTime));
+
+				try {
+					Thread.sleep(100);
+				} catch (final InterruptedException e) {
+					break;
+				}
 			}
+			recordedSum += elapsedTime;
 
-			int totalTime = 0;     // running count of total time
-			int segmentedTime = 0; // total time, broken up into segment chunks
+			listHandler.sendMessage(Message.obtain(listHandler, MSG_END_SECTION, section, count));
 
-			boolean isFirstSegment = true;
 
-			for (int segment = 0; segment < count; segment++){
-				final CastMediaInProgress item = adapter.getItem(segment);
-				if (item.localUri != null){
-					totalTime += item.elapsedDuration * 1000;
-					segmentedTime += item.elapsedDuration * 1000;
-					// skip over already recorded sections
-					continue;
-				}
-				listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_SECTION, segment, count));
-				// don't pause on the first one
-				if (! isFirstSegment){
-					pause();
-				}
-				isFirstSegment = false;
-				listHandler.sendMessage(Message.obtain(listHandler, MSG_START_SECTION, segment, count));
-
-				int segmentTime = 0;   // time for the given segment
-				segmentTime = adapter.getTotalTime(segment);
-				stoppable = (segmentTime == 0); // this allows for recording a segment of unlimited length. call stop() to stop
-				int elapsedTime = 0;
-				for (elapsedTime = 0; (stoppable && !stop) || elapsedTime <= segmentTime; elapsedTime += 100){
-					totalTime += 100;
-
-					if (elapsedTime % 1000 == 0){
-						listHandler.sendMessage(Message.obtain(listHandler, MSG_UPDATE_TIME, segment, elapsedTime/1000));
-					}
-
-					listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_PROGRESS, segmentedTime, totalTime));
-
-					try {
-						Thread.sleep(100);
-					} catch (final InterruptedException e) {
-						break;
-					}
-				}
-				segmentedTime += elapsedTime;
-				listHandler.sendMessage(Message.obtain(listHandler, MSG_END_SECTION, segment, count));
-
-			}
-			listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_PROGRESS, totalLength, totalLength));
-			finished = true;
-			listHandler.sendEmptyMessage(MSG_FINISHED_LAST_SECTION);
 		}
 	}
 
-	private class TemplateAdapter extends ArrayAdapter<CastMediaInProgress> {
+	public class TemplateAdapter extends ArrayAdapter<CastMediaInProgress> {
 		private final NumberFormat timeFormat  = NumberFormat.getInstance();
 		private final int mItemLayout;
 
@@ -600,7 +584,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			final CastMediaInProgress item = getItem(position);
 
 			if (convertView == null){
-				convertView = getLayoutInflater().inflate(mItemLayout, parent, false);
+				convertView = LayoutInflater.from(getContext()).inflate(mItemLayout, parent, false);
 			}
 
 			((TextView)(convertView.findViewById(R.id.template_item_numeral))).setText(item.index + 1 + ".");
@@ -632,20 +616,15 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	public void onClick(View v) {
 		switch (v.getId()){
 		case R.id.indicator:
-			if (templateRunnable == null){
-				templateRunnable = new TemplateRunnable(lv);
-				new Thread(templateRunnable).start();
 
-			}else if (templateRunnable.isStoppable() && mIndicatorState == INDICATOR_STOP){
-				templateRunnable.stop();
+			if (! isRecording()){
+				recordCastVideo();
 
-			}else if(! templateRunnable.isFinished()){
-
-				templateRunnable.advanceToNextSection();
-			}else{
-				// we've finished recording, but the user tapped the screen, probably accidentally. Ignore them.
+			}else if (mIndicatorState == INDICATOR_STOP){
+				stopRecording();
 			}
 			break;
+
 		case R.id.delete:
 			whichToDelete = (Integer)v.getTag();
 			showDialog(DIALOG_CONFIRM_DELETE);
@@ -665,60 +644,67 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		MSG_UPDATE_TIME = 1,
 		MSG_SET_PROGRESS = 2,
 		MSG_START_SECTION = 4,
-		MSG_END_SECTION = 5,
-		MSG_FINISHED_LAST_SECTION = 6;
+		MSG_END_SECTION = 5;
 
 	private final Handler listHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
 			super.handleMessage(msg);
 			switch(msg.what){
-			case MSG_SET_SECTION:
-				lv.setSelectionFromTop(msg.arg1, 0);
+				case MSG_SET_SECTION:
+					lv.setSelectionFromTop(msg.arg1, 0);
 
-				break;
+					break;
 
-			case MSG_UPDATE_TIME:
-				//templateAdapter.setItemProperty(msg.arg1, "remainingtime", msg.arg2);
-				mCastMediaInProgressList.get(msg.arg1).elapsedDuration = msg.arg2;
-				templateAdapter.notifyDataSetChanged();
+				case MSG_UPDATE_TIME:
+					mCastMediaInProgressList.get(msg.arg1).elapsedDuration = msg.arg2;
+					templateAdapter.notifyDataSetChanged();
 
-				break;
+					break;
 
-			case MSG_SET_PROGRESS:
-				progressBar.setProgress(msg.arg1);
-				progressBar.setSecondaryProgress(msg.arg2);
-				break;
+				case MSG_SET_PROGRESS:{
+					progressBar.setProgress(msg.arg1);
+					progressBar.setSecondaryProgress(msg.arg2);
+				}break;
 
-			case MSG_START_SECTION:{
-				if (templateRunnable.isStoppable()){
-					setIndicator(INDICATOR_STOP);
-				}else{
-					setIndicator(INDICATOR_NONE);
-				}
-				startRecorder();
-			} break;
+				case MSG_START_SECTION:{
+					if (templateRunnable.isStoppable()){
+						setIndicator(INDICATOR_STOP);
+					}else{
+						setIndicator(INDICATOR_NONE);
+					}
+					startRecorder();
+				} break;
 
-			case MSG_END_SECTION:{
-				stopRecorder();
-				final CastMediaInProgress inProgressItem = mCastMediaInProgressList.get(msg.arg1);
-				inProgressItem.localUri = Uri.fromFile(getFullOutputFile());
-				fullTemplateAdapter.notifyDataSetChanged();
-				Log.d(TAG, "Video recorded to " + getFullOutputFile());
+				case MSG_END_SECTION:{
+					templateRunnable = null;
+					stopRecorder();
+					final CastMediaInProgress inProgressItem = mCastMediaInProgressList.get(msg.arg1);
+					inProgressItem.localUri = Uri.fromFile(getFullOutputFile());
+					fullTemplateAdapter.notifyDataSetChanged();
+					Log.d(TAG, "Video recorded to " + getFullOutputFile());
 
-				if (msg.arg1 < msg.arg2 - 1){
-					setIndicator(INDICATOR_RECORD_PAUSE);
-					initRecorder();
-					setOutputFilename(filePrefix + "-" + (msg.arg1 + 1) +"-"+instanceId);
-					prepareRecorder();
-				}
+					if (msg.arg1 < msg.arg2 - 1){
+						setIndicator(INDICATOR_RECORD_PAUSE);
+						initRecorder();
+						setOutputFilename(filePrefix + "-" + (msg.arg1 + 1) +"-"+instanceId);
+						prepareRecorder();
+					}
 
-			}break;
+					boolean isFinished = true;
+					for (int i = 0; i < mCastMediaInProgressList.size(); i++){
+						if (mCastMediaInProgressList.get(i).localUri == null){
+							isFinished = false;
+							break;
+						}
+					}
 
-			case MSG_FINISHED_LAST_SECTION:{
-				setIndicator(INDICATOR_NONE);
-				shotlistSwitch.setDisplayedChild(SHOTLIST_SWITCH_FULL_LIST);
-			}
+					if (isFinished){
+						setIndicator(INDICATOR_NONE);
+						shotlistSwitch.setDisplayedChild(SHOTLIST_SWITCH_FULL_LIST);
+					}
+
+				}break;
 			}
 		}
 	};
@@ -733,52 +719,5 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	public void onProviderEnabled(String provider) {}
 
 	public void onStatusChanged(String provider, int status, Bundle extras) {}
-
-	private static class CastMediaInProgress implements Parcelable {
-		public CastMediaInProgress(String direction, int duration, int index){
-			this.duration = duration;
-			this.direction = direction;
-			this.index = index;
-		}
-		protected Uri localUri = null;
-		protected int duration = 0;
-		protected int elapsedDuration = 0;
-		protected String direction = null;
-		protected int index = 0;
-
-		public int describeContents() {
-			return 0;
-		}
-
-		public CastMediaInProgress(Parcel p){
-
-			localUri = Uri.CREATOR.createFromParcel(p);
-			duration = p.readInt();
-			elapsedDuration = p.readInt();
-			direction = p.readString();
-			index = p.readInt();
-		}
-		public void writeToParcel(Parcel dest, int flags) {
-
-			Uri.writeToParcel(dest, localUri);
-			dest.writeInt(duration);
-			dest.writeInt(elapsedDuration);
-			dest.writeString(direction);
-			dest.writeInt(index);
-		}
-
-		@SuppressWarnings("unused")
-		public static final Parcelable.Creator<CastMediaInProgress> CREATOR
-			= new Creator<CastMediaInProgress>() {
-
-				public CastMediaInProgress[] newArray(int size) {
-					return new CastMediaInProgress[size];
-				}
-
-				public CastMediaInProgress createFromParcel(Parcel source) {
-					return new CastMediaInProgress(source);
-				}
-			};
-	}
 
 }
