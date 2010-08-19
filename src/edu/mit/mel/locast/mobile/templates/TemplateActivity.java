@@ -70,7 +70,7 @@ import edu.mit.mel.locast.mobile.data.Project;
 import edu.mit.mel.locast.mobile.data.ShotList;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.widget.LocationLink;
-import edu.mit.mel.locast.mobile.widget.ProgressBarWithMarkers;
+import edu.mit.mel.locast.mobile.widget.SegmentedProgressBar;
 
 public class TemplateActivity extends VideoRecorder implements OnClickListener, LocationListener {
 	private static final String TAG = TemplateActivity.class.getSimpleName();
@@ -86,7 +86,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	private TemplateAdapter fullTemplateAdapter;
 	private ImageView mIndicator;
 	private ListView lv;
-	private ProgressBarWithMarkers progressBar;
+	private SegmentedProgressBar progressBar;
 	private ViewSwitcher shotlistSwitch;
 	private String filePrefix;
 	private boolean hasDoneFirstInit;
@@ -133,7 +133,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		initSurfaceHolder(sv.getHolder());
 
 
-		progressBar = (ProgressBarWithMarkers)findViewById(R.id.progress);
+		progressBar = (SegmentedProgressBar)findViewById(R.id.progress);
 		mIndicator = (ImageView)findViewById(R.id.indicator);
 		shotlistSwitch = (ViewSwitcher)findViewById(R.id.shot_list_switch);
 		((Button)findViewById(R.id.done)).setOnClickListener(this);
@@ -173,10 +173,10 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 		totalDuration = 0;
 		for (final CastMediaInProgress cmip: mCastMediaInProgressList){
-			progressBar.addMarker(totalDuration);
+			progressBar.addSegment(cmip.duration * 1000);
 			totalDuration += cmip.duration * 1000;
 		}
-		progressBar.setMax(totalDuration);
+		//progressBar.setMax(totalDuration);
 
 		templateAdapter = new TemplateAdapter(this, mCastMediaInProgressList, R.layout.template_item);
 		lv.setAdapter(templateAdapter);
@@ -551,7 +551,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 					listHandler.sendMessage(Message.obtain(listHandler, MSG_UPDATE_TIME, section, elapsedTime/1000));
 				}
 
-				listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_PROGRESS, recordedSum, recordedSum + elapsedTime));
+				listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_PROGRESS, section, elapsedTime));
 
 				try {
 					Thread.sleep(100);
@@ -663,8 +663,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 					break;
 
 				case MSG_SET_PROGRESS:{
-					progressBar.setProgress(msg.arg1);
-					progressBar.setSecondaryProgress(msg.arg2);
+					progressBar.setProgress(msg.arg1, msg.arg2);
 				}break;
 
 				case MSG_START_SECTION:{
