@@ -17,7 +17,6 @@ package edu.mit.mel.locast.mobile.templates;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import java.io.File;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +26,6 @@ import android.app.AlertDialog.Builder;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.DialogInterface.OnCancelListener;
@@ -42,7 +40,6 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,7 +48,6 @@ import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -79,6 +75,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	// stateful
 	private long instanceId;
 	private ArrayList<CastMediaInProgress> mCastMediaInProgressList = new ArrayList<CastMediaInProgress>();
+	private int currentCastVideo;
 
 	// non-stateful
 	private Uri projectUri;
@@ -97,6 +94,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 	private final static String
 		RUNTIME_STATE_INSTANCE_ID = "edu.mit.mobile.android.locast.instanceid",
+		RUNTIME_STATE_CURRENT_CAST_VIDEO = "edu.mit.mobile.android.locast.current_cast_video",
 		RUNTIME_STATE_CAST_MEDIA_IN_PROGRESS = "edu.mit.mobile.android.locast.cast_media_in_progress";
 
 	private final static int
@@ -108,19 +106,11 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 		super.onCreate(savedInstanceState);
 
-		if (savedInstanceState != null
-				&& savedInstanceState.containsKey(RUNTIME_STATE_INSTANCE_ID)){
-			instanceId = savedInstanceState.getLong(RUNTIME_STATE_INSTANCE_ID);
-		}else{
-			instanceId = System.currentTimeMillis();
-		}
-
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
 		initialStartPreview();
-
 
 		setContentView(R.layout.template_main);
 
@@ -143,32 +133,24 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		// so we can tap to record.
 		mIndicator.setOnClickListener(this);
 
-
 		findViewById(R.id.list_overlay).setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
-				shotlistSwitch.setDisplayedChild(SHOTLIST_SWITCH_FULL_LIST);
+				showFullList();
 			}
 		});
+
+		// restore state
 		final Uri data = getIntent().getData();
-		if (savedInstanceState != null
-				&& savedInstanceState.containsKey(RUNTIME_STATE_CAST_MEDIA_IN_PROGRESS)){
+		if (savedInstanceState == null){
+			savedInstanceState = new Bundle();
+		}
+
+		instanceId = savedInstanceState.getLong(RUNTIME_STATE_INSTANCE_ID, System.currentTimeMillis());
+		currentCastVideo = savedInstanceState.getInt(RUNTIME_STATE_CURRENT_CAST_VIDEO, 0);
+		if (savedInstanceState.containsKey(RUNTIME_STATE_CAST_MEDIA_IN_PROGRESS)){
 			mCastMediaInProgressList = savedInstanceState.getParcelableArrayList(RUNTIME_STATE_CAST_MEDIA_IN_PROGRESS);
 		}else{
-			final Cursor c = managedQuery(data, ShotList.PROJECTION, null, null, null);
-			final int directionColumn = c.getColumnIndex(ShotList._DIRECTION);
-			final int durationColumn = c.getColumnIndex(ShotList._DURATION);
-			final int idxColumn = c.getColumnIndex(ShotList._LIST_IDX);
-
-			if (c.getCount() > 0){
-				for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
-					mCastMediaInProgressList.add(new CastMediaInProgress(c.getString(directionColumn), c.getInt(durationColumn), c.getInt(idxColumn)));
-				}
-			}else{
-				mCastMediaInProgressList.add(new CastMediaInProgress(getString(R.string.template_default_direction), 0, 0));
-
-			}
-			c.close();
-			stopManagingCursor(c);
+			loadTemplate(getIntent().getData());
 		}
 
 		totalDuration = 0;
@@ -178,23 +160,26 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 		//progressBar.setMax(totalDuration);
 
-		templateAdapter = new TemplateAdapter(this, mCastMediaInProgressList, R.layout.template_item);
+		templateAdapter = new TemplateAdapter(this, this, mCastMediaInProgressList, R.layout.template_item);
 		lv.setAdapter(templateAdapter);
-		fullTemplateAdapter = new TemplateAdapter(this, mCastMediaInProgressList, R.layout.template_item_full);
+		fullTemplateAdapter = new TemplateAdapter(this, this, mCastMediaInProgressList, R.layout.template_item_full);
 		final ListView instructionListFull = ((ListView)findViewById(R.id.instructions_list_full));
 		instructionListFull.setAdapter(fullTemplateAdapter);
 		instructionListFull.setOnItemClickListener(new ListView.OnItemClickListener() {
 
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-				final CastMediaInProgress castMedia = fullTemplateAdapter.getItem(position);
+				final CastMediaInProgress castMedia = (CastMediaInProgress) parent.getItemAtPosition(position);
 				if (castMedia.localUri != null){
 					final Intent viewCastPart = new Intent(Intent.ACTION_VIEW, null, getApplicationContext(), TemplatePlayer.class);
 					viewCastPart.setDataAndType(castMedia.localUri, "video/3gpp");
 					startActivity(viewCastPart);
+				}else{
+					hideFullList();
+					prepareToRecord(position);
+					recordCastVideo(position);
 				}
 			}
 		});
-
 
 		lv.setEnabled(false);
 
@@ -234,111 +219,43 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		iloc.requestLocationUpdates(this);
 	}
 
-	private void loadTemplate(){
+	private void loadTemplate(Uri shotlist){
+		final Cursor c = managedQuery(shotlist, ShotList.PROJECTION, null, null, null);
+		final int directionColumn = c.getColumnIndex(ShotList._DIRECTION);
+		final int durationColumn = c.getColumnIndex(ShotList._DURATION);
+		final int idxColumn = c.getColumnIndex(ShotList._LIST_IDX);
+
+		if (c.getCount() > 0){
+			for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
+				mCastMediaInProgressList.add(new CastMediaInProgress(c.getString(directionColumn), c.getInt(durationColumn), c.getInt(idxColumn)));
+			}
+		}else{
+			mCastMediaInProgressList.add(new CastMediaInProgress(getString(R.string.template_default_direction), 0, 0));
+
+		}
+		c.close();
 
 	}
-
-	private final Handler recorderStateHandler = new Handler(){
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what){
-			case MSG_RECORDER_INITIALIZED:
-				try {
-					removeDialog(DIALOG_LOADING);
-				}catch (final IllegalArgumentException e) {
-					// This would happen if it's already dismissed. Which is fine.
-				}
-				if (!hasDoneFirstInit){
-					final int nextId = getNextCastVideo();
-					if (nextId < 0){
-						// done!
-						return;
-					}
-					setOutputFilename(filePrefix + "-"+nextId+"-"+instanceId);
-					prepareRecorder();
-					hasDoneFirstInit = true;
-					setIndicator(INDICATOR_RECORD);
-
-					if (nextId == 0){
-						showRecordHelp();
-					}
-
-				}
-
-				break;
-			}
-		}
-	};
 
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		outState.putLong(RUNTIME_STATE_INSTANCE_ID, instanceId);
+		outState.putInt(RUNTIME_STATE_CURRENT_CAST_VIDEO, currentCastVideo);
 		outState.putParcelableArrayList(RUNTIME_STATE_CAST_MEDIA_IN_PROGRESS, mCastMediaInProgressList);
-	}
-
-	private static final int
-		INDICATOR_NONE = 0,
-		INDICATOR_RECORD = 1,
-		INDICATOR_RECORD_PAUSE = 2,
-		INDICATOR_STOP = 3;
-
-	private int mIndicatorState = 0;
-
-	private static final RelativeLayout.LayoutParams osdLayoutCenter = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-	private static final RelativeLayout.LayoutParams osdLayoutLeft = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-
-	static {
-		osdLayoutLeft.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-		osdLayoutLeft.addRule(RelativeLayout.CENTER_VERTICAL);
-
-		osdLayoutCenter.addRule(RelativeLayout.CENTER_IN_PARENT);
-	}
-	private void setIndicator(int indicator){
-
-		if(mIndicatorState == INDICATOR_STOP && indicator != INDICATOR_STOP){
-			mIndicator.setLayoutParams(osdLayoutCenter);
-		}
-
-		switch (indicator){
-		case INDICATOR_RECORD:
-			mIndicator.setImageResource(R.drawable.osd_record);
-			mIndicator.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_in));
-		break;
-
-		case INDICATOR_RECORD_PAUSE:
-			mIndicator.setImageResource(R.drawable.osd_record_pause);
-			break;
-
-		case INDICATOR_STOP:
-			mIndicator.setImageResource(R.drawable.osd_stop);
-			mIndicator.setLayoutParams(osdLayoutLeft);
-			mIndicator.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_in));
-			break;
-
-		case INDICATOR_NONE:
-			if (mIndicatorState != INDICATOR_NONE){
-				mIndicator.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_out));
-				mIndicator.setVisibility(View.GONE);
-			}
-		}
-		if (mIndicatorState == INDICATOR_NONE && indicator != INDICATOR_NONE){
-			mIndicator.setVisibility(View.VISIBLE);
-
-		}
-		mIndicatorState = indicator;
 	}
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event)  {
 	    if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
-	    	if (shotlistSwitch.getDisplayedChild() == SHOTLIST_SWITCH_FULL_LIST){
-	    		shotlistSwitch.setDisplayedChild(SHOTLIST_SWITCH_MAIN);
+	    	if (hideFullList()){
 	    		return true;
 	    	}
 	    }
 
 	    return super.onKeyDown(keyCode, event);
 	}
+
+	/******************** dialogs ************************/
 
 	private static final int
 		DIALOG_CONFIRM_DELETE = 0,
@@ -409,6 +326,34 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 	};
 
+	/*************** Template UI manipulators *********************/
+
+	/**
+	 * Hides the full shot list.
+	 * @return true if the list was hidden.
+	 */
+	private boolean hideFullList(){
+    	if (shotlistSwitch.getDisplayedChild() == SHOTLIST_SWITCH_FULL_LIST){
+    		shotlistSwitch.setDisplayedChild(SHOTLIST_SWITCH_MAIN);
+    		return true;
+    	}else{
+    		return false;
+    	}
+	}
+
+	/**
+	 * Shows the full shot list.
+	 * @return true if the list was shown.
+	 */
+	private boolean showFullList(){
+    	if (shotlistSwitch.getDisplayedChild() == SHOTLIST_SWITCH_MAIN){
+    		shotlistSwitch.setDisplayedChild(SHOTLIST_SWITCH_FULL_LIST);
+    		return true;
+    	}else{
+    		return false;
+    	}
+	}
+
 	private void showRecordHelp(){
 		final Toast t = Toast.makeText(TemplateActivity.this, R.string.template_toast_start_record, Toast.LENGTH_LONG);
 		final DisplayMetrics metrics = new DisplayMetrics();
@@ -418,6 +363,61 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 		t.show();
 	}
+
+	/************ indicator *******************/
+	private static final int
+		INDICATOR_NONE = 0,
+		INDICATOR_RECORD = 1,
+		INDICATOR_RECORD_PAUSE = 2,
+		INDICATOR_STOP = 3;
+
+	private int mIndicatorState = 0;
+
+	private static final RelativeLayout.LayoutParams osdLayoutCenter = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+	private static final RelativeLayout.LayoutParams osdLayoutLeft = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+
+	static {
+		osdLayoutLeft.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+		osdLayoutLeft.addRule(RelativeLayout.CENTER_VERTICAL);
+
+		osdLayoutCenter.addRule(RelativeLayout.CENTER_IN_PARENT);
+	}
+	private void setIndicator(int indicator){
+
+		if(mIndicatorState == INDICATOR_STOP && indicator != INDICATOR_STOP){
+			mIndicator.setLayoutParams(osdLayoutCenter);
+		}
+
+		switch (indicator){
+		case INDICATOR_RECORD:
+			mIndicator.setImageResource(R.drawable.osd_record);
+			mIndicator.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_in));
+		break;
+
+		case INDICATOR_RECORD_PAUSE:
+			mIndicator.setImageResource(R.drawable.osd_record_pause);
+			break;
+
+		case INDICATOR_STOP:
+			mIndicator.setImageResource(R.drawable.osd_stop);
+			mIndicator.setLayoutParams(osdLayoutLeft);
+			mIndicator.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_in));
+			break;
+
+		case INDICATOR_NONE:
+			if (mIndicatorState != INDICATOR_NONE){
+				mIndicator.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_out));
+				mIndicator.setVisibility(View.GONE);
+			}
+		}
+		if (mIndicatorState == INDICATOR_NONE && indicator != INDICATOR_NONE){
+			mIndicator.setVisibility(View.VISIBLE);
+
+		}
+		mIndicatorState = indicator;
+	}
+
+	/*********************** cast video manipulators *************************/
 
 	public static final int CAST_VIDEO_DONE = -1;
 
@@ -442,21 +442,45 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 	}
 
-	private void recordCastVideo(int index){
-		templateRunnable = new TemplateRunnable(templateAdapter, index);
-		new Thread(templateRunnable).start();
+	private void prepareToRecord(int index){
+		templateRunnable = null;
+		listHandler.obtainMessage(MSG_SET_SECTION, index, 0).sendToTarget();
+		setIndicator(INDICATOR_RECORD_PAUSE);
+		initRecorder();
+		setOutputFilename(filePrefix + "-" + (index + 1) +"-"+instanceId);
+		prepareRecorder();
+	}
 
+
+	private void recordCastVideo(int index){
+		if (templateRunnable == null){
+			templateRunnable = new TemplateRunnable(templateAdapter, index);
+			currentCastVideo = index;
+			new Thread(templateRunnable).start();
+		}else{
+			Log.e(TAG, "requested to start recording when already recording");
+		}
 	}
 
 	private void stopRecording(){
 		if (templateRunnable != null){
 			templateRunnable.stop();
+			templateRunnable = null;
 		}
+	}
+
+	private void saveCastVideo(){
+
+		final CastMediaInProgress inProgressItem = mCastMediaInProgressList.get(currentCastVideo);
+		inProgressItem.localUri = Uri.fromFile(getFullOutputFile());
+		fullTemplateAdapter.notifyDataSetChanged();
+		Log.d(TAG, "Video recorded to " + getFullOutputFile());
 	}
 
 	private boolean isRecording(){
 		return templateRunnable != null;
 	}
+
 	/**
 	 * Records the next needed video.
 	 *
@@ -511,7 +535,40 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 	}
 
-	private int recordedSum;
+	private final Handler recorderStateHandler = new Handler(){
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what){
+			// called when initRecorder() has finished initting.
+			case MSG_RECORDER_INITIALIZED:
+				try {
+					removeDialog(DIALOG_LOADING);
+				}catch (final IllegalArgumentException e) {
+					// This would happen if it's already dismissed. Which is fine.
+				}
+				if (!hasDoneFirstInit){
+					final int nextId = getNextCastVideo();
+					if (nextId < 0){
+						// done!
+						return;
+					}
+					prepareToRecord(nextId);
+					hasDoneFirstInit = true;
+					if (nextId == 0){
+						showRecordHelp();
+					}
+				}
+
+				break;
+			}
+		}
+	};
+
+	/**
+	 * Handles the timing of
+	 * @author steve
+	 *
+	 */
 	private class TemplateRunnable implements Runnable {
 		private final TemplateAdapter adapter;
 
@@ -535,8 +592,6 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		public void run() {
 			final int count = adapter.getCount();
 
-			final CastMediaInProgress item = adapter.getItem(section);
-
 			listHandler.sendMessage(Message.obtain(listHandler, MSG_SET_SECTION, section, count));
 
 			listHandler.sendMessage(Message.obtain(listHandler, MSG_START_SECTION, section, count));
@@ -559,59 +614,13 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 					break;
 				}
 			}
-			recordedSum += elapsedTime;
-
 			listHandler.sendMessage(Message.obtain(listHandler, MSG_END_SECTION, section, count));
 
 
 		}
 	}
 
-	public class TemplateAdapter extends ArrayAdapter<CastMediaInProgress> {
-		private final NumberFormat timeFormat  = NumberFormat.getInstance();
-		private final int mItemLayout;
-
-		public TemplateAdapter(Context context, List<CastMediaInProgress> array, int itemLayout) {
-			super(context, R.layout.template_item, array);
-			this.mItemLayout = itemLayout;
-
-			timeFormat.setMinimumFractionDigits(1);
-			timeFormat.setMaximumFractionDigits(1);
-		}
-
-		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
-			final CastMediaInProgress item = getItem(position);
-
-			if (convertView == null){
-				convertView = LayoutInflater.from(getContext()).inflate(mItemLayout, parent, false);
-			}
-
-			((TextView)(convertView.findViewById(R.id.template_item_numeral))).setText(item.index + 1 + ".");
-			((TextView)(convertView.findViewById(android.R.id.text1))).setText(item.direction);
-			final int shownSeconds = Math.abs(item.duration - item.elapsedDuration);
-			final String secondsString = (shownSeconds == 0 && item.duration == 0) ? "∞" :  Integer.toString(shownSeconds)+"s";
-
-			((TextView)(convertView.findViewById(R.id.time_remaining))).setText(secondsString);
-
-			if (mItemLayout == R.layout.template_item_full){
-				final Button delete = (Button)convertView.findViewById(R.id.delete);
-				delete.setTag(position);
-				delete.setOnClickListener(TemplateActivity.this);
-				delete.setVisibility(item.localUri != null ? View.VISIBLE : View.GONE);
-			}
-			return convertView;
-		}
-
-		public int getTotalTime(int position){
-			final CastMediaInProgress item = getItem(position);
-
-			return item.duration * 1000;
-		}
-	}
-
-	TemplateRunnable templateRunnable;
-
+	private TemplateRunnable templateRunnable;
 
 	public void onClick(View v) {
 		switch (v.getId()){
@@ -676,31 +685,16 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 				} break;
 
 				case MSG_END_SECTION:{
-					templateRunnable = null;
 					stopRecorder();
-					final CastMediaInProgress inProgressItem = mCastMediaInProgressList.get(msg.arg1);
-					inProgressItem.localUri = Uri.fromFile(getFullOutputFile());
-					fullTemplateAdapter.notifyDataSetChanged();
-					Log.d(TAG, "Video recorded to " + getFullOutputFile());
+					saveCastVideo();
 
-					if (msg.arg1 < msg.arg2 - 1){
-						setIndicator(INDICATOR_RECORD_PAUSE);
-						initRecorder();
-						setOutputFilename(filePrefix + "-" + (msg.arg1 + 1) +"-"+instanceId);
-						prepareRecorder();
-					}
+					final int nextSection = getNextCastVideo();
 
-					boolean isFinished = true;
-					for (int i = 0; i < mCastMediaInProgressList.size(); i++){
-						if (mCastMediaInProgressList.get(i).localUri == null){
-							isFinished = false;
-							break;
-						}
-					}
-
-					if (isFinished){
+					if (nextSection == -1){
 						setIndicator(INDICATOR_NONE);
-						shotlistSwitch.setDisplayedChild(SHOTLIST_SWITCH_FULL_LIST);
+						showFullList();
+					}else{
+						prepareToRecord(nextSection);
 					}
 
 				}break;
