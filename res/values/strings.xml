@@ -3,8 +3,8 @@
 	
 	<string name="app_name">Locast Connects</string>
 
-	<string name="default_api_url">http://locast.mit.edu/connects/api</string>
-	<string name="app_update_url">http://locast.mit.edu/connects/static/lcc.json</string>
+	<string name="default_api_url">http://locast.mit.edu/mitconnects/api</string>
+	<string name="app_update_url">http://locast.mit.edu/mitconnects/static/lcc.json</string>
 	
 	<!-- Main screen -->
     <string name="upgrade">Upgrade</string>

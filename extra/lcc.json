@@ -1,8 +1,12 @@
 {
     "package": {
-        "downloadUrl": "http://locast.mit.edu/connects/lcc.apk"
+        "downloadUrl": "http://locast.mit.edu/mitconnects/static/lcc_mit.apk"
     },
 
+    "1.2.7 experimental": {
+    	"versionCode": 10,
+    	"changelog": ["added moment saving"],
+    },
     "1.2.6": {
         "versionCode": 9,
         "changelog": ["Fixed colors on Motorola Milestone", "Improved sync"]

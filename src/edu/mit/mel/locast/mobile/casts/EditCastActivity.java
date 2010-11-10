@@ -23,6 +23,7 @@ import java.util.List;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.location.Location;
@@ -218,7 +219,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 //			((TextView)findViewById(R.id.location_new)).setText(locString);
 
 			if (tagRecommendationTask == null || tagRecommendationTask.getStatus() == AsyncTask.Status.FINISHED){
-				tagRecommendationTask = new UpdateRecommendedTagsTask();
+				tagRecommendationTask = new UpdateRecommendedTagsTask(getApplicationContext(), tagList);
 				tagRecommendationTask.execute(currentLocation);
 			}
 		}
@@ -349,11 +350,17 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		iloc.requestLocationUpdates(this);
 	}
 
-	private class UpdateRecommendedTagsTask extends AsyncTask<Location, Long, List<String>>{
+	public static class UpdateRecommendedTagsTask extends AsyncTask<Location, Long, List<String>>{
+		private final TagList mTagList;
+		private final Context mContext;
+		public UpdateRecommendedTagsTask(Context context, TagList tagList) {
+			mTagList = tagList;
+			mContext = context;
+		}
 
 		@Override
 		protected List<String> doInBackground(Location... params) {
-			final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(getApplicationContext());
+			final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(mContext);
 			try {
 				// this is done first so that tags aren't cleared if there's an error getting new ones.
 				final List<String> recommended = nc.getRecommendedTagsList(params[0]);
@@ -368,8 +375,8 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		@Override
 		protected void onPostExecute(List<String> result) {
 			if (result != null){
-				tagList.clearRecommendedTags();
-				tagList.addedRecommendedTags(result);
+				mTagList.clearRecommendedTags();
+				mTagList.addedRecommendedTags(result);
 			}
 		}
 	}
