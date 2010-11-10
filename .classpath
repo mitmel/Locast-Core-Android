@@ -6,6 +6,12 @@
 	<classpathentry kind="lib" path="lib/CWAC-Bus.jar"/>
 	<classpathentry kind="lib" path="lib/CWAC-Cache.jar"/>
 	<classpathentry kind="lib" path="lib/CWAC-Task.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/osmdroid-android-1.08.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/home/steve/media/android/osmdroid-android-docs-1.08.zip!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry exported="true" kind="lib" path="lib/slf4j-android-1.5.8.jar"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="output" path="bin"/>

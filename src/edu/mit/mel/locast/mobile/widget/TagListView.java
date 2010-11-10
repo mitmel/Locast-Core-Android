@@ -45,12 +45,12 @@ public class TagListView extends LinearLayout {
 		addedTagView.removeAllViews();
 		noTagNotice.setVisibility(TextView.VISIBLE);
 	}
-	
+
 	public TagListView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		
+
 		inflateLayout(context, attrs);
-		
+
 		noTagNotice = (TextView)findViewById(R.id.tag_no_tags);
 		addedTagView = (ViewGroup)findViewById(R.id.tag_added_tags);
 	}
@@ -60,7 +60,7 @@ public class TagListView extends LinearLayout {
 	}
 	/**
 	 * Gets the set of tags associated with the view.
-	 * 
+	 *
 	 * @return
 	 */
 	public List<String> getTags() {
@@ -69,8 +69,10 @@ public class TagListView extends LinearLayout {
 
 	/**
 	 * Adds a tag to the list of tags for this view.
-	 * 
-	 * @param tag
+	 *
+	 * @param tag A short tag, preferably one word. Can contain whitespace.
+	 * @throws IllegalArgumentException if provided an empty tag.
+	 * @return true if the tag was successfully added. Returns false if the tag is already present.
 	 */
 	public boolean addTag(String tag) {
 		boolean added = false;
@@ -87,7 +89,7 @@ public class TagListView extends LinearLayout {
 			}
 			addedTagView.addView(getTagView(tag, true), addedTags.indexOf(tag));
 		}
-		
+
 		return added;
 	}
 
@@ -99,12 +101,17 @@ public class TagListView extends LinearLayout {
 
 	/**
 	 * Removes a tag from the view. If it's recommended, it'll remain in the recommendations.
-	 * 
-	 * @param tag
+	 *
+	 * @param tag A short tag, preferably one word. Can contain whitespace.
+	 * @throws IllegalArgumentException if provided an empty tag.
+	 * @return true if the tag was successfully removed; false if the tag has already been removed.
 	 */
 	public boolean removeTag(String tag) {
 		boolean removed = false;
-		
+		if (tag.length() == 0){
+			throw new IllegalArgumentException("cannot add empty tag");
+		}
+
 		if (addedTags.contains(tag)){
 			addedTagView.removeViewAt(addedTags.indexOf(tag));
 			addedTags.remove(tag);
@@ -123,7 +130,7 @@ public class TagListView extends LinearLayout {
 		b.setOnClickListener(tagHandler);
 		return b;
 	}
-	
+
 	public void setOnTagClickListener(OnClickListener tagHandler){
 		this.tagHandler = tagHandler;
 	}

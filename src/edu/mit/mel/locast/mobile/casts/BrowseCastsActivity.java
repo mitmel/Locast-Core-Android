@@ -105,6 +105,10 @@ public class BrowseCastsActivity extends CastListActivity implements LocationLis
 
 			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()));
 			return true;
+
+		case R.id.moment:
+			startActivity(new Intent(Intent.ACTION_INSERT, Cast.CONTENT_URI, this, Moment.class));
+			return true;
 		}
 
 		return super.onOptionsItemSelected(item);

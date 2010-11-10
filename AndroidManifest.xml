@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="edu.mit.mel.locast.mobile" android:versionCode="9"
-	android:versionName="1.2.6">
+	package="edu.mit.mel.locast.mobile" android:versionCode="10"
+	android:versionName="1.2.7">
 	
 	<uses-sdk android:minSdkVersion="4" android:targetSdkVersion="8" />
 	<supports-screens android:largeScreens="true" android:anyDensity="true" />
@@ -235,6 +235,21 @@
 			</intent-filter>
 		</activity>
 		
+		<activity android:name=".casts.Moment" android:theme="@android:style/Theme.Dialog">
+			<intent-filter>
+			<action android:name="android.intent.action.INSERT" />
+			<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.casts" />
+			</intent-filter>
+		</activity>
+		
+		<receiver android:name=".casts.MomentWidget">
+			<intent-filter>
+				<action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+			</intent-filter>
+			<meta-data android:name="android.appwidget.provider"
+				android:resource="@xml/moment_widget_info" />
+		</receiver>
+		
 		<service android:name=".data.Sync">
 		<intent-filter>
 			<action android:name="edu.mit.mobile.android.locast.ACTION_CANCEL_SYNC" />
@@ -261,13 +276,14 @@
 
 	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-	<uses-permission android:name="android.permission.READ_CONTACTS" />
-	<uses-permission android:name="android.permission.WRITE_CONTACTS" />
+
 	<uses-permission android:name="android.permission.CAMERA" />
 	
 	<uses-permission android:name="android.permission.VIBRATE" /> 
 	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 	<uses-permission android:name="android.permission.RECORD_AUDIO"/> 
