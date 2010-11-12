@@ -26,6 +26,9 @@ public class ShotList extends JsonSyncableItem {
 	public Uri getContentUri() {
 		return CONTENT_URI;
 	}
+	public static Uri getProjectUri(Uri shotlistUri){
+		return MediaProvider.removeLastPathSegment(shotlistUri);
+	}
 
 	@Override
 	public String[] getFullProjection() {

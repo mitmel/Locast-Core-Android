@@ -72,6 +72,12 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
 
         setListAdapter(separatedList);
         registerForContextMenu(this.getListView());
+
+    }
+
+    @Override
+    protected void onStart() {
+    	super.onStart();
         startService(new Intent(Intent.ACTION_SYNC, Project.CONTENT_URI));
     }
 

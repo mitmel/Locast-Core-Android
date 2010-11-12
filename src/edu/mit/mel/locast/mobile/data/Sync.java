@@ -117,17 +117,24 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 	private void sync(Uri toSync, SyncProgressNotifier syncProgress) throws SyncException, IOException {
 		JsonSyncableItem syncItem = null;
 		final String contentType = getApplicationContext().getContentResolver().getType(toSync);
+		if (!MediaProvider.canSync(toSync)){
+			throw new IllegalArgumentException("URI " + toSync + " is not syncable.");
+		}
 		if (MediaProvider.TYPE_COMMENT_DIR.equals(contentType)
 				|| MediaProvider.TYPE_COMMENT_ITEM.equals(contentType)){
 			syncItem = new Comment();
 
 		}else if (MediaProvider.TYPE_CAST_DIR.equals(contentType)
-				|| MediaProvider.TYPE_CAST_ITEM.equals(contentType)){
+				|| MediaProvider.TYPE_CAST_ITEM.equals(contentType)
+				|| MediaProvider.TYPE_PROJECT_CAST_DIR.equals(contentType)
+				|| MediaProvider.TYPE_PROJECT_CAST_ITEM.equals(contentType)){
 			syncItem = new Cast();
 
 		}else if (MediaProvider.TYPE_PROJECT_DIR.equals(contentType)
 				|| MediaProvider.TYPE_PROJECT_ITEM.equals(contentType)){
 			syncItem = new Project();
+		}else{
+			throw new RuntimeException("URI " + toSync + " is syncable, but don't know what type of object it is.");
 		}
 		sync(toSync, syncItem, syncProgress);
 	}

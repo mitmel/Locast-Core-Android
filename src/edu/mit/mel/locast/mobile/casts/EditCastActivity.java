@@ -243,6 +243,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		}
 
 		cv.put(Cast._AUTHOR, AndroidNetworkClient.getInstance(this).getUsername());
+		cv.put(Cast._DRAFT, false);
 
 		Log.d("EditCast", cv.toString());
 		return cv;

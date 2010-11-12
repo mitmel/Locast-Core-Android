@@ -53,7 +53,8 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	private static final String TAG = TaggableItem.class.getSimpleName();
 
 	public static final String _PRIVACY = "privacy",
-								_AUTHOR = "author";
+								_AUTHOR = "author",
+								_DRAFT  = "draft";
 
 	public static final String  PRIVACY_PUBLIC    = "public",
 								PRIVACY_PROTECTED = "protected",

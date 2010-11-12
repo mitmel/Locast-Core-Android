@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
+import junit.framework.Assert;
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -52,6 +53,9 @@ public class MediaProvider extends ContentProvider {
 
 		TYPE_PROJECT_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects",
 		TYPE_PROJECT_DIR  = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects",
+
+		TYPE_PROJECT_CAST_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts",
+		TYPE_PROJECT_CAST_DIR  = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects.casts",
 
 		TYPE_COMMENT_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.comments",
 		TYPE_COMMENT_DIR  = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.comments",
@@ -98,7 +102,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 21;
+		private static final int DB_VER = 22;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -118,12 +122,13 @@ public class MediaProvider extends ContentProvider {
 					+ Cast._MODIFIED_DATE+ " INTEGER,"
 					+ Cast._CREATED_DATE + " INTEGER,"
 					+ Cast._PROJECT_ID  + " INTEGER,"
-					+ Cast._PRIVACY 		+ " TEXT,"
+					+ Cast._PRIVACY 	+ " TEXT,"
 
 					+ Cast._LATITUDE 	+ " REAL,"
 					+ Cast._LONGITUDE 	+ " REAL,"
 
 					+ Cast._FAVORITED   + " BOOLEAN,"
+					+ Cast._DRAFT       + " BOOLEAN,"
 
 					+ Cast._THUMBNAIL_URI+ " TEXT"
 					+ ");"
@@ -140,6 +145,7 @@ public class MediaProvider extends ContentProvider {
 					+ Project._LONGITUDE 	+ " REAL,"
 
 					+ Project._FAVORITED    + " BOOLEAN,"
+					+ Project._DRAFT        + " BOOLEAN,"
 
 					+ Project._MODIFIED_DATE + " INTEGER,"
 					+ Project._CREATED_DATE + " INTEGER"
@@ -342,12 +348,16 @@ public class MediaProvider extends ContentProvider {
 	public String getType(Uri uri) {
 		switch (uriMatcher.match(uri)){
 		case MATCHER_CAST_DIR:
-		case MATCHER_PROJECT_CAST_DIR:
 			return TYPE_CAST_DIR;
 
 		case MATCHER_CAST_ITEM:
-		case MATCHER_PROJECT_CAST_ITEM:
 			return TYPE_CAST_ITEM;
+
+		case MATCHER_PROJECT_CAST_DIR:
+			return TYPE_PROJECT_CAST_DIR;
+
+		case MATCHER_PROJECT_CAST_ITEM:
+			return TYPE_PROJECT_CAST_ITEM;
 
 		case MATCHER_CAST_MEDIA_DIR:
 		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:
@@ -406,9 +416,11 @@ public class MediaProvider extends ContentProvider {
 		values.remove(JsonSyncableItem._ID);
 
 		Uri newItem = null;
+		boolean isDraft = false;
 
 		switch (uriMatcher.match(uri)){
 		case MATCHER_CAST_DIR:{
+			Assert.assertNotNull(values);
 			final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
 
 			rowid = db.insert(CAST_TABLE_NAME, null, values);
@@ -418,20 +430,34 @@ public class MediaProvider extends ContentProvider {
 				newItem = ContentUris.withAppendedId(Cast.CONTENT_URI, rowid);
 
 				update(Uri.withAppendedPath(newItem, Tag.PATH), cvTags, null, null);
+
+				if (values.containsKey(Project._DRAFT)){
+					isDraft = values.getAsBoolean(Project._DRAFT);
+				}else{
+					isDraft = false;
+				}
 			}
 			break;
 		}
 		case MATCHER_PROJECT_DIR:{
+			Assert.assertNotNull(values);
 			final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
 			rowid = db.insert(PROJECT_TABLE_NAME, null, values);
 			if (rowid > 0){
 				getContext().getContentResolver().notifyChange(uri, null);
 				newItem = ContentUris.withAppendedId(Project.CONTENT_URI, rowid);
 				update(Uri.withAppendedPath(newItem, Tag.PATH), cvTags, null, null);
+				if (values.containsKey(Project._DRAFT)){
+					isDraft = values.getAsBoolean(Project._DRAFT);
+				}else{
+					isDraft = false;
+				}
+
 			}
 			break;
 		}
 		case MATCHER_COMMENT_DIR:
+			Assert.assertNotNull(values);
 			rowid = db.insert(COMMENT_TABLE_NAME, null, values);
 			if (rowid > 0){
 				getContext().getContentResolver().notifyChange(uri, null);
@@ -487,17 +513,24 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_PROJECT_CAST_DIR:{
 			final String projectId = uri.getPathSegments().get(1);
 			values.put(Cast._PROJECT_ID, projectId);
-			rowid = db.insert(CAST_TABLE_NAME, null, values);
 
-			newItem = ContentUris.withAppendedId(uri, rowid);
+			// keep the actual isDraft flag, but mark it a draft when recursing in
+			// order to have the sync only happen on the outermost URI
+			if (values.containsKey(Project._DRAFT)){
+				isDraft = values.getAsBoolean(Project._DRAFT);
+			}
+			values.put(Cast._DRAFT, true);
+
+			newItem = insert(Cast.CONTENT_URI, values);
+
 		} break;
 
 		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:{
 			final String castId = uri.getPathSegments().get(3);
 			values.put(CastMedia._PARENT_ID, castId);
-			rowid = db.insert(CAST_MEDIA_TABLE_NAME, null, values);
 
-			newItem = ContentUris.withAppendedId(uri, rowid);
+			// TODO figure out how to have it not sync twice here
+			newItem = insert(CastMedia.CONTENT_URI, values);
 		} break;
 
 		default:
@@ -507,7 +540,7 @@ public class MediaProvider extends ContentProvider {
 			throw new SQLException("Failed to insert row into "+uri);
 		}
 
-		if (syncable){
+		if (syncable && !isDraft){
 			getContext().startService(new Intent(Intent.ACTION_SYNC, uri));
 		}
 		return newItem;

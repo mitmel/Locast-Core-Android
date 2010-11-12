@@ -120,9 +120,11 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	                    targetHost.getPort());
 	            // Obtain credentials matching the target host
 	            final Credentials creds = credsProvider.getCredentials(authScope);
-	            Log.d("NetworkClient", "Pre-emptively authenticating as: " + creds.getUserPrincipal().getName());
 	            // If found, generate BasicScheme preemptively
 	            if (creds != null) {
+	            	if (creds.getUserPrincipal() != null){
+	            		Log.d("NetworkClient", "Pre-emptively authenticating as: " + creds.getUserPrincipal().getName());
+	            	}
 	                authState.setAuthScheme(new BasicScheme());
 	                authState.setCredentials(creds);
 	            }

@@ -74,6 +74,15 @@ public class MainActivity extends TabActivity {
 
         setContentView(R.layout.main);
 
+		if (needToResetNc){
+			nc = new AndroidNetworkClient(this);
+		}
+        if (!nc.isPaired()){
+        	startActivity(new Intent(this, PairingActivity.class));
+        	finish();
+        	return;
+        }
+
         final TabHost tabHost = getTabHost();
 
         final Resources r = getResources();
@@ -103,14 +112,10 @@ public class MainActivity extends TabActivity {
 	@Override
 	protected void onStart() {
 	    super.onStart();
+
 		if (needToResetNc){
 			nc = new AndroidNetworkClient(this);
 		}
-        if (!nc.isPaired()){
-        	startActivity(new Intent(this, PairingActivity.class));
-        	finish();
-        	return;
-        }
 
 	    if (nc.isPaired()){
 	    	//((TextView)findViewById(R.id.header_subtitle)).setText("Logged in as " + nc.getUsername());

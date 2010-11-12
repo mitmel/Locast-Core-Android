@@ -119,7 +119,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 			put(_TITLE, 			new SyncFieldMap("title", SyncFieldMap.STRING));
 
 			put(_THUMBNAIL_URI, 	new SyncFieldMap("screenshot", SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
-			put(_PUBLIC_URI,       new SyncFieldMap("file_url",   SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
+			put(_PUBLIC_URI,        new SyncFieldMap("file_url",   SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 
 
 			put("_contents", new OrderedList.SyncMapItem("castvideos", new CastMedia(), CastMedia.PATH));

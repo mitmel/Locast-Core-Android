@@ -36,6 +36,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -68,6 +70,7 @@ import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.widget.LocationLink;
 import edu.mit.mel.locast.mobile.widget.SegmentedProgressBar;
 
+// XXX left off loading cast videos from a saved cast
 public class TemplateActivity extends VideoRecorder implements OnClickListener, LocationListener {
 	private static final String TAG = TemplateActivity.class.getSimpleName();
 	public final static String ACTION_RECORD_TEMPLATED_VIDEO = "edu.mit.mobile.android.locast.ACTION_RECORD_TEMPLATED_VIDEO";
@@ -76,6 +79,8 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	private long instanceId;
 	private ArrayList<CastMediaInProgress> mCastMediaInProgressList = new ArrayList<CastMediaInProgress>();
 	private int currentCastVideo;
+	private boolean isDraft;
+	private Uri currentCast;
 
 	// non-stateful
 	private Uri projectUri;
@@ -94,6 +99,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 	private final static String
 		RUNTIME_STATE_INSTANCE_ID = "edu.mit.mobile.android.locast.instanceid",
+		RUNTIME_STATE_CURRENT_CAST = "edu.mit.mobile.android.locast.current_cast",
 		RUNTIME_STATE_CURRENT_CAST_VIDEO = "edu.mit.mobile.android.locast.current_cast_video",
 		RUNTIME_STATE_CAST_MEDIA_IN_PROGRESS = "edu.mit.mobile.android.locast.cast_media_in_progress";
 
@@ -107,8 +113,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		super.onCreate(savedInstanceState);
 
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-				WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN|WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 		initialStartPreview();
 
@@ -122,11 +127,28 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		// that we have one initialized.
 		initSurfaceHolder(sv.getHolder());
 
+		final EditText castTitle = ((EditText)findViewById(R.id.cast_title));
+		castTitle.addTextChangedListener(new TextWatcher() {
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				castTitle.setError(null);
+			}
+
+			@Override
+			public void afterTextChanged(Editable s) {}
+
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count,
+					int after) {}
+
+		});
 
 		progressBar = (SegmentedProgressBar)findViewById(R.id.progress);
 		mIndicator = (ImageView)findViewById(R.id.indicator);
 		shotlistSwitch = (ViewSwitcher)findViewById(R.id.shot_list_switch);
 		((Button)findViewById(R.id.done)).setOnClickListener(this);
+		((Button)findViewById(R.id.preview)).setOnClickListener(this);
 
 		lv = (ListView)findViewById(R.id.instructions_list);
 
@@ -146,11 +168,25 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 
 		instanceId = savedInstanceState.getLong(RUNTIME_STATE_INSTANCE_ID, System.currentTimeMillis());
+		isDraft = true;
+		currentCast = savedInstanceState.<Uri>getParcelable(RUNTIME_STATE_CURRENT_CAST);
 		currentCastVideo = savedInstanceState.getInt(RUNTIME_STATE_CURRENT_CAST_VIDEO, 0);
 		if (savedInstanceState.containsKey(RUNTIME_STATE_CAST_MEDIA_IN_PROGRESS)){
 			mCastMediaInProgressList = savedInstanceState.getParcelableArrayList(RUNTIME_STATE_CAST_MEDIA_IN_PROGRESS);
 		}else{
-			loadTemplate(getIntent().getData());
+			final String type = getContentResolver().getType(data);
+			if (MediaProvider.TYPE_SHOTLIST_DIR.equals(type)){
+				projectUri = ShotList.getProjectUri(data);
+				loadShotList(data);
+
+			}else if (MediaProvider.TYPE_PROJECT_CAST_ITEM.equals(type)){
+
+				projectUri = Cast.getProjectUri(loadCast(data));
+				loadShotList(Project.getShotListUri(projectUri));
+
+			}else{
+				throw new IllegalArgumentException("Don't know how to handle URI: " + data);
+			}
 		}
 
 		totalDuration = 0;
@@ -183,7 +219,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 		lv.setEnabled(false);
 
-		projectUri = MediaProvider.removeLastPathSegment(data);
+
 		final Cursor parent = managedQuery(projectUri, Project.PROJECTION, null, null, null);
 		if (parent.getCount() > 1){
 			Log.w(TAG, "got more than one project for " + projectUri);
@@ -219,7 +255,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		iloc.requestLocationUpdates(this);
 	}
 
-	private void loadTemplate(Uri shotlist){
+	private void loadShotList(Uri shotlist){
 		final Cursor c = managedQuery(shotlist, ShotList.PROJECTION, null, null, null);
 		final int directionColumn = c.getColumnIndex(ShotList._DIRECTION);
 		final int durationColumn = c.getColumnIndex(ShotList._DURATION);
@@ -242,6 +278,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		outState.putLong(RUNTIME_STATE_INSTANCE_ID, instanceId);
 		outState.putInt(RUNTIME_STATE_CURRENT_CAST_VIDEO, currentCastVideo);
 		outState.putParcelableArrayList(RUNTIME_STATE_CAST_MEDIA_IN_PROGRESS, mCastMediaInProgressList);
+		outState.putParcelable(RUNTIME_STATE_CURRENT_CAST, currentCast);
 	}
 
 	@Override
@@ -497,9 +534,30 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	}
 
 	/**
+	 * Loads the given cast into the UI and returns a live cursor pointing to it.
+	 * @param cast
+	 * @return
+	 */
+	private Cursor loadCast(Uri cast){
+		final Cursor c = managedQuery(cast, Cast.PROJECTION, null, null, null);
+		if (!c.moveToFirst()){
+			throw new IllegalArgumentException("No content could be found at: " + cast);
+		}
+		currentCast = cast;
+		loadCast(c);
+		return c;
+	}
+
+	private void loadCast(Cursor cast){
+		((EditText)findViewById(R.id.cast_title)).setText(cast.getString(cast.getColumnIndex(Cast._TITLE)));
+		isDraft = cast.getInt(cast.getColumnIndex(Cast._DRAFT)) != 0;
+		final Uri castMediaUri = Cast.getCastMediaUri(currentCast);
+	}
+
+	/**
 	 * Saves this as new cast associated with a given project
 	 */
-	private void save(){
+	private Uri save(){
 		final ContentResolver cr = getContentResolver();
 
 		final ContentValues cast = new ContentValues();
@@ -507,32 +565,38 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		cast.put(Cast._PRIVACY, Cast.PRIVACY_PUBLIC);
 		cast.put(Cast._TITLE, ((EditText)findViewById(R.id.cast_title)).getText().toString());
 		cast.put(Cast._AUTHOR, AndroidNetworkClient.getInstance(this).getUsername());
+		cast.put(Cast._DRAFT, isDraft);
 
 		if (location != null){
 			cast.put(Cast._LATITUDE, location.getLatitude());
 			cast.put(Cast._LONGITUDE, location.getLongitude());
 		}
+		if (currentCast == null){
+			currentCast = cr.insert(Uri.withAppendedPath(projectUri, Cast.PATH), cast);
+			Log.d(TAG, "created cast "+ currentCast);
+		}else{
+			cr.update(currentCast, cast, null, null);
+			Log.d(TAG, "updating cast "+ currentCast);
+		}
 
-		final Uri castUri = cr.insert(Uri.withAppendedPath(projectUri, Cast.PATH), cast);
-		Log.d(TAG, "created cast "+ castUri);
-		final Uri castMediaUri = Uri.withAppendedPath(castUri, CastMedia.PATH);
+		final Uri castMediaUri = Cast.getCastMediaUri(currentCast);
 
 		final ContentValues[] castMedia = new ContentValues[mCastMediaInProgressList.size()];
 		for (int i = 0; i < castMedia.length; i++){
 			final CastMediaInProgress item = mCastMediaInProgressList.get(i);
 			castMedia[i] = new ContentValues();
 			castMedia[i].put(CastMedia._LIST_IDX, i);
-			castMedia[i].put(CastMedia._LOCAL_URI, item.localUri.toString());
+			castMedia[i].put(CastMedia._LOCAL_URI, item.localUri != null ? item.localUri.toString() : null);
 			castMedia[i].put(CastMedia._DURATION, item.duration);
-			castMedia[i].put(CastMedia._MIME_TYPE, "video/3gpp");
+			castMedia[i].put(CastMedia._MIME_TYPE, item.localUri != null ? "video/3gpp": null);
 		}
 		final int inserts = cr.bulkInsert(castMediaUri, castMedia);
 		if (inserts == castMedia.length){
-			Toast.makeText(this, "Cast saved.", Toast.LENGTH_LONG).show();
-			finish();
+			Toast.makeText(this, "Cast saved"+(isDraft ? " as draft" : "")+".", Toast.LENGTH_LONG).show();
 		}else{
 			Toast.makeText(this, "Error saving cast videos. Only saved "+inserts, Toast.LENGTH_LONG).show();
 		}
+		return currentCast;
 	}
 
 	private final Handler recorderStateHandler = new Handler(){
@@ -639,9 +703,29 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			showDialog(DIALOG_CONFIRM_DELETE);
 			break;
 
-		case R.id.done:
-			save();
-			break;
+		case R.id.done:{
+			final EditText title =((EditText)findViewById(R.id.cast_title));
+			if (title.getText().toString().trim().length() == 0){
+				title.setError("Please enter a title"); // XXX i18n
+				title.requestFocus();
+				break;
+			}else{
+				title.setError(null);
+			}
+			isDraft = false;
+			final Uri cast = save();
+			if (cast != null){
+				finish();
+			}
+		}break;
+
+		case R.id.preview:{
+			isDraft = true;
+			final Uri cast = save();
+			final Intent previewCast = new Intent(Intent.ACTION_VIEW, null, getApplicationContext(), TemplatePlayer.class);
+			previewCast.setData(cast);
+			startActivity(previewCast);
+		}break;
 
 		case R.id.cancel:
 			break;

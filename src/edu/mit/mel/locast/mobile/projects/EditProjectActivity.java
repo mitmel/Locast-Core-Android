@@ -156,6 +156,7 @@ public class EditProjectActivity extends Activity implements OnClickListener {
 		cv.put(Project._TITLE, title.getText().toString());
 		cv.put(Project._DESCRIPTION, description.getText().toString());
 		cv.put(Project._PRIVACY, Project.PRIVACY_LIST[privacy.getSelectedItemPosition()]);
+		cv.put(Project._DRAFT, false);
 
 		return cv;
 	}

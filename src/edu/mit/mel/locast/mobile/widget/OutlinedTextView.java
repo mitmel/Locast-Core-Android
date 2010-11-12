@@ -85,12 +85,12 @@ public class OutlinedTextView extends TextView {
 	private void setStrokePaint(){
 		mTextPaint = getPaint();
 		strokePaint = new TextPaint(mTextPaint);
+		strokePaint.setTypeface(getTypeface());
+		strokePaint.setStyle(Paint.Style.STROKE);
 
 		// TODO make these properties that can be set from XML
 		strokePaint.setARGB(255, 0, 0, 0);
-		strokePaint.setStyle(Paint.Style.STROKE);
-		strokePaint.setTypeface(getTypeface());
-		strokePaint.setStrokeWidth(2);
+		strokePaint.setStrokeWidth(4);
 	}
 
 	@Override

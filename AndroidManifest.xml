@@ -74,6 +74,7 @@
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.casts" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>		
 		</activity>
 		
@@ -81,6 +82,7 @@
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.casts" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>		
 		</activity>
 		
@@ -88,6 +90,7 @@
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.casts" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>		
 		</activity>
 		
@@ -98,14 +101,7 @@
 				<action android:name="android.intent.action.PICK" />
 				<category android:name="android.intent.category.DEFAULT" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.casts" />
-			</intent-filter>
-		</activity>
-		<activity android:name=".casts.ViewCastActivity">
-			<intent-filter>
-				<action android:name="android.intent.action.VIEW" />
-				<category android:name="android.intent.category.DEFAULT" />
-				<data
-					android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>
 		</activity>
 
@@ -170,16 +166,16 @@
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
 				<category android:name="android.intent.category.DEFAULT" />
-				<data
-					android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>
 		</activity>
 		
-				<activity android:name=".casts.CastDetailsActivity">
+		<activity android:name=".casts.CastDetailsActivity">
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
-				<data
-					android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>
 		</activity>
 		
@@ -225,6 +221,11 @@
 				<category android:name="android.intent.category.DEFAULT" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.shotlist" />
 			</intent-filter>
+			<intent-filter>
+				<action android:name="android.intent.action.EDIT" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts" />
+			</intent-filter>
 		</activity>
 		
 		<activity android:name=".templates.TemplatePlayer" android:screenOrientation="landscape">
@@ -260,6 +261,8 @@
 				<action android:name="android.intent.action.SYNC" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.casts" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects.casts" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.comments" />

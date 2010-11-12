@@ -19,15 +19,18 @@ package edu.mit.mel.locast.mobile.templates;
 import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.drawable.AnimationDrawable;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.MediaController;
 import android.widget.TextView;
 import android.widget.VideoView;
@@ -47,6 +50,12 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 	private Cursor castMediaCursor = null;
 	private Cursor castCursor = null;
 	private Cursor shotListCursor = null;
+	private Uri currentCastVideo = null;
+
+	private final Handler uiHandler = new Handler(){
+
+	};
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -77,14 +86,18 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 				Log.d(TAG, "It's a cast!");
 				castCursor = managedQuery(data, Cast.PROJECTION, null, null, null);
 				castCursor.moveToFirst();
-				MediaProvider.dumpCursorToLog(castCursor, Cast.PROJECTION);
-				loadCastMedia(Cast.getCastMediaUri(data));
+				castMediaCursor = managedQuery(Cast.getCastMediaUri(data), CastMedia.PROJECTION, null, null, null);
+				//castMediaCursor.moveToFirst();
 
+				//MediaProvider.dumpCursorToLog(castCursor, Cast.PROJECTION);
+				//loadCastMedia(Cast.getCastMediaUri(data));
+				loadShotList();
 			}else{
 				Log.e(TAG, "I don't know how to handle something of type: "+type);
 				finish();
 			}
 		}
+
 
 		mMc = new MediaController(this);
 
@@ -106,7 +119,8 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 		mVideoView.setOnCompletionListener(this);
 
 		//mVideoView.requestFocus();
-		mVideoView.start();
+		//mVideoView.start();
+		nextOrFinish();
 	}
 
 	private void nextOrFinish(){
@@ -116,7 +130,32 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 				shotListCursor.moveToNext();
 			}
 			setVideoFromCursor();
-			mVideoView.start();
+			if (currentCastVideo == null){
+				//final Toast t = Toast.makeText(this, "No video for this segment", Toast.LENGTH_LONG);
+				findViewById(R.id.staticview).setVisibility(View.VISIBLE);
+				final ImageView noise = (ImageView)findViewById(R.id.noise);
+
+				// AnimationDrawables needs to be fully loaded before they can be started.
+				noise.post(new Runnable() {
+					@Override
+					public void run() {
+						((AnimationDrawable)noise.getDrawable()).start();
+					}
+				});
+
+				uiHandler.postDelayed(new Runnable() {
+
+					@Override
+					public void run() {
+						findViewById(R.id.staticview).setVisibility(View.GONE);
+						onCompletion(null);
+
+					}
+				}, 3000);
+				//t.show();
+			}else{
+				mVideoView.start();
+			}
 
 		}else{ // done!
 			// TODO do something
@@ -124,23 +163,22 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 		}
 	}
 
-	private void loadCastMedia(Uri castMediaUri){
-		castMediaCursor = managedQuery(castMediaUri, CastMedia.PROJECTION, null, null, null);
-		castMediaCursor.moveToFirst();
+	private void loadShotList(){
+
 
 		final Uri project = Cast.getProjectUri(castCursor);
 		if (project != null){
 			shotListCursor = managedQuery(Project.getShotListUri(project), ShotList.PROJECTION, null, null, null);
 			if (shotListCursor.getCount() > 0){
-				shotListCursor.moveToFirst();
-				MediaProvider.dumpCursorToLog(shotListCursor, ShotList.PROJECTION);
+				//shotListCursor.moveToFirst();
+				//MediaProvider.dumpCursorToLog(shotListCursor, ShotList.PROJECTION);
+
+				// XXX left off getting the casts to play even if there's missing video
 			}else{
 				shotListCursor = null;
 				Log.i(TAG, "no shot list");
 			}
 		}
-
-		setVideoFromCursor();
 	}
 
 	private void setVideoFromCursor(){
@@ -153,9 +191,12 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 		if (castMediaCursor.isNull(localUriIdx)){
 			Log.e(TAG, "no cast video for this particular shot");
 			// TODO no video here. Do something else?
+			mVideoView.setVideoURI(null);
+			currentCastVideo = null;
 		}else{
 			final Uri localUri = Cast.parseMaybeUri(castMediaCursor.getString(localUriIdx));
 			mVideoView.setVideoURI(localUri);
+			currentCastVideo = localUri;
 		}
 
 		if (shotListCursor != null){
