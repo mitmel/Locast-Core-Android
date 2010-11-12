@@ -40,13 +40,16 @@ import edu.mit.mel.locast.mobile.data.Cast;
 
 /**
  * A list of casts.
+ *
+ * To use, call setListAdapter with a CastCursorAdaptor or something that wraps one.
+ *
  * @author steve
  *
  */
 public abstract class CastListActivity extends ListActivity {
 
 	private ListAdapter adapter;
-	
+
 	protected SimpleWebImageCache<ThumbnailBus, ThumbnailMessage> imgCache;
 
 	@Override
@@ -56,13 +59,13 @@ public abstract class CastListActivity extends ListActivity {
 		imgCache = ((Application)getApplication()).getImageCache();
 
 	}
-	
+
 	protected void loadList(Cursor c){
 		adapter = new CastCursorAdapter(this, c);
 
         setListAdapter(adapter);
 	}
-	
+
 	@Override
 	public void setListAdapter(ListAdapter adapter){
         // this defines what images need to be loaded. URLs are placed in the ImageView tag
@@ -70,11 +73,11 @@ public abstract class CastListActivity extends ListActivity {
         this.adapter = adapter;
 		super.setListAdapter(new ThumbnailAdapter(this, adapter, imgCache, IMAGE_IDS));
 	}
-	
+
 	protected ListAdapter getAdapter(){
 		return adapter;
 	}
-	
+
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v,
 			ContextMenuInfo menuInfo) {
@@ -94,11 +97,11 @@ public abstract class CastListActivity extends ListActivity {
 			startActivity(new Intent(Intent.ACTION_VIEW, uri));
 		}
 	}
-	
+
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
 		switch (item.getItemId()){
-		
+
 		}
 		return super.onContextItemSelected(item);
 	}

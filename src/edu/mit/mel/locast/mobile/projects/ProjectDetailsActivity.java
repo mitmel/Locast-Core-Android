@@ -17,7 +17,6 @@ package edu.mit.mel.locast.mobile.projects;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import android.app.ListActivity;
 import android.content.ContentUris;
 import android.content.Intent;
 import android.database.Cursor;
@@ -36,13 +35,10 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
-
-import com.commonsware.cwac.thumbnail.ThumbnailAdapter;
-
-import edu.mit.mel.locast.mobile.Application;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.casts.BasicCursorContentObserver;
 import edu.mit.mel.locast.mobile.casts.CastCursorAdapter;
+import edu.mit.mel.locast.mobile.casts.CastListActivity;
 import edu.mit.mel.locast.mobile.casts.BasicCursorContentObserver.BasicCursorContentObserverWatcher;
 import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.Project;
@@ -50,7 +46,7 @@ import edu.mit.mel.locast.mobile.data.ShotList;
 import edu.mit.mel.locast.mobile.templates.TemplateActivity;
 import edu.mit.mel.locast.mobile.widget.TagListView;
 
-	public class ProjectDetailsActivity extends ListActivity
+	public class ProjectDetailsActivity extends CastListActivity
 		implements OnClickListener, OnItemClickListener, OnCreateContextMenuListener, BasicCursorContentObserverWatcher {
 		private TagListView tagList;
 
@@ -67,28 +63,23 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 		public void onCreate(Bundle savedInstanceState) {
 	        super.onCreate(savedInstanceState);
 
-	        setContentView(R.layout.projectdetails);
-	        final ListView castList = getListView();
+	        final Uri projectCasts = Uri.withAppendedPath(getIntent().getData(), Cast.PATH);
+	        castAdapter = new CastCursorAdapter(this,
+	        				managedQuery(projectCasts,
+	        						Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT));
 
-	        //castList.addHeaderView(LayoutInflater.from(this).inflate(R.layout.projectdetails, castList, false));
+	        setListAdapter(castAdapter);
+
+	        // this needs to get called after setListAdapter()
+	        setContentView(R.layout.projectdetails);
+
+	        final ListView castList = getListView();
 
 	        castList.setVerticalScrollBarEnabled(false);
 
 	        castList.setEmptyView(findViewById(R.id.empty));
-	        //castList.setEmptyView(getLayoutInflater().inflate(R.layout.project_no_casts, castList, false));
 
 	        tagList = ((TagListView)findViewById(R.id.tags));
-
-	        // this defines what images need to be loaded. URLs are placed in the ImageView tag
-	        final int[] IMAGE_IDS = {R.id.thumbnail};
-	        final Uri projectCasts = Uri.withAppendedPath(getIntent().getData(), Cast.PATH);
-	        castAdapter = new ThumbnailAdapter(this,
-	        		new CastCursorAdapter(this,
-	        				managedQuery(projectCasts,
-	        						Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT)),
-	        		((Application)getApplication()).getImageCache(), IMAGE_IDS);
-
-	        setListAdapter(castAdapter);
 
 	        castList.setOnItemClickListener(this);
 	        castList.setOnCreateContextMenuListener(this);
@@ -127,36 +118,7 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 			((TextView)findViewById(R.id.item_title)).setText(c.getString(c.getColumnIndex(Project._TITLE)));
 			((TextView)findViewById(R.id.description)).setText(c.getString(c.getColumnIndex(Project._DESCRIPTION)));
 
-			/*
-			Calendar fromDate = null, toDate = null;
-			if (! c.isNull(c.getColumnIndex(Project._START_DATE))){
-				fromDate = Calendar.getInstance();
-				fromDate.setTimeInMillis(c.getLong(c.getColumnIndex(Project._START_DATE)));
-			}
-			if (! c.isNull(c.getColumnIndex(Project._END_DATE))){
-				toDate = Calendar.getInstance();
-				toDate.setTimeInMillis(c.getLong(c.getColumnIndex(Project._END_DATE)));
-			}
-			final DateFormat df = SimpleDateFormat.getDateInstance(SimpleDateFormat.MEDIUM);
-			final String dateString = ((fromDate != null) ? df.format(fromDate.getTime()) : "")
-				+ (( fromDate != null && toDate != null) ? " - " : "")
-				+ ((toDate != null) ? df.format(toDate.getTime()) : "");
-			((TextView)findViewById(R.id.date)).setText(dateString);
-			*/
 			tagList.addTags(Project.getTags(getContentResolver(), mProjectUri));
-
-			//castAdapter.notifyDataSetChanged();
-
-			/* membership members = new TreeSet<String>(Project.getList(c.getColumnIndex(Project._MEMBERS), c));
-			final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(this);
-			if (members.contains(nc.getUsername())){
-				mJoinButton.setText(R.string.project_leave);
-			}else{
-				mJoinButton.setText(R.string.project_join);
-			}
-			((TextView)findViewById(R.id.people)).setText(Project.getMemberList(getApplicationContext(), c));
-			 *
-			 */
 		}
 
 		@Override
@@ -218,59 +180,6 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 			}
 			return true;
 		}
-
-	    /*public class CastListAdapter extends BaseAdapter {
-	        int mGalleryItemBackground;
-	        final LayoutInflater inflater = getLayoutInflater();
-
-	        public CastListAdapter(Context context) {
-	            final TypedArray a = obtainStyledAttributes(R.styleable.Gallery1);
-	            mGalleryItemBackground = a.getResourceId(
-	                    R.styleable.Gallery1_android_galleryItemBackground, 0);
-	            a.recycle();
-	        }
-
-	        public int getCount() {
-	            return casts.size();
-	        }
-
-	        public Object getItem(int position) {
-	            return position;
-	        }
-
-	        public long getItemId(int position) {
-	            return casts.get(position);
-	        }
-
-	        public View getView(int position, View convertView, ViewGroup parent) {
-
-	        	ImageView i;
-	            if (convertView != null){
-	            	i = (ImageView) convertView;
-	            }else {
-	            	i = (ImageView)inflater.inflate(R.layout.thumbimage, parent, false);
-
-	                // The preferred Gallery item background
-	                i.setBackgroundResource(mGalleryItemBackground);
-	            }
-	            final ContentResolver cr = getContentResolver();
-	            final Cursor c = cr.query(ContentUris.withAppendedId(Cast.CONTENT_URI, getItemId(position)), Cast.PROJECTION, null, null, null);
-	            if (c.moveToFirst()){
-
-	            	i.setTag(c.getString(c.getColumnIndex(Cast._THUMBNAIL_URI)));
-	            	i.setImageResource(R.drawable.cast_placeholder);
-	            }
-	            c.close();
-
-	            return i;
-	        }
-	    }*/
-
-	   /* private void updateCasts(){
-			final ContentValues cv = new ContentValues();
-			Project.putList(Project._CASTS, cv, casts);
-			getContentResolver().update(getIntent().getData(), cv, null, null);
-	    }*/
 
 		public void onClick(View v) {
 			switch (v.getId()){
