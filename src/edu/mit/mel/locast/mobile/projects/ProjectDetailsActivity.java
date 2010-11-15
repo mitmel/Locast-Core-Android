@@ -56,6 +56,7 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 		private BaseAdapter castAdapter;
 		private Cursor c;
 		private Uri mProjectUri;
+		private Uri mProjectCasts;
 
 		private final BasicCursorContentObserver mContentObserver = new BasicCursorContentObserver(this);
 
@@ -63,9 +64,9 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 		public void onCreate(Bundle savedInstanceState) {
 	        super.onCreate(savedInstanceState);
 
-	        final Uri projectCasts = Uri.withAppendedPath(getIntent().getData(), Cast.PATH);
+	        mProjectCasts = Uri.withAppendedPath(getIntent().getData(), Cast.PATH);
 	        castAdapter = new CastCursorAdapter(this,
-	        				managedQuery(projectCasts,
+	        				managedQuery(mProjectCasts,
 	        						Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT));
 
 	        setListAdapter(castAdapter);
@@ -84,7 +85,7 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	        castList.setOnItemClickListener(this);
 	        castList.setOnCreateContextMenuListener(this);
 
-	        startService(new Intent(Intent.ACTION_SYNC, projectCasts));
+	        startService(new Intent(Intent.ACTION_SYNC, mProjectCasts));
 
 	        /////////// intent handling //////////////
 	        final String action = getIntent().getAction();
@@ -166,7 +167,7 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 			case MENU_ITEM_VIEW_CAST:
 				info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
 				startActivity(new Intent(Intent.ACTION_VIEW,
-						ContentUris.withAppendedId(Cast.CONTENT_URI, info.id)));
+						ContentUris.withAppendedId(mProjectCasts, info.id)));
 				break;
 
 			case MENU_ITEM_REMOVE_CAST:
@@ -198,11 +199,8 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 		public void onItemClick(AdapterView<?> adapter, View v, int position, long itemId) {
 			switch (adapter.getId()){
 			case android.R.id.list:
-
-				/*startActivity(new Intent(Intent.ACTION_VIEW,
-						ContentUris.withAppendedId(Uri.withAppendedPath(getIntent().getData(),Cast.PATH), itemId)));*/
 				startActivity(new Intent(Intent.ACTION_VIEW,
-						ContentUris.withAppendedId(Cast.CONTENT_URI, itemId)));
+						ContentUris.withAppendedId(mProjectCasts, itemId)));
 			}
 		}
 	}

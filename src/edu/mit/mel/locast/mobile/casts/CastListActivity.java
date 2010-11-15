@@ -49,6 +49,7 @@ import edu.mit.mel.locast.mobile.data.Cast;
 public abstract class CastListActivity extends ListActivity {
 
 	private ListAdapter adapter;
+	private Uri data;
 
 	protected SimpleWebImageCache<ThumbnailBus, ThumbnailMessage> imgCache;
 
@@ -57,7 +58,10 @@ public abstract class CastListActivity extends ListActivity {
 		setContentView(R.layout.cast_list);
 		super.onCreate(savedInstanceState);
 		imgCache = ((Application)getApplication()).getImageCache();
-
+		data = getIntent().getData();
+		if (data == null){
+			data = Cast.CONTENT_URI;
+		}
 	}
 
 	protected void loadList(Cursor c){
@@ -89,7 +93,8 @@ public abstract class CastListActivity extends ListActivity {
 	protected void onListItemClick(ListView l, View v, int position,
 			long id) {
 		super.onListItemClick(l, v, position, id);
-		final Uri uri = ContentUris.withAppendedId(Cast.CONTENT_URI, id);
+		final Uri uri = ContentUris.withAppendedId(data, id);
+
 		if (Intent.ACTION_PICK.equals(getIntent().getAction())){
 			setResult(RESULT_OK, new Intent().setData(uri));
 			finish();

@@ -28,6 +28,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -46,7 +47,7 @@ import edu.mit.mel.locast.mobile.data.Comment;
 import edu.mit.mel.locast.mobile.data.MediaProvider;
 
 public class DiscussionBoard extends ListView implements OnClickListener, OnEditorActionListener {
-
+	public static final String TAG = DiscussionBoard.class.getSimpleName();
 	private final Context mContext;
 
 	private final EditText postingTextField;
@@ -135,6 +136,7 @@ public class DiscussionBoard extends ListView implements OnClickListener, OnEdit
     }
 
     public void setUri(Uri myUri){
+    	Log.d(TAG, "Loading comments for "+myUri);
     	thisThread = myUri;
        	c = getContext().getContentResolver().query(thisThread,
 				Comment.PROJECTION, null, null, Comment.DEFAULT_SORT_BY);

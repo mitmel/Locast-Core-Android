@@ -80,7 +80,8 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		_THUMBNAIL_URI,
 		_FAVORITED,
 		_LATITUDE,
-		_LONGITUDE };
+		_LONGITUDE,
+		_DRAFT };
 
 	public static final String
 		SORT_ORDER_DEFAULT = Cast._FAVORITED + " DESC," + Cast._MODIFIED_DATE+" DESC";
