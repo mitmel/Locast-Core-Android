@@ -48,7 +48,7 @@ public abstract class Locatable {
 	};
 
 	public static final String
-		SELECTION_LAT_LON = Columns._LATITUDE + " - ? < 1 and "+Columns._LONGITUDE + " - ? < 1";
+		SELECTION_LAT_LON = "abs("+Columns._LATITUDE + " - ?) < 1 and abs("+Columns._LONGITUDE + " - ?) < 1";
 
 	public static Uri toGeoUri(Cursor c){
 		if (c.isNull(c.getColumnIndex(Columns._LATITUDE)) || c.isNull(c.getColumnIndex(Columns._LONGITUDE))) {
