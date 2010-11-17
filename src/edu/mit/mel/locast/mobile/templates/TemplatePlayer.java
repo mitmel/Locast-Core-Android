@@ -52,8 +52,35 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 	private Cursor shotListCursor = null;
 	private Uri currentCastVideo = null;
 
-	private final Handler uiHandler = new Handler(){
+	public static final int
+		MSG_STATIC_HIDE = 0,
+		MSG_STATIC_SHOW = 1;
 
+	private final Runnable startAnim = new Runnable() {
+
+		@Override
+		public void run() {
+			final ImageView noise = (ImageView)findViewById(R.id.noise);
+			((AnimationDrawable)noise.getDrawable()).start();
+		}
+	};
+
+	private final Handler uiHandler = new Handler(){
+		@Override
+		public void handleMessage(android.os.Message msg) {
+			switch (msg.what){
+				case MSG_STATIC_SHOW:{
+					findViewById(R.id.staticview).setVisibility(View.VISIBLE);
+					final ImageView noise = (ImageView)findViewById(R.id.noise);
+					noise.post(startAnim);
+				}break;
+
+				case MSG_STATIC_HIDE:{
+					findViewById(R.id.staticview).setVisibility(View.GONE);
+					onCompletion(null);
+				}break;
+			}
+		};
 	};
 
 
@@ -123,6 +150,12 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 		nextOrFinish();
 	}
 
+	@Override
+	protected void onPause() {
+		super.onPause();
+		uiHandler.removeMessages(MSG_STATIC_HIDE);
+	}
+
 	private void nextOrFinish(){
 		if (castMediaCursor != null && ! castMediaCursor.isLast()){
 			castMediaCursor.moveToNext();
@@ -132,27 +165,20 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 			setVideoFromCursor();
 			if (currentCastVideo == null){
 				//final Toast t = Toast.makeText(this, "No video for this segment", Toast.LENGTH_LONG);
-				findViewById(R.id.staticview).setVisibility(View.VISIBLE);
-				final ImageView noise = (ImageView)findViewById(R.id.noise);
+				//findViewById(R.id.staticview).setVisibility(View.VISIBLE);
+				//final ImageView noise = (ImageView)findViewById(R.id.noise);
 
 				// AnimationDrawables needs to be fully loaded before they can be started.
-				noise.post(new Runnable() {
+				/*noise.post(new Runnable() {
 					@Override
 					public void run() {
 						((AnimationDrawable)noise.getDrawable()).start();
 					}
-				});
+				});*/
+				uiHandler.sendMessage(uiHandler.obtainMessage(MSG_STATIC_SHOW));
 
-				uiHandler.postDelayed(new Runnable() {
+				uiHandler.sendMessageDelayed(uiHandler.obtainMessage(MSG_STATIC_HIDE), 3000);
 
-					@Override
-					public void run() {
-						findViewById(R.id.staticview).setVisibility(View.GONE);
-						onCompletion(null);
-
-					}
-				}, 3000);
-				//t.show();
 			}else{
 				mVideoView.start();
 			}
