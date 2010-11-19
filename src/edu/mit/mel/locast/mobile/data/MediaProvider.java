@@ -102,26 +102,32 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 22;
+		private static final int DB_VER = 23;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
 		}
 
+		private static final String JSON_SYNCABLE_ITEM_FIELDS =
+			JsonSyncableItem._ID 			 + " INTEGER PRIMARY KEY,"
+			+ JsonSyncableItem._PUBLIC_URI 	 + " TEXT UNIQUE,"
+			+ JsonSyncableItem._MODIFIED_DATE+ " INTEGER,"
+			+ JsonSyncableItem._CREATED_DATE + " INTEGER,";
+
 		@Override
 		public void onCreate(SQLiteDatabase db) {
+
 			db.execSQL("CREATE TABLE "  + CAST_TABLE_NAME + " ("
-					+ Cast._ID 			+ " INTEGER PRIMARY KEY,"
-					+ Cast._PUBLIC_ID 	+ " INTEGER,"
+					+ JSON_SYNCABLE_ITEM_FIELDS
 					+ Cast._TITLE 		+ " TEXT,"
 					+ Cast._AUTHOR 		+ " TEXT,"
 					+ Cast._DESCRIPTION + " TEXT,"
-					+ Cast._PUBLIC_URI 	+ " TEXT,"
-					+ Cast._LOCAL_URI 	+ " TEXT,"
+					+ Cast._MEDIA_PUBLIC_URI 	+ " TEXT,"
+					+ Cast._MEDIA_LOCAL_URI 	+ " TEXT,"
 					+ Cast._CONTENT_TYPE + " TEXT,"
-					+ Cast._MODIFIED_DATE+ " INTEGER,"
-					+ Cast._CREATED_DATE + " INTEGER,"
+
 					+ Cast._PROJECT_ID  + " INTEGER,"
+					+ Cast._PROJECT_URI + " TEXT,"
 					+ Cast._PRIVACY 	+ " TEXT,"
 
 					+ Cast._LATITUDE 	+ " REAL,"
@@ -134,8 +140,7 @@ public class MediaProvider extends ContentProvider {
 					+ ");"
 					);
 			db.execSQL("CREATE TABLE " + PROJECT_TABLE_NAME + " ("
-					+ Project._ID 			+ " INTEGER PRIMARY KEY,"
-					+ Project._PUBLIC_ID 	+ " INTEGER,"
+					+ JSON_SYNCABLE_ITEM_FIELDS
 					+ Project._TITLE 		+ " TEXT,"
 					+ Project._AUTHOR		+ " TEXT,"
 					+ Project._DESCRIPTION 	+ " TEXT,"
@@ -145,18 +150,14 @@ public class MediaProvider extends ContentProvider {
 					+ Project._LONGITUDE 	+ " REAL,"
 
 					+ Project._FAVORITED    + " BOOLEAN,"
-					+ Project._DRAFT        + " BOOLEAN,"
+					+ Project._DRAFT        + " BOOLEAN"
 
-					+ Project._MODIFIED_DATE + " INTEGER,"
-					+ Project._CREATED_DATE + " INTEGER"
 					+ ");"
 			);
 			db.execSQL("CREATE TABLE " + COMMENT_TABLE_NAME + " ("
-					+ Comment._ID 			+ " INTEGER PRIMARY KEY,"
-					+ Comment._PUBLIC_ID 	+ " INTEGER,"
+					+ JSON_SYNCABLE_ITEM_FIELDS
 					+ Comment._AUTHOR		+ " TEXT,"
 					+ Comment._AUTHOR_ICON	+ " TEXT,"
-					+ Comment._MODIFIED_DATE + " INTEGER,"
 					+ Comment._PARENT_ID     + " INTEGER,"
 					+ Comment._PARENT_CLASS  + " TEXT,"
 					+ Comment._COMMENT_NUMBER+ " TEXT,"
@@ -173,11 +174,9 @@ public class MediaProvider extends ContentProvider {
 					+ ");"
 			);
 			db.execSQL("CREATE TABLE "+ CAST_MEDIA_TABLE_NAME + " ("
-					+ CastMedia._ID            + " INTEGER PRIMARY KEY,"
-					+ CastMedia._PUBLIC_ID     + " INTEGER,"
+					+ JSON_SYNCABLE_ITEM_FIELDS
 					+ CastMedia._PARENT_ID     + " INTEGER,"
 					+ CastMedia._LIST_IDX      + " INTEGER,"
-					+ CastMedia._MODIFIED_DATE + " INTEGER,"
 					+ CastMedia._MEDIA_URL     + " TEXT,"
 					+ CastMedia._LOCAL_URI     + " TEXT,"
 					+ CastMedia._MIME_TYPE     + " TEXT,"
@@ -191,8 +190,7 @@ public class MediaProvider extends ContentProvider {
 			);
 
 			db.execSQL("CREATE TABLE "+ SHOTLIST_TABLE_NAME + " ("
-					+ ShotList._ID            + " INTEGER PRIMARY KEY,"
-					+ ShotList._PUBLIC_ID     + " INTEGER,"
+					+ JSON_SYNCABLE_ITEM_FIELDS
 					+ ShotList._PARENT_ID     + " INTEGER,"
 					+ ShotList._LIST_IDX      + " INTEGER,"
 					+ ShotList._DIRECTION     + " TEXT,"
@@ -415,6 +413,14 @@ public class MediaProvider extends ContentProvider {
 		}
 		values.remove(JsonSyncableItem._ID);
 
+		// XXX remove this when the API updates
+		if (syncable){
+			final String pubUri = values.getAsString(JsonSyncableItem._PUBLIC_URI);
+			if (pubUri != null && !pubUri.contains("/")){
+				values.put(JsonSyncableItem._PUBLIC_URI, getPublicPath(getContext().getContentResolver(), uri, Long.valueOf(pubUri)));
+			}
+		}
+
 		Uri newItem = null;
 		boolean isDraft = false;
 
@@ -431,8 +437,8 @@ public class MediaProvider extends ContentProvider {
 
 				update(Uri.withAppendedPath(newItem, Tag.PATH), cvTags, null, null);
 
-				if (values.containsKey(Project._DRAFT)){
-					isDraft = values.getAsBoolean(Project._DRAFT);
+				if (values.containsKey(Cast._DRAFT)){
+					isDraft = values.getAsBoolean(Cast._DRAFT);
 				}else{
 					isDraft = false;
 				}
@@ -732,6 +738,14 @@ public class MediaProvider extends ContentProvider {
 			needSync = true;
 		}
 
+		// XXX remove this when the API updates
+		if (canSync){
+			final String pubUri = values.getAsString(JsonSyncableItem._PUBLIC_URI);
+			if (pubUri != null && !pubUri.contains("/")){
+				values.put(JsonSyncableItem._PUBLIC_URI, getPublicPath(getContext().getContentResolver(), uri, Long.valueOf(pubUri)));
+			}
+		}
+
 		switch (uriMatcher.match(uri)){
 		case MATCHER_CAST_DIR:
 			count = db.update(CAST_TABLE_NAME, values, where, whereArgs);
@@ -904,6 +918,14 @@ public class MediaProvider extends ContentProvider {
 		return getPublicPath(cr, uri, null, false);
 	}
 
+	/**
+	 * Returns a public ID to an item, given the parent URI and a public ID
+	 *
+	 * @param cr
+	 * @param uri URI of the parent item
+	 * @param publicId public ID of the child item
+	 * @return
+	 */
 	public static String getPublicPath(ContentResolver cr, Uri uri, Long publicId){
 		return getPublicPath(cr, uri, publicId, false);
 	}
@@ -919,8 +941,8 @@ public class MediaProvider extends ContentProvider {
 	 * @return
 	 */
 	public static String getPublicPath(ContentResolver cr, Uri uri, Long publicId, boolean parent){
-		final String[] generalProjection = {JsonSyncableItem._ID, JsonSyncableItem._PUBLIC_ID};
-		final String[] castProjection = {JsonSyncableItem._ID, JsonSyncableItem._PUBLIC_ID, Cast._PROJECT_ID};
+		final String[] generalProjection = {JsonSyncableItem._ID, JsonSyncableItem._PUBLIC_URI};
+		final String[] castProjection = {JsonSyncableItem._ID, JsonSyncableItem._PUBLIC_URI, Cast._PROJECT_ID, Cast._PROJECT_URI};
 
 		String[] projection = generalProjection;
 		String path = null;
@@ -929,6 +951,7 @@ public class MediaProvider extends ContentProvider {
 		switch (match){
 		case MATCHER_CAST_ITEM:
 			projection = castProjection;
+
 		case MATCHER_PROJECT_ITEM:{
 			Cursor c;
 			c = cr.query(uri, projection, null, null, null);
@@ -936,17 +959,24 @@ public class MediaProvider extends ContentProvider {
 				if (match == MATCHER_PROJECT_ITEM){
 					path = "/"+Project.SERVER_PATH;
 				}else if(match == MATCHER_CAST_ITEM){
-					if (!c.isNull(c.getColumnIndex(Cast._PROJECT_ID))){
+					if (!c.isNull(c.getColumnIndex(Cast._PROJECT_URI))){
+						path = c.getString(c.getColumnIndex(Cast._PROJECT_URI)) + Cast.SERVER_PATH;
+
+					}else if (!c.isNull(c.getColumnIndex(Cast._PROJECT_ID))){
 						path = getPublicPath(cr, ContentUris.withAppendedId(Project.CONTENT_URI, c.getLong(c.getColumnIndex(Cast._PROJECT_ID)))) + Cast.SERVER_PATH;
 					}else{
 						path = "/"+Cast.SERVER_PATH;
 					}
 				}
-
+				final int pubUriCol = c.getColumnIndex(JsonSyncableItem._PUBLIC_URI);
 				if (parent){
 					// we won't add anything to the path. We've already got what we want.
-				}else if(!c.isNull(c.getColumnIndex(JsonSyncableItem._PUBLIC_ID))){
-					path += c.getLong(c.getColumnIndex(JsonSyncableItem._PUBLIC_ID)) + "/";
+				}else if(!c.isNull(pubUriCol)){
+					if (!c.getString(pubUriCol).contains("/")){
+						path += c.getString(pubUriCol) + "/";
+					}else{
+						path = c.getString(pubUriCol);
+					}
 
 				}else if (publicId != null && publicId > 0){
 					path += publicId + "/";
@@ -961,14 +991,14 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CAST_DIR:
 			path = "/"+Cast.SERVER_PATH;
 			if (publicId != null){
-				path += publicId;
+				path += publicId + "/";
 			}
 			break;
 
 		case MATCHER_PROJECT_DIR:
 			path = "/"+Project.SERVER_PATH;
 			if (publicId != null){
-				path += publicId;
+				path += publicId + "/";
 			}
 			break;
 
@@ -1015,7 +1045,7 @@ public class MediaProvider extends ContentProvider {
 
 		}
 		path = path.replaceAll("//", "/"); // hack to get around a tedious problem
-		Log.d("MediaProvider", "gave "+path+" for a public path for "+uri);
+		Log.d("MediaProvider", "gave "+path+" for a public path for "+uri + ((publicId != null && publicId >= 0) ? " with public ID "+publicId : ""));
 		return path;
 
 	}

@@ -43,7 +43,7 @@ public class Comment extends JsonSyncableItem {
 
 	public final static String[] PROJECTION = {
 			_ID,
-			_PUBLIC_ID,
+			_PUBLIC_URI,
 			_AUTHOR,
 			_AUTHOR_ICON,
 			_MODIFIED_DATE,
@@ -85,7 +85,7 @@ public class Comment extends JsonSyncableItem {
 			author.put(_AUTHOR_ICON, new SyncFieldMap("icon", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_BOTH));
 			put("author_object", new SyncMapChain("author", author, SyncItem.SYNC_FROM));
 
-			put(_PUBLIC_ID, 		new SyncFieldMap("id", SyncFieldMap.INTEGER, SyncItem.SYNC_FROM));
+			put(_PUBLIC_URI, 		new SyncFieldMap("id", SyncFieldMap.STRING, SyncItem.SYNC_FROM));
 			put(_MODIFIED_DATE,	new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM));
 			put(_DESCRIPTION, 	new SyncFieldMap("content", SyncFieldMap.STRING));
 		}

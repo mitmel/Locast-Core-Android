@@ -4,7 +4,6 @@ import android.net.Uri;
 
 public class ShotList extends JsonSyncableItem {
 	public static final String
-		_PUBLIC_ID   = "id",
 		_DIRECTION   = "direction",
 		_DURATION    = "duration",
 		_PARENT_ID   = "parent_id",
@@ -15,7 +14,7 @@ public class ShotList extends JsonSyncableItem {
 	public final static Uri CONTENT_URI = Uri.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
 	public final static String[] PROJECTION = {
 		_ID,
-		_PUBLIC_ID,
+		_PUBLIC_URI,
 		_DIRECTION,
 		_DURATION,
 		_PARENT_ID,
@@ -40,7 +39,7 @@ public class ShotList extends JsonSyncableItem {
 	static {
 		SYNC_MAP.put(_DURATION,  new SyncFieldMap("duration", SyncFieldMap.DURATION));
 		SYNC_MAP.put(_DIRECTION, new SyncFieldMap("direction", SyncFieldMap.STRING));
-		SYNC_MAP.put(_PUBLIC_ID, new SyncFieldMap("id", SyncFieldMap.INTEGER, SyncFieldMap.SYNC_FROM));
+		SYNC_MAP.put(_PUBLIC_URI, new SyncFieldMap("id", SyncFieldMap.STRING, SyncFieldMap.SYNC_FROM));
 	}
 
 	@Override

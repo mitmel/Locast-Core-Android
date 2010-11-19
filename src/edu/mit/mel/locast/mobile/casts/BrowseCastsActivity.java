@@ -57,7 +57,7 @@ public class BrowseCastsActivity extends CastListActivity implements LocationLis
 		final ArrayList<String> tag = new ArrayList<String>();
 		tag.add(TaggableItem.addPrefixToTag(TaggableItem.SYSTEM_PREFIX, "_featured"));
 
-		//adapter.addSection("Unpublished", new CastCursorAdapter(this, managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._PUBLIC_ID + "=null", null, null)));
+		adapter.addSection("Unpublished", new CastCursorAdapter(this, managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._PUBLIC_URI + "=null OR "+Cast._DRAFT, null, null)));
 		adapter.addSection("featured", new CastCursorAdapter(this, managedQuery(TaggableItem.getTagUri(Cast.CONTENT_URI, tag), TaggableItem.getTagProjection(Cast.PROJECTION), null, null, Cast.SORT_ORDER_DEFAULT)));
 
 		nearbyCursorAdapter = new CastCursorAdapter(this, managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._ID + "=-1", null, null));

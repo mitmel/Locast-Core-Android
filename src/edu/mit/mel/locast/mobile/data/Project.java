@@ -45,7 +45,7 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 
 	public final static String[] PROJECTION = {
 		_ID,
-		_PUBLIC_ID,
+		_PUBLIC_URI,
 		_MODIFIED_DATE,
 		_CREATED_DATE,
 		_TITLE,

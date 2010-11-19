@@ -191,7 +191,9 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 					syncProgress.completeTask();
 
 				}catch (final SyncItemDeletedException side){
-					side.printStackTrace();
+					Log.d(TAG, side.getLocalizedMessage() + " Deleting...");
+					cr.delete(side.getItem(), null, null);
+					//side.printStackTrace();
 					syncProgress.completeTask();
 					continue;
 				}
@@ -220,9 +222,16 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 
 		Uri locUri = null;
 		ContentValues cvNet = null;
+
+		final Context context = getApplicationContext();
+		final ContentResolver cr = context.getContentResolver();
 		if (jsonObject != null){
 			try {
-				cvNet = JsonSyncableItem.fromJSON(getApplicationContext(), null, jsonObject, syncMap);
+				cvNet = JsonSyncableItem.fromJSON(context, null, jsonObject, syncMap);
+				final String pubUri = cvNet.getAsString(JsonSyncableItem._PUBLIC_URI);
+				if (pubUri != null && !pubUri.contains("/")){
+					cvNet.put(JsonSyncableItem._PUBLIC_URI, MediaProvider.getPublicPath(cr,  sync.getContentUri(), Long.valueOf(pubUri)));
+				}
 			}catch (final Exception e){
 				final SyncException se = new SyncException("Problem loading JSON object.");
 				se.initCause(e);
@@ -230,7 +239,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			}
 		}
 
-		final String contentType = getApplicationContext().getContentResolver().getType(toSync);
+		final String contentType = cr.getType(toSync);
 
 		if (c != null) {
 			if (contentType.startsWith("vnd.android.cursor.dir")){
@@ -250,13 +259,16 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			syncMap.onPreSyncItem(cr, locUri, c);
 		}
 
-		// when the PUBLIC_ID is null, that means it's only local
-		final int pubIdColumn = (c != null) ? c.getColumnIndex(JsonSyncableItem._PUBLIC_ID) : -1;
-		if (c != null && (c.isNull(pubIdColumn) || c.getInt(pubIdColumn) == 0)){
+		if (c != null){
+			MediaProvider.dumpCursorToLog(c, sync.getFullProjection());
+		}
+		// when the PUBLIC_URI is null, that means it's only local
+		final int pubUriColumn = (c != null) ? c.getColumnIndex(JsonSyncableItem._PUBLIC_URI) : -1;
+		if (c != null && (c.isNull(pubUriColumn) || c.getString(pubUriColumn) == "")){
 			// new content on the local side only. Gotta publish.
 
 			try {
-				jsonObject = JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, syncMap);
+				jsonObject = JsonSyncableItem.toJSON(context, locUri, c, syncMap);
 
 				final String publicPath = MediaProvider.getPostPath(cr, locUri);
 				Log.d(TAG, "Posting "+locUri + " to " + publicPath);
@@ -265,7 +277,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 				// which contains the public ID that we need.
 				jsonObject = nc.postJson(publicPath, jsonObject);
 
-				final ContentValues cvUpdate = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, syncMap);
+				final ContentValues cvUpdate = JsonSyncableItem.fromJSON(context, locUri, jsonObject, syncMap);
 				if (cr.update(locUri, cvUpdate, null, null) == 1){
 					// at this point, server and client should be in sync.
 					syncdItems.add(locUri);
@@ -284,9 +296,10 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 
 			// only on the remote side, so pull it in.
 		}else if (c == null && cvNet != null) {
+			final String[] params = {cvNet.getAsString(JsonSyncableItem._PUBLIC_URI)};
 			c = cr.query(toSync,
 					sync.getFullProjection(),
-					JsonSyncableItem._PUBLIC_ID+"="+cvNet.getAsLong(JsonSyncableItem._PUBLIC_ID), null, null);
+					JsonSyncableItem._PUBLIC_URI+"=?", params, null);
 			c.moveToFirst();
 			needToCloseCursor = true;
 			if (c.getCount() == 0){
@@ -301,9 +314,10 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 
 		// we've now found data on both sides, so sync them.
 		if (! modified && c != null){
-			final long pubId = c.getLong(c.getColumnIndex(JsonSyncableItem._PUBLIC_ID));
-
-			final String publicPath = MediaProvider.getPublicPath(cr, toSync, pubId);
+			final String publicPath = c.getString(c.getColumnIndex(JsonSyncableItem._PUBLIC_URI));
+//			if (!publicPath.contains("/")){
+//				publicPath = MediaProvider.getPublicPath(cr, toSync, Long.valueOf(publicPath));
+//			}
 			try {
 
 				if (cvNet == null){
@@ -319,7 +333,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 							if (jsonObject == null){
 								jsonObject = nc.getObject(publicPath);
 							}
-							cvNet = JsonSyncableItem.fromJSON(getApplicationContext(), locUri, jsonObject, syncMap);
+							cvNet = JsonSyncableItem.fromJSON(context, locUri, jsonObject, syncMap);
 
 						}
 					}catch (final HttpResponseException hre){
@@ -348,7 +362,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 
 				}else if (netLastModified.before(locLastModified)){
 					// local is more up to date, propagate!
-					jsonObject = nc.putJson(publicPath, JsonSyncableItem.toJSON(getApplicationContext(), locUri, c, syncMap));
+					jsonObject = nc.putJson(publicPath, JsonSyncableItem.toJSON(context, locUri, c, syncMap));
 
 					Log.d("LocastSync", cvNet + " is older than "+locUri);
 					modified = true;
@@ -378,7 +392,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			throw new RuntimeException("Never got a local URI for a sync'd item.");
 		}
 
-		syncMap.onPostSyncItem(getApplicationContext(), locUri, jsonObject, modified);
+		syncMap.onPostSyncItem(context, locUri, jsonObject, modified);
 
 		syncdItems.add(locUri);
 

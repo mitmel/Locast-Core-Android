@@ -47,16 +47,16 @@ import edu.mit.mel.locast.mobile.widget.LocationLink;
 import edu.mit.mel.locast.mobile.widget.TagListView;
 
 public class CastDetailsActivity extends Activity implements OnClickListener, BasicCursorContentObserverWatcher {
+	@SuppressWarnings("unused")
 	private static final String TAG = CastDetailsActivity.class.getSimpleName();
 	private Cursor c;
 	private Uri castUri;
 
 	private ImageView mediaThumbView;
 	private String contentType;
-	private Uri publicUri;
+	private Uri mediaPublicUri;
 	private boolean hasLocalVids = false;
 	private Uri geoUri;
-	private int publicId = -1;
 
 	private WebImageLoader imgLoader;
 
@@ -140,11 +140,8 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 			contentType = "video/3gpp";
 		}
 
-		if (!c.isNull(c.getColumnIndex(Cast._PUBLIC_URI))){
-			publicUri = Uri.parse(c.getString(c.getColumnIndex(Cast._PUBLIC_URI)));
-		}
-		if (!c.isNull(c.getColumnIndex(Cast._PUBLIC_ID))) {
-			publicId = c.getInt(c.getColumnIndex(Cast._PUBLIC_ID));
+		if (!c.isNull(c.getColumnIndex(Cast._MEDIA_PUBLIC_URI))){
+			mediaPublicUri = Uri.parse(c.getString(c.getColumnIndex(Cast._MEDIA_PUBLIC_URI)));
 		}
 
 		final LocationLink locButton = (LocationLink)findViewById(R.id.location);
@@ -229,9 +226,9 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 		switch (v.getId()){
 		case R.id.media_thumbnail:{
 
-			if (publicUri != null && !hasLocalVids && AndroidNetworkClient.getInstance(this).isConnectionWorking()){
+			if (mediaPublicUri != null && !hasLocalVids && AndroidNetworkClient.getInstance(this).isConnectionWorking()){
 				final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
-				viewVideo.setDataAndType(publicUri, contentType);
+				viewVideo.setDataAndType(mediaPublicUri, contentType);
 				startActivity(viewVideo);
 
 			}else if (hasLocalVids){
@@ -239,7 +236,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 				startActivity(viewVideos);
 
 			}else{
-				if (publicUri != null){
+				if (mediaPublicUri != null){
 					Toast.makeText(this, "Could not play video.", Toast.LENGTH_SHORT).show();
 				}else{
 					Toast.makeText(this, "Cast video has not been uploaded yet.", Toast.LENGTH_SHORT).show();

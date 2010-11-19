@@ -49,13 +49,13 @@ import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
  */
 public abstract class JsonSyncableItem implements BaseColumns {
 	public static final String
-		_PUBLIC_ID      = "id",
+		_PUBLIC_URI      = "uri",
 		_MODIFIED_DATE  = "modified",
 		_CREATED_DATE 	= "created";
 
 	public static final String[] SYNC_PROJECTION = {
 		_ID,
-		_PUBLIC_ID,
+		_PUBLIC_URI,
 		_MODIFIED_DATE,
 		_CREATED_DATE,
 
@@ -87,8 +87,8 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		public ItemSyncMap() {
 			super();
 
-			put(_PUBLIC_ID, 		new SyncFieldMap("id", SyncFieldMap.INTEGER, SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_BOTH));
-			put(_MODIFIED_DATE,	new SyncFieldMap("modified", SyncFieldMap.DATE, SyncItem.SYNC_FROM));
+			put(_PUBLIC_URI, 		new SyncFieldMap("id", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM));
+			put(_MODIFIED_DATE,		new SyncFieldMap("modified", SyncFieldMap.DATE, SyncItem.SYNC_FROM));
 			put(_CREATED_DATE,		new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 		}
 	}
@@ -527,7 +527,6 @@ public abstract class JsonSyncableItem implements BaseColumns {
         	}
 			return retval;
 		}
-
 	}
 
 	/**

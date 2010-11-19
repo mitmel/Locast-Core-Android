@@ -27,6 +27,7 @@ import java.util.TreeMap;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.ContentResolver;
@@ -42,6 +43,7 @@ import android.provider.MediaStore.Video.Media;
 import android.util.Log;
 import edu.mit.mel.locast.mobile.StreamUtils;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
+import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
 
 public class Cast extends TaggableItem implements MediaScannerConnectionClient, Favoritable.Columns, Locatable.Columns {
 	public final static String TAG = "LocastSyncCast";
@@ -57,24 +59,26 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		_DESCRIPTION 	= "description";
 
 	public static final String
-		_LOCAL_URI = "local_uri",
-		_PUBLIC_URI = "public_uri",
+		_MEDIA_LOCAL_URI = "local_uri",
+		_MEDIA_PUBLIC_URI = "public_uri",
 		_CONTENT_TYPE = "content_type",
 		_PROJECT_ID   = "project_id",
+		_PROJECT_URI = "project_uri",
 
 		_THUMBNAIL_URI = "thumbnail_uri";
 
 	public static final String[] PROJECTION =
 	{   _ID,
+		_PUBLIC_URI,
+		_MEDIA_PUBLIC_URI,
 		_TITLE,
 		_DESCRIPTION,
 		_PRIVACY,
 		_AUTHOR,
 		_CREATED_DATE,
-		_PUBLIC_ID,
 		_PROJECT_ID,
-		_LOCAL_URI,
-		_PUBLIC_URI,
+		_PROJECT_URI,
+		_MEDIA_LOCAL_URI,
 		_CONTENT_TYPE,
 		_MODIFIED_DATE,
 		_THUMBNAIL_URI,
@@ -120,7 +124,38 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 			put(_TITLE, 			new SyncFieldMap("title", SyncFieldMap.STRING));
 
 			put(_THUMBNAIL_URI, 	new SyncFieldMap("screenshot", SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
-			put(_PUBLIC_URI,        new SyncFieldMap("file_url",   SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
+			put(_MEDIA_PUBLIC_URI,  new SyncFieldMap("file_url",   SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
+			put(_PROJECT_URI,		new SyncFieldMap("project",    SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
+
+			put(_PROJECT_ID, 		new SyncCustom("project", SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL) {
+
+				@Override
+				public Object toJSON(Context context, Uri localItem, Cursor c, String lProp)
+						throws JSONException, NetworkProtocolException, IOException {
+					return null;
+				}
+
+				/* (non-Javadoc)
+				 *
+				 * This field will only work if the project has been sync'd before the cast.
+				 *
+				 * @see edu.mit.mel.locast.mobile.data.JsonSyncableItem.SyncItem#fromJSON(android.content.Context, android.net.Uri, org.json.JSONObject, java.lang.String)
+				 */
+				@Override
+				public ContentValues fromJSON(Context context, Uri localItem,
+						JSONObject item, String lProp) throws JSONException,
+						NetworkProtocolException, IOException {
+					final String projectUri = MediaProvider.getPublicPath(context.getContentResolver(), Project.CONTENT_URI, item.optLong(this.remoteKey));
+					final String[] selectionArgs = {projectUri};
+					final Cursor c = context.getContentResolver().query(Project.CONTENT_URI, Project.SYNC_PROJECTION, Project._PUBLIC_URI + "=?", selectionArgs, null);
+					final ContentValues cv = new ContentValues();
+					if (c.moveToFirst()){
+						cv.put(lProp, c.getLong(c.getColumnIndex(_ID)));
+					}
+					c.close();
+					return cv;
+				}
+			});
 
 
 			put("_contents", new OrderedList.SyncMapItem("castvideos", new CastMedia(), CastMedia.PATH));
@@ -310,7 +345,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 
 
 		final ContentValues cvCast = new ContentValues();
-		cvCast.put(_LOCAL_URI, uri.toString());
+		cvCast.put(_MEDIA_LOCAL_URI, uri.toString());
 		final ScanQueueItem item = scanMap.get(path);
 		Log.d("Locast", "new local uri " + uri + " for cast "+item.castUri);
 		// TODO should be passing in the modified date here to prevent marking the cast as dirty.
@@ -360,7 +395,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 
 		if (newLocUri != null){
 			final ContentValues cvCast = new ContentValues();
-			cvCast.put(_LOCAL_URI, newLocUri);
+			cvCast.put(_MEDIA_LOCAL_URI, newLocUri);
 			final String[] castProjection = {_ID, _MODIFIED_DATE};
 			final Cursor castCursor = context.getContentResolver().query(uri, castProjection, null, null, null);
 			castCursor.moveToFirst();

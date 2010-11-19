@@ -58,9 +58,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		ACTION_CAST_FROM_MEDIA_URI = "edu.mit.mobile.android.locast.share.ACTION_CAST_FROM_MEDIA_URI",
 		ACTION_TOGGLE_STARRED = "edu.mit.mobile.android.locast.ACTION_TOGGLE_STARRED";
 
-	private final static int UNPUBLISHED_CAST = -1;
-
-	private int castPublicId = UNPUBLISHED_CAST;
+	private String castPublicUri = null;
 
 	private IncrementalLocator iloc;
 
@@ -93,7 +91,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
         final String type = i.getType();
 
         if (ACTION_TOGGLE_STARRED.equals(action)){
-        	final ContentResolver cr = getContentResolver();
+        	//final ContentResolver cr = getContentResolver();
         	//String[] STARRED_PROJECTION = {Cast._ID, Cast._};
         	//cr.query(uri, projection, selection, selectionArgs, sortOrder);
 
@@ -164,11 +162,11 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 
 		tagList.addTags(Cast.getTags(getContentResolver(), castUri));
 
-		if (!c.isNull(c.getColumnIndex(Cast._PUBLIC_ID))){
-			castPublicId = c.getInt(c.getColumnIndex(Cast._PUBLIC_ID));
-		}
 		if (!c.isNull(c.getColumnIndex(Cast._PUBLIC_URI))){
-			mediaUri = Uri.parse(c.getString(c.getColumnIndex(Cast._PUBLIC_URI)));
+			castPublicUri = c.getString(c.getColumnIndex(Cast._PUBLIC_URI));
+		}
+		if (!c.isNull(c.getColumnIndex(Cast._MEDIA_PUBLIC_URI))){
+			mediaUri = Uri.parse(c.getString(c.getColumnIndex(Cast._MEDIA_PUBLIC_URI)));
 		}
 		if (!c.isNull(c.getColumnIndex(Cast._THUMBNAIL_URI))){
 			final String thumbString = c.getString(c.getColumnIndex(Cast._THUMBNAIL_URI));
@@ -229,11 +227,11 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		final ContentValues cv = new ContentValues();
 		cv.put(Cast._TITLE, mTitleField.getText().toString());
 		cv.put(Cast._DESCRIPTION, descriptionField.getText().toString());
-		cv.put(Cast._PUBLIC_URI, (mediaUri != null && !mediaUri.equals("null")) ? mediaUri.toString(): null);
+		cv.put(Cast._MEDIA_PUBLIC_URI, (mediaUri != null && !mediaUri.equals("null")) ? mediaUri.toString(): null);
 		cv.put(Cast._CONTENT_TYPE, contentType);
 
-		if (castPublicId != UNPUBLISHED_CAST) {
-			cv.put(Cast._PUBLIC_ID, castPublicId);
+		if (castPublicUri != null) {
+			cv.put(Cast._PUBLIC_URI, castPublicUri);
 		}
 		cv.put(Cast._PRIVACY, Cast.PRIVACY_LIST[privacy.getSelectedItemPosition()]);
 

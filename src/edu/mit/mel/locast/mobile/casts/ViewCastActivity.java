@@ -120,7 +120,7 @@ public class ViewCastActivity extends TabActivity implements BasicCursorContentO
 		}
 
 		// only add the discussion tab if it is published already.
-		if (!mCursor.isNull(mCursor.getColumnIndex(Cast._PUBLIC_ID))){
+		if (!mCursor.isNull(mCursor.getColumnIndex(Cast._PUBLIC_URI))){
 			tabHost.addTab(tabHost.newTabSpec("discussion")
 					.setContent(new Intent(Intent.ACTION_VIEW,
 							Uri.withAppendedPath(data, Comment.PATH)))

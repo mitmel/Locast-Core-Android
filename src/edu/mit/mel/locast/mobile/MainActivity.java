@@ -16,10 +16,10 @@ package edu.mit.mel.locast.mobile;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.TabActivity;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -167,7 +167,7 @@ public class MainActivity extends TabActivity {
 		} // switch requestCode
 	}
 
-	public static void resetDB(final Context context){
+	public static void resetDB(final Activity context){
 		final AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle(R.string.app_name);
 		builder.setMessage("This will erase all the Locast information stored on the device, aside from the video files themselves. Do you want to reset Locast?");
@@ -188,7 +188,7 @@ public class MainActivity extends TabActivity {
 				cr.delete(CastMedia.CONTENT_URI, null, null);
 				cr.delete(ShotList.CONTENT_URI, null, null);
 				Toast.makeText(context.getApplicationContext(), "Databases reset.", Toast.LENGTH_LONG).show();
-
+				context.finish();
 			}
 		});
 
@@ -198,8 +198,9 @@ public class MainActivity extends TabActivity {
 
 	public void startSync(){
 
-		startService(new Intent(Intent.ACTION_SYNC, Cast.CONTENT_URI));
 		startService(new Intent(Intent.ACTION_SYNC, Project.CONTENT_URI));
+		startService(new Intent(Intent.ACTION_SYNC, Cast.CONTENT_URI));
+
 	}
 
 	private class TestNetworkTask extends AsyncTask<Void, Void, Boolean>{

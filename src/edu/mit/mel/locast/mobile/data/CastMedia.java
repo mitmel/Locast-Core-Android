@@ -17,7 +17,7 @@ public class CastMedia extends JsonSyncableItem implements OrderedList.Columns{
 
 	public final static String[] PROJECTION = {
 		_ID,
-		_PUBLIC_ID,
+		_PUBLIC_URI,
 		_MODIFIED_DATE,
 		_MEDIA_URL,
 		_LOCAL_URI,
@@ -55,7 +55,7 @@ public class CastMedia extends JsonSyncableItem implements OrderedList.Columns{
 
 		public ItemSyncMap() {
 			super();
-			put(_PUBLIC_ID, 	new SyncFieldMap("id", SyncFieldMap.INTEGER,              SyncFieldMap.SYNC_FROM));
+			put(_PUBLIC_URI, 	new SyncFieldMap("id", SyncFieldMap.STRING,              SyncFieldMap.SYNC_FROM));
 			put(_MODIFIED_DATE,new SyncFieldMap("modified", SyncFieldMap.DATE, SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));
 			put(_SCREENSHOT, 	new SyncFieldMap("screenshot", SyncFieldMap.STRING,SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));
 			put(_PREVIEW_URL, 	new SyncFieldMap("preview_url", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));

@@ -129,7 +129,7 @@ public class ViewProjectActivity extends TabActivity {
 										this, ProjectDetailsActivity.class))
 				.setIndicator(r.getString(R.string.tab_project), r.getDrawable(R.drawable.icon_project)));
 
-		if (!mCursor.isNull(mCursor.getColumnIndex(Project._PUBLIC_ID))){
+		if (!mCursor.isNull(mCursor.getColumnIndex(Project._PUBLIC_URI))){
 
 		tabHost.addTab(tabHost.newTabSpec("discussion")
 				.setContent(new Intent(Intent.ACTION_VIEW,
