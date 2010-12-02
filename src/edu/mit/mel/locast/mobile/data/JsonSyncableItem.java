@@ -50,12 +50,14 @@ import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
 public abstract class JsonSyncableItem implements BaseColumns {
 	public static final String
 		_PUBLIC_URI      = "uri",
+		_PUBLIC_ID       = "pub_id",
 		_MODIFIED_DATE  = "modified",
 		_CREATED_DATE 	= "created";
 
 	public static final String[] SYNC_PROJECTION = {
 		_ID,
 		_PUBLIC_URI,
+		_PUBLIC_ID,
 		_MODIFIED_DATE,
 		_CREATED_DATE,
 
@@ -87,7 +89,8 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		public ItemSyncMap() {
 			super();
 
-			put(_PUBLIC_URI, 		new SyncFieldMap("id", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM));
+			put(_PUBLIC_URI, 		new SyncFieldMap("uri", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM));
+			put(_PUBLIC_ID, 		new SyncFieldMap("id", SyncFieldMap.INTEGER, SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM));
 			put(_MODIFIED_DATE,		new SyncFieldMap("modified", SyncFieldMap.DATE, SyncItem.SYNC_FROM));
 			put(_CREATED_DATE,		new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 		}
@@ -219,13 +222,21 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		for (final String lProp: mySyncMap.keySet()){
 			final SyncItem map = mySyncMap.get(lProp);
 
-			if (!lProp.startsWith("_") && map.isOptional() && c.isNull(c.getColumnIndex(lProp))){
-				continue;
-			}
-
 			if ((map.getDirection() & SyncItem.SYNC_TO) == 0){
 				continue;
 			}
+
+			final int colIndex = c.getColumnIndex(lProp);
+			// if it's a real property that's optional and is null on the local side
+			if (!lProp.startsWith("_") && map.isOptional()){
+				if (colIndex == -1){
+					throw new RuntimeException("Programming error: Cursor does not have column '"+lProp+"', though sync map says it should. Sync Map: "+mySyncMap );
+				}
+				if (c.isNull(colIndex)){
+					continue;
+				}
+			}
+
 			final Object jsonObject = map.toJSON(context, localItem, c, lProp);
 			if (jsonObject instanceof MultipleJsonObjectKeys){
 				for (final Entry<String, Object> entry :((MultipleJsonObjectKeys) jsonObject).entrySet()){

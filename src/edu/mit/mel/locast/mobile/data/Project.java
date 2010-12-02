@@ -30,7 +30,7 @@ import android.net.Uri;
  * @author stevep
  *
  */
-public class Project extends TaggableItem implements Favoritable.Columns, Locatable.Columns {
+public class Project extends TaggableItem implements Favoritable.Columns, Locatable.Columns, Commentable.Columns {
 	public final static String PATH = "projects";
 	public final static Uri CONTENT_URI = Uri
 			.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
@@ -41,7 +41,8 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 
 	public static final String
 		_TITLE = "title",
-		_DESCRIPTION = "description";
+		_DESCRIPTION = "description",
+		_CASTS_URI = "casts_uri";
 
 	public final static String[] PROJECTION = {
 		_ID,
@@ -51,6 +52,7 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 		_TITLE,
 		_AUTHOR,
 		_DESCRIPTION,
+		_CASTS_URI,
 		_LATITUDE,
 		_LONGITUDE,
 		_PRIVACY,
@@ -91,8 +93,11 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 
 			put(_DESCRIPTION, 		new SyncFieldMap("description", SyncFieldMap.STRING));
 			put(_TITLE, 			new SyncFieldMap("title", SyncFieldMap.STRING));
+			put(_CASTS_URI,			new SyncFieldMap("casts", SyncFieldMap.STRING, SyncFieldMap.SYNC_FROM | SyncFieldMap.FLAG_OPTIONAL));
+
 			putAll(Locatable.SYNC_MAP);
 			putAll(Favoritable.SYNC_MAP);
+			putAll(Commentable.SYNC_MAP);
 			put("_shotlist",   new OrderedList.SyncMapItem("shotlist", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new ShotList(), ShotList.PATH));
 
 			remove(_PRIVACY);

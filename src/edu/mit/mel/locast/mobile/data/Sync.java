@@ -174,7 +174,11 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			} catch (final SyncException se){
 				throw se;
 			} catch (final Exception e1) {
-				final SyncException se = new SyncException("Sync error: " + e1.getLocalizedMessage());
+				String message = e1.getLocalizedMessage();
+				if (message == null){
+					message = "caused by " + e1.getClass().getCanonicalName();
+				}
+				final SyncException se = new SyncException("Sync error: " + message);
 				se.initCause(e1);
 				throw se;
 			}
@@ -228,10 +232,13 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 		if (jsonObject != null){
 			try {
 				cvNet = JsonSyncableItem.fromJSON(context, null, jsonObject, syncMap);
-				final String pubUri = cvNet.getAsString(JsonSyncableItem._PUBLIC_URI);
-				if (pubUri != null && !pubUri.contains("/")){
-					cvNet.put(JsonSyncableItem._PUBLIC_URI, MediaProvider.getPublicPath(cr,  sync.getContentUri(), Long.valueOf(pubUri)));
+				// XXX remove this when the API updates
+				Uri itemToGetPubPathOf = toSync;
+				if (itemToGetPubPathOf == null){
+					itemToGetPubPathOf = sync.getContentUri();
 				}
+				MediaProvider.translateIdToUri(context, cvNet, true, itemToGetPubPathOf);
+
 			}catch (final Exception e){
 				final SyncException se = new SyncException("Problem loading JSON object.");
 				se.initCause(e);
@@ -258,10 +265,9 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 
 			syncMap.onPreSyncItem(cr, locUri, c);
 		}
-
-		if (c != null){
-			MediaProvider.dumpCursorToLog(c, sync.getFullProjection());
-		}
+//		if (c != null){
+//			MediaProvider.dumpCursorToLog(c, sync.getFullProjection());
+//		}
 		// when the PUBLIC_URI is null, that means it's only local
 		final int pubUriColumn = (c != null) ? c.getColumnIndex(JsonSyncableItem._PUBLIC_URI) : -1;
 		if (c != null && (c.isNull(pubUriColumn) || c.getString(pubUriColumn) == "")){
@@ -300,9 +306,9 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 			c = cr.query(toSync,
 					sync.getFullProjection(),
 					JsonSyncableItem._PUBLIC_URI+"=?", params, null);
-			c.moveToFirst();
 			needToCloseCursor = true;
-			if (c.getCount() == 0){
+
+			if (! c.moveToFirst()){
 				locUri = cr.insert(toSync, cvNet);
 				modified = true;
 			}else {
@@ -315,9 +321,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 		// we've now found data on both sides, so sync them.
 		if (! modified && c != null){
 			final String publicPath = c.getString(c.getColumnIndex(JsonSyncableItem._PUBLIC_URI));
-//			if (!publicPath.contains("/")){
-//				publicPath = MediaProvider.getPublicPath(cr, toSync, Long.valueOf(publicPath));
-//			}
+
 			try {
 
 				if (cvNet == null){

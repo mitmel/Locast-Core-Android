@@ -84,6 +84,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 	// non-stateful
 	private Uri projectUri;
+	private String publicProjectUri;
 	private TemplateAdapter templateAdapter;
 	private TemplateAdapter fullTemplateAdapter;
 	private ImageView mIndicator;
@@ -230,6 +231,8 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 		parent.moveToFirst();
 		((TextView)findViewById(android.R.id.title)).setText(parent.getString(parent.getColumnIndex(Project._TITLE)));
+		publicProjectUri = parent.getString(parent.getColumnIndex(Project._PUBLIC_URI));
+
 
 		final List<String> path = data.getPathSegments();
 		filePrefix = ListUtils.join(path, "-");
@@ -562,6 +565,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 		final ContentValues cast = new ContentValues();
 		cast.put(Cast._PROJECT_ID, ContentUris.parseId(projectUri));
+		cast.put(Cast._PROJECT_URI, publicProjectUri);
 		cast.put(Cast._PRIVACY, Cast.PRIVACY_PUBLIC);
 		cast.put(Cast._TITLE, ((EditText)findViewById(R.id.cast_title)).getText().toString());
 		cast.put(Cast._AUTHOR, AndroidNetworkClient.getInstance(this).getUsername());

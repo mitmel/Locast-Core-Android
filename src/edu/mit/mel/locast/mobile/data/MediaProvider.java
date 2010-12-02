@@ -42,6 +42,7 @@ import android.util.Log;
 import edu.mit.mel.locast.mobile.ListUtils;
 
 public class MediaProvider extends ContentProvider {
+	private final static String TAG = MediaProvider.class.getSimpleName();
 	public final static String AUTHORITY = "edu.mit.mobile.android.locast.provider";
 
 	public final static String
@@ -102,7 +103,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 23;
+		private static final int DB_VER = 26;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -111,14 +112,19 @@ public class MediaProvider extends ContentProvider {
 		private static final String JSON_SYNCABLE_ITEM_FIELDS =
 			JsonSyncableItem._ID 			 + " INTEGER PRIMARY KEY,"
 			+ JsonSyncableItem._PUBLIC_URI 	 + " TEXT UNIQUE,"
+			+ JsonSyncableItem._PUBLIC_ID 	 + " INTEGER UNIQUE,"
 			+ JsonSyncableItem._MODIFIED_DATE+ " INTEGER,"
 			+ JsonSyncableItem._CREATED_DATE + " INTEGER,";
+
+		private static final String JSON_COMMENTABLE_FIELDS =
+			Commentable.Columns._COMMENT_DIR_URI  + " TEXT,";
 
 		@Override
 		public void onCreate(SQLiteDatabase db) {
 
 			db.execSQL("CREATE TABLE "  + CAST_TABLE_NAME + " ("
 					+ JSON_SYNCABLE_ITEM_FIELDS
+					+ JSON_COMMENTABLE_FIELDS
 					+ Cast._TITLE 		+ " TEXT,"
 					+ Cast._AUTHOR 		+ " TEXT,"
 					+ Cast._DESCRIPTION + " TEXT,"
@@ -128,6 +134,7 @@ public class MediaProvider extends ContentProvider {
 
 					+ Cast._PROJECT_ID  + " INTEGER,"
 					+ Cast._PROJECT_URI + " TEXT,"
+					+ Cast._CASTMEDIA_DIR_URI + " TEXT,"
 					+ Cast._PRIVACY 	+ " TEXT,"
 
 					+ Cast._LATITUDE 	+ " REAL,"
@@ -141,10 +148,12 @@ public class MediaProvider extends ContentProvider {
 					);
 			db.execSQL("CREATE TABLE " + PROJECT_TABLE_NAME + " ("
 					+ JSON_SYNCABLE_ITEM_FIELDS
+					+ JSON_COMMENTABLE_FIELDS
 					+ Project._TITLE 		+ " TEXT,"
 					+ Project._AUTHOR		+ " TEXT,"
 					+ Project._DESCRIPTION 	+ " TEXT,"
 					+ Project._PRIVACY 		+ " TEXT,"
+					+ Project._CASTS_URI	+ " TEXT,"
 
 					+ Project._LATITUDE 	+ " REAL,"
 					+ Project._LONGITUDE 	+ " REAL,"
@@ -224,79 +233,6 @@ public class MediaProvider extends ContentProvider {
 		return true;
 	}
 
-	@Override
-	public int delete(Uri uri, String where, String[] whereArgs) {
-		final SQLiteDatabase db = dbHelper.getWritableDatabase();
-		final long id;
-
-		switch (uriMatcher.match(uri)){
-		case MATCHER_CAST_DIR:
-			db.delete(CAST_TABLE_NAME, where, whereArgs);
-			break;
-
-		case MATCHER_CAST_ITEM:
-			id = ContentUris.parseId(uri);
-			db.delete(CAST_TABLE_NAME, Cast._ID + "="+ id +
-					(where != null && where.length() > 0 ? " AND (" + where + ")" : ""),
-					whereArgs);
-			break;
-
-		case MATCHER_PROJECT_DIR:
-			db.delete(PROJECT_TABLE_NAME, where, whereArgs);
-			break;
-
-		case MATCHER_PROJECT_ITEM:
-			id = ContentUris.parseId(uri);
-			db.delete(PROJECT_TABLE_NAME, Project._ID + "="+ id +
-					(where != null && where.length() > 0 ? " AND (" + where + ")" : ""),
-					whereArgs);
-			break;
-
-		case MATCHER_COMMENT_DIR:
-			db.delete(COMMENT_TABLE_NAME, where, whereArgs);
-			break;
-
-		case MATCHER_COMMENT_ITEM:
-			id = ContentUris.parseId(uri);
-			db.delete(COMMENT_TABLE_NAME, Comment._ID + "="+ id +
-					(where != null && where.length() > 0 ? " AND (" + where + ")" : ""),
-					whereArgs);
-			break;
-
-		case MATCHER_ITEM_TAGS:{
-
-			final List<String> pathSegments = uri.getPathSegments();
-			final String where2 = Tag._REF_CLASS+"=\""+pathSegments.get(pathSegments.size() - 3) + "\" AND " +
-			Tag._REF_ID+"="+pathSegments.get(pathSegments.size() - 2) +
-			(where != null && where.length() > 0 ? " AND (" + where + ")" : "");
-
-			db.delete(TAG_TABLE_NAME, where2, whereArgs);
-			break;
-
-		}
-
-		case MATCHER_TAG_DIR:{
-			db.delete(TAG_TABLE_NAME, where, whereArgs);
-			break;
-		}
-
-		case MATCHER_CAST_MEDIA_DIR:{
-			db.delete(CAST_MEDIA_TABLE_NAME, where, whereArgs);
-			break;
-		}
-
-		case MATCHER_SHOTLIST_DIR:{
-
-			db.delete(SHOTLIST_TABLE_NAME, where, whereArgs);
-		}break;
-
-			default:
-				throw new IllegalArgumentException("Unknown URI: "+uri);
-		}
-		db.execSQL("VACUUM");
-		getContext().getContentResolver().notifyChange(uri, null);
-		return 0;
-	}
 
 	/**
 	 * @param uri
@@ -414,12 +350,7 @@ public class MediaProvider extends ContentProvider {
 		values.remove(JsonSyncableItem._ID);
 
 		// XXX remove this when the API updates
-		if (syncable){
-			final String pubUri = values.getAsString(JsonSyncableItem._PUBLIC_URI);
-			if (pubUri != null && !pubUri.contains("/")){
-				values.put(JsonSyncableItem._PUBLIC_URI, getPublicPath(getContext().getContentResolver(), uri, Long.valueOf(pubUri)));
-			}
-		}
+		translateIdToUri(getContext(), values, syncable, uri);
 
 		Uri newItem = null;
 		boolean isDraft = false;
@@ -431,6 +362,8 @@ public class MediaProvider extends ContentProvider {
 
 			rowid = db.insert(CAST_TABLE_NAME, null, values);
 			if (rowid > 0){
+				//Log.d(TAG, "just inserted: " + values);
+
 				getContext().getContentResolver().notifyChange(uri, null);
 
 				newItem = ContentUris.withAppendedId(Cast.CONTENT_URI, rowid);
@@ -471,15 +404,16 @@ public class MediaProvider extends ContentProvider {
 			}
 			break;
 
-		case MATCHER_CHILD_COMMENT_DIR:
-			values.put(Comment._PARENT_CLASS, uri.getPathSegments().get(0));
-			values.put(Comment._PARENT_ID, uri.getPathSegments().get(1));
+		case MATCHER_CHILD_COMMENT_DIR:{
+			final List<String> pathSegs = uri.getPathSegments();
+			values.put(Comment._PARENT_CLASS, pathSegs.get(pathSegs.size() - 3));
+			values.put(Comment._PARENT_ID, pathSegs.get(pathSegs.size() - 2));
 			rowid = db.insert(COMMENT_TABLE_NAME, null, values);
 			if (rowid > 0){
 				getContext().getContentResolver().notifyChange(uri, null);
 				newItem = ContentUris.withAppendedId(uri, rowid);
 			}
-			break;
+		}break;
 
 		case MATCHER_ITEM_TAGS:{
 			final List<String> pathSegments = uri.getPathSegments();
@@ -604,24 +538,22 @@ public class MediaProvider extends ContentProvider {
 		}
 
 		case MATCHER_CHILD_COMMENT_DIR:{
-			qb.setTables(COMMENT_TABLE_NAME);
-			final String projectId = uri.getPathSegments().get(1);
-			qb.appendWhere(Comment._PARENT_ID + "="+projectId);
-			qb.appendWhere(" AND " + Comment._PARENT_CLASS+"='"+uri.getPathSegments().get(0)+"'");
-			c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
+			final List<String> pathSegs = uri.getPathSegments();
+			c = db.query(COMMENT_TABLE_NAME, projection,
+					addExtraWhere(selection, 			Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
+					addExtraWhereArgs(selectionArgs, 	pathSegs.get(pathSegs.size() - 2), 	pathSegs.get(pathSegs.size() - 3)), null, null, sortOrder);
 			break;
 		}
 
 		case MATCHER_CHILD_COMMENT_ITEM:{
-			qb.setTables(COMMENT_TABLE_NAME);
-			final String projectId = uri.getPathSegments().get(1);
-			qb.appendWhere(Comment._PARENT_ID + "="+projectId);
-			qb.appendWhere(" AND " + Comment._PARENT_CLASS+"='"+uri.getPathSegments().get(0)+"'");
+			final List<String> pathSegs = uri.getPathSegments();
 
 			id = ContentUris.parseId(uri);
-			qb.appendWhere(" AND " + Comment._ID + "="+id);
 
-			c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
+			c = db.query(COMMENT_TABLE_NAME, projection,
+					addExtraWhere(selection, 			Comment._ID+"=?", 	Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
+					addExtraWhereArgs(selectionArgs, 	String.valueOf(id), pathSegs.get(pathSegs.size() - 3), 	pathSegs.get(pathSegs.size() - 4))
+					, null, null, sortOrder);
 			break;
 		}
 
@@ -739,12 +671,7 @@ public class MediaProvider extends ContentProvider {
 		}
 
 		// XXX remove this when the API updates
-		if (canSync){
-			final String pubUri = values.getAsString(JsonSyncableItem._PUBLIC_URI);
-			if (pubUri != null && !pubUri.contains("/")){
-				values.put(JsonSyncableItem._PUBLIC_URI, getPublicPath(getContext().getContentResolver(), uri, Long.valueOf(pubUri)));
-			}
-		}
+		translateIdToUri(getContext(), values, canSync, uri);
 
 		switch (uriMatcher.match(uri)){
 		case MATCHER_CAST_DIR:
@@ -826,29 +753,24 @@ public class MediaProvider extends ContentProvider {
 			break;
 
 		case MATCHER_CHILD_COMMENT_DIR:{
-			final String where2 = Comment._PARENT_CLASS + "=?"
-				+ " AND "+ Comment._PARENT_ID + "=?"
-				+ (where != null && where.length() > 0 ? " AND ("+where+")":"");
-			final List<String>whereArgsList = (whereArgs == null) ? new Vector<String>() : Arrays.asList(whereArgs);
-			whereArgsList.add(uri.getPathSegments().get(0));
-			whereArgsList.add(uri.getPathSegments().get(1));
-			count = db.update(COMMENT_TABLE_NAME, values, where2, whereArgsList.toArray(new String[]{}));
+			id = ContentUris.parseId(uri);
+			final List<String>pathSegs = uri.getPathSegments();
+
+			count = db.update(COMMENT_TABLE_NAME, values,
+					addExtraWhere(where, 			Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
+					addExtraWhereArgs(whereArgs, 	pathSegs.get(pathSegs.size() - 2), 	pathSegs.get(pathSegs.size() - 3))
+					);
 			break;
 		}
 
 		case MATCHER_CHILD_COMMENT_ITEM:{
 			id = ContentUris.parseId(uri);
-			final String where2 = Comment._ID + "=? AND "
-				+ Comment._PARENT_CLASS + "=?"
-				+ " AND "+ Comment._PARENT_ID+"=?"
-				+ (where != null && where.length() > 0 ? " AND ("+where+")":"");
+			final List<String>pathSegs = uri.getPathSegments();
 
-			final List<String>whereArgsList = (whereArgs == null) ? new Vector<String>() : Arrays.asList(whereArgs);
-			whereArgsList.add(String.valueOf(id));
-			whereArgsList.add(uri.getPathSegments().get(0));
-			whereArgsList.add(uri.getPathSegments().get(1));
-
-			count = db.update(COMMENT_TABLE_NAME, values, where2,  whereArgsList.toArray(new String[]{}));
+			count = db.update(COMMENT_TABLE_NAME, values,
+					addExtraWhere(where, 			Comment._ID+"=?", 	Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
+					addExtraWhereArgs(whereArgs, 	String.valueOf(id), pathSegs.get(pathSegs.size() - 3), 	pathSegs.get(pathSegs.size() - 4))
+					);
 			break;
 		}
 
@@ -905,6 +827,89 @@ public class MediaProvider extends ContentProvider {
 		return count;
 	}
 
+	@Override
+	public int delete(Uri uri, String where, String[] whereArgs) {
+		final SQLiteDatabase db = dbHelper.getWritableDatabase();
+		final long id;
+
+		switch (uriMatcher.match(uri)){
+		case MATCHER_CAST_DIR:
+			db.delete(CAST_TABLE_NAME, where, whereArgs);
+			break;
+
+		case MATCHER_CAST_ITEM:
+			id = ContentUris.parseId(uri);
+			db.delete(CAST_TABLE_NAME, Cast._ID + "="+ id +
+					(where != null && where.length() > 0 ? " AND (" + where + ")" : ""),
+					whereArgs);
+			break;
+
+		case MATCHER_PROJECT_DIR:
+			db.delete(PROJECT_TABLE_NAME, where, whereArgs);
+			break;
+
+		case MATCHER_PROJECT_ITEM:
+			id = ContentUris.parseId(uri);
+			db.delete(PROJECT_TABLE_NAME, Project._ID + "="+ id +
+					(where != null && where.length() > 0 ? " AND (" + where + ")" : ""),
+					whereArgs);
+			break;
+
+		case MATCHER_COMMENT_DIR:
+			db.delete(COMMENT_TABLE_NAME, where, whereArgs);
+			break;
+
+		case MATCHER_COMMENT_ITEM:{
+			id = ContentUris.parseId(uri);
+			db.delete(COMMENT_TABLE_NAME,
+					addExtraWhere(where, Comment._ID + "=?"),
+					addExtraWhereArgs(whereArgs, String.valueOf(id)));
+		}break;
+
+		case MATCHER_CHILD_COMMENT_ITEM:{
+
+			final List<String>pathSegs = uri.getPathSegments();
+			id = ContentUris.parseId(uri);
+
+			db.delete(COMMENT_TABLE_NAME,
+					addExtraWhere(where, Comment._ID+"=?", 				Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
+					addExtraWhereArgs(whereArgs, Long.toString(id),  	pathSegs.get(pathSegs.size() - 3), 	pathSegs.get(pathSegs.size() - 4)));
+		}break;
+
+		case MATCHER_ITEM_TAGS:{
+
+			final List<String> pathSegments = uri.getPathSegments();
+
+			db.delete(TAG_TABLE_NAME,
+					addExtraWhere(where, 			Tag._REF_CLASS + "=?", 						Tag._REF_ID+"=?"),
+					addExtraWhereArgs(whereArgs, 	pathSegments.get(pathSegments.size() - 3), 	pathSegments.get(pathSegments.size() - 2)));
+			break;
+
+		}
+
+		case MATCHER_TAG_DIR:{
+			db.delete(TAG_TABLE_NAME, where, whereArgs);
+			break;
+		}
+
+		case MATCHER_CAST_MEDIA_DIR:{
+			db.delete(CAST_MEDIA_TABLE_NAME, where, whereArgs);
+			break;
+		}
+
+		case MATCHER_SHOTLIST_DIR:{
+
+			db.delete(SHOTLIST_TABLE_NAME, where, whereArgs);
+		}break;
+
+			default:
+				throw new IllegalArgumentException("Unknown URI: "+uri);
+		}
+		db.execSQL("VACUUM");
+		getContext().getContentResolver().notifyChange(uri, null);
+		return 0;
+	}
+
 	/**
 	 * @param cr
 	 * @param uri
@@ -930,125 +935,88 @@ public class MediaProvider extends ContentProvider {
 		return getPublicPath(cr, uri, publicId, false);
 	}
 
-	/**
-	 * Given a local content item, returns the public path (on the API) for that item.
-	 * If the item has not been published yet, cannot get the public path of the item, but can get the path of its parent.
-	 *
-	 * @param cr A content resolver.
-	 * @param uri The URI of the object.
-	 * @param publicId Append the given publicId to this path. Null if undesired.
-	 * @param parent If this should return the path to the parent of the item instead of the item itself.
-	 * @return
-	 */
-	public static String getPublicPath(ContentResolver cr, Uri uri, Long publicId, boolean parent){
-		final String[] generalProjection = {JsonSyncableItem._ID, JsonSyncableItem._PUBLIC_URI};
-		final String[] castProjection = {JsonSyncableItem._ID, JsonSyncableItem._PUBLIC_URI, Cast._PROJECT_ID, Cast._PROJECT_URI};
-
-		String[] projection = generalProjection;
+	private static String getPathFromField(ContentResolver cr, Uri uri, String field){
 		String path = null;
-		// TODO change this to switch on item type, not path. Path is breaking everything...
-		final int match = uriMatcher.match(uri);
-		switch (match){
-		case MATCHER_CAST_ITEM:
-			projection = castProjection;
-
-		case MATCHER_PROJECT_ITEM:{
-			Cursor c;
-			c = cr.query(uri, projection, null, null, null);
-			if (c.moveToFirst()){
-				if (match == MATCHER_PROJECT_ITEM){
-					path = "/"+Project.SERVER_PATH;
-				}else if(match == MATCHER_CAST_ITEM){
-					if (!c.isNull(c.getColumnIndex(Cast._PROJECT_URI))){
-						path = c.getString(c.getColumnIndex(Cast._PROJECT_URI)) + Cast.SERVER_PATH;
-
-					}else if (!c.isNull(c.getColumnIndex(Cast._PROJECT_ID))){
-						path = getPublicPath(cr, ContentUris.withAppendedId(Project.CONTENT_URI, c.getLong(c.getColumnIndex(Cast._PROJECT_ID)))) + Cast.SERVER_PATH;
-					}else{
-						path = "/"+Cast.SERVER_PATH;
-					}
-				}
-				final int pubUriCol = c.getColumnIndex(JsonSyncableItem._PUBLIC_URI);
-				if (parent){
-					// we won't add anything to the path. We've already got what we want.
-				}else if(!c.isNull(pubUriCol)){
-					if (!c.getString(pubUriCol).contains("/")){
-						path += c.getString(pubUriCol) + "/";
-					}else{
-						path = c.getString(pubUriCol);
-					}
-
-				}else if (publicId != null && publicId > 0){
-					path += publicId + "/";
-
-				}else {
-					throw new RuntimeException("Asked for public path of "+uri+", but it has no public ID");
-				}
+		final String[] generalProjection = {JsonSyncableItem._ID, field};
+		final Cursor c = cr.query(uri, generalProjection, null, null, null);
+		if (c.getCount() == 1 && c.moveToFirst()){
+			final String storedPath = c.getString(c.getColumnIndex(field));
+			if (storedPath != null){
+				path = storedPath;
 			}
-			c.close();
+		}
+		c.close();
+		return path;
+	}
+
+	public static String getPublicPath(ContentResolver cr, Uri uri, Long publicId, boolean parent){
+		String path;
+
+		final int match = uriMatcher.match(uri);
+
+		// first check to see if the path is stored already.
+		switch (match){
+
+		// these should be the only hard-coded paths in the system.
+		case MATCHER_CAST_DIR:{
+			path = "/"+Cast.SERVER_PATH;
+
 		}break;
 
-		case MATCHER_CAST_DIR:
-			path = "/"+Cast.SERVER_PATH;
-			if (publicId != null){
-				path += publicId + "/";
-			}
-			break;
-
-		case MATCHER_PROJECT_DIR:
+		case MATCHER_PROJECT_DIR:{
 			path = "/"+Project.SERVER_PATH;
-			if (publicId != null){
-				path += publicId + "/";
-			}
+		}break;
+
+		case MATCHER_COMMENT_DIR:
+			path = "/"+Comment.SERVER_PATH;
 			break;
 
+		case MATCHER_CHILD_COMMENT_DIR:
+			path = getPathFromField(cr, removeLastPathSegment(uri), Commentable.Columns._COMMENT_DIR_URI);
+			break;
+
+		case MATCHER_CAST_ITEM:
+		case MATCHER_CAST_MEDIA_ITEM:
 		case MATCHER_CHILD_COMMENT_ITEM:
 		case MATCHER_COMMENT_ITEM:
-			if (parent){
-				return getPublicPath(cr, removeLastPathSegment(uri), null);
+		case MATCHER_PROJECT_CAST_CASTMEDIA_ITEM:
+		case MATCHER_PROJECT_CAST_ITEM:
+		case MATCHER_PROJECT_ITEM:
+		case MATCHER_PROJECT_SHOTLIST_ITEM:{
+			if (parent || publicId != null){
+				path = getPublicPath(cr, removeLastPathSegment(uri));
+			}else{
+				path = getPathFromField(cr, uri, JsonSyncableItem._PUBLIC_URI);
 			}
-			// TODO this needs to handle Don't know how to get the public path for content://edu.mit.mobile.android.locast.provider/casts/20/comments/1 for getPostPath()
-			break;
-		case MATCHER_CHILD_COMMENT_DIR:{
-			if (publicId != null){
-				return null;
-			}
-			path = getPublicPath(cr, removeLastPathSegment(uri)) + Comment.SERVER_PATH;
 
-		} break;
+			}break;
 
 		case MATCHER_PROJECT_CAST_DIR:{
-			final List<String> pathSegments = uri.getPathSegments();
-			final Uri castPart = (uri.buildUpon().path(pathSegments.get(pathSegments.size() - 1))).build();
-			path = getPublicPath(cr, removeLastPathSegment(uri)) + getPublicPath(cr, castPart, publicId);
-		} break;
-
-		case MATCHER_PROJECT_CAST_ITEM:{
-			final List<String> pathSegments = uri.getPathSegments();
-			final Uri castPart = (uri.buildUpon().path(pathSegments.get(pathSegments.size() - 2) + "/" + pathSegments.get(pathSegments.size() - 1))).build();
-
-			path = getPublicPath(cr, castPart, publicId, parent);
-
-		} break;
+			path = getPathFromField(cr, removeLastPathSegment(uri), Project._CASTS_URI);
+		}break;
 
 		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:
 		case MATCHER_CAST_MEDIA_DIR: {
-			path = getPublicPath(cr, removeLastPathSegment(uri)) + CastMedia.SERVER_PATH;
-			if (publicId != null){
-				throw new IllegalArgumentException("cannot get public URI for cast media with supplied public ID: "+publicId);
-			}
+			path = getPathFromField(cr, removeLastPathSegment(uri), Cast._CASTMEDIA_DIR_URI);
 		}break;
-
 
 		default:
 			throw new IllegalArgumentException("Don't know how to get the public path for "+uri);
-
 		}
-		path = path.replaceAll("//", "/"); // hack to get around a tedious problem
-		Log.d("MediaProvider", "gave "+path+" for a public path for "+uri + ((publicId != null && publicId >= 0) ? " with public ID "+publicId : ""));
-		return path;
 
+		if (path == null){
+			throw new RuntimeException("got null path for " + uri);
+		}
+		if (publicId != null){
+			path += publicId + "/";
+		}
+
+		path = path.replaceAll("//", "/"); // hack to get around a tedious problem
+		//Log.d("MediaProvider", "gave "+path+" for a public "+(parent ? "parent ": "") +"path for "+uri + ((publicId != null && publicId >= 0) ? " with public ID "+publicId : ""));
+
+		return path;
 	}
+
 
 	public static UriMatcher getUriMatcher(){
 		return uriMatcher;
@@ -1094,6 +1062,32 @@ public class MediaProvider extends ContentProvider {
 	}
 
 	/**
+	 * Adds extra where clauses
+	 * @param where
+	 * @param extraWhere
+	 * @return
+	 */
+	public static String addExtraWhere(String where, String ... extraWhere){
+		final String extraWhereJoined = "(" + ListUtils.join(Arrays.asList(extraWhere), ") AND (") + ")";
+		return extraWhereJoined + (where != null && where.length() > 0 ? " AND ("+where+")":"");
+	}
+
+	/**
+	 * Adds in extra arguments to a where query. You'll have to put in the appropriate
+	 * @param whereArgs the original whereArgs passed in from the query. Can be null.
+	 * @param extraArgs Extra arguments needed for the query.
+	 * @return
+	 */
+	public static String[] addExtraWhereArgs(String[] whereArgs, String...extraArgs){
+		final List<String> whereArgs2 = new ArrayList<String>();
+		if (whereArgs != null){
+			whereArgs2.addAll(Arrays.asList(whereArgs));
+		}
+		whereArgs2.addAll(0, Arrays.asList(extraArgs));
+		return whereArgs2.toArray(new String[]{});
+	}
+
+	/**
 	 * Handly helper
 	 * @param c
 	 * @param projection
@@ -1113,6 +1107,73 @@ public class MediaProvider extends ContentProvider {
 			testOut.append("; ");
 		}
 		Log.d("CursorDump", testOut.toString());
+	}
+
+	/**
+	 * Translates a numerical public ID stored in JsonSyncableItem._PUBLIC_ID to a full path.
+	 * Stores results in JsonSyncableItem._PUBLIC_URI
+	 *
+	 * XXX hack!
+	 * This is a workaround to help transition to an API with all objects having URIs
+	 * This should be removed ASAP.
+	 *
+	 * @param context
+	 * @param values the values that should be modified
+	 * @param canSync if the object can sync
+	 * @param uri full URI of the object
+	 */
+	public static void translateIdToUri(Context context, ContentValues values, boolean canSync, Uri uri){
+		final int type = uriMatcher.match(uri);
+
+		if (canSync || type == MATCHER_CHILD_COMMENT_ITEM){
+			final ContentResolver cr = context.getContentResolver();
+			final String pubUri = values.getAsString(JsonSyncableItem._PUBLIC_URI);
+			if (pubUri == null && values.getAsLong(JsonSyncableItem._PUBLIC_ID) != null){
+				String path = getPublicPath(cr, uri, values.getAsLong(JsonSyncableItem._PUBLIC_ID));
+				if (type == MATCHER_CAST_DIR || type == MATCHER_CAST_ITEM ||
+					type == MATCHER_PROJECT_CAST_ITEM || type == MATCHER_PROJECT_CAST_DIR){
+					String projectUri = values.getAsString(Cast._PROJECT_URI);
+					if (projectUri != null){
+						if (!projectUri.contains("/")){
+							projectUri = getPublicPath(cr, Project.CONTENT_URI, Long.valueOf(projectUri));
+							values.put(Cast._PROJECT_URI, projectUri);
+						}
+						if (!path.contains("/project")){
+							path = projectUri + path;
+						}
+					}
+				}
+				path = path.replaceAll("//", "/");
+				//Log.d("MediaProvider", "Setting public URI for "+uri + " (or item inserted into it) to " + path);
+				values.put(JsonSyncableItem._PUBLIC_URI, path);
+
+			}
+		}
+
+		// add in the various directory URIs if missing.
+		switch (type){
+		case MATCHER_CAST_DIR:
+		case MATCHER_CAST_ITEM:
+		case MATCHER_PROJECT_CAST_DIR:
+		case MATCHER_PROJECT_CAST_ITEM:
+			if (!values.containsKey(Cast._CASTMEDIA_DIR_URI)){
+				values.put(Cast._CASTMEDIA_DIR_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + CastMedia.SERVER_PATH);
+			}
+			if (!values.containsKey(Cast._COMMENT_DIR_URI)){
+				values.put(Cast._COMMENT_DIR_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + Comment.SERVER_PATH);
+			}
+			break;
+
+		case MATCHER_PROJECT_DIR:
+		case MATCHER_PROJECT_ITEM:
+			if (!values.containsKey(Project._CASTS_URI)){
+				values.put(Project._CASTS_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + Cast.SERVER_PATH);
+			}
+			if (!values.containsKey(Project._COMMENT_DIR_URI)){
+				values.put(Project._COMMENT_DIR_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + Comment.SERVER_PATH);
+			}
+			break;
+		}
 	}
 
 

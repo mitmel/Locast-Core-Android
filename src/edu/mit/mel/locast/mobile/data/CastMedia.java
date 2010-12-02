@@ -18,6 +18,7 @@ public class CastMedia extends JsonSyncableItem implements OrderedList.Columns{
 	public final static String[] PROJECTION = {
 		_ID,
 		_PUBLIC_URI,
+		_PUBLIC_ID,
 		_MODIFIED_DATE,
 		_MEDIA_URL,
 		_LOCAL_URI,
@@ -47,7 +48,7 @@ public class CastMedia extends JsonSyncableItem implements OrderedList.Columns{
 
 	public final static ItemSyncMap SYNC_MAP = new ItemSyncMap();
 
-	public static class ItemSyncMap extends SyncMap {
+	public static class ItemSyncMap extends JsonSyncableItem.ItemSyncMap {
 		/**
 		 *
 		 */
@@ -55,8 +56,9 @@ public class CastMedia extends JsonSyncableItem implements OrderedList.Columns{
 
 		public ItemSyncMap() {
 			super();
-			put(_PUBLIC_URI, 	new SyncFieldMap("id", SyncFieldMap.STRING,              SyncFieldMap.SYNC_FROM));
-			put(_MODIFIED_DATE,new SyncFieldMap("modified", SyncFieldMap.DATE, SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));
+
+			// modify the modified date to make it optional.
+			put(_MODIFIED_DATE, new SyncFieldMap("modified", SyncFieldMap.DATE, SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));
 			put(_SCREENSHOT, 	new SyncFieldMap("screenshot", SyncFieldMap.STRING,SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));
 			put(_PREVIEW_URL, 	new SyncFieldMap("preview_url", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));
 			put(_MEDIA_URL, 	new SyncFieldMap("file_url", SyncFieldMap.STRING,         SyncFieldMap.SYNC_FROM));

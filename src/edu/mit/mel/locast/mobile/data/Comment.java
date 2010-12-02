@@ -44,6 +44,7 @@ public class Comment extends JsonSyncableItem {
 	public final static String[] PROJECTION = {
 			_ID,
 			_PUBLIC_URI,
+			_PUBLIC_ID,
 			_AUTHOR,
 			_AUTHOR_ICON,
 			_MODIFIED_DATE,
@@ -70,7 +71,7 @@ public class Comment extends JsonSyncableItem {
 
 	public static final SyncMap SYNC_MAP = new ItemSyncMap();
 
-	public static class ItemSyncMap extends SyncMap {
+	public static class ItemSyncMap extends JsonSyncableItem.ItemSyncMap {
 
 		/**
 		 *
@@ -83,10 +84,10 @@ public class Comment extends JsonSyncableItem {
 			final SyncMap author = new SyncMap();
 			author.put(_AUTHOR, new SyncFieldMap("username", SyncFieldMap.STRING));
 			author.put(_AUTHOR_ICON, new SyncFieldMap("icon", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_BOTH));
-			put("author_object", new SyncMapChain("author", author, SyncItem.SYNC_FROM));
+			put("_author_object", new SyncMapChain("author", author, SyncItem.SYNC_FROM));
 
-			put(_PUBLIC_URI, 		new SyncFieldMap("id", SyncFieldMap.STRING, SyncItem.SYNC_FROM));
-			put(_MODIFIED_DATE,	new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM));
+			remove(_CREATED_DATE);
+			put(_MODIFIED_DATE,	new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM)); // comments only have a creation date.
 			put(_DESCRIPTION, 	new SyncFieldMap("content", SyncFieldMap.STRING));
 		}
 	}

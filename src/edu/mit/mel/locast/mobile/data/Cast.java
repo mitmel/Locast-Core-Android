@@ -45,7 +45,7 @@ import edu.mit.mel.locast.mobile.StreamUtils;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
 
-public class Cast extends TaggableItem implements MediaScannerConnectionClient, Favoritable.Columns, Locatable.Columns {
+public class Cast extends TaggableItem implements MediaScannerConnectionClient, Favoritable.Columns, Locatable.Columns, Commentable.Columns {
 	public final static String TAG = "LocastSyncCast";
 	public final static String PATH = "casts";
 	public final static Uri
@@ -64,7 +64,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		_CONTENT_TYPE = "content_type",
 		_PROJECT_ID   = "project_id",
 		_PROJECT_URI = "project_uri",
-
+		_CASTMEDIA_DIR_URI = "castmedia_dir_uri",
 		_THUMBNAIL_URI = "thumbnail_uri";
 
 	public static final String[] PROJECTION =
@@ -79,6 +79,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		_PROJECT_ID,
 		_PROJECT_URI,
 		_MEDIA_LOCAL_URI,
+		_CASTMEDIA_DIR_URI,
 		_CONTENT_TYPE,
 		_MODIFIED_DATE,
 		_THUMBNAIL_URI,
@@ -118,6 +119,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 			super();
 			putAll(Favoritable.SYNC_MAP);
 			putAll(Locatable.SYNC_MAP);
+			putAll(Commentable.SYNC_MAP);
 
 
 			put(_DESCRIPTION, 		new SyncFieldMap("description", SyncFieldMap.STRING));
@@ -125,8 +127,10 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 
 			put(_THUMBNAIL_URI, 	new SyncFieldMap("screenshot", SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 			put(_MEDIA_PUBLIC_URI,  new SyncFieldMap("file_url",   SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
-			put(_PROJECT_URI,		new SyncFieldMap("project",    SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
+			//put(_PROJECT_URI,		new SyncFieldMap("project",    SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
+			put(_PROJECT_URI,		new SyncFieldMap("project", SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 
+			// this is a local ID.
 			put(_PROJECT_ID, 		new SyncCustom("project", SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL) {
 
 				@Override
@@ -147,6 +151,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 						NetworkProtocolException, IOException {
 					final String projectUri = MediaProvider.getPublicPath(context.getContentResolver(), Project.CONTENT_URI, item.optLong(this.remoteKey));
 					final String[] selectionArgs = {projectUri};
+
 					final Cursor c = context.getContentResolver().query(Project.CONTENT_URI, Project.SYNC_PROJECTION, Project._PUBLIC_URI + "=?", selectionArgs, null);
 					final ContentValues cv = new ContentValues();
 					if (c.moveToFirst()){
