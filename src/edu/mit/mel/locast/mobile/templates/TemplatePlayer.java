@@ -152,6 +152,7 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 
 	@Override
 	protected void onPause() {
+		mVideoView.stopPlayback();
 		super.onPause();
 		uiHandler.removeMessages(MSG_STATIC_HIDE);
 	}
