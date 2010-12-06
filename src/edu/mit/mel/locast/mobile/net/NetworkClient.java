@@ -18,6 +18,7 @@ package edu.mit.mel.locast.mobile.net;
  */
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -88,11 +89,12 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	public final static String JSON_MIME_TYPE = "application/json";
 
 	private final static String
-		PATH_PAIR = "/pair/",
-		PATH_UNPAIR = "/un-pair/"
+		PATH_PAIR = "pair/",
+		PATH_UNPAIR = "un-pair/"
 		;
 
 	protected String baseurl;
+	protected URI baseuri;
 	// one of the formats from ISO 8601
 	public final static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
@@ -156,7 +158,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	}
 
 	/**
-	 * @param baseurl the base URL of the API. This should not end in a "/"
+	 * @param baseurl the base URL of the API. This should end in a "/"
 	 */
 	public NetworkClient(String baseurl){
 		this();
@@ -171,6 +173,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 
 		try {
 			final URL baseUrl = new URL(this.baseurl);
+			baseuri = baseUrl.toURI();
 			this.authScope = new AuthScope(baseUrl.getHost(), baseUrl.getPort());
 
 			loadCredentials();
@@ -422,9 +425,9 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @throws HttpResponseException
 	 */
 	public HttpResponse get(String path) throws IOException, JSONException, NetworkProtocolException, HttpResponseException {
-
-		final HttpGet req = new HttpGet(getFullUri(path));
-
+		final String fullUri = getFullUri(path);
+		final HttpGet req = new HttpGet(fullUri);
+		Log.d("NetworkClient", "GET "+ fullUri);
 		final HttpResponse res = this.execute(req);
 
 		checkStatusCode(res, false);
@@ -507,7 +510,9 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 */
 	protected synchronized HttpResponse put(String path, String jsonString) throws IOException,
 		NetworkProtocolException{
-		final HttpPut r = new HttpPut(getFullUri(path));
+		final String fullUri = getFullUri(path);
+		final HttpPut r = new HttpPut(fullUri);
+		Log.d("NetworkClient", "PUT "+ fullUri);
 
 		r.setEntity(new StringEntity(jsonString, "utf-8"));
 
@@ -523,8 +528,9 @@ abstract public class NetworkClient extends DefaultHttpClient {
 
 	protected synchronized HttpResponse put(String path, String contentType, InputStream is) throws IOException,
 		NetworkProtocolException {
-		final HttpPut r = new HttpPut(getFullUri(path));
-
+		final String fullUri = getFullUri(path);
+		final HttpPut r = new HttpPut(fullUri);
+		Log.d("NetworkClient", "PUT "+ fullUri);
 		r.setEntity(new InputStreamEntity(is, 0));
 
 		r.setHeader("Content-Type", contentType);
@@ -542,7 +548,9 @@ abstract public class NetworkClient extends DefaultHttpClient {
 			fullUri = path;
 
 		}else {
-			fullUri = baseurl + path;
+
+			fullUri = baseuri.resolve(path).normalize().toASCIIString();
+			Log.d("NetworkClient", "path: " + path + ", baseUri: " + baseuri + ", fullUri: "+fullUri);
 		}
 
 		return fullUri;
@@ -559,7 +567,10 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 */
 	public synchronized HttpResponse post(String path, String jsonString)
 		throws IOException, NetworkProtocolException {
-		final HttpPost r = new HttpPost(getFullUri(path));
+
+		final String fullUri = getFullUri(path);
+		final HttpPut r = new HttpPut(fullUri);
+		Log.d("NetworkClient", "POST "+ fullUri);
 
 		r.setEntity(new StringEntity(jsonString, "utf-8"));
 
@@ -611,13 +622,13 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		if (username == null){
 			return null;
 		}
-		return getObject("/user/"+username+"/");
+		return getObject("user/"+username+"/");
 	}
 
 	public Vector<User> getUsers() throws NetworkProtocolException, IOException {
 		final Vector<User> outUsers = new Vector<User>();
 		try{
-			final JSONArray users =getArray("/user/");
+			final JSONArray users =getArray("user/");
 			for (int i = 0; i < users.length(); i++){
 				outUsers.addElement(loadUser(users.getJSONObject(i)));
 
@@ -794,7 +805,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @throws JSONException
 	 */
 	public Map<String, Integer> getCategories() throws IOException, NetworkProtocolException, JSONException {
-		final JSONArray cats = getArray("/categories/");
+		final JSONArray cats = getArray("categories/");
 		final Map<String, Integer> catOut = new HashMap<String, Integer>();
 
 		final int length = cats.length();
@@ -834,7 +845,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @throws NetworkProtocolException
 	 */
 	public List<String> getTagsList(String path) throws JSONException, IOException, NetworkProtocolException {
-		return toNativeStringList(getArray("/tag/"+path));
+		return toNativeStringList(getArray("tag/"+path));
 	}
 
 	/******************************** utils **************************/

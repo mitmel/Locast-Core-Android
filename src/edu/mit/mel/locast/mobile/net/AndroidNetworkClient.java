@@ -109,6 +109,8 @@ public class AndroidNetworkClient extends NetworkClient {
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
+		instances.clear();
+		initClient();
 	}
 
 	@Override

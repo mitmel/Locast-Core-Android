@@ -959,16 +959,16 @@ public class MediaProvider extends ContentProvider {
 
 		// these should be the only hard-coded paths in the system.
 		case MATCHER_CAST_DIR:{
-			path = "/"+Cast.SERVER_PATH;
+			path = Cast.SERVER_PATH;
 
 		}break;
 
 		case MATCHER_PROJECT_DIR:{
-			path = "/"+Project.SERVER_PATH;
+			path = Project.SERVER_PATH;
 		}break;
 
 		case MATCHER_COMMENT_DIR:
-			path = "/"+Comment.SERVER_PATH;
+			path = Comment.SERVER_PATH;
 			break;
 
 		case MATCHER_CHILD_COMMENT_DIR:
@@ -1134,11 +1134,11 @@ public class MediaProvider extends ContentProvider {
 					type == MATCHER_PROJECT_CAST_ITEM || type == MATCHER_PROJECT_CAST_DIR){
 					String projectUri = values.getAsString(Cast._PROJECT_URI);
 					if (projectUri != null){
-						if (!projectUri.contains("/")){
+						if (!projectUri.contains("project")){
 							projectUri = getPublicPath(cr, Project.CONTENT_URI, Long.valueOf(projectUri));
 							values.put(Cast._PROJECT_URI, projectUri);
 						}
-						if (!path.contains("/project")){
+						if (!path.contains("project")){
 							path = projectUri + path;
 						}
 					}
