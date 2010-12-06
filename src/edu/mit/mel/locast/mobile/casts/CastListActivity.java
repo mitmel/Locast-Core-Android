@@ -95,7 +95,9 @@ public abstract class CastListActivity extends ListActivity {
 		super.onListItemClick(l, v, position, id);
 		final Uri uri = ContentUris.withAppendedId(data, id);
 
-		if (Intent.ACTION_PICK.equals(getIntent().getAction())){
+		final String action = getIntent().getAction();
+
+		if (Intent.ACTION_PICK.equals(action) || Intent.ACTION_GET_CONTENT.equals(action)){
 			setResult(RESULT_OK, new Intent().setData(uri));
 			finish();
 		}else {

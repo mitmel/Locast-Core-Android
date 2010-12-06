@@ -86,8 +86,8 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
 		final String action = getIntent().getAction();
 		final Uri projectUri = ContentUris.withAppendedId(Project.CONTENT_URI, id);
 
-		if (Intent.ACTION_PICK.equals(action)){
-			setResult(RESULT_OK, new Intent().setData(ContentUris.withAppendedId(getIntent().getData(), id)));
+		if (Intent.ACTION_PICK.equals(action) || Intent.ACTION_GET_CONTENT.equals(action)){
+			setResult(RESULT_OK, new Intent().setData(projectUri));
 			finish();
 		}else{
 			startActivity(new Intent(Intent.ACTION_VIEW, projectUri));
