@@ -13,8 +13,7 @@
 		android:name=".Application"
 		android:theme="@style/LocastTheme"
 		android:debuggable="true">
-		
-        <uses-library android:name="com.google.android.maps" />
+
 	<!-- 
 		*****************************************************************************************************
 		*                                               Main                                                *
@@ -98,7 +97,7 @@
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>		
 		</activity>
-		
+<!-- 		
 		<activity android:name=".casts.BrowseByMapActivity">
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
@@ -106,7 +105,7 @@
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>		
 		</activity>
-		
+	 -->	
 		<activity android:name=".casts.BrowseByTagsActivity">
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />

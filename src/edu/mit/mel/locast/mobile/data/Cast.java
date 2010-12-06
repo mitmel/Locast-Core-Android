@@ -149,7 +149,12 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 				public ContentValues fromJSON(Context context, Uri localItem,
 						JSONObject item, String lProp) throws JSONException,
 						NetworkProtocolException, IOException {
-					final String projectUri = MediaProvider.getPublicPath(context.getContentResolver(), Project.CONTENT_URI, item.optLong(this.remoteKey));
+					String projectUri;
+					if (item.optString(this.remoteKey).contains("project")){
+						projectUri = item.optString(this.remoteKey);
+					}else{
+						projectUri = MediaProvider.getPublicPath(context.getContentResolver(), Project.CONTENT_URI, item.optLong(this.remoteKey));
+					}
 					final String[] selectionArgs = {projectUri};
 
 					final Cursor c = context.getContentResolver().query(Project.CONTENT_URI, Project.SYNC_PROJECTION, Project._PUBLIC_URI + "=?", selectionArgs, null);
