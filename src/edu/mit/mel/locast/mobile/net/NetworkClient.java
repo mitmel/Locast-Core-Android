@@ -569,7 +569,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		throws IOException, NetworkProtocolException {
 
 		final String fullUri = getFullUri(path);
-		final HttpPut r = new HttpPut(fullUri);
+		final HttpPost r = new HttpPost(fullUri);
 		Log.d("NetworkClient", "POST "+ fullUri);
 
 		r.setEntity(new StringEntity(jsonString, "utf-8"));
