@@ -52,6 +52,8 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 	private Cursor c;
 	private Uri castUri;
 
+	public static final String ACTION_PLAY_CAST = "edu.mit.mobile.android.locast.ACTION_PLAY_CAST";
+
 	private ImageView mediaThumbView;
 	private String contentType;
 	private Uri mediaPublicUri;
@@ -66,8 +68,9 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		final Uri data = getIntent().getData();
-        final String action = getIntent().getAction();
+		final Intent intent = getIntent();
+		final Uri data = intent.getData();
+        final String action = intent.getAction();
 
         setContentView(R.layout.view_cast);
 
@@ -78,10 +81,14 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
         ((Button)findViewById(R.id.location)).setOnClickListener(this);
         ((ImageButton)findViewById(R.id.refresh)).setOnClickListener(this);
 
-		if (Intent.ACTION_VIEW.equals(action)) {
+		if (Intent.ACTION_VIEW.equals(action) || ACTION_PLAY_CAST.equals(action)) {
         	loadFromUri(data);
+        	loadFromCursor();
         }
-		loadFromCursor();
+
+		if (ACTION_PLAY_CAST.equals(action)) {
+			playCast();
+		}
 	}
 
 	private void loadFromUri(Uri data){
@@ -162,7 +169,6 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 			imgLoader.loadImage(mediaThumbView, thumbUrl);
 		}
 
-
 	}
 
 	@Override
@@ -221,69 +227,44 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 		return true;
 	}
 
+	private void playCast(){
+		final boolean finishImmediately = ACTION_PLAY_CAST.equals(getIntent().getAction());
+
+		final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
+		if (mediaPublicUri != null && !hasLocalVids && AndroidNetworkClient.getInstance(this).isConnectionWorking()){
+			viewVideo.setDataAndType(mediaPublicUri, contentType);
+
+		}else if (hasLocalVids){
+			viewVideo.setData(castUri);
+			viewVideo.setClass(this, TemplatePlayer.class);
+
+		}else{
+			if (mediaPublicUri != null){
+				Toast.makeText(this, "Could not play video.", Toast.LENGTH_SHORT).show();
+			}else{
+				Toast.makeText(this, "Cast video has not been uploaded yet.", Toast.LENGTH_SHORT).show();
+			}
+			return;
+		}
+
+		if (finishImmediately){
+			viewVideo.addFlags(Intent.FLAG_ACTIVITY_PREVIOUS_IS_TOP);
+			startActivity(viewVideo);
+			finish();
+		}else{
+			startActivity(viewVideo);
+		}
+	}
+
 
 	public void onClick(View v) {
 		switch (v.getId()){
 		case R.id.media_thumbnail:{
-
-			if (mediaPublicUri != null && !hasLocalVids && AndroidNetworkClient.getInstance(this).isConnectionWorking()){
-				final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
-				viewVideo.setDataAndType(mediaPublicUri, contentType);
-				startActivity(viewVideo);
-
-			}else if (hasLocalVids){
-				final Intent viewVideos = new Intent(Intent.ACTION_VIEW, castUri, this, TemplatePlayer.class);
-				startActivity(viewVideos);
-
-			}else{
-				if (mediaPublicUri != null){
-					Toast.makeText(this, "Could not play video.", Toast.LENGTH_SHORT).show();
-				}else{
-					Toast.makeText(this, "Cast video has not been uploaded yet.", Toast.LENGTH_SHORT).show();
-				}
-			}
-
-			/*
-			if (localUri == null){
-				try {
-					if (publicUri != null){
-						Cast.checkForMediaEntry(getApplicationContext(), getIntent().getData(), publicUri);
-
-						final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
-						// try to look up content type if we don't have it...
-						if (false && contentType == null){ // XXX
-							try {
-								final HttpResponse resp = AndroidNetworkClient.getInstance(getApplicationContext()).head(publicUri.toString());
-								contentType = resp.getFirstHeader("Content-Type").getValue();
-
-							} catch (final Exception e) {
-								e.printStackTrace();
-							}
-						}
-						viewVideo.setDataAndType(publicUri, contentType);
-
-						startActivity(viewVideo);
-					}
-				} catch (final SyncException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}else{
-				if (localUri.getScheme() == null){
-					// XXX
-					Toast.makeText(getApplicationContext(), "Sorry, viewing of un-published casts is not fully implemented yet.", Toast.LENGTH_SHORT).show();
-				}else{
-
-					final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
-					viewVideo.setDataAndType(localUri, contentType);
-
-					startActivity(viewVideo);
-				}
-
-			}*/
+			playCast();
 
 			break;
 		}
+
 		case R.id.location:
             final Intent mapsIntent = new Intent(Intent.ACTION_VIEW, geoUri);
             try {

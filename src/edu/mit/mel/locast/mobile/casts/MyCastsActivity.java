@@ -27,7 +27,7 @@ public class MyCastsActivity extends CastListActivity {
 		
 		final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(getApplicationContext());
 		
-		loadList(managedQuery(Cast.CONTENT_URI, CastCursorAdapter.projection, 
+		loadList(managedQuery(Cast.CONTENT_URI, CastCursorAdapter.DEFAULT_PROJECTION, 
 				Cast._AUTHOR+"=?", 
 				new String[]{nc.getUsername()}, 
 				Cast._MODIFIED_DATE+" DESC"));

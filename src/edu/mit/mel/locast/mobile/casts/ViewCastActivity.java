@@ -39,6 +39,7 @@ import edu.mit.mel.locast.mobile.widget.FavoriteClickHandler;
 
 public class ViewCastActivity extends TabActivity implements BasicCursorContentObserverWatcher {
 	public static final String TAG = ViewCastActivity.class.getSimpleName();
+
 	private WebImageLoader imgLoader;
 
 	private Uri myUri;

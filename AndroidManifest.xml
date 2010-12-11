@@ -140,6 +140,13 @@
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>
+			<intent-filter>
+				<action android:name="edu.mit.mobile.android.locast.ACTION_PLAY_CAST" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts" />
+			</intent-filter>
+			
 		</activity>
 		
 		<activity android:name=".casts.EditCastActivity">

@@ -24,11 +24,11 @@ import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.data.Cast;
 
 public class CastCursorAdapter extends SimpleCursorAdapter {
-	private final static String[] from = new String[] {Cast._THUMBNAIL_URI, Cast._AUTHOR, Cast._TITLE, Cast._DESCRIPTION};
-	private final static int[] to = new int[] {R.id.media_thumbnail, R.id.author, android.R.id.text1, android.R.id.text2};
+	private final static String[] DEFAULT_FROM = new String[] {	Cast._THUMBNAIL_URI, 	Cast._AUTHOR, 	Cast._TITLE, 		Cast._DESCRIPTION};
+	private final static int[] DEFAULT_TO      = new int[] {	R.id.media_thumbnail, 	R.id.author, 	android.R.id.text1, android.R.id.text2};
 	public final static int[] IMAGE_IDS = {R.id.media_thumbnail};
 
-	public final static String[] projection = {
+	public final static String[] DEFAULT_PROJECTION = {
 			Cast._ID,
 			Cast._AUTHOR,
 			Cast._TITLE,
@@ -36,18 +36,39 @@ public class CastCursorAdapter extends SimpleCursorAdapter {
 			Cast._THUMBNAIL_URI
 		};
 
+	/**
+	 * To add a thumbnail, make sure to include an ImageView  with an ID of R.id.media_thumbnail
+	 *
+	 * @param context
+	 * @param c
+	 * @param layout Layout to load individual casts into.
+	 * @param from table column names to map data from
+	 * @param to resource IDs to map data to
+	 */
+	public CastCursorAdapter(Context context, Cursor c, int layout, String[]from, int[] to) {
+		super(context, layout, c, from, to);
+	}
+
+	/**
+	 * A CastCursorAdapter which uses the default cast layout.
+	 *
+	 * @param context
+	 * @param c
+	 */
 	public CastCursorAdapter(Context context, Cursor c) {
-		super(context, R.layout.browse_content_item, c, from, to);
+		this(context, c, R.layout.browse_content_item, DEFAULT_FROM, DEFAULT_TO);
 	}
 
 	@Override
 	public void setViewImage(ImageView v, String value) {
-		v.setImageResource(R.drawable.icon_default_cast);
-		if (value != null && value.length() > 0){
-			v.setTag(value);
-		}else{
-			v.setTag(null);
+		if (v.getId() == R.id.media_thumbnail){
+			v.setImageResource(R.drawable.icon_default_cast);
+			if (value != null && value.length() > 0){
+				v.setTag(value);
+			}else{
+				v.setTag(null);
 
+			}
 		}
 	}
 }
