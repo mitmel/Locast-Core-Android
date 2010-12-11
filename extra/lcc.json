@@ -2,7 +2,10 @@
     "package": {
         "downloadUrl": "http://locast.mit.edu/connects/static/lcc.apk"
     },
-
+    "1.2.8": {
+    	"versionCode": 11,
+    	"changelog": ["improved sync reliability"],
+    },
     "1.2.7": {
     	"versionCode": 10,
     	"changelog": ["added moment saving", "improved template recording"],
