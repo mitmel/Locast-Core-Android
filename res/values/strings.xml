@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="error_please_enter_a_title">Please enter a title</string>
 	
 	<string name="app_name">Locast Connects</string>
 

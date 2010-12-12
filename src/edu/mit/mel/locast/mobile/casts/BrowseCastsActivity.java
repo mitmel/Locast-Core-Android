@@ -24,12 +24,10 @@ import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Toast;
 import edu.mit.mel.locast.mobile.IncrementalLocator;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.data.Cast;
@@ -44,10 +42,6 @@ public class BrowseCastsActivity extends CastListActivity implements LocationLis
 
 	private IncrementalLocator iloc;
 	private CastCursorAdapter nearbyCursorAdapter;
-
-	private static final int
-		ACTIVITY_RECORD_SOUND = 1,
-		ACTIVITY_RECORD_VIDEO = 2;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -131,36 +125,8 @@ public class BrowseCastsActivity extends CastListActivity implements LocationLis
 
 	public void onStatusChanged(String provider, int status, Bundle extras) {}
 
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		super.onActivityResult(requestCode, resultCode, data);
-
-		switch (requestCode){
-
-		case ACTIVITY_RECORD_SOUND:
-		case ACTIVITY_RECORD_VIDEO:
-
-			switch (resultCode){
-
-			case RESULT_OK:
-				startActivity(new Intent(
-						EditCastActivity.ACTION_CAST_FROM_MEDIA_URI,
-						data.getData()));
-				break;
-
-			case RESULT_CANCELED:
-				Toast.makeText(this, "Recording cancelled", Toast.LENGTH_SHORT).show();
-				break;
-			} // switch resultCode
-			break;
-
-		} // switch requestCode
-	}
-
 	public void onClick(View v) {
-
-		final Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-		startActivityForResult(intent, ACTIVITY_RECORD_VIDEO);
+		startActivity(new Intent(Intent.ACTION_INSERT, Cast.CONTENT_URI));
 
 	}
 }

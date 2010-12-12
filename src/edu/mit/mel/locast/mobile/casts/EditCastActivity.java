@@ -31,6 +31,7 @@ import android.location.LocationListener;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -62,14 +63,6 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 
 	private IncrementalLocator iloc;
 
-	private EditText mTitleField;
-	private EditText descriptionField;
-	private Spinner privacy;
-	private Button sendButton;
-	private Button cancelButton;
-	private ImageView videoThumbView;
-
-	private TagList tagList;
 	private UpdateRecommendedTagsTask tagRecommendationTask = null;
 	private Uri mediaUri;
 	private String contentType;
@@ -78,6 +71,11 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 	private Cursor c;
 	private Uri castUri;
 
+	private boolean isDraft = true;
+
+	private static final int
+		ACTIVITY_RECORD_SOUND = 1,
+		ACTIVITY_RECORD_VIDEO = 2;
 
 	WebImageLoader imgLoader;
 
@@ -104,23 +102,13 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		imgLoader = ((Application)getApplication()).getImageLoader();
 
 
-		tagList = (TagList)findViewById(R.id.new_cast_tags);
-		mTitleField = (EditText) findViewById(R.id.cast_title);
-		descriptionField = (EditText) findViewById(R.id.cast_description);
-		privacy = ((Spinner)findViewById(R.id.privacy));
 
-        sendButton = (Button) findViewById(R.id.done);
-		cancelButton = (Button) findViewById(R.id.cancel);
+		final Button sendButton = (Button) findViewById(R.id.done);
+		((Button) findViewById(R.id.cancel)).setOnClickListener(this);
 		((Button)findViewById(R.id.location_set)).setOnClickListener(this);
 
-		videoThumbView = (ImageView) findViewById(R.id.cast_thumb);
-
-		videoThumbView.setOnClickListener(this);
+		((ImageView) findViewById(R.id.cast_thumb)).setOnClickListener(this);
         sendButton.setOnClickListener(this);
-		cancelButton.setOnClickListener(this);
-
-
-
 
         if (ACTION_CAST_FROM_MEDIA_URI.equals(action) ){
         	locCastMedia = new ArrayList<Uri>();
@@ -141,6 +129,10 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
         	c.moveToFirst();
         	castUri = data;
         	loadFromCursor();
+
+        } else if (Intent.ACTION_INSERT.equals(action) && savedInstanceState == null){
+    		final Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+    		startActivityForResult(intent, ACTIVITY_RECORD_VIDEO);
         }
 
         iloc = new IncrementalLocator(this);
@@ -153,14 +145,14 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			finish();
 		}
 		if (!c.isNull(c.getColumnIndex(Cast._TITLE))){
-			mTitleField.setText(c.getString(c.getColumnIndex(Cast._TITLE)));
+			((EditText) findViewById(R.id.cast_title)).setText(c.getString(c.getColumnIndex(Cast._TITLE)));
 		}
 
 		if (!c.isNull(c.getColumnIndex(Cast._DESCRIPTION))){
-			descriptionField.setText(c.getString(c.getColumnIndex(Cast._DESCRIPTION)));
+			((EditText) findViewById(R.id.cast_description)).setText(c.getString(c.getColumnIndex(Cast._DESCRIPTION)));
 		}
 
-		tagList.addTags(Cast.getTags(getContentResolver(), castUri));
+		((TagList)findViewById(R.id.new_cast_tags)).addTags(Cast.getTags(getContentResolver(), castUri));
 
 		if (!c.isNull(c.getColumnIndex(Cast._PUBLIC_URI))){
 			castPublicUri = c.getString(c.getColumnIndex(Cast._PUBLIC_URI));
@@ -172,7 +164,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			final String thumbString = c.getString(c.getColumnIndex(Cast._THUMBNAIL_URI));
 			Uri.parse(thumbString);
 			try {
-				imgLoader.loadImage(videoThumbView, thumbString);
+				imgLoader.loadImage(((ImageView)findViewById(R.id.cast_thumb)), thumbString);
 				//videoThumbView.setImageBitmap(imc.getImage(new URL(thumbString)));
 
 			} catch (final Exception e) {
@@ -183,6 +175,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		contentType = c.getString(c.getColumnIndex(Cast._CONTENT_TYPE));
 
 		if (! c.isNull(c.getColumnIndex(Cast._PRIVACY))){
+			final Spinner privacy = ((Spinner)findViewById(R.id.privacy));
 			privacy.setSelection(Arrays.asList(Project.PRIVACY_LIST).indexOf(c.getString(c.getColumnIndex(Cast._PRIVACY))));
 			privacy.setEnabled(Cast.canChangePrivacyLevel(c));
 		}
@@ -200,8 +193,40 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			}
 		}
 
+		isDraft = c.getInt(c.getColumnIndex(Cast._DRAFT)) != 0;
+
 		location = Locatable.toLocation(c);
 		updateLocations(null);
+	}
+
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+
+		switch (requestCode){
+
+		case ACTIVITY_RECORD_SOUND:
+		case ACTIVITY_RECORD_VIDEO:
+
+			switch (resultCode){
+
+			case RESULT_OK:
+	        	locCastMedia = new ArrayList<Uri>();
+	        	locCastMedia.add(data.getData());
+	        	contentType = data.getType();
+
+				break;
+
+			case RESULT_CANCELED:
+				Toast.makeText(this, "Recording cancelled", Toast.LENGTH_SHORT).show();
+				finish();
+				break;
+
+			} // switch resultCode
+			break;
+
+		} // switch requestCode
 	}
 
 	/**
@@ -217,23 +242,37 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 //			((TextView)findViewById(R.id.location_new)).setText(locString);
 
 			if (tagRecommendationTask == null || tagRecommendationTask.getStatus() == AsyncTask.Status.FINISHED){
-				tagRecommendationTask = new UpdateRecommendedTagsTask(getApplicationContext(), tagList);
+				tagRecommendationTask = new UpdateRecommendedTagsTask(getApplicationContext(), ((TagList)findViewById(R.id.new_cast_tags)));
 				tagRecommendationTask.execute(currentLocation);
 			}
 		}
 	}
 
+	protected boolean validateInput(){
+		boolean valid = true;
+
+		final EditText title = (EditText) findViewById(R.id.cast_title);
+		if (title.getText().length() == 0){
+			title.setError(getString(R.string.error_please_enter_a_title));
+			valid = false;
+		}else{
+			title.setError(null);
+		}
+
+		return valid;
+	}
+
 	protected ContentValues toContentValues() {
 		final ContentValues cv = new ContentValues();
-		cv.put(Cast._TITLE, mTitleField.getText().toString());
-		cv.put(Cast._DESCRIPTION, descriptionField.getText().toString());
+		cv.put(Cast._TITLE, ((EditText) findViewById(R.id.cast_title)).getText().toString());
+		cv.put(Cast._DESCRIPTION, ((EditText) findViewById(R.id.cast_description)).getText().toString());
 		cv.put(Cast._MEDIA_PUBLIC_URI, (mediaUri != null && !mediaUri.equals("null")) ? mediaUri.toString(): null);
 		cv.put(Cast._CONTENT_TYPE, contentType);
 
 		if (castPublicUri != null) {
 			cv.put(Cast._PUBLIC_URI, castPublicUri);
 		}
-		cv.put(Cast._PRIVACY, Cast.PRIVACY_LIST[privacy.getSelectedItemPosition()]);
+		cv.put(Cast._PRIVACY, Cast.PRIVACY_LIST[((Spinner)findViewById(R.id.privacy)).getSelectedItemPosition()]);
 
 		if (location != null){
 			cv.put(Cast._LATITUDE, location.getLatitude());
@@ -241,7 +280,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		}
 
 		cv.put(Cast._AUTHOR, AndroidNetworkClient.getInstance(this).getUsername());
-		cv.put(Cast._DRAFT, false);
+		cv.put(Cast._DRAFT, isDraft);
 
 		Log.d("EditCast", cv.toString());
 		return cv;
@@ -263,6 +302,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 	}
 
 	protected boolean saveCast(){
+
 		final ContentValues[] allMediaCv = toCastMediaCV();
 		final ContentResolver cr = getContentResolver();
 		Uri castMediaUri;
@@ -287,7 +327,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 
 		// cast media is special in that inserts into it overwrite any existing data.
 		cr.bulkInsert(castMediaUri, allMediaCv);
-		Cast.putTags(getContentResolver(), castUri, tagList.getTags());
+		Cast.putTags(getContentResolver(), castUri, ((TagList)findViewById(R.id.new_cast_tags)).getTags());
 
 		Toast.makeText(this, "Cast saved. Uploading to server...", Toast.LENGTH_LONG).show();
 		return true;
@@ -300,8 +340,15 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			break;
 
 		case R.id.done:
-			saveCast();
-			finish();
+			if (validateInput()){
+				isDraft = false;
+			}else{
+				return;
+			}
+
+			if (saveCast()){
+				finish();
+			}
 			break;
 
 		case R.id.location_set:

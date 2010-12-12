@@ -36,8 +36,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -127,23 +125,6 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		// mSurfaceHolder is set from the callback so we can ensure
 		// that we have one initialized.
 		initSurfaceHolder(sv.getHolder());
-
-		final EditText castTitle = ((EditText)findViewById(R.id.cast_title));
-		castTitle.addTextChangedListener(new TextWatcher() {
-
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				castTitle.setError(null);
-			}
-
-			@Override
-			public void afterTextChanged(Editable s) {}
-
-			@Override
-			public void beforeTextChanged(CharSequence s, int start, int count,
-					int after) {}
-
-		});
 
 		progressBar = (SegmentedProgressBar)findViewById(R.id.progress);
 		mIndicator = (ImageView)findViewById(R.id.indicator);
@@ -710,7 +691,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		case R.id.done:{
 			final EditText title =((EditText)findViewById(R.id.cast_title));
 			if (title.getText().toString().trim().length() == 0){
-				title.setError("Please enter a title"); // XXX i18n
+				title.setError(getString(R.string.error_please_enter_a_title));
 				title.requestFocus();
 				break;
 			}else{
