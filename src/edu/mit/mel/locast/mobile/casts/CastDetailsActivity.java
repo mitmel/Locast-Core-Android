@@ -31,7 +31,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -82,7 +81,6 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
         mediaThumbView = ((ImageView)findViewById(R.id.media_thumbnail));
         mediaThumbView.setOnClickListener(this);
         ((Button)findViewById(R.id.location)).setOnClickListener(this);
-        ((ImageButton)findViewById(R.id.refresh)).setOnClickListener(this);
 
 		if (Intent.ACTION_VIEW.equals(action) || ACTION_PLAY_CAST.equals(action)) {
         	loadFromUri(data);
@@ -142,17 +140,11 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 	public void loadFromCursor(){
 		MediaProvider.dumpCursorToLog(c, Cast.PROJECTION);
 
-		((TextView)findViewById(R.id.item_title)).setText(
-				c.getString(c.getColumnIndex(Cast._TITLE)));
-
 		((TagListView)findViewById(R.id.tags))
 			.addTags(Cast.getTags(getContentResolver(), castUri));
 
 		((TextView)findViewById(R.id.description)).setText(
 				c.getString(c.getColumnIndex(Cast._DESCRIPTION)));
-
-		((TextView)findViewById(R.id.item_authors))
-			.setText(c.getString(c.getColumnIndex(Cast._AUTHOR)));
 
 
 		if (!c.isNull(c.getColumnIndex(Cast._CONTENT_TYPE))){
@@ -228,6 +220,12 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
        case R.id.cast_play:
     	   startActivity(new Intent(CastDetailsActivity.ACTION_PLAY_CAST, cast));
     	   return true;
+
+		case R.id.refresh:
+			Toast.makeText(this, "Synchronizing cast...", Toast.LENGTH_SHORT).show();
+
+			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()));
+			break;
 
 		/*case R.id.menu_annotate_cast:
 			if (localUri != null){

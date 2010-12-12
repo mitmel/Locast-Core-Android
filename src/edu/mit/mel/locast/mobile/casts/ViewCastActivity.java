@@ -116,11 +116,9 @@ public class ViewCastActivity extends TabActivity implements BasicCursorContentO
 										this, CastDetailsActivity.class))
 				.setIndicator(r.getString(R.string.tab_cast), r.getDrawable(R.drawable.icon_cast)));
 
-		((TextView)(getWindow().findViewById(android.R.id.title))).setText(
-				mCursor.getString(mCursor.getColumnIndex(Cast._TITLE)));
-
-
-		setTitle(mCursor.getString(mCursor.getColumnIndex(Cast._TITLE)));
+		final String title = mCursor.getString(mCursor.getColumnIndex(Cast._TITLE));
+		((TextView)(getWindow().findViewById(android.R.id.title))).setText(title);
+		setTitle(title);
 
 		((TextView)(getWindow().findViewById(android.R.id.text1)))
 			.setText(mCursor.getString(mCursor.getColumnIndex(Cast._AUTHOR)));

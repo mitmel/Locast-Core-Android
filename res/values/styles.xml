@@ -36,13 +36,13 @@
 
  	<style name="WindowTitleThick">
         <item name="android:singleLine">true</item>
-        <item name="android:shadowColor">#DD000000</item>
+        <item name="android:shadowColor">#77000000</item>
         <item name="android:shadowRadius">2.75</item>
         <item name="android:paddingLeft">4dip</item>
         <item name="android:paddingTop">4dip</item>
         
  		<item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
- 		<item name="android:textColor">#fff</item>
+ 		<item name="android:textColor">#000</item>
  	</style>
 
  	<style name="WindowTitleThick.Background">
@@ -59,7 +59,7 @@
  		
  	<style name="CastIcon">
  		<item name="android:background">@android:drawable/picture_frame</item>
- 		<item name="android:scaleType">fitCenter</item>
+ 		<item name="android:scaleType">centerCrop</item>
  		<item name="android:adjustViewBounds">true</item>
  		
  	</style>

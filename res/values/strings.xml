@@ -124,6 +124,8 @@
     <!-- privacy -->
 	<string name="privacy_header">Privacy:</string>
 	<string name="privacy_spinner">Privacy level</string>
+    <string name="refresh">Refresh</string>
+    
 	
 	<!-- Sync -->
 	<string name="sync_first">No local content detected. Starting first sync…</string>
