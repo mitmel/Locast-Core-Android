@@ -130,6 +130,11 @@ public class AndroidNetworkClient extends NetworkClient {
 
 	protected synchronized void loadBaseUri(){
 		this.baseurl = prefs.getString(PREF_SERVER_URL, context.getString(R.string.default_api_url));
+		if (!baseurl.endsWith("/")){
+			Log.w(TAG, "Baseurl in preferences (" +baseurl+") didn't end in a slash, so we added one.");
+			baseurl = baseurl + "/";
+			prefs.edit().putString(PREF_SERVER_URL, baseurl).commit();
+		}
 	}
 	/**
 	 * Retrieves the user credentials from local storage.
