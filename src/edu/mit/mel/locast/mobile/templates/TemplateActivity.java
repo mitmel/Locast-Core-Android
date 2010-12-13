@@ -207,7 +207,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			Log.w(TAG, "got more than one project for " + projectUri);
 		}else if (parent.getCount() == 0){
 			Log.e(TAG, "did not find a project at "+ projectUri);
-			Toast.makeText(this, "Error loading project", Toast.LENGTH_LONG);
+			Toast.makeText(this, "Error loading project", Toast.LENGTH_LONG); // XXX i18n
 			finish();
 		}
 		parent.moveToFirst();
@@ -380,7 +380,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		final DisplayMetrics metrics = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(metrics);
 		// position it above the red circle.
-		t.setGravity(Gravity.CENTER, 0, (int)(-50.0 * metrics.density));
+		t.setGravity(Gravity.CENTER_VERTICAL|Gravity.LEFT, 0, (int)(-50.0 * metrics.density));
 
 		t.show();
 	}
@@ -389,8 +389,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	private static final int
 		INDICATOR_NONE = 0,
 		INDICATOR_RECORD = 1,
-		INDICATOR_RECORD_PAUSE = 2,
-		INDICATOR_STOP = 3;
+		INDICATOR_STOP = 2;
 
 	private int mIndicatorState = 0;
 
@@ -400,6 +399,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	static {
 		osdLayoutLeft.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
 		osdLayoutLeft.addRule(RelativeLayout.CENTER_VERTICAL);
+		osdLayoutLeft.leftMargin = 10;
 
 		osdLayoutCenter.addRule(RelativeLayout.CENTER_IN_PARENT);
 	}
@@ -412,12 +412,9 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		switch (indicator){
 		case INDICATOR_RECORD:
 			mIndicator.setImageResource(R.drawable.osd_record);
-			mIndicator.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_in));
+			mIndicator.setLayoutParams(osdLayoutLeft);
+			//mIndicator.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_in));
 		break;
-
-		case INDICATOR_RECORD_PAUSE:
-			mIndicator.setImageResource(R.drawable.osd_record_pause);
-			break;
 
 		case INDICATOR_STOP:
 			mIndicator.setImageResource(R.drawable.osd_stop);
@@ -466,7 +463,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	private void prepareToRecord(int index){
 		templateRunnable = null;
 		listHandler.obtainMessage(MSG_SET_SECTION, index, 0).sendToTarget();
-		setIndicator(INDICATOR_RECORD_PAUSE);
+		setIndicator(INDICATOR_RECORD);
 		initRecorder();
 		setOutputFilename(filePrefix + "-" + (index + 1) +"-"+instanceId);
 		prepareRecorder();
@@ -647,9 +644,12 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 			int segmentTime = 0;   // time for the given segment
 			segmentTime = adapter.getTotalTime(section);
-			stoppable = (segmentTime == 0); // this allows for recording a segment of unlimited length. call stop() to stop
+			final boolean infinite = segmentTime == 0; // this allows for recording a segment of unlimited length.
+			stoppable = (infinite || segmentTime > 7000); // call stop() to stop
 			int elapsedTime = 0;
-			for (elapsedTime = 0; (stoppable && !stop) || elapsedTime <= segmentTime; elapsedTime += 100){
+			for (elapsedTime = 0; (!stoppable || (stoppable && !stop))
+					&& (infinite || (elapsedTime <= segmentTime));
+			elapsedTime += 100){
 
 				if (elapsedTime % 1000 == 0){
 					listHandler.sendMessage(Message.obtain(listHandler, MSG_UPDATE_TIME, section, elapsedTime/1000));

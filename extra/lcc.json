@@ -2,6 +2,10 @@
     "package": {
         "downloadUrl": "http://locast.mit.edu/connects/static/lcc.apk"
     },
+    "1.2.9": {
+    	"versionCode": 12,
+    	"changelog": ["improved templated recording", "added cast validation"],
+    },
     "1.2.8": {
     	"versionCode": 11,
     	"changelog": ["improved sync reliability"],

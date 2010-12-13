@@ -75,4 +75,12 @@
  		<item name="android:src">@drawable/icon_default_user</item>
  	</style>
 
+	<style name="TemplateTextPrompt">
+		<item name="android:textSize">24sp</item>
+		<item name="android:textColor">@color/template_item_text_color</item>
+	</style>
+	<style name="TemplateTextPrompt.OSD">
+		<item name="android:textColor">#fff</item>
+		<item name="android:textStyle">bold</item>
+	</style>
 </resources>

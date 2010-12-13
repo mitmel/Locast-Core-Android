@@ -60,7 +60,7 @@
 			android:focusableInTouchMode="false"
 		    android:background="#a0000000"
 		    android:layout_width="fill_parent" 
-		    android:layout_height="70sp" 
+		    android:layout_height="50sp" 
 		    android:layout_alignParentBottom="true"
 		    android:fadingEdge="vertical"
 		    android:cacheColorHint="@android:color/transparent"

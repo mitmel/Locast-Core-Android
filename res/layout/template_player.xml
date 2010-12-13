@@ -50,16 +50,12 @@
   <edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/osd_text"
   	android:layout_width="wrap_content"
   	android:layout_height="wrap_content"
-  	android:textSize="30sp"
-  	android:textStyle="bold"
-  	android:textColor="#fff" />
+  	style="@style/TemplateTextPrompt.OSD" />
   	
   	<edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/osd_text2"
   	android:layout_width="wrap_content"
   	android:layout_height="wrap_content"
-  	android:textSize="30sp"
-  	android:textStyle="bold"
-  	android:textColor="#fff" />
+  	style="@style/TemplateTextPrompt.OSD" />
   	</ViewSwitcher>
   
 </RelativeLayout>

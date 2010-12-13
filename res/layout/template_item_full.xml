@@ -39,9 +39,7 @@
   	android:layout_toRightOf="@id/play"
   	android:layout_alignWithParentIfMissing="true"
   	android:layout_centerVertical="true"
-  	
-  	android:textColor="@color/template_item_text_color"
-  	android:textSize="30sp"
+	style="@style/TemplateTextPrompt"
   	android:gravity="center_vertical"
   	android:paddingLeft="5sp"
   	 />
@@ -49,8 +47,7 @@
        		
        					
   <TextView android:id="@+id/time_remaining" android:layout_height="wrap_content" android:layout_width="wrap_content" 
-	  android:textColor="@color/template_item_text_color"
-	  android:textSize="30sp"
+	  style="@style/TemplateTextPrompt"
 	  android:gravity="center_vertical"
 	  android:layout_centerVertical="true"
 	  android:text="3s"
@@ -61,14 +58,13 @@
   	
   	<TextView android:id="@android:id/text1" 
   android:layout_width="wrap_content" android:layout_height="wrap_content"
-  android:textColor="@color/template_item_text_color"
   android:text="description"
-  android:textSize="30sp"
   android:gravity="center_vertical"
   android:paddingLeft="5sp"
   android:layout_toRightOf="@id/template_item_numeral"
   android:layout_toLeftOf="@id/time_remaining"
   android:layout_centerVertical="true"
+  style="@style/TemplateTextPrompt"
    />
 
 </RelativeLayout>
