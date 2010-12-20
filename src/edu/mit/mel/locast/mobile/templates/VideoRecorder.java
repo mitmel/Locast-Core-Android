@@ -84,7 +84,8 @@ public abstract class VideoRecorder extends Activity {
 	private Handler recorderStateHandler;
 
 	public final static int MSG_RECORDER_INITIALIZED = 100,
-							MSG_RECORDER_SHUTDOWN = 101;
+							MSG_RECORDER_SHUTDOWN = 101,
+							MSG_RECORDER_STARTED = 102;
 	public void setRecorderStateHandler(Handler recorderStateHandler) {
 		this.recorderStateHandler = recorderStateHandler;
 	}
@@ -330,6 +331,7 @@ public abstract class VideoRecorder extends Activity {
 	private void startRecorderActual(){
 		try {
 			recorder.start();
+			recorderStateHandler.sendEmptyMessage(MSG_RECORDER_STARTED);
 		} catch (final IllegalStateException e) {
 			alertFailSetup(e);
 		}

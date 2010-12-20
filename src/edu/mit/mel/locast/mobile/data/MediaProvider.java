@@ -99,7 +99,8 @@ public class MediaProvider extends ContentProvider {
 		MATCHER_PROJECT_SHOTLIST_ITEM= 18,
 		MATCHER_SHOTLIST_DIR         = 19,
 		MATCHER_PROJECT_CAST_CASTMEDIA_DIR = 20,
-		MATCHER_PROJECT_CAST_CASTMEDIA_ITEM= 21; // wow...
+		MATCHER_PROJECT_CAST_CASTMEDIA_ITEM= 21, // wow...
+		MATCHER_CAST_CASTMEDIA_DIR 	 = 22;
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
@@ -245,6 +246,7 @@ public class MediaProvider extends ContentProvider {
 
 		case MATCHER_CAST_MEDIA_DIR:
 		case MATCHER_CAST_MEDIA_ITEM:
+		case MATCHER_CAST_CASTMEDIA_DIR:
 		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:
 		case MATCHER_PROJECT_CAST_CASTMEDIA_ITEM:
 
@@ -294,6 +296,7 @@ public class MediaProvider extends ContentProvider {
 			return TYPE_PROJECT_CAST_ITEM;
 
 		case MATCHER_CAST_MEDIA_DIR:
+		case MATCHER_CAST_CASTMEDIA_DIR:
 		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:
 			return TYPE_CAST_MEDIA_DIR;
 
@@ -432,7 +435,7 @@ public class MediaProvider extends ContentProvider {
 			break;
 		}
 
-		case MATCHER_CAST_MEDIA_DIR:{
+		case MATCHER_CAST_CASTMEDIA_DIR:{
 			final String castId = uri.getPathSegments().get(1);
 			values.put(CastMedia._PARENT_ID, castId);
 			rowid = db.insert(CAST_MEDIA_TABLE_NAME, null, values);
@@ -626,7 +629,7 @@ public class MediaProvider extends ContentProvider {
 
 		} break;
 
-		case MATCHER_CAST_MEDIA_DIR:{
+		case MATCHER_CAST_CASTMEDIA_DIR:{
 			final String castId = uri.getPathSegments().get(1);
 
 			qb.setTables(CAST_MEDIA_TABLE_NAME);
@@ -844,6 +847,14 @@ public class MediaProvider extends ContentProvider {
 					whereArgs);
 			break;
 
+		case MATCHER_PROJECT_CAST_ITEM:{
+			final List<String> pathSegs = uri.getPathSegments();
+			id = ContentUris.parseId(uri);
+			db.delete(CAST_TABLE_NAME,
+					addExtraWhere(where, 			Cast._ID+"=?",		Cast._PROJECT_ID+"=?"),
+					addExtraWhereArgs(whereArgs,	Long.toString(id), 	pathSegs.get(pathSegs.size() - 3)));
+		}break;
+
 		case MATCHER_PROJECT_DIR:
 			db.delete(PROJECT_TABLE_NAME, where, whereArgs);
 			break;
@@ -891,6 +902,17 @@ public class MediaProvider extends ContentProvider {
 			db.delete(TAG_TABLE_NAME, where, whereArgs);
 			break;
 		}
+
+		case MATCHER_CAST_CASTMEDIA_DIR:
+		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:{
+			final List<String> pathSegs = uri.getPathSegments();
+
+			db.delete(CAST_MEDIA_TABLE_NAME,
+					addExtraWhere(where, 			CastMedia._PARENT_ID+"=?"),
+					addExtraWhereArgs(whereArgs,	pathSegs.get(pathSegs.size() - 2)));
+		}break;
+
+
 
 		case MATCHER_CAST_MEDIA_DIR:{
 			db.delete(CAST_MEDIA_TABLE_NAME, where, whereArgs);
@@ -996,6 +1018,7 @@ public class MediaProvider extends ContentProvider {
 		}break;
 
 		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:
+		case MATCHER_CAST_CASTMEDIA_DIR:
 		case MATCHER_CAST_MEDIA_DIR: {
 			path = getPathFromField(cr, removeLastPathSegment(uri), Cast._CASTMEDIA_DIR_URI);
 		}break;
@@ -1183,7 +1206,7 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#", MATCHER_CAST_ITEM);
 
 		// cast media
-		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH, MATCHER_CAST_MEDIA_DIR);
+		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH, MATCHER_CAST_CASTMEDIA_DIR);
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH+"/#", MATCHER_CAST_MEDIA_ITEM);
 
 		// cast media

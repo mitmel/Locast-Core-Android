@@ -262,6 +262,11 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 				return false;
 			}
 
+			final int draftCol = c.getColumnIndex(TaggableItem._DRAFT);
+			if (draftCol != -1 && c.getInt(draftCol) != 0){
+				Log.d(TAG, locUri + " is marked a draft. Not syncing.");
+				return false;
+			}
 
 			syncMap.onPreSyncItem(cr, locUri, c);
 		}
