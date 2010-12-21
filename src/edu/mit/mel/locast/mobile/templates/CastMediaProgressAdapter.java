@@ -11,6 +11,8 @@ import edu.mit.mel.locast.mobile.data.ShotList;
 import edu.mit.mobile.android.widget.RelativeSizeListAdapter;
 
 public class CastMediaProgressAdapter extends CursorAdapter implements RelativeSizeListAdapter {
+	@SuppressWarnings("unused")
+	private static final String TAG = CastMediaProgressAdapter.class.getSimpleName();
 	private int[] progress;
 	private int[] shotLength;
 
@@ -32,9 +34,13 @@ public class CastMediaProgressAdapter extends CursorAdapter implements RelativeS
 	}
 
 	private void loadProgress(){
+		final Cursor c = getCursor();
+		if (c.isClosed() || shotListCursor.isClosed()){
+			return;
+		}
 		progress = new int[getCount()];
 		shotLength = new int[getCount()];
-		final Cursor c = getCursor();
+
 		for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
 			final int position = c.getPosition();
 			progress[position] = !c.isNull(videoCol) ? c.getInt(durationCol) : 0;

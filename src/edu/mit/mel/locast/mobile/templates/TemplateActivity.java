@@ -76,7 +76,6 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	private Uri projectUri;
 	private String publicProjectUri;
 	private Cursor shotListCursor;
-	private Cursor castCursor;
 	private Cursor castMediaCursor;
 
 	private Uri castMediaUri;
@@ -116,7 +115,6 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		initSurfaceHolder(sv.getHolder());
 
 		progressBar = (RelativeSizeListView)findViewById(R.id.progress);
-		//((Button)findViewById(R.id.done)).setOnClickListener(this);
 		//((Button)findViewById(R.id.preview)).setOnClickListener(this);
 		mActionButton = ((ImageButton)findViewById(R.id.shutter));
 		updateRecordingIndicator(false, true);
@@ -155,8 +153,9 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 		// save a stub
 		if (currentCast == null){
-			currentCast = save(true);
+			currentCast = save();
 		}
+		castMediaUri = Cast.getCastMediaUri(currentCast);
 		castMediaCursor = managedQuery(castMediaUri, CastMedia.PROJECTION, null, null, CastMedia.DEFAULT_SORT);
 
 		mCastMediaProgressAdapter = new CastMediaProgressAdapter(this, castMediaCursor, shotListCursor);
@@ -190,23 +189,18 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		hasDoneFirstInit = false;
 		iloc.removeLocationUpdates(this);
 		castMediaCursor.unregisterContentObserver(castMediaObserver);
+		if (currentCast != null){
+			save();
+			if (isDraft){
+				Toast.makeText(this, "Cast saved as draft", Toast.LENGTH_LONG).show();
+			}
+		}
 	}
 
 	@Override
 	public void onBackPressed() {
 		super.onBackPressed();
-
-		boolean empty = true;
-		final int vidCol = castMediaCursor.getColumnIndex(CastMedia._LOCAL_URI);
-		for (castMediaCursor.moveToFirst(); empty && !castMediaCursor.isAfterLast(); castMediaCursor.moveToNext()){
-			empty = castMediaCursor.isNull(vidCol);
-		}
-		if (empty){
-			final ContentResolver cr = getContentResolver();
-			cr.delete(castMediaUri, null, null);
-			cr.delete(currentCast, null, null);
-			Log.d(TAG, "deleted empty cast");
-		}
+		deleteCastIfEmpty();
 	}
 
 	@Override
@@ -389,8 +383,10 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		@Override
 		public void onChange(boolean selfChange) {
 			castMediaCursor.requery();
-			prepareToRecordNext();
-		};
+			if (castMediaCursor.getCount() > 0){
+				prepareToRecordNext();
+			}
+		}
 	};
 
 	private void prepareToRecordNext(){
@@ -479,16 +475,12 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	private void loadCast(Cursor cast){
 		((EditText)findViewById(R.id.cast_title)).setText(cast.getString(cast.getColumnIndex(Cast._TITLE)));
 		isDraft = cast.getInt(cast.getColumnIndex(Cast._DRAFT)) != 0;
-		castMediaUri = Cast.getCastMediaUri(currentCast);
 	}
 
-	private Uri save(){
-		return save(false);
-	}
 	/**
 	 * Saves this as new cast associated with a given project
 	 */
-	private Uri save(boolean quiet){
+	private Uri save(){
 		final ContentResolver cr = getContentResolver();
 
 		final ContentValues cast = new ContentValues();
@@ -513,7 +505,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 				castMedia[i].put(CastMedia._LIST_IDX, i);
 				i++;
 			}
-			castMediaUri = Cast.getCastMediaUri(currentCast);
+			final Uri castMediaUri = Cast.getCastMediaUri(currentCast);
 
 			final int inserts = cr.bulkInsert(castMediaUri, castMedia);
 			if (inserts != shotListCursor.getCount()){
@@ -525,9 +517,32 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			Log.d(TAG, "updating cast "+ currentCast);
 		}
 
-
-
 		return currentCast;
+	}
+
+	/**
+	 * If the cast being created is entirely empty (no recorded videos),
+	 * delete it. This should be called if the user backs out of the activity
+	 * intentionally (as opposed to wandering off).
+	 *
+	 * @return true if the cast was empty and was therefore deleted.
+	 */
+	private boolean deleteCastIfEmpty(){
+		boolean empty = true;
+		final int vidCol = castMediaCursor.getColumnIndex(CastMedia._LOCAL_URI);
+		for (castMediaCursor.moveToFirst(); empty && !castMediaCursor.isAfterLast(); castMediaCursor.moveToNext()){
+			empty = castMediaCursor.isNull(vidCol);
+		}
+		if (empty){
+			final ContentResolver cr = getContentResolver();
+			cr.delete(castMediaUri, null, null);
+			cr.delete(currentCast, null, null);
+			Log.d(TAG, "deleted empty cast");
+			currentCast = null;
+			castMediaUri = null;
+
+		}
+		return empty;
 	}
 
 	private final Handler recorderStateHandler = new Handler(){
