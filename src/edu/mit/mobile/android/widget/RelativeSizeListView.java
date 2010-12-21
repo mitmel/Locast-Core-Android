@@ -35,8 +35,10 @@ import android.content.Context;
 import android.database.DataSetObserver;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.LinearLayout;
+import edu.mit.mel.locast.mobile.R;
 
 /**
  * Displays a list of views representing the contents of the adapter.
@@ -46,7 +48,7 @@ import android.widget.LinearLayout;
  * @author steve
  *
  */
-public class RelativeSizeListView extends AdapterView<RelativeSizeListAdapter> {
+public class RelativeSizeListView extends AdapterView<RelativeSizeListAdapter> implements OnClickListener {
 	private RelativeSizeListAdapter mAdapter;
 	private int mSelectedPosition = INVALID_POSITION;
 	private long mSelectedRowId = INVALID_ROW_ID;
@@ -58,6 +60,7 @@ public class RelativeSizeListView extends AdapterView<RelativeSizeListAdapter> {
 
 	private final LinearLayout mLinearLayout;
 
+	private static int TAG_ITEM_POSITION = R.id.tag; // XXX not entirely kosher, but should work.
 	public RelativeSizeListView(Context context, AttributeSet attrs,
 			int defStyle) {
 		super(context, attrs, defStyle);
@@ -128,6 +131,7 @@ public class RelativeSizeListView extends AdapterView<RelativeSizeListAdapter> {
 		requestLayout();
 		invalidate();
 
+
 	}
 
 	@Override
@@ -152,11 +156,15 @@ public class RelativeSizeListView extends AdapterView<RelativeSizeListAdapter> {
 		for (int i = 0; i < mItemCount; i++){
 			final View existingView = i < currentCount ? mLinearLayout.getChildAt(i): null;
 			final View child = mAdapter.getView(i, existingView, mLinearLayout);
+			child.setTag(TAG_ITEM_POSITION, i);
+			child.setSelected(mSelectedPosition == i);
+
 			final LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.FILL_PARENT);
 
 			child.setLayoutParams(params);
 			(params).weight = mRelMax - mAdapter.getRelativeSize(i);
 			if (existingView == null){
+				child.setOnClickListener(this);
 				mLinearLayout.addView(child);
 			}
 		}
@@ -193,5 +201,11 @@ public class RelativeSizeListView extends AdapterView<RelativeSizeListAdapter> {
 
 			resetList();
 		}
+	}
+
+	@Override
+	public void onClick(View v) {
+		final Integer position = (Integer) v.getTag(TAG_ITEM_POSITION);
+		performItemClick(v, position, getItemIdAtPosition(position));
 	}
 }

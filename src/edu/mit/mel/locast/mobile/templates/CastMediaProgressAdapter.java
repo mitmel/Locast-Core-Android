@@ -2,10 +2,12 @@ package edu.mit.mel.locast.mobile.templates;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CursorAdapter;
 import android.widget.ProgressBar;
+import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.data.CastMedia;
 import edu.mit.mel.locast.mobile.data.ShotList;
 import edu.mit.mobile.android.widget.RelativeSizeListAdapter;
@@ -13,7 +15,13 @@ import edu.mit.mobile.android.widget.RelativeSizeListAdapter;
 public class CastMediaProgressAdapter extends CursorAdapter implements RelativeSizeListAdapter {
 	@SuppressWarnings("unused")
 	private static final String TAG = CastMediaProgressAdapter.class.getSimpleName();
+	/**
+	 * length of any recorded shots. 0 if not yet recorded.
+	 */
 	private int[] progress;
+	/**
+	 * length of a shot, defined in the shot list
+	 */
 	private int[] shotLength;
 
 
@@ -45,12 +53,8 @@ public class CastMediaProgressAdapter extends CursorAdapter implements RelativeS
 			final int position = c.getPosition();
 			progress[position] = !c.isNull(videoCol) ? c.getInt(durationCol) : 0;
 
-			int shotLen = c.getInt(durationCol);
-			if (shotLen == 0){
-				shotListCursor.moveToPosition(position);
-				shotLen = shotListCursor.getInt(shotListDurationCol) * 1000;
-			}
-			shotLength[position] = shotLen;
+			shotListCursor.moveToPosition(position);
+			shotLength[position] = shotListCursor.getInt(shotListDurationCol) * 1000;
 		}
 	}
 
@@ -74,7 +78,7 @@ public class CastMediaProgressAdapter extends CursorAdapter implements RelativeS
 	public float getRelativeSize(int position) {
 		float len = shotLength[position];
 		if (len == 0){
-			len = 3000; // XXX this should really be in the presentation layer.
+			len = Math.max(3000, progress[position]); // XXX this should really be in the presentation layer.
 		}
 		return len;
 	}
@@ -83,10 +87,11 @@ public class CastMediaProgressAdapter extends CursorAdapter implements RelativeS
 	public void bindView(View view, Context context, Cursor cursor) {
 		final ProgressBar pb = (ProgressBar) view;
 		final int shot = cursor.getPosition();
-		final int len = shotLength[shot];
-		if (len > 0 || !cursor.isNull(videoCol)){
+		final int shotLen = shotLength[shot];
+		// already recorded
+		if (shotLen > 0 || !cursor.isNull(videoCol)){
 			pb.setIndeterminate(false);
-			pb.setMax(Math.max(len, progress[shot]));
+			pb.setMax(Math.max(shotLen, progress[shot]));
 			pb.setProgress(progress[shot]);
 		}else{
 			if (progress[shot] > 0){
@@ -99,9 +104,7 @@ public class CastMediaProgressAdapter extends CursorAdapter implements RelativeS
 
 	@Override
 	public View newView(Context context, Cursor cursor, ViewGroup parent) {
-		final ProgressBar pb = new ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal);
-        pb.setIndeterminate(false);
-        return pb;
+		return LayoutInflater.from(context).inflate(R.layout.template_progress_item, parent, false);
 	}
 
 }

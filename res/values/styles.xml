@@ -83,4 +83,8 @@
 		<item name="android:textColor">#fff</item>
 		<item name="android:textStyle">bold</item>
 	</style>
+	
+	<style name="TemplateProgress" parent="@android:style/Widget.ProgressBar.Horizontal">
+		<item name="android:background">@drawable/progress_selector</item>
+	</style>
 </resources>
