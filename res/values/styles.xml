@@ -74,17 +74,27 @@
  		<item name="android:adjustViewBounds">true</item>
  		<item name="android:src">@drawable/icon_default_user</item>
  	</style>
+	
+	<style name="TemplatedVideo">
+		<item name="android:background">@drawable/camera_background</item>
+	</style>
+	<style name="TemplatedVideoControls">
+		<item name="android:background">@drawable/btn_mode_switch_bg</item>
+		<item name="android:padding">5dip</item>
+		
+	</style>
 
-	<style name="TemplateTextPrompt">
+	<style name="TemplatedVideoTextPrompt">
 		<item name="android:textSize">24sp</item>
 		<item name="android:textColor">@color/template_item_text_color</item>
+		<item name="android:gravity">bottom|left</item>
 	</style>
-	<style name="TemplateTextPrompt.OSD">
+	<style name="TemplatedVideoTextPrompt.OSD">
 		<item name="android:textColor">#fff</item>
 		<item name="android:textStyle">bold</item>
 	</style>
 	
-	<style name="TemplateProgress" parent="@android:style/Widget.ProgressBar.Horizontal">
+	<style name="TemplatedVideoProgress" parent="@android:style/Widget.ProgressBar.Horizontal">
 		<item name="android:background">@drawable/progress_selector</item>
 	</style>
 </resources>

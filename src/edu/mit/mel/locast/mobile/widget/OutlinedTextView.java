@@ -34,17 +34,16 @@ package edu.mit.mel.locast.mobile.widget;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.text.BoringLayout;
 import android.text.Layout;
+import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
 import android.widget.TextView;
 
 /**
  * A modified text view that puts an outline around the text.
- * Doesn't support much other than plain, single-lined colored text.
+ * Supports a limited subset of what TextViews allow.
  *
  * @author Steve Pomeroy
  *
@@ -59,20 +58,19 @@ public class OutlinedTextView extends TextView {
 	private float mSpacingAdd = 0;
 
 	private TextPaint mTextPaint;
-	private TextPaint strokePaint = new TextPaint();
+	private TextPaint mStrokePaint = new TextPaint();
+	private boolean mInvalidateLayout;
 
 	public OutlinedTextView(Context context) {
-		this(context, null);
+		super(context);
 	}
 
 	public OutlinedTextView(Context context, AttributeSet attrs) {
-		this(context, attrs, 0);
+		super(context, attrs);
 	}
 
 	public OutlinedTextView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
-
-		mGravity = getGravity();
 	}
 
 	@Override
@@ -82,52 +80,84 @@ public class OutlinedTextView extends TextView {
 		setStrokePaint();
 	}
 
+	public void setOutlineARGB(int alpha, int red, int green, int blue){
+		mStrokePaint.setARGB(alpha, red, green, blue);
+		invalidate();
+	}
+
+	public void setOutlineColor(int color){
+		mStrokePaint.setColor(color);
+		invalidate();
+	}
+
+	public void setOutlineWidth(float width){
+		mStrokePaint.setStrokeWidth(width);
+		invalidate();
+	}
+
 	private void setStrokePaint(){
 		mTextPaint = getPaint();
-		strokePaint = new TextPaint(mTextPaint);
-		strokePaint.setTypeface(getTypeface());
-		strokePaint.setStyle(Paint.Style.STROKE);
+		mStrokePaint = new TextPaint(mTextPaint);
+		mStrokePaint.setTypeface(getTypeface());
+		mStrokePaint.setStyle(Paint.Style.STROKE);
 
 		// TODO make these properties that can be set from XML
-		strokePaint.setARGB(255, 0, 0, 0);
-		strokePaint.setStrokeWidth(4);
+		mStrokePaint.setARGB(255, 0, 0, 0);
+		mStrokePaint.setStrokeWidth(4);
+	}
+
+	@Override
+	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 	}
 
 	@Override
 	public void setText(CharSequence text, BufferType type) {
 		setStrokePaint();
 
-		mGravity = getGravity();
-
 		super.setText(text, type);
 
+		mInvalidateLayout = true;
+		invalidate();
+	}
 
-        Layout.Alignment alignment;
-        switch (mGravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
-            case Gravity.CENTER_HORIZONTAL:
-                alignment = Layout.Alignment.ALIGN_CENTER;
-                break;
+	@Override
+	protected void onLayout(boolean changed, int left, int top, int right,
+			int bottom) {
+		createLayouts(left, right);
+	}
 
-            case Gravity.RIGHT:
-                alignment = Layout.Alignment.ALIGN_OPPOSITE;
-                break;
+	@Override
+	public void setGravity(int gravity) {
+		super.setGravity(gravity);
 
-            default:
-                alignment = Layout.Alignment.ALIGN_NORMAL;
-        }
+		// call through to the parent, as it sets defaults
+		mGravity = super.getGravity();
 
-        final BoringLayout.Metrics boring = BoringLayout.isBoring(text, mTextPaint);
-        final BoringLayout.Metrics boringOutline = BoringLayout.isBoring(text, strokePaint);
-        if (boring == null){
-        	// we only support boringness here.
-        	mLayout = null;
-        	mLayoutOutline = null;
-        	Log.e(TAG, "Text too complex for view to understand.");
-        }else{
+        mInvalidateLayout = true;
+	}
 
-        	mLayout = BoringLayout.make(text, mTextPaint, 0, alignment, mSpacingMult, mSpacingAdd, boring, mIncludePad);
-        	mLayoutOutline = BoringLayout.make(text, strokePaint, 0, alignment, mSpacingMult, mSpacingAdd, boringOutline, mIncludePad);
-        }
+	private void createLayouts(int left, int right){
+		if (mInvalidateLayout){
+	        final int width = right - left - getCompoundPaddingRight() - getCompoundPaddingLeft();
+	        Layout.Alignment alignment;
+	        switch (mGravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
+	            case Gravity.CENTER_HORIZONTAL:
+	                alignment = Layout.Alignment.ALIGN_CENTER;
+	                break;
+
+	            case Gravity.RIGHT:
+	                alignment = Layout.Alignment.ALIGN_OPPOSITE;
+	                break;
+
+	            default:
+	                alignment = Layout.Alignment.ALIGN_NORMAL;
+	        }
+	        final CharSequence text = getText();
+	    	mLayout = new StaticLayout(text, mTextPaint, width, alignment, mSpacingMult, mSpacingAdd, mIncludePad);
+	    	mLayoutOutline = new StaticLayout(text, mStrokePaint, width, alignment, mSpacingMult, mSpacingAdd, mIncludePad);
+	    	mInvalidateLayout = false;
+		}
 	}
 
 	@Override
@@ -145,6 +175,7 @@ public class OutlinedTextView extends TextView {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
+
 		// This routine explicitly does not call super.onDraw() as trying to match
 		// up the drawn text with the outline is too hard.
 		if (mLayoutOutline != null){
@@ -158,6 +189,7 @@ public class OutlinedTextView extends TextView {
 			canvas.restore();
 		}
 	}
+
     private int getVerticalOffset() {
         int voffset = 0;
         final int gravity = mGravity & Gravity.VERTICAL_GRAVITY_MASK;
@@ -180,5 +212,4 @@ public class OutlinedTextView extends TextView {
         }
         return voffset;
     }
-
 }

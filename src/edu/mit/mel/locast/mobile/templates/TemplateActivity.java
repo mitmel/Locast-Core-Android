@@ -48,9 +48,8 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.TextView;
+import android.widget.TextSwitcher;
 import android.widget.Toast;
-import android.widget.ViewSwitcher;
 import android.widget.AdapterView.OnItemClickListener;
 import edu.mit.mel.locast.mobile.IncrementalLocator;
 import edu.mit.mel.locast.mobile.ListUtils;
@@ -82,7 +81,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	private Cursor castMediaCursor;
 
 	private Uri castMediaUri;
-	private ViewSwitcher osdSwitcher;
+	private TextSwitcher osdSwitcher;
 	private ImageButton mActionButton;
 	private RelativeSizeListView progressBar;
 	private CastMediaProgressAdapter mCastMediaProgressAdapter;
@@ -134,7 +133,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		updateRecordingIndicator(false, true);
 		mActionButton.setOnClickListener(this);
 		findViewById(R.id.done).setOnClickListener(this);
-		osdSwitcher = (ViewSwitcher) findViewById(R.id.osd_switcher);
+		osdSwitcher = (TextSwitcher) findViewById(R.id.osd_switcher);
 
 
 		// restore state
@@ -244,7 +243,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		DIALOG_CONFIRM_RERECORD = 1,
 		DIALOG_LOADING = 2;
 	// this is to work around the missing bundle API introduced in API level 5
-	private int whichToDelete = -1;
+	private final int whichToDelete = -1;
 
 	@Override
 	protected Dialog onCreateDialog(int id) {
@@ -630,10 +629,6 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 	public void onClick(View v) {
 		switch (v.getId()){
-		case R.id.delete:
-			whichToDelete = (Integer)v.getTag();
-			showDialog(DIALOG_CONFIRM_DELETE);
-			break;
 
 		case R.id.done:{
 			final EditText title =((EditText)findViewById(R.id.cast_title));
@@ -783,10 +778,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	}
 
 	private void setOsdText(String osdText){
-		final int current = osdSwitcher.getDisplayedChild();
-		final int other = current == 0 ? 1 : 0;
-		((TextView)osdSwitcher.getChildAt(other)).setText(osdText);
-		osdSwitcher.setDisplayedChild(other);
+		osdSwitcher.setText(osdText);
 
 	}
 

@@ -3,7 +3,7 @@
   xmlns:android="http://schemas.android.com/apk/res/android"
   android:layout_width="fill_parent"
   android:layout_height="fill_parent"
-  android:background="@android:color/black"
+  style="@style/TemplatedVideo"
   >
   
   <FrameLayout
@@ -50,12 +50,12 @@
   <edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/osd_text"
   	android:layout_width="wrap_content"
   	android:layout_height="wrap_content"
-  	style="@style/TemplateTextPrompt.OSD" />
+  	style="@style/TemplatedVideoTextPrompt.OSD" />
   	
   	<edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/osd_text2"
   	android:layout_width="wrap_content"
   	android:layout_height="wrap_content"
-  	style="@style/TemplateTextPrompt.OSD" />
+  	style="@style/TemplatedVideoTextPrompt.OSD" />
   	</ViewSwitcher>
   
 </RelativeLayout>

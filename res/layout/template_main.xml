@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="#000"
+    style="@style/TemplatedVideo"
     >  
     
 	    <edu.mit.mobile.android.widget.RelativeSizeListView android:id="@+id/progress" 
@@ -12,14 +12,15 @@
 	        android:paddingBottom="4dp"
 	       />
 
-    <LinearLayout android:id="@+id/controls" 
-    	android:background="#aaa"
+    <LinearLayout android:id="@+id/controls"
+    	style="@style/TemplatedVideoControls" 
     	android:orientation="vertical"
     	android:layout_width="wrap_content"
     	android:layout_height="wrap_content"
     	android:layout_above="@id/progress"
     	android:layout_alignParentLeft="true"
     	android:layout_alignParentTop="true"
+    	android:fadingEdge="vertical"
     	>
     	
     	<ImageButton android:id="@+id/shutter" 
@@ -29,13 +30,14 @@
     	/>
     	
     	<Button android:id="@+id/done"
-    		android:layout_width="wrap_content"
-	    	android:layout_height="wrap_content"
-	    	android:text="Done"
-	    	android:enabled="false"
-	    	/>
+    		android:layout_width="fill_parent"
+    		android:layout_height="wrap_content" 
+    		android:text="@string/done"
+    		android:enabled="false"
+    		android:layout_gravity="bottom"/>
     	
-    	</LinearLayout>
+    	
+</LinearLayout>
     	
     	<SurfaceView android:id="@+id/camera"
     		android:layout_width="fill_parent"
@@ -56,23 +58,27 @@
     		
     		/>
     	
-<ViewSwitcher android:id="@+id/osd_switcher"
+<TextSwitcher android:id="@+id/osd_switcher"
   	android:layout_width="fill_parent"
   	android:layout_height="wrap_content"
    	android:layout_above="@id/progress"
   	android:layout_toRightOf="@id/controls"
   	android:inAnimation="@anim/push_up_in"
   	android:outAnimation="@anim/push_down_out"
+  	android:layout_marginLeft="6sp"
+  	android:layout_marginRight="6sp"
   >
+  
   <edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/osd_text"
-  	android:layout_width="wrap_content"
+  	android:layout_width="fill_parent"
   	android:layout_height="wrap_content"
-  	style="@style/TemplateTextPrompt.OSD" />
+  	style="@style/TemplatedVideoTextPrompt.OSD" />
   	
+  	<!--  -->
   	<edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/osd_text2"
-  	android:layout_width="wrap_content"
+  	android:layout_width="fill_parent"
   	android:layout_height="wrap_content"
-  	style="@style/TemplateTextPrompt.OSD" />
-  	</ViewSwitcher>
+  	style="@style/TemplatedVideoTextPrompt.OSD" />
+  	</TextSwitcher>
 
 </RelativeLayout>
