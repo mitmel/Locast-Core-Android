@@ -54,40 +54,43 @@ public abstract class VideoRecorder extends Activity {
 	private Camera mCamera;
 	private SurfaceHolder mSurfaceHolder;
 	private boolean mIsPreviewing = false;
+	private boolean mShouldPreview = true;
 	private MediaRecorder recorder = null;
 
 	private static final int
-		MSG_INIT_RECORDER  = 1,
-		MSG_START_RECORD   = 2,
-		MSG_PREPARE_RECORD = 3;
+		_MSG_INIT_RECORDER  = 1,
+		_MSG_START_RECORD   = 2,
+		_MSG_PREPARE_RECORD = 3;
 
-	private final Handler mHandler = new Handler(){
+	private final Handler mInternalHandler = new Handler(){
 
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what){
-			case MSG_INIT_RECORDER:
+			case _MSG_INIT_RECORDER:
 				initRecorder();
 				break;
 
-			case MSG_START_RECORD:
+			case _MSG_START_RECORD:
 				startRecorderActual();
 				break;
 
-			case MSG_PREPARE_RECORD:
+			case _MSG_PREPARE_RECORD:
 				prepareRecorderActual();
 				break;
 			}
 		}
 	};
 
-	private Handler recorderStateHandler;
+	private Handler mRecorderStateHandler;
 
-	public final static int MSG_RECORDER_INITIALIZED = 100,
-							MSG_RECORDER_SHUTDOWN = 101,
-							MSG_RECORDER_STARTED = 102;
+	public final static int MSG_RECORDER_INITIALIZED 	= 100,
+							MSG_RECORDER_SHUTDOWN 		= 101,
+							MSG_RECORDER_STARTED 		= 102,
+							MSG_PREVIEW_STOPPED			= 103;
+
 	public void setRecorderStateHandler(Handler recorderStateHandler) {
-		this.recorderStateHandler = recorderStateHandler;
+		this.mRecorderStateHandler = recorderStateHandler;
 	}
 
 	private final SurfaceHolder.Callback cameraSHListener = new SurfaceHolder.Callback() {
@@ -114,7 +117,7 @@ public abstract class VideoRecorder extends Activity {
 				setPreviewDisplay(holder);
 				//unlockCamera();
 				Log.d(TAG, "surface changed set preview display");
-				mHandler.sendEmptyMessage(MSG_INIT_RECORDER);
+				mInternalHandler.sendEmptyMessage(_MSG_INIT_RECORDER);
 			}
 			//mCamera.startPreview();
 
@@ -129,7 +132,7 @@ public abstract class VideoRecorder extends Activity {
 		startPreviewThread = new Thread(new Runnable() {
 
 				public void run() {
-					startPreview();
+					actualStartPreview();
 				}
 			});
 		startPreviewThread.start();
@@ -153,8 +156,8 @@ public abstract class VideoRecorder extends Activity {
 	protected void onResume() {
 		super.onResume();
 
-		if (!mIsPreviewing){
-			startPreview();
+		if (!mIsPreviewing && mShouldPreview){
+			actualStartPreview();
 		}
 	}
 
@@ -163,7 +166,7 @@ public abstract class VideoRecorder extends Activity {
 		super.onPause();
 		//mHandler.sendEmptyMessage(MSG_CLOSE_CAMERA);
 
-		closeCamera();
+		actualStopPreview();
 	}
 
 	@Override
@@ -198,7 +201,26 @@ public abstract class VideoRecorder extends Activity {
 		mCamera.setParameters(params);
 	}
 
-	protected void startPreview() {
+	/**
+	 * Stops the camera preview. Any further calls to the recorder will fail.
+	 */
+	public void stopPreview(){
+		mShouldPreview = false;
+		actualStopPreview();
+	}
+
+	/**
+	 * Starts the camera preview on the given surface.
+	 */
+	public void startPreview(){
+		mShouldPreview = true;
+		actualStartPreview();
+	}
+
+	/**
+	 * Starts the camera preview on the given surface.
+	 */
+	private void actualStartPreview() {
 		if (mIsPreviewing){
 			// already rolling...
 			return;
@@ -230,7 +252,10 @@ public abstract class VideoRecorder extends Activity {
 	    }
 	}
 
-	private void closeCamera() {
+	/**
+	 * Stops the camera preview. Any further calls to the recorder will fail.
+	 */
+	private void actualStopPreview() {
 		if (mCamera == null){
 			return;
 		}
@@ -247,14 +272,14 @@ public abstract class VideoRecorder extends Activity {
 		mIsPreviewing = false;
 		mCamera = null;
 		Log.d(TAG, "Camera has been shut down");
-
+		mRecorderStateHandler.sendEmptyMessage(MSG_PREVIEW_STOPPED);
 	}
 
 	private void setPreviewDisplay(SurfaceHolder holder) {
 	    try {
 	        mCamera.setPreviewDisplay(holder);
 	    } catch (final Throwable ex) {
-	        closeCamera();
+	        actualStopPreview();
 	        throw new RuntimeException("setPreviewDisplay failed", ex);
 	    }
 	}
@@ -308,7 +333,7 @@ public abstract class VideoRecorder extends Activity {
 	}
 
 	public void startRecorder(){
-		mHandler.sendEmptyMessage(MSG_START_RECORD);
+		mInternalHandler.sendEmptyMessage(_MSG_START_RECORD);
 	}
 
 	private boolean isLocked;
@@ -317,7 +342,7 @@ public abstract class VideoRecorder extends Activity {
 	 * Call this after setOutputFilename(), but before startRecorder()
 	 */
 	public void prepareRecorder(){
-		mHandler.sendEmptyMessage(MSG_PREPARE_RECORD);
+		mInternalHandler.sendEmptyMessage(_MSG_PREPARE_RECORD);
 	}
 	private void prepareRecorderActual(){
 		try {
@@ -331,7 +356,7 @@ public abstract class VideoRecorder extends Activity {
 	private void startRecorderActual(){
 		try {
 			recorder.start();
-			recorderStateHandler.sendEmptyMessage(MSG_RECORDER_STARTED);
+			mRecorderStateHandler.sendEmptyMessage(MSG_RECORDER_STARTED);
 		} catch (final IllegalStateException e) {
 			alertFailSetup(e);
 		}
@@ -344,7 +369,7 @@ public abstract class VideoRecorder extends Activity {
 	}
 
 	public void alertFailSetup(Throwable e){
-		closeCamera();
+		actualStopPreview();
 		Toast.makeText(getApplicationContext(), edu.mit.mel.locast.mobile.R.string.template_error_setup_fail, Toast.LENGTH_SHORT).show();
 		e.printStackTrace();
 		finish();
@@ -382,11 +407,14 @@ public abstract class VideoRecorder extends Activity {
 		return mFullOutputFile;
 	}
 
+	/**
+	 * Call this from start or from preview being stopped.
+	 */
 	protected void initRecorder() {
 		Log.d(TAG, "initializing recorder...");
 		if (mCamera == null){
 			Log.d(TAG, "Camera was null. Starting preview...");
-			startPreview();
+			actualStartPreview();
 		}
 
 		if (isLocked){
@@ -431,8 +459,8 @@ public abstract class VideoRecorder extends Activity {
 
 
 			Log.d(TAG, "done setting recorder parameters");
-			if (recorderStateHandler != null){
-				recorderStateHandler.sendEmptyMessage(MSG_RECORDER_INITIALIZED);
+			if (mRecorderStateHandler != null){
+				mRecorderStateHandler.sendEmptyMessage(MSG_RECORDER_INITIALIZED);
 			}
 		} catch (final IllegalStateException e) {
 			alertFailSetup(e);

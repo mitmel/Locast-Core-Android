@@ -87,7 +87,7 @@ public class RelativeSizeListView extends AdapterView<RelativeSizeListAdapter> i
 
 	@Override
 	public View getSelectedView() {
-		if (mItemCount > 0 && mSelectedPosition >= 0){
+		if (mItemCount > 0 && mSelectedPosition != INVALID_POSITION){
 			return getChildAt(mSelectedPosition);
 		}else{
 			return null;
@@ -95,8 +95,35 @@ public class RelativeSizeListView extends AdapterView<RelativeSizeListAdapter> i
 	}
 
 	@Override
+	public Object getSelectedItem() {
+		if (mItemCount > 0 && mSelectedPosition != INVALID_POSITION){
+			return mAdapter.getItem(mSelectedPosition);
+		}else{
+			return null;
+		}
+	}
+
+	@Override
+	public long getSelectedItemId() {
+		return mSelectedRowId;
+	}
+
+	@Override
+	public int getSelectedItemPosition() {
+		return mSelectedPosition;
+	}
+
+
+	@Override
 	public int getCount() {
 		return mItemCount;
+	}
+
+	@Override
+	public void setEnabled(boolean enabled) {
+		super.setEnabled(enabled);
+
+		requestLayout();
 	}
 
 	public void setMinWidth(float minWidth){
@@ -128,10 +155,13 @@ public class RelativeSizeListView extends AdapterView<RelativeSizeListAdapter> i
 	@Override
 	public void setSelection(int position) {
 		mSelectedPosition = position;
+		if (position != INVALID_POSITION){
+			mSelectedRowId = mAdapter.getItemId(position);
+		}else{
+			mSelectedRowId = INVALID_ROW_ID;
+		}
 		requestLayout();
 		invalidate();
-
-
 	}
 
 	@Override
@@ -149,15 +179,15 @@ public class RelativeSizeListView extends AdapterView<RelativeSizeListAdapter> i
 		}
 
 		final int currentCount = mLinearLayout.getChildCount();
-
+		final boolean enabled = isEnabled();
 		// first remove any views
 		mLinearLayout.removeViews(0, Math.max(0, currentCount - mItemCount));
-
 		for (int i = 0; i < mItemCount; i++){
 			final View existingView = i < currentCount ? mLinearLayout.getChildAt(i): null;
 			final View child = mAdapter.getView(i, existingView, mLinearLayout);
 			child.setTag(TAG_ITEM_POSITION, i);
 			child.setSelected(mSelectedPosition == i);
+			child.setEnabled(enabled);
 
 			final LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.FILL_PARENT);
 

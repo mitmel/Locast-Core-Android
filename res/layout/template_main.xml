@@ -10,6 +10,7 @@
 			android:layout_alignParentBottom="true"
 	        android:paddingTop="4dp"
 	        android:paddingBottom="4dp"
+	        style="@style/TemplatedVideoProgress"
 	       />
 
     <LinearLayout android:id="@+id/controls"
@@ -38,13 +39,54 @@
     	
     	
 </LinearLayout>
-    	
+
+    	<VideoView android:id="@+id/playback"
+    		android:layout_width="fill_parent"
+    		android:layout_height="fill_parent" 
+    		android:layout_toRightOf="@id/controls"
+    		android:layout_above="@id/progress"
+    		android:visibility="gone" />
+    		
+		<ImageView android:id="@+id/playback_overlay"
+    		android:layout_width="fill_parent"
+    		android:layout_height="fill_parent" 
+    		android:layout_toRightOf="@id/controls"
+    		android:layout_above="@id/progress"
+    		android:visibility="gone" 
+    		android:src="@drawable/osd_play"
+		/>
+		
+ 	<RelativeLayout android:id="@+id/staticview"
+ 	    android:visibility="gone" 
+  	    android:layout_width="fill_parent"
+  		android:layout_height="fill_parent"
+		android:layout_toRightOf="@id/controls"
+   		android:layout_above="@id/progress"
+  		>
+	    <ImageView android:id="@+id/noise"
+	      android:src="@drawable/noise"
+	      android:scaleType="centerCrop"
+		  android:layout_centerInParent="true"
+		  android:layout_width="fill_parent"
+		  android:layout_height="fill_parent" />
+		  
+	  <edu.mit.mel.locast.mobile.widget.OutlinedTextView
+	  	android:layout_width="wrap_content"
+	  	android:layout_height="wrap_content"
+	  	android:layout_centerInParent="true"
+	  	android:text="No video for this segment"
+	  	android:textSize="30sp"
+	  	android:textStyle="bold"
+	  	android:textColor="#f00" />
+	  </RelativeLayout>
+		
     	<SurfaceView android:id="@+id/camera"
     		android:layout_width="fill_parent"
     		android:layout_height="fill_parent" 
     		
     		android:layout_toRightOf="@id/controls"
     		android:layout_above="@id/progress"
+    		android:visibility="visible"
     		/>
     		
     		<EditText android:id="@+id/cast_title"
