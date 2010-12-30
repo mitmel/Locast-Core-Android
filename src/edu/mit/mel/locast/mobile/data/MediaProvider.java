@@ -465,6 +465,8 @@ public class MediaProvider extends ContentProvider {
 			values.put(Cast._DRAFT, true);
 
 			newItem = insert(Cast.CONTENT_URI, values);
+			// this adds the ID to the path that we sent in, instead of the base one.
+			newItem = ContentUris.withAppendedId(uri, ContentUris.parseId(newItem));
 
 		} break;
 
@@ -473,7 +475,9 @@ public class MediaProvider extends ContentProvider {
 			values.put(CastMedia._PARENT_ID, castId);
 
 			// TODO figure out how to have it not sync twice here
-			newItem = insert(CastMedia.CONTENT_URI, values);
+			newItem = insert(Cast.getCastMediaUri(Uri.withAppendedPath(Cast.CONTENT_URI, castId)), values);
+			// this adds the ID to the path that we sent in, instead of the base one.
+			newItem = ContentUris.withAppendedId(uri, ContentUris.parseId(newItem));
 		} break;
 
 		default:
