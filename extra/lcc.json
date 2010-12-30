@@ -4,15 +4,15 @@
     },
     "1.2.9": {
     	"versionCode": 12,
-    	"changelog": ["improved templated recording", "added cast validation"],
+    	"changelog": ["improved templated recording", "added cast validation"]
     },
     "1.2.8": {
     	"versionCode": 11,
-    	"changelog": ["improved sync reliability"],
+    	"changelog": ["improved sync reliability"]
     },
     "1.2.7": {
     	"versionCode": 10,
-    	"changelog": ["added moment saving", "improved template recording"],
+    	"changelog": ["added moment saving", "improved template recording"]
     },
     "1.2.6": {
         "versionCode": 9,
