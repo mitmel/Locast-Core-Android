@@ -354,7 +354,7 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
 					}
 				}
 				if (cvNet == null){
-					Log.e(TAG, "got null values from fromJSON() on item " + locUri +": " +jsonObject.toString());
+					Log.e(TAG, "got null values from fromJSON() on item " + locUri +": " +(jsonObject != null ? jsonObject.toString(): "<< no json object >>"));
 					return false;
 				}
 				final Date netLastModified = new Date(cvNet.getAsLong(JsonSyncableItem._MODIFIED_DATE));
