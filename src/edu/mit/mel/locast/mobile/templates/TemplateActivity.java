@@ -72,10 +72,10 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 	// stateful
 	private long mInstanceId; 		// a randomly-generated value to differentiate between different instances of a cast recording
-	private int mCurrentCastVideo; 	// the index of the currently-recording video
+	private int mCurrentCastVideo = -1; 	// the index of the currently-recording video
 	private boolean mIsDraft; 		// casts are drafts until the user decides to publish
 	private Uri mCurrentCast; 		// the uri of the current cast, or null if it's new
-	private Integer mTemplateState = STATE_INITIAL; 	// state machine for the recording system.
+	private Integer mTemplateState = STATE_NULL; 	// state machine for the recording system.
 	private Integer mPlaybackMode; 	// the mode of playback.
 
 	// non-stateful
@@ -106,6 +106,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 
 	private static final int
+		STATE_NULL					= -1,
 		STATE_INITIAL 				= 0,
 		STATE_RECORDER_READY 		= 1,
 		STATE_RECORDER_STARTING 	= 2,
@@ -164,7 +165,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		mInstanceId = savedInstanceState.getLong(RUNTIME_STATE_INSTANCE_ID, System.currentTimeMillis());
 		mIsDraft = true;
 		mCurrentCast = savedInstanceState.<Uri>getParcelable(RUNTIME_STATE_CURRENT_CAST);
-		mCurrentCastVideo = savedInstanceState.getInt(RUNTIME_STATE_CURRENT_CAST_VIDEO, 0);
+
 		setState(savedInstanceState.getInt(RUNTIME_STATE_TEMPLATE_STATE, STATE_INITIAL));
 		mPlaybackMode = savedInstanceState.getInt(RUNTIME_STATE_PLAYBACK_MODE, PLAYBACK_MODE_SINGLE);
 
@@ -215,6 +216,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 		mIloc = new IncrementalLocator(this);
 
+		selectCastVideo(savedInstanceState.getInt(RUNTIME_STATE_CURRENT_CAST_VIDEO, 0));
 		updateControls();
 	}
 
@@ -261,7 +263,8 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 	private static final int
 		DIALOG_CONFIRM_RERECORD = 0,
-		DIALOG_LOADING_CAMERA = 1;
+		DIALOG_LOADING_CAMERA = 1,
+		DIALOG_LOADING_PREVIEW = 2;
 	// this is to work around the missing bundle API introduced in API level 5
 	private int mDialogWhichToDelete = -1;
 
@@ -276,10 +279,10 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			dialogBuilder.setMessage(R.string.template_rerecord_video_body);
 			return dialogBuilder.create();
 
-		case DIALOG_LOADING_CAMERA:
+		case DIALOG_LOADING_CAMERA:{
             final ProgressDialog dialog = new ProgressDialog(this);
             dialog.setIndeterminate(true);
-            dialog.setMessage(getString(R.string.template_loading_dialog));
+            dialog.setMessage(getString(R.string.template_dialog_loading_camera));
             dialog.setCancelable(true);
             dialog.setOnCancelListener(new OnCancelListener() {
 
@@ -290,6 +293,23 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 				}
 			});
             return dialog;
+		}
+
+		case DIALOG_LOADING_PREVIEW:{
+            final ProgressDialog dialog = new ProgressDialog(this);
+            dialog.setIndeterminate(true);
+            dialog.setMessage(getString(R.string.template_dialog_loading_preview));
+            dialog.setCancelable(true);
+            dialog.setOnCancelListener(new OnCancelListener() {
+
+				@Override
+				public void onCancel(DialogInterface dialog) {
+					finish();
+
+				}
+			});
+            return dialog;
+            }
 
 
 			default:
@@ -415,16 +435,16 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	 */
 	private void selectCastVideo(int index){
 		final int state = getState();
-		mProgressBar.setSelected((state == STATE_PLAYBACK || state == STATE_PLAYBACK_PREPARING) &&
-				(mPlaybackMode == PLAYBACK_MODE_ALL || mPlaybackMode == PLAYBACK_MODE_ALL_FIRST));
+		final boolean playAllMode =
+			(state == STATE_PLAYBACK || state == STATE_PLAYBACK_PREPARING)
+			&& (mPlaybackMode == PLAYBACK_MODE_ALL || mPlaybackMode == PLAYBACK_MODE_ALL_FIRST);
+		mProgressBar.setSelected(playAllMode);
 
 		if (mCurrentCastVideo == index){
 			return;
 		}
 
 		if (index != CAST_VIDEO_DONE && index != RelativeSizeListView.INVALID_POSITION){
-
-
 			mShotListCursor.moveToPosition(index);
 			final int shotTextCol = mShotListCursor.getColumnIndex(ShotList._DIRECTION);
 			if (!mShotListCursor.isNull(shotTextCol)){
@@ -456,7 +476,6 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 	private void prepareToRecordNext(){
 		final int nextShot = getNextUnrecordedCastVideo();
-		selectCastVideo(nextShot);
 		if (nextShot != CAST_VIDEO_DONE){
 			prepareToRecord(nextShot);
 		}else{
@@ -464,18 +483,28 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 	}
 
-
-
 	private void setState(int newState){
 		synchronized(mTemplateState){
 			Log.d(TAG, "Template State: moving from "+ mTemplateState + " to "+newState);
 			if (newState != mTemplateState){ // new state
-				if (newState == STATE_RECORDER_READY || newState == STATE_PLAYBACK){
+				switch (newState){
+				case STATE_PLAYBACK:
+				case STATE_RECORDER_READY:
+					try {
+						dismissDialog(DIALOG_LOADING_PREVIEW);
+					}catch (final IllegalArgumentException e) {
+						// This would happen if it's already dismissed. Which is fine.
+					}
 					try {
 						dismissDialog(DIALOG_LOADING_CAMERA);
 					}catch (final IllegalArgumentException e) {
 						// This would happen if it's already dismissed. Which is fine.
 					}
+					break;
+
+				case STATE_PLAYBACK_PREPARING:
+					showDialog(DIALOG_LOADING_PREVIEW);
+					break;
 				}
 			}
 			mTemplateState = newState;
@@ -493,7 +522,9 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		if (getState() == STATE_PLAYBACK){
 			stopPlayback();
 		}
-		if (getState() == STATE_RECORDER_READY){
+		// getState() is intentionally called twice here, as it should
+		// change with stopPlayback()
+		if (getState() == STATE_RECORDER_READY && index == mCurrentCastVideo){
 			return;
 		}
 
@@ -648,11 +679,6 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			switch (msg.what){
 			// called when initRecorder() has finished initting.
 			case MSG_RECORDER_INITIALIZED:
-				try {
-					dismissDialog(DIALOG_LOADING_CAMERA);
-				}catch (final IllegalArgumentException e) {
-					// This would happen if it's already dismissed. Which is fine.
-				}
 				if (getState() == STATE_INITIAL){
 					prepareToRecordNext();
 				}
@@ -787,7 +813,6 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		case STATE_RECORDER_STOPPED:
 		case STATE_RECORDER_READY:{
 			selectCastVideo(position);
-			showDialog(DIALOG_LOADING_CAMERA);
 			setState(STATE_PLAYBACK_PREPARING);
 			mPlaybackPosition = position;
 
@@ -842,12 +867,6 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		@Override
 		public void onPrepared(MediaPlayer mp) {
 			Log.d(TAG, "video prepared");
-
-			try {
-				dismissDialog(DIALOG_LOADING_CAMERA);
-			}catch (final IllegalArgumentException e) {
-				// This would happen if it's already dismissed. Which is fine.
-			}
 
 			setState(STATE_PLAYBACK);
 
@@ -921,6 +940,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			throw new IllegalStateException();
 		}
 		showDialog(DIALOG_LOADING_CAMERA);
+		mPlaybackMode = PLAYBACK_MODE_SINGLE;
 
 		final VideoView playback = ((VideoView)findViewById(R.id.playback));
 		if (playback.isPlaying()){
@@ -931,6 +951,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		camera.setVisibility(View.VISIBLE);
 		playback.setVisibility(View.GONE);
 		findViewById(R.id.playback_overlay).setVisibility(View.GONE);
+
 	}
 
 
@@ -956,11 +977,6 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 					final ImageView noise = (ImageView)findViewById(R.id.noise);
 					noise.post(startAnim);
 					setState(STATE_PLAYBACK);
-					try {
-						dismissDialog(DIALOG_LOADING_CAMERA);
-					}catch (final IllegalStateException e){
-						// this is alright.
-					}
 				}break;
 
 				case MSG_STATIC_HIDE:{
@@ -975,7 +991,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	@Override
 	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
 
-		if (adapter.getSelectedItemPosition() != position){
+		if (adapter.getSelectedItemPosition() != position || mPlaybackMode != PLAYBACK_MODE_SINGLE){
 			if (!hasCastVideo(position)){
 				prepareToRecord(position);
 			}else{
