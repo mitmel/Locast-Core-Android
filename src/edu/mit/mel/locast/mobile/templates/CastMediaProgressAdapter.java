@@ -46,15 +46,19 @@ public class CastMediaProgressAdapter extends CursorAdapter implements RelativeS
 		if (c.isClosed() || shotListCursor.isClosed()){
 			return;
 		}
-		progress = new int[getCount()];
-		shotLength = new int[getCount()];
+		final int count = getCount();
+		progress = new int[count];
+		shotLength = new int[count];
 
 		for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
 			final int position = c.getPosition();
 			progress[position] = !c.isNull(videoCol) ? c.getInt(durationCol) : 0;
 
-			shotListCursor.moveToPosition(position);
-			shotLength[position] = shotListCursor.getInt(shotListDurationCol) * 1000;
+			if (shotListCursor.moveToPosition(position)){
+				shotLength[position] = shotListCursor.getInt(shotListDurationCol) * 1000;
+			}else{
+				shotLength[position] = 0; // if there isn't a shot list, assume unlimited shots.
+			}
 		}
 	}
 

@@ -499,10 +499,13 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 
 		if (index != CAST_VIDEO_DONE && index != RelativeSizeListView.INVALID_POSITION){
-			mShotListCursor.moveToPosition(index);
-			final int shotTextCol = mShotListCursor.getColumnIndex(ShotList._DIRECTION);
-			if (!mShotListCursor.isNull(shotTextCol)){
-				setOsdText((index + 1) + ". " + mShotListCursor.getString(shotTextCol));
+			if (mShotListCursor.moveToPosition(index)){
+				final int shotTextCol = mShotListCursor.getColumnIndex(ShotList._DIRECTION);
+				if (!mShotListCursor.isNull(shotTextCol)){
+					setOsdText((index + 1) + ". " + mShotListCursor.getString(shotTextCol));
+				}else{
+					setOsdText("");
+				}
 			}else{
 				setOsdText("");
 			}
@@ -600,7 +603,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			throw new IllegalStateException("Must call prepareToRecord() first (state="+getState()+")");
 		}
 
-		if(mShotListCursor.moveToPosition(shot)){
+		if(mCastMediaCursor.moveToPosition(shot)){
 			if (hasCastVideo(shot)){
 				deleteCastVideo(shot);
 			}
@@ -682,17 +685,17 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			Log.d(TAG, "saving cast:" + cast);
 			mCurrentCast = cr.insert(Uri.withAppendedPath(mProjectUri, Cast.PATH), cast);
 
-			final ContentValues[] castMedia = new ContentValues[mShotListCursor.getCount()];
-			int i = 0;
-			for (mShotListCursor.moveToFirst(); !mShotListCursor.isAfterLast(); mShotListCursor.moveToNext()){
+			// ensure that there's always one cast video.
+			final int castVideoCount = Math.max(1, mShotListCursor.getCount());
+			final ContentValues[] castMedia = new ContentValues[castVideoCount];
+			for (int i = 0; i < castVideoCount; i++){
 				castMedia[i] = new ContentValues();
 				castMedia[i].put(CastMedia._LIST_IDX, i);
-				i++;
 			}
 			final Uri castMediaUri = Cast.getCastMediaUri(mCurrentCast);
 
 			final int inserts = cr.bulkInsert(castMediaUri, castMedia);
-			if (inserts != mShotListCursor.getCount()){
+			if (inserts != castVideoCount){
 				Log.e(TAG, "only created template for some of the cast videos");
 			}
 			Log.d(TAG, "created cast "+ mCurrentCast);
@@ -718,6 +721,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 		if (empty){
 			deleteCast();
+			Log.d(TAG, "deleted empty cast");
 		}
 		return empty;
 	}
@@ -726,7 +730,6 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		final ContentResolver cr = getContentResolver();
 		cr.delete(mCastMediaUri, null, null);
 		cr.delete(mCurrentCast, null, null);
-		Log.d(TAG, "deleted empty cast");
 		mCurrentCast = null;
 		mCastMediaUri = null;
 	}
@@ -1145,8 +1148,11 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		public TimedRecording(Cursor shotList, Handler shotHandler, int shotIndex) {
 			mShotList = shotList;
 			mShotIndex = shotIndex;
-			mShotList.moveToPosition(mShotIndex);
-			maxTime = mShotList.getInt(mShotList.getColumnIndex(ShotList._DURATION)) * 1000;
+			if (mShotList.moveToPosition(mShotIndex)){
+				maxTime = mShotList.getInt(mShotList.getColumnIndex(ShotList._DURATION)) * 1000;
+			}else{
+				maxTime = 0;
+			}
 			mShotHandler = shotHandler;
 		}
 
