@@ -222,6 +222,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 	@Override
 	protected void onPause() {
+		setState(STATE_INITIAL);
 		super.onPause();
 		mIloc.removeLocationUpdates(this);
 		mCastMediaCursor.unregisterContentObserver(castMediaObserver);
@@ -465,8 +466,11 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 
 	private boolean hasCastVideo(int index){
-		mCastMediaCursor.moveToPosition(index);
-		return !mCastMediaCursor.isNull(mLocUriCol);
+		if (mCastMediaCursor.moveToPosition(index)){
+			return !mCastMediaCursor.isNull(mLocUriCol);
+		}else{
+			return false;
+		}
 	}
 
 	private void deleteCastVideo(int index){
@@ -544,28 +548,44 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		synchronized(mTemplateState){
 			Log.d(TAG, "Template State: moving from "+ mTemplateState + " to "+newState);
 			if (newState != mTemplateState){ // new state
-				switch (newState){
-				case STATE_PLAYBACK:
-				case STATE_RECORDER_READY:
-					try {
-						dismissDialog(DIALOG_LOADING_PREVIEW);
-					}catch (final IllegalArgumentException e) {
-						// This would happen if it's already dismissed. Which is fine.
-					}
-					try {
-						dismissDialog(DIALOG_LOADING_CAMERA);
-					}catch (final IllegalArgumentException e) {
-						// This would happen if it's already dismissed. Which is fine.
-					}
-					break;
-
-				case STATE_PLAYBACK_PREPARING:
-					showDialog(DIALOG_LOADING_PREVIEW);
-					break;
-				}
+				moveToNewState(mTemplateState, newState);
 			}
 			mTemplateState = newState;
 			updateControls();
+		}
+	}
+
+	private void moveToNewState(int oldState, int newState){
+		switch (newState){
+		// when we want to pause the activity, we set it to the initial state.
+		case STATE_INITIAL:
+			switch (oldState){
+			case STATE_RECORDER_RECORDING:
+				stopRecordingCastVideo();
+				break;
+			case STATE_PLAYBACK:
+				stopPlayback();
+				break;
+			}
+			break;
+
+		case STATE_PLAYBACK:
+		case STATE_RECORDER_READY:
+			try {
+				dismissDialog(DIALOG_LOADING_PREVIEW);
+			}catch (final IllegalArgumentException e) {
+				// This would happen if it's already dismissed. Which is fine.
+			}
+			try {
+				dismissDialog(DIALOG_LOADING_CAMERA);
+			}catch (final IllegalArgumentException e) {
+				// This would happen if it's already dismissed. Which is fine.
+			}
+			break;
+
+		case STATE_PLAYBACK_PREPARING:
+			showDialog(DIALOG_LOADING_PREVIEW);
+			break;
 		}
 	}
 
@@ -1123,10 +1143,12 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	}
 
 	private void stopRecordingCastVideo(){
-		setState(STATE_RECORDER_STOPPING);
-		if (mTimedRecording != null){
-			mTimedRecording.stopRecording();
-			mTimedRecording = null;
+		if (getState() == STATE_RECORDER_RECORDING){
+			setState(STATE_RECORDER_STOPPING);
+			if (mTimedRecording != null){
+				mTimedRecording.stopRecording();
+				mTimedRecording = null;
+			}
 		}
 	}
 
@@ -1142,16 +1164,18 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	private class TimedRecording implements Runnable {
 		private final Cursor mShotList;
 		private final int mShotIndex;
-		private final int maxTime;
+		private final int mMaxTime;
 		private final Handler mShotHandler;
+		private boolean mStoppable;
 
 		public TimedRecording(Cursor shotList, Handler shotHandler, int shotIndex) {
 			mShotList = shotList;
 			mShotIndex = shotIndex;
 			if (mShotList.moveToPosition(mShotIndex)){
-				maxTime = mShotList.getInt(mShotList.getColumnIndex(ShotList._DURATION)) * 1000;
+				mMaxTime = mShotList.getInt(mShotList.getColumnIndex(ShotList._DURATION)) * 1000;
+				mStoppable = mMaxTime > 7000;  // XXX switch to database
 			}else{
-				maxTime = 0;
+				mMaxTime = 0;
 			}
 			mShotHandler = shotHandler;
 		}
@@ -1163,8 +1187,9 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 		@Override
 		public void run() {
-			final boolean infinite = maxTime == 0;
-			final boolean stoppable = infinite || maxTime > 7000; // XXX switch to database
+			final boolean infinite = mMaxTime == 0;
+			final boolean stoppable = infinite || mStoppable;
+
 
 			boolean running = true;
 			final long startTime = System.currentTimeMillis();
@@ -1176,7 +1201,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 				elapsedTime = (int)(System.currentTimeMillis() - startTime);
 				mShotHandler.obtainMessage(MSG_SHOT_SET_PROGRESS, mShotIndex, elapsedTime).sendToTarget();
 
-				if ((!infinite && elapsedTime >= maxTime) || (stoppable && stopRequested)){
+				if ((!infinite && elapsedTime >= mMaxTime) || (stoppable && stopRequested)){
 					running = false;
 
 				}else{
