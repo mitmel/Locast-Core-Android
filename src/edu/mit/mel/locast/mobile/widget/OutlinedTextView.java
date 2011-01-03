@@ -63,14 +63,18 @@ public class OutlinedTextView extends TextView {
 
 	public OutlinedTextView(Context context) {
 		super(context);
+		setStrokePaint();
 	}
 
 	public OutlinedTextView(Context context, AttributeSet attrs) {
 		super(context, attrs);
+		setStrokePaint();
 	}
 
 	public OutlinedTextView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
+
+		setStrokePaint();
 	}
 
 	@Override
