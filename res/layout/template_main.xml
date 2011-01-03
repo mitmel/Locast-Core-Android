@@ -12,33 +12,37 @@
 	        android:paddingBottom="4dp"
 	        style="@style/TemplatedVideoProgress"
 	       />
+	       
+   	<ImageButton android:id="@+id/shutter" 
+	    	android:background="@drawable/btn_shutter"
+	    	android:layout_width="wrap_content"
+	    	android:layout_height="wrap_content"
+	    	android:layout_alignParentLeft="true"
+	    	android:layout_alignParentTop="true"
+    	/>
 
-    <LinearLayout android:id="@+id/controls"
+    <RelativeLayout android:id="@+id/controls"
     	style="@style/TemplatedVideoControls" 
-    	android:orientation="vertical"
     	android:layout_width="wrap_content"
     	android:layout_height="wrap_content"
     	android:layout_above="@id/progress"
     	android:layout_alignParentLeft="true"
-    	android:layout_alignParentTop="true"
+    	android:layout_below="@id/shutter"
+    	android:layout_alignLeft="@id/shutter"
     	android:fadingEdge="vertical"
+    	android:layout_marginTop="2dip"
     	>
-    	
-    	<ImageButton android:id="@+id/shutter" 
-	    	android:background="@drawable/btn_shutter"
-	    	android:layout_width="wrap_content"
-	    	android:layout_height="wrap_content"
-    	/>
-    	
+
     	<Button android:id="@+id/done"
-    		android:layout_width="fill_parent"
+    		android:layout_width="wrap_content"
     		android:layout_height="wrap_content" 
-    		android:text="@string/done"
+    		android:text="@string/publish"
     		android:enabled="false"
-    		android:layout_gravity="bottom"/>
-    	
-    	
-</LinearLayout>
+    		android:layout_alignParentBottom="true"
+
+    		/>
+    		
+	</RelativeLayout>
 
     	<VideoView android:id="@+id/playback"
     		android:layout_width="fill_parent"

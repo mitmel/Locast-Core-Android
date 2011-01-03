@@ -58,14 +58,18 @@
 	<string name="view_cast">View Cast</string>
 	<string name="remove_cast">Remove Cast from Project</string>
 	<string name="current_location">Current location: </string>
-	<string name="requesting_location">Requesting current location...</string>
+	<string name="requesting_location">Requesting current location…</string>
 	<string name="cast_location">Cast location: </string>
 	<string name="set_location">Set Location</string>
 	<string name="my_casts">My Casts</string>
 	<string name="casts_nearby">Nearby</string>
 	<string name="casts_tags">Tags</string>
 	<string name="view_casts_in_map">View casts in map</string>
+	<string name="cast_publish_title">Publish Cast</string>
 	
+	<!-- dialogs -->
+	<string name="cast_delete_title">Delete Cast</string>
+	<string name="cast_delete_message">Are you sure you want to delete this cast? All shots will be lost.</string>
 	
 	<!-- projects -->
 	<string name="project_join">Join</string>
@@ -80,17 +84,16 @@
 	<string name="project_new_cast">Record a cast</string>
 	
 	<!-- template -->
-	<string name="template_delete_video_title">Delete Cast Video</string>
-	<string name="template_delete_video_body">Are you sure you want to delete this cast video?</string>
-	<string name="template_delete_error">Error: could not delete cast video.</string>
+
 	<string name="template_error_setup_fail">Error: could not setup camera.</string>
 	
-	<string name="template_rerecord_video_title">Rerecord Cast Video</string>
-	<string name="template_rerecord_video_body">Are you sure you want to rerecord this cast video?</string>
+	<string name="template_rerecord_video_title">Rerecord Shot</string>
+	<string name="template_rerecord_video_body">Are you sure you want to rerecord this shot?</string>
 	<string name="template_toast_start_record">Tap the red circle to start recording.</string>
-	<string name="template_default_direction">Record a cast video for this project.</string>
-	<string name="template_dialog_loading_camera">Setting up camera for recording...</string>
-	<string name="template_dialog_loading_preview">Loading preview...</string>
+	<string name="template_default_direction">Record a shot for this project.</string>
+	<string name="template_dialog_loading_camera">Setting up camera for recording…</string>
+	<string name="template_dialog_loading_preview">Loading preview…</string>
+	<string name="template_done">Done!</string>
 	
 	<string name="dialog_button_delete">Delete</string>
 	<string name="dialog_button_rerecord">Rerecord</string>
@@ -105,12 +108,13 @@
 	
 	<!-- generic -->
 	<string name="done">Done</string>
+	<string name="publish">Publish</string>
 	<string name="privacy_header">Privacy:</string>
 	<string name="privacy_spinner">Privacy level</string>
 	
 	<!-- Sync -->
-	<string name="sync_first">No local content detected. Starting first sync...</string>
-	<string name="sync_notification">Synchronizing Locast...</string>
+	<string name="sync_first">No local content detected. Starting first sync…</string>
+	<string name="sync_notification">Synchronizing Locast…</string>
 	<string name="sync_success">Sync successful.</string>
 	<string name="sync_menu">Synchronize</string>
 	

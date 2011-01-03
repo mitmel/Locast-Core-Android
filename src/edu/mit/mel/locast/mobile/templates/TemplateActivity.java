@@ -41,6 +41,9 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
@@ -263,8 +266,9 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 	private static final int
 		DIALOG_CONFIRM_RERECORD = 0,
-		DIALOG_LOADING_CAMERA = 1,
-		DIALOG_LOADING_PREVIEW = 2;
+		DIALOG_LOADING_CAMERA 	= 1,
+		DIALOG_LOADING_PREVIEW 	= 2,
+		DIALOG_CAST_DELETE 		= 3;
 	// this is to work around the missing bundle API introduced in API level 5
 	private int mDialogWhichToDelete = -1;
 
@@ -272,6 +276,13 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	protected Dialog onCreateDialog(int id) {
 		final Builder dialogBuilder = new Builder(this);
 		switch (id){
+		case DIALOG_CAST_DELETE:
+			dialogBuilder.setTitle(R.string.cast_delete_title);
+			dialogBuilder.setPositiveButton(R.string.dialog_button_delete, dialogCastDeleteOnClickListener);
+			dialogBuilder.setNeutralButton(android.R.string.cancel, dialogCastDeleteOnClickListener);
+			dialogBuilder.setMessage(R.string.cast_delete_message);
+			return dialogBuilder.create();
+
 		case DIALOG_CONFIRM_RERECORD:
 			dialogBuilder.setTitle(R.string.template_rerecord_video_title);
 			dialogBuilder.setPositiveButton(R.string.dialog_button_rerecord, dialogRerecordOnClickListener);
@@ -333,6 +344,47 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 	};
 
+	private final DialogInterface.OnClickListener dialogCastDeleteOnClickListener = new DialogInterface.OnClickListener() {
+		public void onClick(DialogInterface dialog, int which) {
+			switch (which){
+			case Dialog.BUTTON_POSITIVE:
+				deleteCast();
+				finish();
+			case Dialog.BUTTON_NEUTRAL:
+				dialog.dismiss();
+				break;
+			}
+		}
+	};
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		final MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.templated_video, menu);
+		return true;
+
+	};
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		menu.findItem(R.id.publish_cast).setEnabled(isDone());
+		return true;
+	};
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()){
+		case R.id.publish_cast:
+			publish();
+			return true;
+
+		case R.id.delete_cast:
+			showDialog(DIALOG_CAST_DELETE);
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
+	}
+
 	/*************** Template UI manipulators *********************/
 
     /**
@@ -343,13 +395,14 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		updateRecordingIndicator(currentlyRecording, stoppable, false);
 	}
     private void updateRecordingIndicator(boolean currentlyRecording, boolean stoppable, boolean recordingExists) {
-        int drawableId =
+        final int drawableId =
                 currentlyRecording ? R.drawable.btn_ic_video_record_stop
                         : R.drawable.btn_ic_video_record;
 
-        if (recordingExists){
-        	drawableId = R.drawable.btn_ic_review_delete;
-        }
+        // after trying it out with some users, this icon was confusing.
+//        if (recordingExists){
+//        	drawableId = R.drawable.btn_ic_review_delete;
+//        }
         final Drawable drawable = getResources().getDrawable(drawableId);
         mActionButton.setImageDrawable(drawable);
 
@@ -366,7 +419,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
     		if (isDone){
     			setOsdText("");
-    			Toast.makeText(TemplateActivity.this, "done!", Toast.LENGTH_LONG).show();
+    			Toast.makeText(this, R.string.template_done, Toast.LENGTH_LONG).show();
     		}
     	}
     }
@@ -378,6 +431,10 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		if (mCastMediaCursor != null){
 			updateDoneState(getNextUnrecordedCastVideo() == CAST_VIDEO_DONE);
 		}
+	}
+
+	private boolean isDone(){
+		return getNextUnrecordedCastVideo() == CAST_VIDEO_DONE;
 	}
 
 	/*********************** cast video manipulators *************************/
@@ -663,15 +720,18 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			empty = mCastMediaCursor.isNull(mLocUriCol);
 		}
 		if (empty){
-			final ContentResolver cr = getContentResolver();
-			cr.delete(mCastMediaUri, null, null);
-			cr.delete(mCurrentCast, null, null);
-			Log.d(TAG, "deleted empty cast");
-			mCurrentCast = null;
-			mCastMediaUri = null;
-
+			deleteCast();
 		}
 		return empty;
+	}
+
+	private void deleteCast(){
+		final ContentResolver cr = getContentResolver();
+		cr.delete(mCastMediaUri, null, null);
+		cr.delete(mCurrentCast, null, null);
+		Log.d(TAG, "deleted empty cast");
+		mCurrentCast = null;
+		mCastMediaUri = null;
 	}
 
 	private final Handler recorderStateHandler = new Handler(){
@@ -719,6 +779,27 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 	}
 
+	/**
+	 * @return true if successfully published.
+	 */
+	private boolean publish(){
+		final EditText title =((EditText)findViewById(R.id.cast_title));
+		if (title.getText().toString().trim().length() == 0){
+			title.setError(getString(R.string.error_please_enter_a_title));
+			title.requestFocus();
+			return false;
+		}else{
+			title.setError(null);
+		}
+		mIsDraft = false;
+		final Uri cast = save();
+		if (cast != null){
+			finish();
+			return true;
+		}
+		return false;
+	}
+
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		switch (keyCode){
@@ -735,19 +816,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		switch (v.getId()){
 
 		case R.id.done:{
-			final EditText title =((EditText)findViewById(R.id.cast_title));
-			if (title.getText().toString().trim().length() == 0){
-				title.setError(getString(R.string.error_please_enter_a_title));
-				title.requestFocus();
-				break;
-			}else{
-				title.setError(null);
-			}
-			mIsDraft = false;
-			final Uri cast = save();
-			if (cast != null){
-				finish();
-			}
+			publish();
 		}break;
 
 		case R.id.shutter:{
@@ -768,6 +837,10 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		case R.id.playback_overlay:{
 			togglePlayback();
 			}break;
+
+		case R.id.delete_cast:{
+			showDialog(DIALOG_CAST_DELETE);
+		}break;
 		}
 	}
 
