@@ -127,12 +127,9 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		super.onCreate(savedInstanceState);
-
-
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN|WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-		initialStartPreview();
+		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.template_main);
 
@@ -146,7 +143,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 		mProgressBar = (RelativeSizeListView)findViewById(R.id.progress);
 		mProgressBar.setOnItemClickListener(this);
-		//((Button)findViewById(R.id.preview)).setOnClickListener(this);
+
 		mActionButton = ((ImageButton)findViewById(R.id.shutter));
 		updateRecordingIndicator(false, true);
 		mActionButton.setOnClickListener(this);

@@ -48,6 +48,14 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.widget.Toast;
 
+/**
+ * @author steve
+ *
+ */
+/**
+ * @author steve
+ *
+ */
 public abstract class VideoRecorder extends Activity {
 
 	private static final String TAG = VideoRecorder.class.getSimpleName();
@@ -55,7 +63,7 @@ public abstract class VideoRecorder extends Activity {
 	private SurfaceHolder mSurfaceHolder;
 	private boolean mIsPreviewing = false;
 	private boolean mShouldPreview = true;
-	private MediaRecorder recorder = null;
+	private MediaRecorder mRecorder = null;
 
 	private static final int
 		_MSG_INIT_RECORDER  = 1,
@@ -93,17 +101,14 @@ public abstract class VideoRecorder extends Activity {
 		this.mRecorderStateHandler = recorderStateHandler;
 	}
 
-	private final SurfaceHolder.Callback cameraSHListener = new SurfaceHolder.Callback() {
+	private final SurfaceHolder.Callback mCameraSHListener = new SurfaceHolder.Callback() {
 
 		public void surfaceDestroyed(SurfaceHolder holder) {
 			mSurfaceHolder = null;
-
-
 		}
 
 		public void surfaceCreated(SurfaceHolder holder) {
 			mSurfaceHolder = holder;
-
 		}
 
 		public void surfaceChanged(SurfaceHolder holder, int format, int width,
@@ -115,41 +120,15 @@ public abstract class VideoRecorder extends Activity {
 
 			if (holder.isCreating()){
 				setPreviewDisplay(holder);
-				//unlockCamera();
 				Log.d(TAG, "surface changed set preview display");
 				mInternalHandler.sendEmptyMessage(_MSG_INIT_RECORDER);
 			}
-			//mCamera.startPreview();
-
-
 		}
 	};
 
-
-	private Thread startPreviewThread;
-
-	public void initialStartPreview(){
-		startPreviewThread = new Thread(new Runnable() {
-
-				public void run() {
-					actualStartPreview();
-				}
-			});
-		startPreviewThread.start();
-	}
-
-	public void waitForInitialStartPreview(){
-		try {
-			startPreviewThread.join();
-
-		} catch (final InterruptedException e) {
-			// ignore
-		}
-	}
-
 	public void initSurfaceHolder(SurfaceHolder holder){
 		holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-		holder.addCallback(cameraSHListener);
+		holder.addCallback(mCameraSHListener);
 	}
 
 	@Override
@@ -164,14 +143,12 @@ public abstract class VideoRecorder extends Activity {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		//mHandler.sendEmptyMessage(MSG_CLOSE_CAMERA);
 
 		actualStopPreview();
 	}
 
 	@Override
 	protected void onDestroy() {
-
 		super.onDestroy();
 	}
 
@@ -226,9 +203,9 @@ public abstract class VideoRecorder extends Activity {
 			return;
 		}
 		if (mCamera == null){
+			Log.d(TAG, "opening camera");
 			mCamera = Camera.open();
 		}
-
 
 		try {
 			lockCamera();
@@ -243,6 +220,7 @@ public abstract class VideoRecorder extends Activity {
 	    try {
 			mCamera.startPreview();
 			mIsPreviewing = true;
+			Log.d(TAG, "preview is up and running");
 	    } catch (final Throwable ex) {
 	    	alertFailSetup(ex);
 	    	return;
@@ -259,18 +237,20 @@ public abstract class VideoRecorder extends Activity {
 		if (mCamera == null){
 			return;
 		}
-		if (recorder != null){
-			recorder.release();
-			recorder = null;
+		if (mRecorder != null){
+			mRecorder.release();
+			// release unlocks the camera
+			mRecorder = null;
 		}
 		Log.d(TAG, "closing camera");
+
+		// need to lock the camera to release it(!)
 		lockCamera();
-		//mCamera.stopPreview();
-		Log.d(TAG, "preview stopped");
-		//
 		mCamera.release();
+		Log.d(TAG, "preview stopped");
 		mIsPreviewing = false;
 		mCamera = null;
+
 		Log.d(TAG, "Camera has been shut down");
 		mRecorderStateHandler.sendEmptyMessage(MSG_PREVIEW_STOPPED);
 	}
@@ -284,21 +264,21 @@ public abstract class VideoRecorder extends Activity {
 	    }
 	}
 
+	/**
+	 * Call the lock() method (introduced in API level 5) if possible.
+	 */
 	private void lockCamera() {
-		// Call the unlock() method (introduced in API level 5) if possible
-		// Otherwise just stop the preview to unlock.
 		try {
 			try {
 				final Method lock = mCamera.getClass().getDeclaredMethod("lock");
 				lock.invoke(mCamera);
 
 			}catch (final NoSuchMethodException m){
-				// before API level 5, this seems to be the only way to unlock.
-				//mCamera.stopPreview();
+				// no such method in api < 5
 			}
 
 			Log.d(TAG, "locked camera");
-			isLocked = true;
+			mIsLocked = true;
 
 		}catch (final InvocationTargetException ie){
 			throw new RuntimeException(ie.getTargetException());
@@ -308,9 +288,11 @@ public abstract class VideoRecorder extends Activity {
 		}
 	}
 
+	/**
+	 * Call the unlock() method (introduced in API level 5) if possible
+	 * Otherwise just stop the preview to unlock.
+	 */
 	private void unlockCamera() {
-		// Call the unlock() method (introduced in API level 5) if possible
-		// Otherwise just stop the preview to unlock.
 		try {
 			try {
 				final Method unlock = mCamera.getClass().getDeclaredMethod("unlock");
@@ -322,7 +304,7 @@ public abstract class VideoRecorder extends Activity {
 			}
 
 			Log.d(TAG, "unlocked camera");
-			isLocked = false;
+			mIsLocked = false;
 
 		}catch (final InvocationTargetException ie){
 			throw new RuntimeException(ie);
@@ -336,7 +318,7 @@ public abstract class VideoRecorder extends Activity {
 		mInternalHandler.sendEmptyMessage(_MSG_START_RECORD);
 	}
 
-	private boolean isLocked;
+	private boolean mIsLocked;
 
 	/**
 	 * Call this after setOutputFilename(), but before startRecorder()
@@ -344,18 +326,20 @@ public abstract class VideoRecorder extends Activity {
 	public void prepareRecorder(){
 		mInternalHandler.sendEmptyMessage(_MSG_PREPARE_RECORD);
 	}
+
 	private void prepareRecorderActual(){
 		try {
-			recorder.prepare();
+			mRecorder.prepare();
 		} catch (final IllegalStateException e) {
 			alertFailSetup(e);
 		} catch (final IOException e) {
 			alertFailSetup(e);
 		}
 	}
+
 	private void startRecorderActual(){
 		try {
-			recorder.start();
+			mRecorder.start();
 			mRecorderStateHandler.sendEmptyMessage(MSG_RECORDER_STARTED);
 		} catch (final IllegalStateException e) {
 			alertFailSetup(e);
@@ -363,8 +347,8 @@ public abstract class VideoRecorder extends Activity {
 	}
 
 	public void stopRecorder(){
-		if (recorder != null){
-			recorder.stop();
+		if (mRecorder != null){
+			mRecorder.stop();
 		}
 	}
 
@@ -397,7 +381,7 @@ public abstract class VideoRecorder extends Activity {
 
 		mFullOutputFile = new File(locastBase, filename +".3gp");
 		try {
-			recorder.setOutputFile(mFullOutputFile.getAbsolutePath());
+			mRecorder.setOutputFile(mFullOutputFile.getAbsolutePath());
 		}catch (final IllegalStateException ise){
 			Log.e(TAG, "Couldn't set output filename. Attempting to continue.", ise);
 		}
@@ -417,44 +401,43 @@ public abstract class VideoRecorder extends Activity {
 			actualStartPreview();
 		}
 
-		if (isLocked){
+		if (mIsLocked){
 			unlockCamera();
 		}
 		try {
-			if (recorder == null){
-				recorder = new MediaRecorder();
+			if (mRecorder == null){
+				mRecorder = new MediaRecorder();
 			}else{
-				recorder.reset();
+				mRecorder.reset();
 			}
-			recorder.setCamera(mCamera);
-			recorder.setPreviewDisplay(mSurfaceHolder.getSurface());
+			mRecorder.setCamera(mCamera);
+			mRecorder.setPreviewDisplay(mSurfaceHolder.getSurface());
 
-			recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-			recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+			mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+			mRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 
-			recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-			//recorder.setMaxDuration(5000); // XXX
+			mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
 
 			// set the recorder parameters from the settings detected in setCameraParameters()
 			final Camera.Parameters params = mCamera.getParameters();
 			final Size vidSize = params.getPreviewSize();
-			recorder.setVideoSize(vidSize.width, vidSize.height);
-			recorder.setVideoFrameRate(params.getPreviewFrameRate());
+			mRecorder.setVideoSize(vidSize.width, vidSize.height);
+			mRecorder.setVideoFrameRate(params.getPreviewFrameRate());
 
 			// this would be for setting the aspect ratio properly, but causes occasional white screens
 			//final SurfaceView sv = ((SurfaceView)findViewById(R.id.camera_view));
 			//sv.setLayoutParams(new FrameLayout.LayoutParams((int)(sv.getHeight() * (720.0/480)), sv.getHeight()));
 
-			recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+			mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 
 			if (Build.MODEL.equals("Milestone")){
-				recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+				mRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 
 			}else if (Build.MODEL.equals("Nexus One")) {
-				recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+				mRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 
 			}else{ // for all other devices, fall back on a well-known default.
-				recorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
+				mRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
 			}
 
 
