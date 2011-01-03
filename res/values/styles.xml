@@ -84,6 +84,12 @@
 		
 	</style>
 
+	<style name="TemplatedVideoTextPromptSwitcher">
+	  	<item name="android:inAnimation">@anim/push_up_in</item>
+  		<item name="android:outAnimation">@anim/push_down_out</item>
+  		<item name="android:layout_marginLeft">6sp</item>
+  		<item name="android:layout_marginRight">6sp</item>
+	</style>
 	<style name="TemplatedVideoTextPrompt">
 		<item name="android:textSize">24sp</item>
 		<item name="android:textColor">@color/template_item_text_color</item>
@@ -92,6 +98,7 @@
 	<style name="TemplatedVideoTextPrompt.OSD">
 		<item name="android:textColor">#fff</item>
 		<item name="android:textStyle">bold</item>
+		<item name="android:padding">2sp</item>
 	</style>
 	<style name="TemplatedVideoProgress" parent="@android:style/Widget.ProgressBar.Horizontal">
 		<item name="android:background">@drawable/progress_selector</item>

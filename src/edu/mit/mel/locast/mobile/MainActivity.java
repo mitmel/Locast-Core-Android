@@ -38,6 +38,7 @@ import edu.mit.mel.locast.mobile.data.CastMedia;
 import edu.mit.mel.locast.mobile.data.Comment;
 import edu.mit.mel.locast.mobile.data.Project;
 import edu.mit.mel.locast.mobile.data.ShotList;
+import edu.mit.mel.locast.mobile.data.Sync;
 import edu.mit.mel.locast.mobile.data.Tag;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.projects.ListProjectsActivity;
@@ -178,7 +179,7 @@ public class MainActivity extends TabActivity {
 				/*final Editor e = prefs.edit();
 				e.clear();
 				e.commit();*/
-
+				context.startService(new Intent(Sync.ACTION_CANCEL_SYNC, null, context, Sync.class));
 				// reset DBs
 				final ContentResolver cr = context.getContentResolver();
 				cr.delete(Cast.CONTENT_URI, null, null);

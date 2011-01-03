@@ -3,7 +3,7 @@
   xmlns:android="http://schemas.android.com/apk/res/android"
   android:layout_width="fill_parent"
   android:layout_height="fill_parent"
-  style="@style/TemplatedVideo"
+  android:background="@android:color/black"
   >
   
   <FrameLayout
@@ -32,6 +32,7 @@
   	android:layout_height="wrap_content"
   	android:layout_centerInParent="true"
   	android:text="No video for this segment"
+  	style="@style/TemplatedVideoTextPrompt.OSD"
   	android:textSize="30sp"
   	android:textStyle="bold"
   	android:textColor="#f00" />
@@ -44,8 +45,7 @@
   	android:layout_height="wrap_content"
    	android:layout_alignParentBottom="true"
   	android:layout_alignParentLeft="true"
-  	android:inAnimation="@anim/push_up_in"
-  	android:outAnimation="@anim/push_down_out"
+	style="@style/TemplatedVideoTextPromptSwitcher"
   >
   <edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/osd_text"
   	android:layout_width="wrap_content"

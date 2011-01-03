@@ -105,10 +105,7 @@
   	android:layout_height="wrap_content"
    	android:layout_above="@id/progress"
   	android:layout_toRightOf="@id/controls"
-  	android:inAnimation="@anim/push_up_in"
-  	android:outAnimation="@anim/push_down_out"
-  	android:layout_marginLeft="6sp"
-  	android:layout_marginRight="6sp"
+  	style="@style/TemplatedVideoTextPromptSwitcher"
   >
   
   <edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/osd_text"

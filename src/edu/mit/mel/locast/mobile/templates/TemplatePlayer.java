@@ -24,6 +24,7 @@ import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -44,17 +45,27 @@ import edu.mit.mel.locast.mobile.data.ShotList;
 
 public class TemplatePlayer extends Activity implements OnCompletionListener {
 	public static final String TAG = TemplatePlayer.class.getSimpleName();
+
+	// stateful
+	private int mCurrentCastVideoPosition;
+
+	// stateless
 	private VideoView mVideoView;
 	private MediaController mMc;
 	private ViewSwitcher osdSwitcher;
-	private Cursor castMediaCursor = null;
+	private Cursor mCastMediaCursor = null;
 	private Cursor castCursor = null;
-	private Cursor shotListCursor = null;
-	private Uri currentCastVideo = null;
+	private Cursor mShotListCursor = null;
+	private Uri mCurrentCastVideo = null;
+
 
 	public static final int
 		MSG_STATIC_HIDE = 0,
 		MSG_STATIC_SHOW = 1;
+
+	private static final String
+		RUNTIME_STATE_CURRENT_CAST_VIDEO = "edu.mit.mobile.android.locast.CAST_VIDEO",
+		RUNTIME_STATE_CURRENT_PLAYBACK_TIME = "edu.mit.mobile.android.locast.CURRENT_PLAYBACK_TIME";
 
 	private final Runnable startAnim = new Runnable() {
 
@@ -94,37 +105,8 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 
 		setContentView(R.layout.template_player);
 
-		final Intent intent = getIntent();
-
 		mVideoView = (VideoView)findViewById(R.id.videoview);
 		osdSwitcher = (ViewSwitcher)findViewById(R.id.osd_switcher);
-
-		final Uri data = intent.getData();
-		if (data != null){
-			final String type = getContentResolver().getType(data);
-			Log.d(TAG, "Playing: " + data);
-
-			if ("file".equals(data.getScheme())){
-				Log.d(TAG, "It's a file!");
-				mVideoView.setVideoPath(data.getPath());
-				castMediaCursor = null;
-
-			}else if (MediaProvider.TYPE_CAST_ITEM.equals(type)){
-				Log.d(TAG, "It's a cast!");
-				castCursor = managedQuery(data, Cast.PROJECTION, null, null, null);
-				castCursor.moveToFirst();
-				castMediaCursor = managedQuery(Cast.getCastMediaUri(data), CastMedia.PROJECTION, null, null, null);
-				//castMediaCursor.moveToFirst();
-
-				//MediaProvider.dumpCursorToLog(castCursor, Cast.PROJECTION);
-				//loadCastMedia(Cast.getCastMediaUri(data));
-				loadShotList();
-			}else{
-				Log.e(TAG, "I don't know how to handle something of type: "+type);
-				finish();
-			}
-		}
-
 
 		mMc = new MediaController(this);
 
@@ -135,7 +117,6 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 		mMc.setAnchorView(anchorView);
 		mMc.setEnabled(false);
 
-		//mVideoView.setMediaController(mMc);
 		mVideoView.setOnPreparedListener(new OnPreparedListener() {
 
 			public void onPrepared(MediaPlayer mp) {
@@ -145,9 +126,16 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 
 		mVideoView.setOnCompletionListener(this);
 
-		//mVideoView.requestFocus();
-		//mVideoView.start();
-		nextOrFinish();
+		new LoadCastTask().execute(savedInstanceState);
+	}
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+
+		outState.putInt(RUNTIME_STATE_CURRENT_CAST_VIDEO, mCurrentCastVideoPosition);
+		outState.putInt(RUNTIME_STATE_CURRENT_PLAYBACK_TIME, mVideoView.getCurrentPosition());
+
 	}
 
 	@Override
@@ -157,78 +145,68 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 		uiHandler.removeMessages(MSG_STATIC_HIDE);
 	}
 
+	private boolean playCastVideo(){
+		if (mCastMediaCursor != null && (mCastMediaCursor.isAfterLast() || mCastMediaCursor.isBeforeFirst())){
+			return false;
+		}
+		if (mShotListCursor != null){
+			mShotListCursor.moveToPosition(mCastMediaCursor.getPosition());
+		}
+		setVideoFromCursor();
+		if (mCurrentCastVideo == null){
+			uiHandler.sendMessage(uiHandler.obtainMessage(MSG_STATIC_SHOW));
+
+			uiHandler.sendMessageDelayed(uiHandler.obtainMessage(MSG_STATIC_HIDE), 3000);
+
+		}else{
+			mVideoView.start();
+		}
+		return true;
+	}
+
 	private void nextOrFinish(){
-		if (castMediaCursor != null && ! castMediaCursor.isLast()){
-			castMediaCursor.moveToNext();
-			if (shotListCursor != null){
-				shotListCursor.moveToNext();
-			}
-			setVideoFromCursor();
-			if (currentCastVideo == null){
-				//final Toast t = Toast.makeText(this, "No video for this segment", Toast.LENGTH_LONG);
-				//findViewById(R.id.staticview).setVisibility(View.VISIBLE);
-				//final ImageView noise = (ImageView)findViewById(R.id.noise);
-
-				// AnimationDrawables needs to be fully loaded before they can be started.
-				/*noise.post(new Runnable() {
-					@Override
-					public void run() {
-						((AnimationDrawable)noise.getDrawable()).start();
-					}
-				});*/
-				uiHandler.sendMessage(uiHandler.obtainMessage(MSG_STATIC_SHOW));
-
-				uiHandler.sendMessageDelayed(uiHandler.obtainMessage(MSG_STATIC_HIDE), 3000);
-
-			}else{
-				mVideoView.start();
-			}
+		if (mCastMediaCursor != null && ! mCastMediaCursor.isLast()){
+			mCastMediaCursor.moveToNext();
+			playCastVideo();
 
 		}else{ // done!
-			// TODO do something
+			// TODO do something when finished.
 			mMc.show(0);
 		}
 	}
 
 	private void loadShotList(){
-
-
 		final Uri project = Cast.getProjectUri(castCursor);
 		if (project != null){
-			shotListCursor = managedQuery(Project.getShotListUri(project), ShotList.PROJECTION, null, null, null);
-			if (shotListCursor.getCount() > 0){
-				//shotListCursor.moveToFirst();
-				//MediaProvider.dumpCursorToLog(shotListCursor, ShotList.PROJECTION);
-
-				// XXX left off getting the casts to play even if there's missing video
-			}else{
-				shotListCursor = null;
+			mShotListCursor = managedQuery(Project.getShotListUri(project), ShotList.PROJECTION, null, null, null);
+			if (mShotListCursor.getCount() <= 0){
+				// TODO need to handle the case where a project doesn't have a shotlist.
+				mShotListCursor = null;
 				Log.i(TAG, "no shot list");
 			}
 		}
 	}
 
 	private void setVideoFromCursor(){
-		if (castMediaCursor.isClosed() || castMediaCursor.isBeforeFirst() || castMediaCursor.isAfterLast()){
+		if (mCastMediaCursor.isClosed() || mCastMediaCursor.isBeforeFirst() || mCastMediaCursor.isAfterLast()){
 			return;
 		}
-		MediaProvider.dumpCursorToLog(castMediaCursor, CastMedia.PROJECTION);
-		final int localUriIdx = castMediaCursor.getColumnIndex(CastMedia._LOCAL_URI);
+		mCurrentCastVideoPosition = mCastMediaCursor.getPosition();
+		MediaProvider.dumpCursorToLog(mCastMediaCursor, CastMedia.PROJECTION);
+		final int localUriCol = mCastMediaCursor.getColumnIndex(CastMedia._LOCAL_URI);
 
-		if (castMediaCursor.isNull(localUriIdx)){
-			Log.e(TAG, "no cast video for this particular shot");
-			// TODO no video here. Do something else?
+		if (mCastMediaCursor.isNull(localUriCol)){
 			mVideoView.setVideoURI(null);
-			currentCastVideo = null;
+			mCurrentCastVideo = null;
 		}else{
-			final Uri localUri = Cast.parseMaybeUri(castMediaCursor.getString(localUriIdx));
+			final Uri localUri = Cast.parseMaybeUri(mCastMediaCursor.getString(localUriCol));
 			mVideoView.setVideoURI(localUri);
-			currentCastVideo = localUri;
+			mCurrentCastVideo = localUri;
 		}
 
-		if (shotListCursor != null){
-			setOsdText(shotListCursor.getInt(shotListCursor.getColumnIndex(ShotList._LIST_IDX)) + 1 + ". "
-					+ shotListCursor.getString(shotListCursor.getColumnIndex(ShotList._DIRECTION)));
+		if (mShotListCursor != null){
+			setOsdText(mShotListCursor.getInt(mShotListCursor.getColumnIndex(ShotList._LIST_IDX)) + 1 + ". "
+					+ mShotListCursor.getString(mShotListCursor.getColumnIndex(ShotList._DIRECTION)));
 		}
 	}
 
@@ -245,5 +223,49 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 
 	}
 
+	private class LoadCastTask extends AsyncTask<Bundle, Void, Bundle>{
 
+		@Override
+		protected Bundle doInBackground(Bundle... params) {
+			final Bundle savedInstanceState = params[0];
+			final Intent intent = getIntent();
+			final Uri data = intent.getData();
+
+			if (data != null){
+				final String type = getContentResolver().getType(data);
+				Log.d(TAG, "Playing: " + data);
+
+				if (MediaProvider.TYPE_PROJECT_CAST_ITEM.equals(type)){
+					Log.d(TAG, "It's a cast!");
+					castCursor = managedQuery(data, Cast.PROJECTION, null, null, null);
+					castCursor.moveToFirst();
+					mCastMediaCursor = managedQuery(Cast.getCastMediaUri(data), CastMedia.PROJECTION, null, null, null);
+					if (savedInstanceState != null){
+						mCastMediaCursor.moveToPosition(savedInstanceState.getInt(RUNTIME_STATE_CURRENT_CAST_VIDEO, 0));
+					}
+
+					loadShotList();
+				}else{
+					Log.e(TAG, "I don't know how to handle something of type: "+type);
+					finish();
+				}
+			}
+
+			return savedInstanceState;
+		}
+
+		@Override
+		protected void onPostExecute(Bundle result) {
+			final Intent intent = getIntent();
+			if (Intent.ACTION_VIEW.equals(intent.getAction())){
+				if (result != null){
+					playCastVideo();
+					mVideoView.seekTo(result.getInt(RUNTIME_STATE_CURRENT_PLAYBACK_TIME, 0));
+
+				}else{
+					nextOrFinish();
+				}
+			}
+		}
+	}
 }

@@ -625,6 +625,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			cast.put(Cast._LONGITUDE, mLocation.getLongitude());
 		}
 		if (mCurrentCast == null){
+			Log.d(TAG, "saving cast:" + cast);
 			mCurrentCast = cr.insert(Uri.withAppendedPath(mProjectUri, Cast.PATH), cast);
 
 			final ContentValues[] castMedia = new ContentValues[mShotListCursor.getCount()];
