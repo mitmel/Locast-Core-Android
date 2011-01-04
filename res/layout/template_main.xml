@@ -94,7 +94,7 @@
     		/>
     		
     		<EditText android:id="@+id/cast_title"
-    		android:hint="Cast title"
+    		android:hint="@string/cast_title_hint"
     		android:layout_width="fill_parent"
     		android:layout_height="wrap_content" 
 

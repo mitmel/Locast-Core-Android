@@ -6,7 +6,7 @@
 		android:icon="@android:drawable/ic_menu_add" />
 	<item
 		android:id="@+id/project_edit"
-		android:title="Edit Project"
+		android:title="@string/edit_project"
 		android:icon="@android:drawable/ic_menu_edit" />
 		
 </menu>

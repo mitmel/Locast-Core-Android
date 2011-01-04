@@ -7,7 +7,7 @@
 		
 	
 		
-		<item android:title="Wipe Database"
+		<item android:title="@string/wipe_database"
 		android:id="@+id/reset"
 		android:visible="false"
 		android:icon="@android:drawable/ic_menu_delete" />

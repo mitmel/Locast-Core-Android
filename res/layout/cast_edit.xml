@@ -20,7 +20,7 @@
     android:layout_height="wrap_content">
     
 	<EditText android:id="@+id/cast_title"
-	 android:hint="Cast Title"
+	 android:hint="@string/cast_title_hint"
 	 android:layout_width="fill_parent"
 	 android:layout_height="wrap_content"
 	 android:singleLine="true" 
@@ -47,7 +47,7 @@
 	
 	
 	<EditText android:id="@+id/cast_description"
-	 android:hint="Description"
+	 android:hint="@string/description"
 	 android:layout_width="fill_parent"
 	 android:layout_height="wrap_content"
 	 android:minLines="3"

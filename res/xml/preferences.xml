@@ -1,40 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-	<PreferenceCategory android:title="Account">
-		<EditTextPreference android:title="Username"
-			android:singleLine="true" 		
-			android:key="username" />
-		<EditTextPreference android:title="Password"
+	<PreferenceCategory android:title="@string/pref_cat_account">
+	
+		<EditTextPreference android:key="username"
+			android:title="@string/pref_title_username"
+			android:singleLine="true"  />
 			
-                android:password="true"
-                android:singleLine="true" 
-			
-			android:key="password" />
-			
-	</PreferenceCategory>
-	<!-- 
-	<PreferenceCategory android:title="Privacy">
-		<CheckBoxPreference android:title="Publish my location"
-			android:defaultValue="true" android:key="privacy" />
+		<EditTextPreference  android:key="password"
+			android:title="@string/pref_title_password"
+			android:password="true" android:singleLine="true" />
+
 	</PreferenceCategory>
 
-	<PreferenceCategory android:title="Tags">
-		<CheckBoxPreference android:defaultValue="true"
-			android:title="Favorite Tags" android:key="favoritetags" />
+	<PreferenceCategory android:title="@string/pref_cat_advanced">
+
+		<EditTextPreference android:key="server_url"
+			android:title="@string/pref_title_server_url"
+			android:singleLine="true"
+			android:defaultValue="@string/default_api_url" />
+
 	</PreferenceCategory>
--->
-	<PreferenceCategory android:title="Advanced">
-		
-		<EditTextPreference android:title="Server URL"
-		android:key="server_url"
-		android:singleLine="true" android:defaultValue="@string/default_api_url"/>
-		<!-- 
-		<CheckBoxPreference android:defaultValue="true"
-			android:title="Unpair Mobile Device" android:key="unpair" />
-	-->
-</PreferenceCategory>
-
-
 </PreferenceScreen>

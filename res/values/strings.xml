@@ -44,6 +44,7 @@
 	<string name="section_all">All</string>
 
 	<!-- casts -->
+    <string name="cast_title_hint">Cast Title</string>
 	<string name="add_to_project">Add to Project</string>
 	<string name="edit_cast">Edit Cast</string>
 	<string name="view_cast">View Cast</string>
@@ -56,6 +57,9 @@
 	<string name="view_casts_in_map">View casts in map</string>
 	<string name="cast_publish_title">Publish Cast</string>
     <string name="action_record_cast">Record a cast</string>
+    <string name="add_cast">Add Cast</string>
+    <string name="description">Description</string>
+
 	
 	<!-- dialogs -->
 	<string name="cast_delete_title">Delete Cast</string>
@@ -68,6 +72,8 @@
 	<string name="project_new_cast">Record a cast</string>
 	<string name="project_pick_title">Pick a project</string>
 	<string name="project_list_view_title">Projects</string>
+   <string name="edit_project">Edit Project</string>
+    <string name="add_project">Add Project</string>
 	
 	<!-- template -->
 
@@ -96,6 +102,8 @@
 	<string name="publish">Publish</string>
     <string name="send">Send</string>
     <string name="save">Save</string>
+
+   	<string name="wipe_database">Wipe Database</string>
     
     <!-- privacy -->
 	<string name="privacy_header">Privacy:</string>
@@ -113,4 +121,18 @@
 	<!-- Mobile Video -->
 	<string name="mobilevideo_video_edit_title">Locast Video Editor</string>
 	<string name="annotate_cast">Annotate Cast</string>
+	
+	<!-- Moments -->
+   	<string name="moment_description_hint">Briefly describe this moment (optional)</string>
+	<string name="save_moment">Save Moment</string>
+	
+	<!-- Preferences -->
+	<!-- account category -->
+   	<string name="pref_cat_account">Account</string>
+   	<string name="pref_title_username">Username</string>
+   	<string name="pref_title_password">Password</string>
+   	
+   	<!-- advanced category -->
+	<string name="pref_cat_advanced">Advanced</string>
+	<string name="pref_title_server_url">Server URL</string>
 </resources>

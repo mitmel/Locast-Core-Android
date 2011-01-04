@@ -42,7 +42,7 @@
   <EditText android:id="@+id/text" 
 	  android:layout_width="fill_parent"
 	  android:layout_height="wrap_content"
-	  android:hint="Briefly describe this moment (optional)"
+	  android:hint="@string/moment_description_hint"
 	  android:inputType="textLongMessage|textCapSentences|textAutoCorrect"
 	  android:layout_below="@id/tags"
 	  
