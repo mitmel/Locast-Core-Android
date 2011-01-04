@@ -35,10 +35,16 @@
 		
 		<activity android:name=".projects.ListProjectsActivity">
 			<intent-filter>
-				<action android:name="android.intent.action.VIEW" />
-				<action android:name="android.intent.action.EDIT" />
-				<action android:name="android.intent.action.PICK" />
 				<action android:name="android.intent.action.GET_CONTENT" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects" />
+			</intent-filter>
+		</activity>
+		
+		<activity android:name=".projects.SimpleProjectList" android:label="@string/project_list_view_title" android:theme="@android:style/Theme.Dialog">
+			<intent-filter>
+				<action android:name="android.intent.action.PICK" />
+				<action android:name="android.intent.action.VIEW" />
 				<category android:name="android.intent.category.DEFAULT" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects" />
 			</intent-filter>
@@ -259,6 +265,7 @@
 				<action android:name="edu.mit.mobile.android.locast.ACTION_RECORD_TEMPLATED_VIDEO" />
 				<category android:name="android.intent.category.DEFAULT" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.shotlist" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects" />
 			</intent-filter>
 			<intent-filter>
 				<action android:name="android.intent.action.EDIT" />
@@ -301,7 +308,6 @@
 	 -->
 	 
 		<activity android:name=".SettingsActivity" />
-		<activity android:name=".FavoriteTagsActivity" />
 		<activity android:name=".PairingActivity" />
 		
 	<!--
