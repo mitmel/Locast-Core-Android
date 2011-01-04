@@ -31,7 +31,7 @@
   	android:layout_width="wrap_content"
   	android:layout_height="wrap_content"
   	android:layout_centerInParent="true"
-  	android:text="No video for this segment"
+  	android:text="@string/template_no_video_for_this_segment"
   	style="@style/TemplatedVideoTextPrompt.OSD"
   	android:textSize="30sp"
   	android:textStyle="bold"
@@ -47,12 +47,12 @@
   	android:layout_alignParentLeft="true"
 	style="@style/TemplatedVideoTextPromptSwitcher"
   >
-  <edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/osd_text"
+  <edu.mit.mel.locast.mobile.widget.OutlinedTextView
   	android:layout_width="wrap_content"
   	android:layout_height="wrap_content"
   	style="@style/TemplatedVideoTextPrompt.OSD" />
   	
-  	<edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/osd_text2"
+  	<edu.mit.mel.locast.mobile.widget.OutlinedTextView
   	android:layout_width="wrap_content"
   	android:layout_height="wrap_content"
   	style="@style/TemplatedVideoTextPrompt.OSD" />

@@ -179,6 +179,10 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			mProjectUri = Cast.getProjectUri(loadCast(data));
 			mShotListCursor = loadShotList(Project.getShotListUri(mProjectUri));
 
+		}else if (MediaProvider.TYPE_PROJECT_ITEM.equals(type)){
+			mProjectUri = data;
+			mShotListCursor = loadShotList(Project.getShotListUri(mProjectUri));
+
 		}else if (type == null){
 			throw new IllegalArgumentException("must provide a shotlist or project URI");
 

@@ -47,7 +47,6 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
 
 	//Selection of columns that we want in the cursor
 
-
 	private static final int MENU_ADD_CAST = 0;
 	private static final int MENU_VIEW_PROJECT = 1;
 	private static final int MENU_EDIT_PROJECT = 2;
@@ -63,10 +62,10 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
     			*/
     	final ArrayList<String> featuredTag = new ArrayList<String>();
     	featuredTag.add(TaggableItem.addPrefixToTag(TaggableItem.SYSTEM_PREFIX, "_featured"));
-    	separatedList.addSection("featured", "Featured", new ProjectListAdapter(getApplicationContext(),
+    	separatedList.addSection("featured", getString(R.string.section_featured), new ProjectListAdapter(getApplicationContext(),
     			managedQuery(TaggableItem.getTagUri(Project.CONTENT_URI, featuredTag), TaggableItem.getTagProjection(ProjectListAdapter.PROJECTION), null, null, Project.SORT_ORDER_DEFAULT), this));
-    	// need nearby
-    	separatedList.addSection("nearby", "All", new ProjectListAdapter(getApplicationContext(),
+    	// TODO need nearby
+    	separatedList.addSection("all", getString(R.string.section_all), new ProjectListAdapter(getApplicationContext(),
     			managedQuery(Project.CONTENT_URI, ProjectListAdapter.PROJECTION, null, null, Project.SORT_ORDER_DEFAULT), this));
 
 
@@ -86,7 +85,7 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
 		final String action = getIntent().getAction();
 		final Uri projectUri = ContentUris.withAppendedId(Project.CONTENT_URI, id);
 
-		if (Intent.ACTION_PICK.equals(action) || Intent.ACTION_GET_CONTENT.equals(action)){
+		if (Intent.ACTION_GET_CONTENT.equals(action)){
 			setResult(RESULT_OK, new Intent().setData(projectUri));
 			finish();
 		}else{

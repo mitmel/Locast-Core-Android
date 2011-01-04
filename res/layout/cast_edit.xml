@@ -106,7 +106,7 @@
     android:layout_gravity="bottom"
     style="@android:style/ButtonBar"
     >
-    <Button android:text="Done" 
+    <Button android:text="@string/done" 
     android:id="@+id/done" 
     android:layout_width="wrap_content" 
     android:layout_height="wrap_content"/>

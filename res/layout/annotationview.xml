@@ -62,7 +62,7 @@
 					<Button android:id="@+id/annotation_Done"
 						android:layout_width="wrap_content"
 						android:layout_height="wrap_content"
-						android:text="Done">
+						android:text="@string/done">
 					</Button>		
 			
 			</LinearLayout>

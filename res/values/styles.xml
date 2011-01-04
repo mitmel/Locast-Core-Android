@@ -18,10 +18,6 @@
 		
 	 </style>
 	 
-	 <style name="TestStyle" parent="@android:style/Widget.TextView">
-			 <item name="android:textColor">#f00</item>
- 	 </style>
-	 
 	 <style name="ListSeparatorLight" parent="@android:style/Widget.TextView.ListSeparator.White">
         <item name="android:background">@drawable/light_header</item>
         <item name="android:layout_width">fill_parent</item>

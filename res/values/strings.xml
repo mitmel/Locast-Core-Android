@@ -1,19 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Default, English -->
 <resources>
-    <string name="error_please_enter_a_title">Please enter a title</string>
-	
 	<string name="app_name">Locast Connects</string>
 
 	<string name="default_api_url">http://locast.mit.edu/connects/api/</string>
 	<string name="app_update_url">http://locast.mit.edu/connects/static/lcc.json</string>
 	
 	<!-- Main screen -->
-    <string name="upgrade">Upgrade</string>
     <string name="about">About</string>
     <string name="settings">Settings</string>
-    
-    <!-- AppUpdateChecker -->
-    <string name="app_update_new_version">There is a new version (%1$s) of %2$s available!</string>
     
     <!-- Tabs -->
     <string name="tab_cast">Cast</string>
@@ -24,22 +19,17 @@
     
     <!-- pairing -->
 	<string name="pair_or">or</string>
-	<string name="pairing_key">Enter Pairing Key</string>
-	<string name="scan_qr_code">Scan QRCode</string>
 	<string name="pairing_code_entry">Type pairing code</string>
-	<string name="pair_button">Pair</string>
+	<string name="pair_action">Pair</string>
 	
 	<!-- User-facing error messages -->
 	<string name="error_no_providers">Error: no location providers</string>
 	<string name="error_no_maps">Error: no map handler present.</string>
-	<string name="error_comments_sync">Error syncing comments.</string>
 	<string name="error_sync">Could not synchronize with server. Do you have a network connection?</string>
-	<string name="error_no_location">Could not get your location. This cast will not be geo-tagged until you add a location.</string>
 	<string name="error_cannot_edit">Sorry, you don\'t have permission to edit this item.</string>
-	<string name="error_no_project">Error: project %s could not be found in local database.</string>
 	<string name="error_sync_no_post">Sorry, there was a problem uploading your media to the server. Please try synchronizing again.</string>
 	<string name="error_cast_no_videos">Sorry, there aren\'t any videos for this cast yet.</string>
-
+	<string name="error_please_enter_a_title">Please enter a title</string>
 	
 	<!-- user-facing alerts -->
 	<string name="added_cast_to">Added cast to %s</string>
@@ -48,40 +38,36 @@
 	
 	<!-- List sections -->
 	<string name="section_featured">Featured</string>
+	<string name="section_drafts">Drafts</string>
 	<string name="section_nearby">Nearby</string>
-	<string name="section_starred">Liked</string>
+	<string name="section_starred">Starred</string>
+	<string name="section_all">All</string>
 
 	<!-- casts -->
 	<string name="add_to_project">Add to Project</string>
 	<string name="edit_cast">Edit Cast</string>
-	<string name="annotate_cast">Annotate Cast</string>
 	<string name="view_cast">View Cast</string>
 	<string name="remove_cast">Remove Cast from Project</string>
 	<string name="current_location">Current location: </string>
-	<string name="requesting_location">Requesting current location…</string>
 	<string name="cast_location">Cast location: </string>
 	<string name="set_location">Set Location</string>
 	<string name="my_casts">My Casts</string>
-	<string name="casts_nearby">Nearby</string>
 	<string name="casts_tags">Tags</string>
 	<string name="view_casts_in_map">View casts in map</string>
 	<string name="cast_publish_title">Publish Cast</string>
+    <string name="action_record_cast">Record a cast</string>
 	
 	<!-- dialogs -->
 	<string name="cast_delete_title">Delete Cast</string>
 	<string name="cast_delete_message">Are you sure you want to delete this cast? All shots will be lost.</string>
 	
 	<!-- projects -->
-	<string name="project_join">Join</string>
-	<string name="project_leave">Leave</string>
 	<string name="project_title">Project Title</string>
-	<string name="project_members_label">Members:</string>
-	<string name="project_start_date">Start Date:</string>
-	<string name="project_end_date">End Date:</string>
 	<string name="project_description">Project Description</string>
-	<string name="project_no_members"><i>No members</i></string>
 	<string name="project_no_casts">This project does not contain any casts. You can add a cast by pressing \'menu\'.</string>
 	<string name="project_new_cast">Record a cast</string>
+	<string name="project_pick_title">Pick a project</string>
+	<string name="project_list_view_title">Projects</string>
 	
 	<!-- template -->
 
@@ -89,10 +75,9 @@
 	
 	<string name="template_rerecord_video_title">Rerecord Shot</string>
 	<string name="template_rerecord_video_body">Are you sure you want to rerecord this shot?</string>
-	<string name="template_toast_start_record">Tap the red circle to start recording.</string>
-	<string name="template_default_direction">Record a shot for this project.</string>
 	<string name="template_dialog_loading_camera">Setting up camera for recording…</string>
 	<string name="template_dialog_loading_preview">Loading preview…</string>
+    <string name="template_no_video_for_this_segment">No video for this segment</string>
 	<string name="template_done">Done!</string>
 	
 	<string name="dialog_button_delete">Delete</string>
@@ -106,9 +91,13 @@
 	<string name="location_link_accuracy_meter">±%.0f meters</string>
 	<string name="location_link_accuracy_kilometer">±%.01f kilometers</string>
 	
-	<!-- generic -->
+	<!-- generic actions -->
 	<string name="done">Done</string>
 	<string name="publish">Publish</string>
+    <string name="send">Send</string>
+    <string name="save">Save</string>
+    
+    <!-- privacy -->
 	<string name="privacy_header">Privacy:</string>
 	<string name="privacy_spinner">Privacy level</string>
 	
@@ -121,10 +110,7 @@
 	<string name="sync_upload_success">Cast uploaded successfully.</string>
 	<string name="sync_upload_fail">Error uploading cast.</string>
 
-	<string name="authority">edu.mit.mel.locast.mobile.provider</string>
-	<string name="type_content_item">vnd.android.cursor.item/vnd.edu.mit.mel.locast.mobile.content</string>
-	<string name="type_content_dir">vnd.android.cursor.dir/vnd.edu.mit.mel.locast.mobile.content</string>
-	
 	<!-- Mobile Video -->
 	<string name="mobilevideo_video_edit_title">Locast Video Editor</string>
+	<string name="annotate_cast">Annotate Cast</string>
 </resources>

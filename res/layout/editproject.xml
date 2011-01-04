@@ -6,7 +6,7 @@
     >
     <!--  giving a weight prioritizes this view over others, 
     	letting the last item fall to the bottom -->
-    <ScrollView android:id="@+id/ScrollView01"
+    <ScrollView
      android:layout_width="fill_parent"
       android:layout_height="wrap_content"
       android:layout_weight="1"
