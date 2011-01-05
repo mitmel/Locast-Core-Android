@@ -254,6 +254,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		final EditText title = (EditText) findViewById(R.id.cast_title);
 		if (title.getText().length() == 0){
 			title.setError(getString(R.string.error_please_enter_a_title));
+			title.requestFocus();
 			valid = false;
 		}else{
 			title.setError(null);

@@ -39,6 +39,7 @@ import edu.mit.mel.locast.mobile.data.TaggableItem;
  *
  */
 public class BrowseCastsActivity extends CastListActivity implements LocationListener, OnClickListener {
+	private static String TAG = BrowseCastsActivity.class.getSimpleName();
 
 	private IncrementalLocator iloc;
 	private CastCursorAdapter nearbyCursorAdapter;

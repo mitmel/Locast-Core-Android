@@ -18,7 +18,10 @@ package edu.mit.mel.locast.mobile.casts;
  */
 
 
+import android.app.Dialog;
 import android.app.TabActivity;
+import android.app.AlertDialog.Builder;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -60,6 +63,10 @@ public class ViewCastActivity extends TabActivity implements BasicCursorContentO
 
 		if (Intent.ACTION_VIEW.equals(action)){
 			myUri = getIntent().getData();
+
+		}else if (Intent.ACTION_DELETE.equals(action)){
+			myUri = getIntent().getData();
+			showDialog(DIALOG_DELETE);
 		}
 		mCursor = managedQuery(myUri, Cast.PROJECTION, null, null, null);
 		mCursor.moveToFirst();
@@ -69,9 +76,17 @@ public class ViewCastActivity extends TabActivity implements BasicCursorContentO
 
 	@Override
 	protected void onResume() {
-		mCursor.moveToFirst();
-		mCursor.registerContentObserver(mContentObserver);
 		super.onResume();
+
+		mCursor.registerContentObserver(mContentObserver);
+
+		if (mCursor.moveToFirst()){
+			loadFromCursor();
+			startService(new Intent(Intent.ACTION_SYNC, myUri));
+		}else{
+			// handle the case where this item is deleted
+			finish();
+		}
 	};
 
 	@Override
@@ -85,7 +100,7 @@ public class ViewCastActivity extends TabActivity implements BasicCursorContentO
 	}
 
 	public void loadFromCursor(){
-		mCursor.moveToFirst();
+
 		final Intent intent = getIntent();
 		final TabHost tabHost = getTabHost();
 		final Uri data = intent.getData();
@@ -130,5 +145,54 @@ public class ViewCastActivity extends TabActivity implements BasicCursorContentO
 		}
 
 		tabHost.setCurrentTab(currentTab);
+	}
+
+	private final static int
+	DIALOG_DELETE = 0;
+
+	@Override
+	protected Dialog onCreateDialog(int id) {
+		switch (id){
+		case DIALOG_DELETE:{
+			final Builder b = new Builder(this);
+			b.setTitle(R.string.cast_delete_title);
+			b.setMessage(R.string.cast_delete_message);
+			b.setPositiveButton(R.string.dialog_button_delete, dialogDeleteOnClickListener);
+			b.setNeutralButton(android.R.string.cancel, dialogDeleteOnClickListener);
+
+			return b.create();
+		}
+
+		default:
+			return null;
+		}
+	}
+
+	private final DialogInterface.OnClickListener dialogDeleteOnClickListener = new DialogInterface.OnClickListener() {
+		@Override
+		public void onClick(DialogInterface dialog, int which) {
+			switch (which){
+			case DialogInterface.BUTTON_POSITIVE:{
+				getContentResolver().delete(myUri, null, null);
+				setResult(RESULT_OK);
+				// from here, the cast view will notice that the cursor has emptied and will finish()
+
+			}break;
+
+			case DialogInterface.BUTTON_NEUTRAL:{
+				dialog.dismiss();
+				if (Intent.ACTION_DELETE.equals(getIntent().getAction())){
+					setResult(RESULT_CANCELED);
+					finish();
+				}
+			}break;
+			}
+		}
+	};
+
+	@Override
+	public void onCursorItemDeleted() {
+		finish();
+
 	}
 }

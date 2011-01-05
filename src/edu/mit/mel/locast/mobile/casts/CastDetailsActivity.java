@@ -85,6 +85,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
         	loadFromUri(data);
         	loadFromCursor();
         }
+		// loaded!
 
 		if (ACTION_PLAY_CAST.equals(action)) {
 			playCast();
@@ -112,13 +113,22 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 	@Override
 	protected void onPause() {
 		super.onPause();
-		c.unregisterContentObserver(mContentObserver);
+		if (c != null){
+			c.unregisterContentObserver(mContentObserver);
+		}
 	}
 	@Override
 	protected void onResume() {
-		c.moveToFirst();
-		c.registerContentObserver(mContentObserver);
 		super.onResume();
+		if (c != null){
+			c.registerContentObserver(mContentObserver);
+			if (c.moveToFirst()){
+				loadFromCursor();
+			}else{
+				// handle the case where this item is deleted
+				finish();
+			}
+		}
 	}
 
 	public Cursor getCursor() {
@@ -175,7 +185,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 		final MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.cast_view, menu);
+		inflater.inflate(R.menu.cast_options, menu);
 		return true;
 	}
 
@@ -183,8 +193,9 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		super.onPrepareOptionsMenu(menu);
 		if (c != null){
-			final MenuItem editItem = menu.findItem(R.id.menu_edit_cast);
-			editItem.setEnabled(Cast.canEdit(c));
+			final boolean canEdit = Cast.canEdit(c);
+		       menu.findItem(R.id.cast_edit).setEnabled(canEdit);
+		       menu.findItem(R.id.cast_delete).setEnabled(canEdit);
 		}
 
 		return true;
@@ -192,15 +203,24 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 
 	@Override
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
+		final Uri cast = getIntent().getData();
+
 		switch (item.getItemId()){
 		case R.id.add_cast_to_project:
-			startActivity(new Intent(Intent.ACTION_ATTACH_DATA, getIntent().getData()));
-			break;
+			startActivity(new Intent(Intent.ACTION_ATTACH_DATA, cast));
+			return true;
 
-		case R.id.menu_edit_cast:
-			startActivity(new Intent(Intent.ACTION_EDIT,
-					getIntent().getData()));
-			break;
+		case R.id.cast_edit:
+			startActivity(new Intent(Intent.ACTION_EDIT, cast));
+			return true;
+
+		case R.id.cast_delete:
+			startActivity(new Intent(Intent.ACTION_DELETE, cast));
+			return true;
+
+       case R.id.cast_play:
+    	   startActivity(new Intent(CastDetailsActivity.ACTION_PLAY_CAST, cast));
+    	   return true;
 
 		/*case R.id.menu_annotate_cast:
 			if (localUri != null){
@@ -223,8 +243,9 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 			}
 
 			break;*/
+			default:
+				return super.onMenuItemSelected(featureId, item);
 		}
-		return true;
 	}
 
 	private void playCast(){
@@ -284,8 +305,8 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 	}
 
 	@Override
-	protected void onDestroy() {
+	public void onCursorItemDeleted() {
+		finish();
 
-		super.onDestroy();
 	}
 }

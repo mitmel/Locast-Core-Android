@@ -17,24 +17,19 @@ package edu.mit.mel.locast.mobile.projects;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import android.content.ContentUris;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 import android.view.View.OnCreateContextMenuListener;
-import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.AdapterView.OnItemClickListener;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.casts.BasicCursorContentObserver;
 import edu.mit.mel.locast.mobile.casts.CastCursorAdapter;
@@ -47,7 +42,7 @@ import edu.mit.mel.locast.mobile.templates.TemplateActivity;
 import edu.mit.mel.locast.mobile.widget.TagListView;
 
 	public class ProjectDetailsActivity extends CastListActivity
-		implements OnClickListener, OnItemClickListener, OnCreateContextMenuListener, BasicCursorContentObserverWatcher {
+		implements OnClickListener, OnCreateContextMenuListener, BasicCursorContentObserverWatcher {
 		private TagListView tagList;
 
 		private final static int MENU_ITEM_VIEW_CAST = 0,
@@ -70,6 +65,7 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	        						Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT));
 
 	        setListAdapter(castAdapter);
+	        setCastsUri(mProjectCasts);
 
 	        // this needs to get called after setListAdapter()
 	        setContentView(R.layout.projectdetails);
@@ -81,9 +77,6 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	        castList.setEmptyView(findViewById(R.id.empty));
 
 	        tagList = ((TagListView)findViewById(R.id.tags));
-
-	        castList.setOnItemClickListener(this);
-	        castList.setOnCreateContextMenuListener(this);
 
 	        startService(new Intent(Intent.ACTION_SYNC, mProjectCasts));
 
@@ -106,9 +99,15 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 
 		@Override
 		protected void onResume() {
-			c.moveToFirst();
-			c.registerContentObserver(mContentObserver);
 			super.onResume();
+			c.registerContentObserver(mContentObserver);
+
+			if (c.moveToFirst()){
+				loadFromCursor();
+			}else{
+				// handle the case where this item is deleted
+				finish();
+			}
 		}
 
 		public Cursor getCursor() {
@@ -152,36 +151,6 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 			return super.onOptionsItemSelected(item);
 		}
 
-		@Override
-		public void onCreateContextMenu(ContextMenu menu, View v,
-				ContextMenuInfo menuInfo) {
-			menu.add(Menu.NONE, MENU_ITEM_VIEW_CAST,   Menu.NONE, R.string.view_cast);
-			//menu.add(Menu.NONE, MENU_ITEM_REMOVE_CAST, Menu.NONE, R.string.remove_cast);
-
-		}
-
-		@Override
-		public boolean onContextItemSelected(MenuItem item) {
-			final AdapterView.AdapterContextMenuInfo info;
-			switch (item.getItemId()){
-			case MENU_ITEM_VIEW_CAST:
-				info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-				startActivity(new Intent(Intent.ACTION_VIEW,
-						ContentUris.withAppendedId(mProjectCasts, info.id)));
-				break;
-
-			case MENU_ITEM_REMOVE_CAST:
-				info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-				//casts.remove(info.position);
-				//updateCasts();
-				break;
-
-			default:
-				return false;
-			}
-			return true;
-		}
-
 		public void onClick(View v) {
 			switch (v.getId()){
 			case R.id.project_cast_add:
@@ -196,12 +165,9 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 
 		}
 
-		public void onItemClick(AdapterView<?> adapter, View v, int position, long itemId) {
-			switch (adapter.getId()){
-			case android.R.id.list:
-				startActivity(new Intent(Intent.ACTION_VIEW,
-						ContentUris.withAppendedId(mProjectCasts, itemId)));
-			}
+		@Override
+		public void onCursorItemDeleted() {
+			finish();
 		}
 	}
 

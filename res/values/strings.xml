@@ -59,6 +59,7 @@
     <string name="action_record_cast">Record a cast</string>
     <string name="add_cast">Add Cast</string>
     <string name="description">Description</string>
+    <string name="cast_play">Play Cast</string>
 
 	
 	<!-- dialogs -->

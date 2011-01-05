@@ -131,6 +131,7 @@
 		<activity android:name=".casts.ViewCastActivity">
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
+				<action android:name="android.intent.action.DELETE" />
 				<category android:name="android.intent.category.DEFAULT" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts" />
@@ -143,13 +144,15 @@
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>
-			<intent-filter>
+			
+			<intent-filter android:label="@string/cast_play">
 				<action android:name="edu.mit.mobile.android.locast.ACTION_PLAY_CAST" />
 				<category android:name="android.intent.category.DEFAULT" />
+				<category android:name="android.intent.category.ALTERNATIVE" />
+				<category android:name="android.intent.category.SELECTED_ALTERNATIVE" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>
-			
 		</activity>
 		
 		<activity android:name=".casts.EditCastActivity">

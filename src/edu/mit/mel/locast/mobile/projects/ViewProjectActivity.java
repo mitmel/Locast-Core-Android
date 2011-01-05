@@ -19,11 +19,9 @@ package edu.mit.mel.locast.mobile.projects;
 import android.app.TabActivity;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.Window;
 import android.widget.ImageView;
 import android.widget.TabHost;
@@ -31,15 +29,19 @@ import android.widget.TextView;
 import edu.mit.mel.locast.mobile.Application;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.WebImageLoader;
+import edu.mit.mel.locast.mobile.casts.BasicCursorContentObserver;
+import edu.mit.mel.locast.mobile.casts.BasicCursorContentObserver.BasicCursorContentObserverWatcher;
 import edu.mit.mel.locast.mobile.data.Comment;
 import edu.mit.mel.locast.mobile.data.Project;
 import edu.mit.mel.locast.mobile.widget.FavoriteClickHandler;
 
-public class ViewProjectActivity extends TabActivity {
+public class ViewProjectActivity extends TabActivity implements BasicCursorContentObserverWatcher {
 	private WebImageLoader imgLoader;
 
 	private Uri myUri;
 	private Cursor mCursor;
+
+	private BasicCursorContentObserver mBasicCursorContentObserver;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +59,8 @@ public class ViewProjectActivity extends TabActivity {
 		if (Intent.ACTION_VIEW.equals(action)){
 			myUri = getIntent().getData();
 		}
+		mBasicCursorContentObserver = new BasicCursorContentObserver(this);
+
 		mCursor = managedQuery(myUri, Project.PROJECTION, null, null, null);
 		mCursor.moveToFirst();
 		loadFromCursor();
@@ -65,34 +69,23 @@ public class ViewProjectActivity extends TabActivity {
 
 	@Override
 	protected void onResume() {
-		mCursor.registerContentObserver(mContentObserver);
 		super.onResume();
-		startService(new Intent(Intent.ACTION_SYNC, myUri));
+		mCursor.registerContentObserver(mBasicCursorContentObserver);
+		if (mCursor.moveToFirst()){
+			loadFromCursor();
+			startService(new Intent(Intent.ACTION_SYNC, myUri));
+		}else{
+			finish();
+		}
 	};
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		mCursor.unregisterContentObserver(mContentObserver);
+		mCursor.unregisterContentObserver(mBasicCursorContentObserver);
 	};
 
-	ContentObserver mContentObserver = new ContentObserver(new Handler()) {
-		@Override
-		public boolean deliverSelfNotifications() {
-			return true;
-		}
-
-		@Override
-		public void onChange(boolean selfChange) {
-			if (!selfChange){
-				mCursor.requery();
-				mCursor.moveToFirst();
-			}
-			loadFromCursor();
-		}
-	};
-
-	private void loadFromCursor(){
+	public void loadFromCursor(){
 		final TabHost tabHost = getTabHost();
 		final int currentTab = tabHost.getCurrentTab();
 		// workaround for TabWidget bug: http://code.google.com/p/android/issues/detail?id=2772
@@ -139,5 +132,15 @@ public class ViewProjectActivity extends TabActivity {
 		tabHost.setCurrentTab(currentTab);
 		}
 
+	}
+
+	@Override
+	public Cursor getCursor() {
+		return mCursor;
+	}
+
+	@Override
+	public void onCursorItemDeleted() {
+		finish();
 	}
 }

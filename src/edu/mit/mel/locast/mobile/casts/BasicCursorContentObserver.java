@@ -35,17 +35,22 @@ public class BasicCursorContentObserver extends ContentObserver {
 
 	@Override
 	public void onChange(boolean selfChange) {
+		final Cursor c = mObservable.getCursor();
 		if (!selfChange){
-			final Cursor c = mObservable.getCursor();
 			c.requery();
-			c.moveToFirst();
 		}
-		mObservable.loadFromCursor();
+
+		if (!c.moveToFirst()){
+			mObservable.onCursorItemDeleted();
+		}else{
+			mObservable.loadFromCursor();
+		}
 	}
 
 	// XXX gotta come up with a better name than this...
 	public interface BasicCursorContentObserverWatcher {
 		public void loadFromCursor();
 		public Cursor getCursor();
+		public void onCursorItemDeleted();
 	}
 }

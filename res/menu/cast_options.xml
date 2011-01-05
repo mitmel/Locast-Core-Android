@@ -4,10 +4,17 @@
 	<item android:id="@+id/add_cast_to_project" 
 		android:title="@string/add_to_project" 
 		android:icon="@android:drawable/ic_menu_add" android:visible="false"/>
+
+	<item android:id="@+id/cast_play" 
+		android:title="@string/cast_play" 
+		android:icon="@drawable/ic_menu_play_clip" />
 		
-	<item android:id="@+id/menu_edit_cast" 
+	<item android:id="@+id/cast_edit" 
 		android:title="@string/edit_cast" 
 		android:icon="@android:drawable/ic_menu_edit" />
 		
+	<item android:id="@+id/cast_delete"
+		android:title="@string/cast_delete_title"
+		android:icon="@android:drawable/ic_menu_delete" />
 	
 </menu>

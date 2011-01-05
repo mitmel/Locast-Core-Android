@@ -22,10 +22,14 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.ContextMenu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.AdapterView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
@@ -48,6 +52,8 @@ import edu.mit.mel.locast.mobile.data.Cast;
  */
 public abstract class CastListActivity extends ListActivity {
 
+	private static final String TAG = CastListActivity.class.getSimpleName();
+
 	private ListAdapter adapter;
 	private Uri data;
 
@@ -64,10 +70,33 @@ public abstract class CastListActivity extends ListActivity {
 		}
 	}
 
+	@Override
+	public void setContentView(int layoutResID) {
+		super.setContentView(layoutResID);
+
+		registerForContextMenu(getListView());
+	}
+
+	@Override
+	public void setContentView(View view) {
+		super.setContentView(view);
+		registerForContextMenu(getListView());
+	}
+
+	@Override
+	public void setContentView(View view, LayoutParams params) {
+		super.setContentView(view, params);
+		registerForContextMenu(getListView());
+	}
+
 	protected void loadList(Cursor c){
 		adapter = new CastCursorAdapter(this, c);
 
         setListAdapter(adapter);
+	}
+
+	protected void setCastsUri(Uri casts){
+		this.data = casts;
 	}
 
 	@Override
@@ -82,12 +111,71 @@ public abstract class CastListActivity extends ListActivity {
 		return adapter;
 	}
 
+
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v,
 			ContextMenuInfo menuInfo) {
-		super.onCreateContextMenu(menu, v, menuInfo);
-	    getMenuInflater().inflate(R.menu.cast_view, menu);
+        AdapterView.AdapterContextMenuInfo info;
+        try {
+            info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+       } catch (final ClassCastException e) {
+           Log.e(TAG, "bad menuInfo", e);
+           return;
+       }
+
+       final Cursor c = (Cursor) getListAdapter().getItem(info.position);
+       if (c == null){
+    	   return;
+       }
+
+       // load the base menus.
+		final MenuInflater menuInflater = getMenuInflater();
+	    menuInflater.inflate(R.menu.cast_context, menu);
+	    menuInflater.inflate(R.menu.cast_options, menu);
+
+       menu.setHeaderTitle(c.getString(c.getColumnIndex(Cast._TITLE)));
+
+       final boolean canEdit = Cast.canEdit(c);
+       menu.findItem(R.id.cast_edit).setVisible(canEdit);
+       menu.findItem(R.id.cast_delete).setVisible(canEdit);
+
 	}
+
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info;
+        try {
+            info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+       } catch (final ClassCastException e) {
+           Log.e(TAG, "bad menuInfo", e);
+           return false;
+       }
+
+       final Uri cast = ContentUris.withAppendedId(data, info.id);
+
+       switch (item.getItemId()){
+       case R.id.cast_view:
+    	   startActivity(new Intent(Intent.ACTION_VIEW, cast));
+    	   return true;
+
+       case R.id.cast_edit:
+    	   startActivity(new Intent(Intent.ACTION_EDIT, cast));
+    	   return true;
+
+       case R.id.cast_delete:
+    	   startActivity(new Intent(Intent.ACTION_DELETE, cast));
+    	   return true;
+
+       case R.id.cast_play:
+    	   startActivity(new Intent(CastDetailsActivity.ACTION_PLAY_CAST, cast));
+    	   return true;
+
+       default:
+    	   return super.onContextItemSelected(item);
+       }
+	}
+
+
 
 	@Override
 	protected void onListItemClick(ListView l, View v, int position,
@@ -103,13 +191,5 @@ public abstract class CastListActivity extends ListActivity {
 		}else {
 			startActivity(new Intent(Intent.ACTION_VIEW, uri));
 		}
-	}
-
-	@Override
-	public boolean onContextItemSelected(MenuItem item) {
-		switch (item.getItemId()){
-
-		}
-		return super.onContextItemSelected(item);
 	}
 }
