@@ -3,4 +3,6 @@
     <declare-styleable name="Gallery1">
         <attr name="android:galleryItemBackground" />
     </declare-styleable>
+    <declare-styleable name="OutlinedTextView">
+    </declare-styleable>
 </resources>

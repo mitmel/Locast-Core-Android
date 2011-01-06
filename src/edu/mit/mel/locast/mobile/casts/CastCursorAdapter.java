@@ -18,6 +18,9 @@ package edu.mit.mel.locast.mobile.casts;
  */
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.SimpleCursorAdapter;
 import edu.mit.mel.locast.mobile.R;
@@ -27,6 +30,7 @@ public class CastCursorAdapter extends SimpleCursorAdapter {
 	private final static String[] DEFAULT_FROM = new String[] {	Cast._THUMBNAIL_URI, 	Cast._AUTHOR, 	Cast._TITLE, 		Cast._DESCRIPTION};
 	private final static int[] DEFAULT_TO      = new int[] {	R.id.media_thumbnail, 	R.id.author, 	android.R.id.text1, android.R.id.text2};
 	public final static int[] IMAGE_IDS = {R.id.media_thumbnail};
+	private final Drawable defaultImage;
 
 	public final static String[] DEFAULT_PROJECTION = {
 			Cast._ID,
@@ -47,6 +51,9 @@ public class CastCursorAdapter extends SimpleCursorAdapter {
 	 */
 	public CastCursorAdapter(Context context, Cursor c, int layout, String[]from, int[] to) {
 		super(context, layout, c, from, to);
+		final View v = LayoutInflater.from(context).inflate(layout, null, false);
+		final ImageView thumb = (ImageView)v.findViewById(IMAGE_IDS[0]);
+		defaultImage = thumb.getDrawable();
 	}
 
 	/**
@@ -57,17 +64,29 @@ public class CastCursorAdapter extends SimpleCursorAdapter {
 	 */
 	public CastCursorAdapter(Context context, Cursor c) {
 		this(context, c, R.layout.browse_content_item, DEFAULT_FROM, DEFAULT_TO);
+
 	}
 
 	@Override
+	public void setViewText(android.widget.TextView v, String text) {
+		super.setViewText(v, text);
+		if (v.getId() == android.R.id.text2){
+			if (text == null || text.length() == 0){
+				v.setVisibility(View.INVISIBLE);
+			}else{
+				v.setVisibility(View.VISIBLE);
+			}
+		}
+	};
+
+	@Override
 	public void setViewImage(ImageView v, String value) {
-		if (v.getId() == R.id.media_thumbnail){
-			v.setImageResource(R.drawable.icon_default_cast);
+		if (v.getId() == IMAGE_IDS[0]){
+			v.setImageDrawable(defaultImage);
 			if (value != null && value.length() > 0){
 				v.setTag(value);
 			}else{
 				v.setTag(null);
-
 			}
 		}
 	}
