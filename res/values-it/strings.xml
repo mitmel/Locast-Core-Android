@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Default, English -->
+<resources>
+	<string name="app_name">Locast Connects</string>
+
+	<string name="default_api_url">http://locast.mit.edu/connects/api/</string>
+	<string name="app_update_url">http://locast.mit.edu/connects/static/lcc.json</string>
+	
+	<!-- Main screen -->
+    <string name="about">Informazioni</string>
+    <string name="settings">Impostazioni</string>
+    
+    <!-- Tabs -->
+    <string name="tab_cast">Cast</string>
+    <string name="tab_casts">Casts</string>
+    <string name="tab_project">Progetto</string>
+    <string name="tab_projects">Progetti</string>
+    <string name="tab_discussion">Discussione</string>
+    
+    <!-- pairing -->
+	<string name="pair_or">oppure</string>
+	<string name="pairing_code_entry">Inserisci codice di accoppiamento</string>
+	<string name="pair_action">Accoppia</string>
+	
+	<!-- User-facing error messages -->
+	<string name="error_no_providers">Errore: non ci sono location providers</string>
+	<string name="error_no_maps">Errore: non è presente il map handler present.</string>
+	<string name="error_sync">Non ho potuto sincronizzarmi con il server. Sei connesso?</string>
+	<string name="error_cannot_edit">Mi dispiace ma non hai il permesso per modificare questo oggetto.</string>
+	<string name="error_sync_no_post">Mi dispiace, c\'è stato un problema nell\'upload del tuo media sul server. Per cortesia riprova a sincronizzare.</string>
+	<string name="error_cast_no_videos">Mi dispiace ma non ci sono ancora video per questo cast.</string>
+	<string name="error_please_enter_a_title">Per cortesia inserisci un titolo.</string>
+	
+	<!-- user-facing alerts -->
+	<string name="added_cast_to">Aggiunto cast a %s</string>
+	<string name="project_you_joined">Hai raggiunto %s</string>
+	<string name="project_you_left">Ti rimangono %s</string>
+	
+	<!-- List sections -->
+	<string name="section_featured">Consigliato</string>
+	<string name="section_drafts">Bozze</string>
+	<string name="section_nearby">Vicino</string>
+	<string name="section_starred">Evidenziato</string>
+	<string name="section_all">Tutti</string>
+
+	<!-- casts -->
+    <string name="cast_title_hint">Titolo del Cast</string>
+	<string name="add_to_project">Aggiunto al Progetto</string>
+	<string name="edit_cast">Modifica il cast</string>
+	<string name="view_cast">Vedi il cast</string>
+	<string name="remove_cast">Togli il Cast dal progetto</string>
+	<string name="current_location">Posizione attuale: </string>
+	<string name="cast_location">Posizione del Cast: </string>
+	<string name="set_location">Definisci posizione</string>
+	<string name="my_casts">I miei Casts</string>
+	<string name="casts_tags">Tags</string>
+	<string name="view_casts_in_map">Visualizza i cast nella mappa</string>
+	<string name="cast_publish_title">Pubblica il Cast</string>
+    <string name="action_record_cast">Registra un cast</string>
+    <string name="add_cast">Aggiungi un Cast</string>
+    <string name="description">Descrizione</string>
+
+	
+	<!-- dialogs -->
+	<string name="cast_delete_title">Cancella Cast</string>
+	<string name="cast_delete_message">Sei sicuro di voler cancellare questo cast? Tutte le riprese saranno perse.</string>
+	
+	<!-- projects -->
+	<string name="project_title">Titolo del progetto</string>
+	<string name="project_description">Descrizione del progetto</string>
+	<string name="project_no_casts">Questo progetto non contiene nessun cast. Puoi aggiungere un cast premendo \'menu\'.</string>
+	<string name="project_new_cast">Registra un cast</string>
+	<string name="project_pick_title">Scegli un progetto</string>
+	<string name="project_list_view_title">Progetti</string>
+   <string name="edit_project">Modifica Progetto</string>
+    <string name="add_project">Aggiungi Progetto</string>
+	
+	<!-- template -->
+
+	<string name="template_error_setup_fail">Errore: non posso inizializzare la macchina fotografica</string>
+	
+	<string name="template_rerecord_video_title">Ri-registra la ripresa</string>
+	<string name="template_rerecord_video_body">Sei sicuro di voler riregistrare la ripresa?</string>
+	<string name="template_dialog_loading_camera">Inizializzando la macchina fotografica per la registrazione…</string>
+	<string name="template_dialog_loading_preview">Caricando la anteprima…</string>
+    <string name="template_no_video_for_this_segment">Nessun video per questo segmento</string>
+	<string name="template_done">Finito!</string>
+	
+	<string name="dialog_button_delete">Cancella</string>
+	<string name="dialog_button_rerecord">Registra</string>
+	
+	<!-- discussion -->
+	<string name="discussion_hint">Commento</string>
+	
+	<!-- LocationLink widget -->
+	<string name="location_link_no_location">Nessuna posizione</string>
+	<string name="location_link_accuracy_meter">±%1$.0f metri</string>
+	<string name="location_link_accuracy_kilometer">±%1$.01f Km</string>
+	
+	<!-- generic actions -->
+	<string name="done">Finito!</string>
+	<string name="publish">Pubblica</string>
+    <string name="send">Manda</string>
+    <string name="save">Salva</string>
+
+   	<string name="wipe_database">Cancella Database</string>
+    
+    <!-- privacy -->
+	<string name="privacy_header">Privacy:</string>
+	<string name="privacy_spinner">Livello di Privacy</string>
+	
+	<!-- Sync -->
+	<string name="sync_first">Nessun contenuto trovato in locale. Comincio la prima syncronizzazione…</string>
+	<string name="sync_notification">Sto sincronizzondo Locast…</string>
+	<string name="sync_success">Sincronizzazione completata.</string>
+	<string name="sync_menu">Sincronizza</string>
+	
+	<string name="sync_upload_success">Upload del Cast effettuato.</string>
+	<string name="sync_upload_fail">Errore nell\'upload del cast.</string>
+
+	<!-- Mobile Video -->
+	<string name="mobilevideo_video_edit_title">Locast Video Editor</string>
+	<string name="annotate_cast">Annota Cast</string>
+	
+	<!-- Moments -->
+   	<string name="moment_description_hint">Descrivi brevemente questo momento (opzionale)</string>
+	<string name="save_moment">Salva Momento</string>
+	
+	<!-- Preferences -->
+	<!-- account category -->
+   	<string name="pref_cat_account">Account</string>
+   	<string name="pref_title_username">Username</string>
+   	<string name="pref_title_password">Password</string>
+   	
+   	<!-- advanced category -->
+	<string name="pref_cat_advanced">Avanzato</string>
+	<string name="pref_title_server_url">Server URL</string>
+</resources>
