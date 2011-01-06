@@ -225,7 +225,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 			Toast.makeText(this, "Synchronizing cast...", Toast.LENGTH_SHORT).show();
 
 			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()));
-			break;
+			return true;
 
 		/*case R.id.menu_annotate_cast:
 			if (localUri != null){
