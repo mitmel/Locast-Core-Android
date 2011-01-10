@@ -193,7 +193,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		super.onPrepareOptionsMenu(menu);
 		if (c != null){
-			final boolean canEdit = Cast.canEdit(c);
+			final boolean canEdit = Cast.canEdit(this, c);
 		       menu.findItem(R.id.cast_edit).setEnabled(canEdit);
 		       menu.findItem(R.id.cast_delete).setEnabled(canEdit);
 		}

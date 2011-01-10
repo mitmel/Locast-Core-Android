@@ -135,7 +135,7 @@ public abstract class CastListActivity extends ListActivity {
 
        menu.setHeaderTitle(c.getString(c.getColumnIndex(Cast._TITLE)));
 
-       final boolean canEdit = Cast.canEdit(c);
+       final boolean canEdit = Cast.canEdit(this, c);
        menu.findItem(R.id.cast_edit).setVisible(canEdit);
        menu.findItem(R.id.cast_delete).setVisible(canEdit);
 

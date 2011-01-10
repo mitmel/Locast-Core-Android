@@ -134,7 +134,7 @@ public class EditProjectActivity extends Activity implements OnClickListener {
 		c.close();
 	}
 	protected void loadFromCursor(final Uri projectUri, final Cursor c){
-		if (!Project.canEdit(c)){
+		if (!Project.canEdit(this, c)){
 			Toast.makeText(this, getText(R.string.error_cannot_edit), Toast.LENGTH_LONG).show();
 			finish();
 		}
@@ -146,7 +146,7 @@ public class EditProjectActivity extends Activity implements OnClickListener {
 
 		if (! c.isNull(c.getColumnIndex(Cast._PRIVACY))){
 			privacy.setSelection(Arrays.asList(Project.PRIVACY_LIST).indexOf(c.getString(c.getColumnIndex(Cast._PRIVACY))));
-			privacy.setEnabled(Project.canChangePrivacyLevel(c));
+			privacy.setEnabled(Project.canChangePrivacyLevel(this, c));
 		}
 	}
 

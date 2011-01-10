@@ -4,4 +4,16 @@
 		<item>Public</item>
 		<item>Private</item>
 	</string-array>
+	
+	<string-array name="locast_sites">
+		<item>Connects</item>
+		<item>MIT Connects</item>
+		<item>H2Flow</item>
+	</string-array>
+	
+	<string-array name="locast_urls">
+		<item>http://locast.mit.edu/connects/api/</item>
+		<item>http://locast.mit.edu/mitconnects/api/</item>
+		<item>http://locast.mit.edu/water/api/</item>
+	</string-array>
 </resources>

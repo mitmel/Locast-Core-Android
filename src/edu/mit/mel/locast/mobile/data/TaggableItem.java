@@ -34,8 +34,10 @@ import org.json.JSONObject;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.stackoverflow.CollectionUtils;
@@ -160,9 +162,10 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 * @param c a cursor pointing at an item's row
 	 * @return true if the item is editable by the logged-in user.
 	 */
-	public static boolean canEdit(Cursor c){
+	public static boolean canEdit(Context context, Cursor c){
 		final String privacy = c.getString(c.getColumnIndex(_PRIVACY));
-		final String username = AndroidNetworkClient.getInstance(null).getUsername();
+		final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		final String username = prefs.getString(AndroidNetworkClient.PREF_USERNAME, null);
 		return privacy == null || username == null || username.length() == 0 ||
 			username.equals(c.getString(c.getColumnIndex(_AUTHOR)));
 	}
@@ -171,8 +174,9 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 * @param c
 	 * @return true if the authenticated user can change the item's privacy level.
 	 */
-	public static boolean canChangePrivacyLevel(Cursor c){
-		final String username = AndroidNetworkClient.getInstance(null).getUsername();
+	public static boolean canChangePrivacyLevel(Context context, Cursor c){
+		final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		final String username = prefs.getString(AndroidNetworkClient.PREF_USERNAME, null);
 		return username == null || username.equals(c.getString(c.getColumnIndex(_AUTHOR)));
 	}
 

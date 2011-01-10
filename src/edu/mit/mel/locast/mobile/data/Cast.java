@@ -178,7 +178,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 			final ContentResolver cr = context.getContentResolver();
 			//final Cursor c = cr.query(uri, PROJECTION, null, null, null);
 			//c.moveToFirst();
-			final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(context);
+
 
 			OrderedList.onUpdate(context, uri, item, "castvideos", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new CastMedia(), CastMedia.PATH);
 			final Uri castMediaDirUri = Uri.withAppendedPath(uri, CastMedia.PATH);
@@ -201,7 +201,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 				if (hasLocMediaUri && !hasPubMediaUri){
 					// upload
 					try {
-
+						final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(context);
 						nc.uploadContentWithNotification(context, uri, pubCastMediaUri + castMedia.getLong(idxCol)+"/", locMediaUri, castMedia.getString(mediaContentTypeCol));
 					} catch (final Exception e){
 						final SyncException se = new SyncException("Error uploading content item.");

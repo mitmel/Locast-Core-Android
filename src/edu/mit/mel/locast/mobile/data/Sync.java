@@ -36,8 +36,6 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -64,7 +62,7 @@ import edu.mit.mel.locast.mobile.notifications.ProgressNotification;
  * @author stevep
  *
  */
-public class Sync extends Service implements OnSharedPreferenceChangeListener {
+public class Sync extends Service {
 	public final static String TAG = "LocastSync";
 
 	public final static String ACTION_CANCEL_SYNC = "edu.mit.mel.locast.mobile.ACTION_CANCEL_SYNC";
@@ -104,15 +102,10 @@ public class Sync extends Service implements OnSharedPreferenceChangeListener {
     public void onCreate() {
     	super.onCreate();
 
-		nc = AndroidNetworkClient.getInstance(getApplicationContext());
+		nc = AndroidNetworkClient.getInstance(this);
 		cr = getApplicationContext().getContentResolver();
     }
 
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-    		String key) {
-    	// reload the network client.
-    	nc = AndroidNetworkClient.getInstance(getApplicationContext());
-    }
 
 	private void sync(Uri toSync, SyncProgressNotifier syncProgress) throws SyncException, IOException {
 		JsonSyncableItem syncItem = null;

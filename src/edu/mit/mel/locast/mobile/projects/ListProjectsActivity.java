@@ -116,7 +116,7 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
 			}
 
 			case R.id.reset: {
-				MainActivity.resetDB(this);
+				MainActivity.resetDBWithConfirmation(this);
 			} break;
 
 			default:

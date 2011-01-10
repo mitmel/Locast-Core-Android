@@ -20,9 +20,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.params.HttpProtocolParams;
 import org.json.JSONObject;
 
 import android.app.NotificationManager;
@@ -43,48 +49,51 @@ import android.widget.Toast;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.notifications.ProgressNotification;
 
-public class AndroidNetworkClient extends NetworkClient {
+public class AndroidNetworkClient extends NetworkClient implements OnSharedPreferenceChangeListener {
+	private static String TAG = AndroidNetworkClient.class.getSimpleName();
+
 	private final Context context;
 	private final SharedPreferences prefs;
 	public final static String  PREF_USERNAME = "username",
 								PREF_PASSWORD = "password",
 								PREF_SERVER_URL = "server_url",
-								TAG = "AndroidNetworkClient";
+								PREF_LOCAST_SITE = "locast_site";
 
-	// maintain a separate network client for each thread as the client should only be used on one thread.
-	private static HashMap<Long, AndroidNetworkClient> instances = new HashMap<Long, AndroidNetworkClient>();
 	static public AndroidNetworkClient getInstance(Context context){
-		final long thisThread = Thread.currentThread().getId();
 
-		if (!instances.containsKey(thisThread)){
-			instances.put(thisThread, new AndroidNetworkClient(context));
-		}
-		return instances.get(thisThread);
-	}
+		final HttpParams params = new BasicHttpParams();
 
-	public AndroidNetworkClient(Context context){
-		super();
-		this.context = context;
-
-		final HttpParams p = this.getParams();
 		String appVersion = "unknown";
 		try {
 			appVersion = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
 		} catch (final NameNotFoundException e) {
 			e.printStackTrace();
 		}
-		p.setParameter("http.useragent", context.getString(R.string.app_name) + "/"+appVersion);
+		final String userAgent = context.getString(R.string.app_name) + "/"+appVersion;
+
+        // Set the specified user agent and register standard protocols.
+        HttpProtocolParams.setUserAgent(params, userAgent);
+        final SchemeRegistry schemeRegistry = new SchemeRegistry();
+        schemeRegistry.register(new Scheme("http",
+                PlainSocketFactory.getSocketFactory(), 80));
+        schemeRegistry.register(new Scheme("https",
+        		PlainSocketFactory.getSocketFactory(), 443));
+
+        final ClientConnectionManager manager =
+                new ThreadSafeClientConnManager(params, schemeRegistry);
+
+        return new AndroidNetworkClient(context, manager, params);
+	}
+
+	public AndroidNetworkClient(Context context, ClientConnectionManager manager, HttpParams params){
+		super(manager, params);
+		this.context = context;
 
 		prefs = PreferenceManager.getDefaultSharedPreferences(context);
 		Log.i(TAG, prefs.getString(PREF_SERVER_URL, ""));
 		loadBaseUri();
 
-		prefs.registerOnSharedPreferenceChangeListener(new OnSharedPreferenceChangeListener() {
-			public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-					String key) {
-				loadFromPreferences();
-			}
-		});
+		prefs.registerOnSharedPreferenceChangeListener(this);
 
 		initClient();
 
@@ -101,6 +110,13 @@ public class AndroidNetworkClient extends NetworkClient {
 		});*/
 	}
 
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		if (PREF_PASSWORD.equals(key) || PREF_USERNAME.equals(key) || PREF_SERVER_URL.equals(key)){
+			loadFromPreferences();
+		}
+	}
+
 	public void loadFromPreferences(){
 		Log.i(TAG, "Preferences changed. Updating network settings.");
 		loadBaseUri();
@@ -109,7 +125,7 @@ public class AndroidNetworkClient extends NetworkClient {
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
-		instances.clear();
+		//instances.clear();
 		initClient();
 	}
 

@@ -140,7 +140,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 	}
 
 	protected void loadFromCursor() {
-		if (!Cast.canEdit(c)){
+		if (!Cast.canEdit(this, c)){
 			Toast.makeText(this, getText(R.string.error_cannot_edit), Toast.LENGTH_LONG).show();
 			finish();
 		}
@@ -177,7 +177,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		if (! c.isNull(c.getColumnIndex(Cast._PRIVACY))){
 			final Spinner privacy = ((Spinner)findViewById(R.id.privacy));
 			privacy.setSelection(Arrays.asList(Project.PRIVACY_LIST).indexOf(c.getString(c.getColumnIndex(Cast._PRIVACY))));
-			privacy.setEnabled(Cast.canChangePrivacyLevel(c));
+			privacy.setEnabled(Cast.canChangePrivacyLevel(this, c));
 		}
 
 		final Cursor castMedia = managedQuery(Uri.withAppendedPath(castUri, CastMedia.PATH), CastMedia.PROJECTION, null, null, null);

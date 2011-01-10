@@ -129,7 +129,7 @@ import edu.mit.mel.locast.mobile.widget.TagListView;
 	        if (c != null && !c.isClosed()){
 	        	c.moveToFirst(); // XXX this shouldn't be necessary. Maybe an observer is confused?
 	        	final MenuItem editItem = menu.findItem(R.id.project_edit);
-	        	editItem.setEnabled(Project.canEdit(c));
+	        	editItem.setEnabled(Project.canEdit(this, c));
 	        }
 	        return true;
 	    }

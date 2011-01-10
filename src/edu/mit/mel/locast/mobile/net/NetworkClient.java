@@ -52,6 +52,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
@@ -145,8 +146,8 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	};
 
 
-	public NetworkClient() {
-		super();
+	public NetworkClient(ClientConnectionManager manager, HttpParams params){
+		super(manager, params);
 
 		this.addRequestInterceptor(PREEMPTIVE_AUTH, 0);
 
@@ -155,18 +156,6 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		p.setParameter("http.protocol.expect-continue", true);
 
 		//this.addRequestInterceptor(removeExpectations);
-	}
-
-	/**
-	 * @param baseurl the base URL of the API. This should end in a "/"
-	 */
-	public NetworkClient(String baseurl){
-		this();
-		this.baseurl = baseurl;
-
-
-		// as dates will be coming in as UTC, but the parser doesn't understand the "Z"
-		//DateParser.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 
 	protected void initClient(){

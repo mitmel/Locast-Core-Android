@@ -20,6 +20,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.TabActivity;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -76,7 +77,7 @@ public class MainActivity extends TabActivity {
         setContentView(R.layout.main);
 
 		if (needToResetNc){
-			nc = new AndroidNetworkClient(this);
+			nc = AndroidNetworkClient.getInstance(this);
 		}
         if (!nc.isPaired()){
         	startActivity(new Intent(this, PairingActivity.class));
@@ -115,7 +116,7 @@ public class MainActivity extends TabActivity {
 	    super.onStart();
 
 		if (needToResetNc){
-			nc = new AndroidNetworkClient(this);
+			nc = AndroidNetworkClient.getInstance(this);
 		}
 
 	    if (nc.isPaired()){
@@ -168,7 +169,20 @@ public class MainActivity extends TabActivity {
 		} // switch requestCode
 	}
 
-	public static void resetDB(final Activity context){
+	public static void resetDB(final Context context){
+		context.startService(new Intent(Sync.ACTION_CANCEL_SYNC, null, context, Sync.class));
+		// reset DBs
+		final ContentResolver cr = context.getContentResolver();
+		cr.delete(Cast.CONTENT_URI, null, null);
+		cr.delete(Project.CONTENT_URI, null, null);
+		cr.delete(Comment.CONTENT_URI, null, null);
+		cr.delete(Tag.CONTENT_URI, null, null);
+		cr.delete(CastMedia.CONTENT_URI, null, null);
+		cr.delete(ShotList.CONTENT_URI, null, null);
+		Toast.makeText(context.getApplicationContext(), "Databases reset.", Toast.LENGTH_LONG).show();
+	}
+
+	public static void resetDBWithConfirmation(final Activity context){
 		final AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle(R.string.app_name);
 		builder.setMessage("This will erase all the Locast information stored on the device, aside from the video files themselves. Do you want to reset Locast?");
@@ -179,16 +193,8 @@ public class MainActivity extends TabActivity {
 				/*final Editor e = prefs.edit();
 				e.clear();
 				e.commit();*/
-				context.startService(new Intent(Sync.ACTION_CANCEL_SYNC, null, context, Sync.class));
-				// reset DBs
-				final ContentResolver cr = context.getContentResolver();
-				cr.delete(Cast.CONTENT_URI, null, null);
-				cr.delete(Project.CONTENT_URI, null, null);
-				cr.delete(Comment.CONTENT_URI, null, null);
-				cr.delete(Tag.CONTENT_URI, null, null);
-				cr.delete(CastMedia.CONTENT_URI, null, null);
-				cr.delete(ShotList.CONTENT_URI, null, null);
-				Toast.makeText(context.getApplicationContext(), "Databases reset.", Toast.LENGTH_LONG).show();
+				resetDB(context);
+
 				context.finish();
 			}
 		});
