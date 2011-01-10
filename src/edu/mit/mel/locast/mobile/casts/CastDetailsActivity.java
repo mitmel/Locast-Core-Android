@@ -41,6 +41,7 @@ import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.CastMedia;
 import edu.mit.mel.locast.mobile.data.Locatable;
 import edu.mit.mel.locast.mobile.data.MediaProvider;
+import edu.mit.mel.locast.mobile.data.Sync;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.templates.TemplatePlayer;
 import edu.mit.mel.locast.mobile.widget.LocationLink;
@@ -299,7 +300,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 		case R.id.refresh:
 			Toast.makeText(this, "Synchronizing cast...", Toast.LENGTH_SHORT).show();
 
-			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()));
+			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()).putExtra(Sync.EXTRA_EXPLICIT_SYNC, true));
 			break;
 		}
 	}

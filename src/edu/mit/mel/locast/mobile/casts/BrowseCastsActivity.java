@@ -32,6 +32,7 @@ import edu.mit.mel.locast.mobile.IncrementalLocator;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.Locatable;
+import edu.mit.mel.locast.mobile.data.Sync;
 import edu.mit.mel.locast.mobile.data.TaggableItem;
 
 /**
@@ -98,7 +99,7 @@ public class BrowseCastsActivity extends CastListActivity implements LocationLis
 		switch (item.getItemId()){
 		case R.id.refresh:
 
-			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()));
+			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()).putExtra(Sync.EXTRA_EXPLICIT_SYNC, true));
 			return true;
 
 		case R.id.moment:

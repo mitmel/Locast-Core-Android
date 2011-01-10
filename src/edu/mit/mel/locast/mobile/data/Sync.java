@@ -31,12 +31,16 @@ import org.json.JSONObject;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
@@ -67,30 +71,71 @@ public class Sync extends Service {
 
 	public final static String ACTION_CANCEL_SYNC = "edu.mit.mel.locast.mobile.ACTION_CANCEL_SYNC";
 
+	/**
+	 * When a sync request is a result of direct user action (eg. pressing a "sync" button),
+	 * set this boolean extra to true.
+	 */
+	public final static String
+		EXTRA_EXPLICIT_SYNC = "edu.mit.mel.locast.mobile.EXTRA_EXPLICIT_SYNC";
+
 	private final IBinder mBinder = new LocalBinder();
 	private AndroidNetworkClient nc;
 	private ContentResolver cr;
 	private Set<Uri> syncdItems;
+	private boolean mNotifiedUserAboutNetworkStatus = true;
+
 	protected final ConcurrentLinkedQueue<Uri> syncQueue = new ConcurrentLinkedQueue<Uri>();
 	private SyncTask currentSyncTask = null;
 
 	private static int NOTIFICATION_SYNC = 0;
 
+	private final BroadcastReceiver networkStateReceiver = new BroadcastReceiver() {
 
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())){
+				final NetworkInfo networkInfo = intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
+
+				// reset this when the network status changes.
+				mNotifiedUserAboutNetworkStatus = true;
+				switch(networkInfo.getState()){
+				case DISCONNECTED:
+				case DISCONNECTING:
+					if (intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false)){
+						stopSync();
+					}
+
+					break;
+
+				case CONNECTED:
+					startSync();
+					break;
+
+				}
+			}
+		}
+	};
+
+	private void stopSync(){
+		Log.d(TAG, "Stopping sync");
+		if(currentSyncTask != null){
+			currentSyncTask.cancel(true);
+			Toast.makeText(getApplicationContext(), "Sync cancelled.", Toast.LENGTH_LONG).show();
+			currentSyncTask = null;
+		}
+		syncQueue.clear();
+	}
 
 	@Override
 	public void onStart(Intent intent, int startId) {
 		if (intent != null){
 			if (Intent.ACTION_SYNC.equals(intent.getAction())){
-
+				if (intent.getBooleanExtra(EXTRA_EXPLICIT_SYNC, false)){
+					mNotifiedUserAboutNetworkStatus = true;
+				}
 				startSync(intent.getData());
 			}else if (ACTION_CANCEL_SYNC.equals(intent.getAction())){
-				if(currentSyncTask != null){
-					currentSyncTask.cancel(true);
-					Toast.makeText(getApplicationContext(), "Sync cancelled.", Toast.LENGTH_LONG).show();
-				}else{
-					Toast.makeText(getApplicationContext(), "Does not appear to currently be syncing", Toast.LENGTH_LONG).show();
-				}
+				stopSync();
 			}
 		}else{
 			// restarted by system.
@@ -104,6 +149,14 @@ public class Sync extends Service {
 
 		nc = AndroidNetworkClient.getInstance(this);
 		cr = getApplicationContext().getContentResolver();
+
+		registerReceiver(networkStateReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+    }
+
+    @Override
+    public void onDestroy() {
+    	super.onDestroy();
+    	unregisterReceiver(networkStateReceiver);
     }
 
 
@@ -159,7 +212,7 @@ public class Sync extends Service {
 				// TODO figure out how to use getContentResolver().bulkInsert(url, values); for this:
 				syncProgress.addPendingTasks(remObjs.length());
 
-				for (int i = 0; i < remObjs.length(); i++){
+				for (int i = 0; (currentSyncTask != null && !currentSyncTask.isCancelled()) && i < remObjs.length(); i++){
 					final JSONObject jo = remObjs.getJSONObject(i);
 					syncItem(toSync, null, jo, sync, syncProgress);
 					syncProgress.completeTask();
@@ -182,7 +235,7 @@ public class Sync extends Service {
 
 		try {
 			Log.d(TAG, "have " + c.getCount() + " local items to sync");
-			for (c.moveToFirst(); ! c.isAfterLast(); c.moveToNext()){
+			for (c.moveToFirst(); (currentSyncTask != null && !currentSyncTask.isCancelled()) && ! c.isAfterLast(); c.moveToNext()){
 				try {
 					syncItem(toSync, c, null, sync, syncProgress);
 					syncProgress.completeTask();
@@ -431,7 +484,30 @@ public class Sync extends Service {
         }
     }
 
+    private boolean isDataConnected(){
+    	// a check is done here as well as startSync() to avoid the queue getting filled when the network is down.
+    	final ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    	final NetworkInfo ni = cm.getActiveNetworkInfo();
+    	if (ni == null || !ni.isConnected()){
+    		if (mNotifiedUserAboutNetworkStatus){
+    			Toast.makeText(this, "Cannot sync Locast: no data network. Please check your connection and try again.", Toast.LENGTH_LONG).show();
+    			mNotifiedUserAboutNetworkStatus = false;
+    		}
+    		Log.d(TAG, "not synchronizing, as it appears that there's no network connection");
+    		return false;
+    	}else{
+    		return ni.isConnected();
+    	}
+
+    }
+
+    /**
+     * Start the sync, if it isn't already started.
+     */
     public void startSync(){
+    	if (!isDataConnected()){
+    		return;
+    	}
 
     	if (currentSyncTask == null || currentSyncTask.getStatus() == AsyncTask.Status.FINISHED){
     		currentSyncTask = new SyncTask();
@@ -439,7 +515,16 @@ public class Sync extends Service {
     	}
     }
 
+    /**
+     * Adds the given URI to the sync queue and starts the sync.
+     *
+     * @param uri
+     */
     public void startSync(Uri uri){
+    	if (!isDataConnected()){
+    		return;
+    	}
+
     	if (! syncQueue.contains(uri)){
     		syncQueue.add(uri);
     		Log.d(TAG, "enqueing " + uri + " to sync queue");
@@ -481,8 +566,10 @@ public class Sync extends Service {
 		};
 
 		private void updateProgressBars(){
-			notification.setProgress(mTaskTotal, mTaskCompleted);
-			nm.notify(NOTIFICATION_SYNC, notification);
+			if (!isCancelled()){
+				notification.setProgress(mTaskTotal, mTaskCompleted);
+				nm.notify(NOTIFICATION_SYNC, notification);
+			}
 		}
 
 
@@ -518,7 +605,6 @@ public class Sync extends Service {
 				this.e = e;
 				return false;
 			} catch (final IOException e) {
-				// TODO Auto-generated catch block
 				this.e = e;
 				e.printStackTrace();
 				return false;
@@ -553,6 +639,13 @@ public class Sync extends Service {
 			mProgressHandler.obtainMessage(MSG_PROGRESS_COMPLETE_TASKS, 1, 0).sendToTarget();
 		}
 
+		@Override
+		protected void onCancelled() {
+			super.onCancelled();
+			if (nm != null){
+				nm.cancel(NOTIFICATION_SYNC);
+			}
+		}
 	}
 
 	public interface SyncProgressNotifier {

@@ -53,10 +53,6 @@ import edu.mit.mel.locast.mobile.projects.ListProjectsActivity;
 public class MainActivity extends TabActivity {
 
 	private AndroidNetworkClient nc;
-	// There's some strange quirk with the network client where it
-	// caches credentials in a way that it probably shouldn't. This will
-	// reset it after pairing. See https://mel-internal.mit.edu/trac/rai/ticket/432
-	private final boolean needToResetNc = false;
 
 	private AppUpdateChecker updateChecker;
 
@@ -76,9 +72,6 @@ public class MainActivity extends TabActivity {
 
         setContentView(R.layout.main);
 
-		if (needToResetNc){
-			nc = AndroidNetworkClient.getInstance(this);
-		}
         if (!nc.isPaired()){
         	startActivity(new Intent(this, PairingActivity.class));
         	finish();
@@ -115,17 +108,12 @@ public class MainActivity extends TabActivity {
 	protected void onStart() {
 	    super.onStart();
 
-		if (needToResetNc){
-			nc = AndroidNetworkClient.getInstance(this);
-		}
-
-	    if (nc.isPaired()){
-	    	//((TextView)findViewById(R.id.header_subtitle)).setText("Logged in as " + nc.getUsername());
-
+	    if (!nc.isPaired()){
+	    	startActivity(new Intent(this, PairingActivity.class));
+	    	finish();
         }
 
 	    new TestNetworkTask().execute();
-
 	}
 
 	public boolean myonOptionsItemSelected(MenuItem item) {
