@@ -20,15 +20,21 @@ import java.util.Date;
 
 
 
+/**
+ * XXX this should eventually be removed.
+ *
+ * @author steve
+ *
+ */
 public class User{
 
 	public String username;
 	private String name;
 	private String language;
 	//private Image icon;
-	private String transport; 
+	private String transport;
 	private Date lastUpdated;
-	
+
 	/**
 	 * @return the name
 	 */
@@ -64,8 +70,8 @@ public class User{
 		return username;
 	}
 
-	
-	
+
+
 	public Date getLastUpdated() {
 		return lastUpdated;
 	}

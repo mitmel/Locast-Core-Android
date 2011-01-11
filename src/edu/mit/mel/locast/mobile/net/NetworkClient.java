@@ -71,7 +71,6 @@ import android.location.Location;
 import android.net.Uri;
 import android.util.Log;
 import edu.mit.mel.locast.mobile.StreamUtils;
-import edu.mit.mel.locast.mobile.data.JSONSerializable;
 import edu.mit.mel.locast.mobile.data.User;
 
 
@@ -853,62 +852,6 @@ abstract public class NetworkClient extends DefaultHttpClient {
 			strs.add(i, ja.getString(i));
 		}
 		return strs;
-	}
-
-	/**
-	 * Loads a Bitmap from the given URL. Can be a relative path to the baseurl
-	 *
-	 * @param url
-	 * @return
-
-	 * @throws IOException
-	 */
-	/*public Image getBitmap(String url) throws IOException {
-		if (!url.startsWith("http://") && ! url.startsWith("https://")){
-			url = baseurl + url;
-		}
-		HttpRequest get = (HttpRequest)Connector.open(url);
-
-
-		if (get.getResponseCode() == 200){
-			return Image.createImage(get.openInputStream());
-
-		}else{
-			return null;
-		}
-	}*/
-
-	/*public Image getUserIcon(String url) throws IOException{
-		return getBitmap(url);
-	}*/
-
-	/**
-	 * @param jsonArray
-	 * @param objClass
-	 * @return
-	 * @throws JSONException
-	 * @throws IOException
-	 * @throws NetworkProtocolException
-	 */
-	static public Vector<? extends JSONSerializable> jsonToNative(
-			JSONArray jsonArray, Class<? extends JSONSerializable> objClass)
-			throws JSONException, IOException, NetworkProtocolException {
-		final Vector<JSONSerializable> vector = new Vector<JSONSerializable>();
-		try {
-			for (int i = 0; i < jsonArray.length(); i++){
-				JSONSerializable o;
-				o = objClass.newInstance();
-				o.fromJSON(jsonArray.getJSONObject(i));
-				vector.addElement(o);
-			}
-		} catch (final InstantiationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (final IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return vector;
 	}
 
 	/**
