@@ -40,10 +40,10 @@ public class BasicCursorContentObserver extends ContentObserver {
 			c.requery();
 		}
 
-		if (!c.moveToFirst()){
-			mObservable.onCursorItemDeleted();
-		}else{
+		if (!c.isClosed() && c.moveToFirst()){
 			mObservable.loadFromCursor();
+		}else{
+			mObservable.onCursorItemDeleted();
 		}
 	}
 

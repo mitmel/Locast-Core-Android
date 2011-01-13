@@ -55,7 +55,7 @@ public class ViewCastActivity extends TabActivity implements BasicCursorContentO
 		getWindow().requestFeature(Window.FEATURE_NO_TITLE);
 		super.onCreate(savedInstanceState);
 
-		setContentView(R.layout.window_title_thick);
+		setContentView(R.layout.window_title_thick_tabhost);
 
 		final String action = getIntent().getAction();
 
@@ -122,7 +122,7 @@ public class ViewCastActivity extends TabActivity implements BasicCursorContentO
 
 		setTitle(mCursor.getString(mCursor.getColumnIndex(Cast._TITLE)));
 
-		((TextView)(getWindow().findViewById(R.id.item_author)))
+		((TextView)(getWindow().findViewById(android.R.id.text1)))
 			.setText(mCursor.getString(mCursor.getColumnIndex(Cast._AUTHOR)));
 
 		final String thumbUrl = mCursor.getString(mCursor.getColumnIndex(Cast._THUMBNAIL_URI));

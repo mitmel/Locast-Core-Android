@@ -344,7 +344,7 @@ public class MediaProvider extends ContentProvider {
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
 		final SQLiteDatabase db = dbHelper.getWritableDatabase();
-
+		final Context context = getContext();
 		long rowid;
 		final boolean syncable = canSync(uri);
 		if (syncable && !values.containsKey(Project._MODIFIED_DATE)){
@@ -353,22 +353,19 @@ public class MediaProvider extends ContentProvider {
 		values.remove(JsonSyncableItem._ID);
 
 		// XXX remove this when the API updates
-		translateIdToUri(getContext(), values, syncable, uri);
+		translateIdToUri(context, values, syncable, uri);
 
 		Uri newItem = null;
 		boolean isDraft = false;
 
 		switch (uriMatcher.match(uri)){
+		//////////////////////////////////////////////////////////////////////////////////
 		case MATCHER_CAST_DIR:{
 			Assert.assertNotNull(values);
 			final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
 
 			rowid = db.insert(CAST_TABLE_NAME, null, values);
 			if (rowid > 0){
-				//Log.d(TAG, "just inserted: " + values);
-
-				getContext().getContentResolver().notifyChange(uri, null);
-
 				newItem = ContentUris.withAppendedId(Cast.CONTENT_URI, rowid);
 
 				update(Uri.withAppendedPath(newItem, Tag.PATH), cvTags, null, null);
@@ -381,12 +378,12 @@ public class MediaProvider extends ContentProvider {
 			}
 			break;
 		}
+		//////////////////////////////////////////////////////////////////////////////////
 		case MATCHER_PROJECT_DIR:{
 			Assert.assertNotNull(values);
 			final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
 			rowid = db.insert(PROJECT_TABLE_NAME, null, values);
 			if (rowid > 0){
-				getContext().getContentResolver().notifyChange(uri, null);
 				newItem = ContentUris.withAppendedId(Project.CONTENT_URI, rowid);
 				update(Uri.withAppendedPath(newItem, Tag.PATH), cvTags, null, null);
 				if (values.containsKey(Project._DRAFT)){
@@ -394,65 +391,70 @@ public class MediaProvider extends ContentProvider {
 				}else{
 					isDraft = false;
 				}
-
 			}
 			break;
 		}
-		case MATCHER_COMMENT_DIR:
+		//////////////////////////////////////////////////////////////////////////////////
+		case MATCHER_COMMENT_DIR:{
 			Assert.assertNotNull(values);
 			rowid = db.insert(COMMENT_TABLE_NAME, null, values);
 			if (rowid > 0){
-				getContext().getContentResolver().notifyChange(uri, null);
 				newItem = ContentUris.withAppendedId(Comment.CONTENT_URI, rowid);
 			}
-			break;
-
+		}break;
+		//////////////////////////////////////////////////////////////////////////////////
 		case MATCHER_CHILD_COMMENT_DIR:{
 			final List<String> pathSegs = uri.getPathSegments();
 			values.put(Comment._PARENT_CLASS, pathSegs.get(pathSegs.size() - 3));
 			values.put(Comment._PARENT_ID, pathSegs.get(pathSegs.size() - 2));
 			rowid = db.insert(COMMENT_TABLE_NAME, null, values);
 			if (rowid > 0){
-				getContext().getContentResolver().notifyChange(uri, null);
 				newItem = ContentUris.withAppendedId(uri, rowid);
 			}
 		}break;
-
+		//////////////////////////////////////////////////////////////////////////////////
 		case MATCHER_ITEM_TAGS:{
 			final List<String> pathSegments = uri.getPathSegments();
 			values.put(Tag._REF_CLASS, pathSegments.get(pathSegments.size() - 3));
 			values.put(Tag._REF_ID, pathSegments.get(pathSegments.size() - 2));
 
 			rowid = 0;
+
+			final ContentValues cv2 = new ContentValues(values);
+			cv2.remove(Tag.PATH);
+			db.beginTransaction();
 			for (final String tag : TaggableItem.getList(values.getAsString(Tag.PATH))){
-				final ContentValues cv2 = new ContentValues(values);
-				cv2.remove(Tag.PATH);
 				cv2.put(Tag._NAME, tag);
 				rowid = db.insert(TAG_TABLE_NAME, null, cv2);
 			}
+			db.setTransactionSuccessful();
+			db.endTransaction();
+
 			newItem = ContentUris.withAppendedId(uri, rowid);
 
 			break;
 		}
-
+		//////////////////////////////////////////////////////////////////////////////////
 		case MATCHER_CAST_CASTMEDIA_DIR:{
 			final String castId = uri.getPathSegments().get(1);
 			values.put(CastMedia._PARENT_ID, castId);
 			rowid = db.insert(CAST_MEDIA_TABLE_NAME, null, values);
-
-			newItem = ContentUris.withAppendedId(uri, rowid);
+			if (rowid > 0){
+				newItem = ContentUris.withAppendedId(uri, rowid);
+			}
 
 		} break;
-
+		//////////////////////////////////////////////////////////////////////////////////
 		case MATCHER_PROJECT_SHOTLIST_DIR:{
 			final String projectId = uri.getPathSegments().get(1);
 			values.put(ShotList._PARENT_ID, projectId);
 			rowid = db.insert(SHOTLIST_TABLE_NAME, null, values);
-
-			newItem = ContentUris.withAppendedId(uri, rowid);
+			if (rowid > 0){
+				newItem = ContentUris.withAppendedId(uri, rowid);
+			}
 
 		} break;
-
+		//////////////////////////////////////////////////////////////////////////////////
 		case MATCHER_PROJECT_CAST_DIR:{
 			final String projectId = uri.getPathSegments().get(1);
 			values.put(Cast._PROJECT_ID, projectId);
@@ -469,7 +471,7 @@ public class MediaProvider extends ContentProvider {
 			newItem = ContentUris.withAppendedId(uri, ContentUris.parseId(newItem));
 
 		} break;
-
+		//////////////////////////////////////////////////////////////////////////////////
 		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:{
 			final String castId = uri.getPathSegments().get(3);
 			values.put(CastMedia._PARENT_ID, castId);
@@ -483,12 +485,15 @@ public class MediaProvider extends ContentProvider {
 		default:
 			throw new IllegalArgumentException("Unknown URI: "+uri);
 		}
-		if (newItem == null){
+
+		if (newItem != null){
+			context.getContentResolver().notifyChange(uri, null);
+		}else{
 			throw new SQLException("Failed to insert row into "+uri);
 		}
 
 		if (syncable && !isDraft){
-			getContext().startService(new Intent(Intent.ACTION_SYNC, uri));
+			context.startService(new Intent(Intent.ACTION_SYNC, uri));
 		}
 		return newItem;
 	}

@@ -162,6 +162,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		try {
 			final URL baseUrl = new URL(this.baseurl);
 			baseuri = baseUrl.toURI();
+
 			this.authScope = new AuthScope(baseUrl.getHost(), baseUrl.getPort());
 
 			loadCredentials();
@@ -289,7 +290,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	public boolean pairDevice(String pairCode) throws IOException, JSONException, NetworkProtocolException{
 		final DefaultHttpClient hc = new DefaultHttpClient();
 		hc.addRequestInterceptor(REMOVE_EXPECTATIONS);
-		final HttpPost r = new HttpPost(getFullUri(PATH_PAIR));
+		final HttpPost r = new HttpPost(getFullUriAsString(PATH_PAIR));
 
 		final List<BasicNameValuePair> parameters = new ArrayList<BasicNameValuePair>();
 		parameters.add(new BasicNameValuePair("auth_secret", pairCode));
@@ -315,7 +316,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @throws RecordStoreException
 	 */
 	public boolean unpairDevice() throws IOException, NetworkProtocolException{
-		final HttpPost r = new HttpPost(getFullUri(PATH_UNPAIR));
+		final HttpPost r = new HttpPost(getFullUriAsString(PATH_UNPAIR));
 
 		final HttpResponse c = this.execute(r);
 		checkStatusCode(c, false);
@@ -331,7 +332,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	/*************************** all request methods ******************/
 
 	public HttpResponse head(String path) throws IOException, JSONException, NetworkProtocolException {
-		final HttpHead req = new HttpHead(getFullUri(path));
+		final HttpHead req = new HttpHead(getFullUriAsString(path));
 
 		return this.execute(req);
 	}
@@ -413,7 +414,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 * @throws HttpResponseException
 	 */
 	public HttpResponse get(String path) throws IOException, JSONException, NetworkProtocolException, HttpResponseException {
-		final String fullUri = getFullUri(path);
+		final String fullUri = getFullUriAsString(path);
 		final HttpGet req = new HttpGet(fullUri);
 		Log.d("NetworkClient", "GET "+ fullUri);
 		final HttpResponse res = this.execute(req);
@@ -498,7 +499,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	 */
 	protected synchronized HttpResponse put(String path, String jsonString) throws IOException,
 		NetworkProtocolException{
-		final String fullUri = getFullUri(path);
+		final String fullUri = getFullUriAsString(path);
 		final HttpPut r = new HttpPut(fullUri);
 		Log.d("NetworkClient", "PUT "+ fullUri);
 
@@ -516,7 +517,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 
 	protected synchronized HttpResponse put(String path, String contentType, InputStream is) throws IOException,
 		NetworkProtocolException {
-		final String fullUri = getFullUri(path);
+		final String fullUri = getFullUriAsString(path);
 		final HttpPut r = new HttpPut(fullUri);
 		Log.d("NetworkClient", "PUT "+ fullUri);
 		r.setEntity(new InputStreamEntity(is, 0));
@@ -530,7 +531,21 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		return c;
 	}
 
-	protected synchronized String getFullUri (String path){
+	public synchronized Uri getFullUri (String path){
+		Uri fullUri;
+		if (path.startsWith("http")){
+			fullUri = Uri.parse(path);
+
+		}else {
+
+			fullUri = Uri.parse(baseuri.resolve(path).normalize().toASCIIString());
+			Log.d("NetworkClient", "path: " + path + ", baseUri: " + baseuri + ", fullUri: "+fullUri);
+		}
+
+		return fullUri;
+	}
+
+	public synchronized String getFullUriAsString (String path){
 		String fullUri;
 		if (path.startsWith("http")){
 			fullUri = path;
@@ -556,7 +571,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	public synchronized HttpResponse post(String path, String jsonString)
 		throws IOException, NetworkProtocolException {
 
-		final String fullUri = getFullUri(path);
+		final String fullUri = getFullUriAsString(path);
 		final HttpPost r = new HttpPost(fullUri);
 		Log.d("NetworkClient", "POST "+ fullUri);
 
@@ -766,7 +781,7 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		final InputStream is = getFileStream(context, localFile);
 
 		// next step is to send the file contents.
-		final HttpPut r = new HttpPut(getFullUri(serverPath));
+		final HttpPut r = new HttpPut(getFullUriAsString(serverPath));
 
 		r.setHeader("Content-Type", contentType);
 

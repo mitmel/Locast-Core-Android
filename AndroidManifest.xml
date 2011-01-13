@@ -335,6 +335,13 @@
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.comments" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.comments" />
 			</intent-filter>
+			<intent-filter>
+				<action android:name="android.intent.action.SYNC" />
+				<data android:scheme="http" android:host="locast.mit.edu" />
+				<data android:scheme="https" android:host="locast.mit.edu" />
+				<data android:scheme="http" android:host="mel-pydev.mit.edu" />
+				<data android:scheme="https" android:host="mel-pydev.mit.edu" />
+				</intent-filter>
 		</service>
 		
 		

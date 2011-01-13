@@ -32,6 +32,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -72,6 +74,30 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 * @return The URI for a given content directory.
 	 */
 	public abstract Uri getContentUri();
+
+
+	private static String[] PUB_URI_PROJECTION = {_ID, _PUBLIC_URI};
+	/**
+	 * Given a public Uri fragment, finds the local item representing it. If there isn't any such item, null is returned.
+	 *
+	 * @param context
+	 * @param dirUri the base local URI to search.
+	 * @param pubUri A public URI fragment that represents the given item. This must match the result from the API.
+	 * @return a local URI matching the item or null if none were found.
+	 */
+	public static Uri getItemByPubIUri(Context context, Uri dirUri, String pubUri){
+		Uri uri = null;
+		final ContentResolver cr = context.getContentResolver();
+
+		final String[] selectionArgs = {pubUri};
+		final Cursor c = cr.query(dirUri, PUB_URI_PROJECTION, _PUBLIC_URI+"=?", selectionArgs, null);
+		if (c.moveToFirst()){
+			uri = ContentUris.withAppendedId(dirUri, c.getLong(c.getColumnIndex(_ID)));
+		}
+
+		c.close();
+		return uri;
+	}
 
 	/**
 	 * @return A mapping of server↔local DB items.

@@ -18,6 +18,7 @@ package edu.mit.mel.locast.mobile.data;
  */
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -162,25 +163,50 @@ public class Sync extends Service {
 
 	private void sync(Uri toSync, SyncProgressNotifier syncProgress) throws SyncException, IOException {
 		JsonSyncableItem syncItem = null;
-		final String contentType = getApplicationContext().getContentResolver().getType(toSync);
-		if (!MediaProvider.canSync(toSync)){
-			throw new IllegalArgumentException("URI " + toSync + " is not syncable.");
-		}
-		if (MediaProvider.TYPE_COMMENT_DIR.equals(contentType)
-				|| MediaProvider.TYPE_COMMENT_ITEM.equals(contentType)){
-			syncItem = new Comment();
-
-		}else if (MediaProvider.TYPE_CAST_DIR.equals(contentType)
-				|| MediaProvider.TYPE_CAST_ITEM.equals(contentType)
-				|| MediaProvider.TYPE_PROJECT_CAST_DIR.equals(contentType)
-				|| MediaProvider.TYPE_PROJECT_CAST_ITEM.equals(contentType)){
-			syncItem = new Cast();
-
-		}else if (MediaProvider.TYPE_PROJECT_DIR.equals(contentType)
-				|| MediaProvider.TYPE_PROJECT_ITEM.equals(contentType)){
-			syncItem = new Project();
+		if ("http".equals(toSync.getScheme()) || "https".equals(toSync.getScheme())){
+			// XXX hack. This should really get the type from the server somehow.
+			final List<String> path = toSync.getPathSegments();
+			final int size = path.size();
+			final String lastPath = size >= 1  ? path.get(size - 1): null;
+			final String secondToLastPath = size >= 2 ? path.get(size - 2) : null;
+			String type = null;
+			try {
+				Integer.parseInt(lastPath);
+				type = secondToLastPath;
+			}catch (final NumberFormatException ne){
+				type = lastPath;
+			}
+			if (Cast.SERVER_PATH.startsWith(type)){
+				syncItem = new Cast();
+			}else if (Project.SERVER_PATH.startsWith(type)){
+				syncItem = new Project();
+			}else if (Comment.SERVER_PATH.startsWith(type)) {
+				syncItem = new Comment();
+			}else{
+				throw new RuntimeException("Cannot determine the type of "+toSync);
+			}
 		}else{
-			throw new RuntimeException("URI " + toSync + " is syncable, but don't know what type of object it is.");
+			final String contentType = getApplicationContext().getContentResolver().getType(toSync);
+			if (!MediaProvider.canSync(toSync)){
+				throw new IllegalArgumentException("URI " + toSync + " is not syncable.");
+			}
+			if (MediaProvider.TYPE_COMMENT_DIR.equals(contentType)
+					|| MediaProvider.TYPE_COMMENT_ITEM.equals(contentType)){
+				syncItem = new Comment();
+
+			}else if (MediaProvider.TYPE_CAST_DIR.equals(contentType)
+					|| MediaProvider.TYPE_CAST_ITEM.equals(contentType)
+					|| MediaProvider.TYPE_PROJECT_CAST_DIR.equals(contentType)
+					|| MediaProvider.TYPE_PROJECT_CAST_ITEM.equals(contentType)){
+				syncItem = new Cast();
+
+			}else if (MediaProvider.TYPE_PROJECT_DIR.equals(contentType)
+					|| MediaProvider.TYPE_PROJECT_ITEM.equals(contentType)){
+				syncItem = new Project();
+
+			}else{
+				throw new RuntimeException("URI " + toSync + " is syncable, but don't know what type of object it is.");
+			}
 		}
 		sync(toSync, syncItem, syncProgress);
 	}
@@ -195,61 +221,107 @@ public class Sync extends Service {
 	 * @throws IOException
 	 */
 	private void sync(Uri toSync, JsonSyncableItem sync, SyncProgressNotifier syncProgress) throws SyncException, IOException{
-		JSONArray remObjs;
 		syncdItems = new TreeSet<Uri>();
 
-		final String contentType = getApplicationContext().getContentResolver().getType(toSync);
-
-		final Cursor c = cr.query(toSync, sync.getFullProjection(), null, null, null);
-		syncProgress.addPendingTasks(c.getCount());
-
-		// Handle a list of items.
-		if (contentType.startsWith("vnd.android.cursor.dir")){
-
-			// load from the network first...
+		if ("http".equals(toSync.getScheme()) || "https".equals(toSync.getScheme())){
+			final List<String> path = toSync.getPathSegments();
+			final int size = path.size();
+			final String lastPath = size >= 1  ? path.get(size - 1): null;
+			boolean isList;
+			// XXX so much of a hack. OMG.
 			try {
-				remObjs = nc.getArray(MediaProvider.getPublicPath(cr, toSync));
-				// TODO figure out how to use getContentResolver().bulkInsert(url, values); for this:
-				syncProgress.addPendingTasks(remObjs.length());
+				Integer.parseInt(lastPath);
+				isList = false;
+			}catch (final NumberFormatException ne){
+				isList = true;
+			}
 
-				for (int i = 0; (currentSyncTask != null && !currentSyncTask.isCancelled()) && i < remObjs.length(); i++){
-					final JSONObject jo = remObjs.getJSONObject(i);
-					syncItem(toSync, null, jo, sync, syncProgress);
-					syncProgress.completeTask();
+			if (isList){
+				syncNetworkList(toSync, toSync.getPath(), sync, syncProgress);
+			}else{
+				syncNetworkItem(toSync, toSync.getPath(), sync, syncProgress);
+			}
+		}else{
+			final String contentType = getApplicationContext().getContentResolver().getType(toSync);
+
+			final Cursor c = cr.query(toSync, sync.getFullProjection(), null, null, null);
+			syncProgress.addPendingTasks(c.getCount());
+
+			// Handle a list of items.
+			if (contentType.startsWith("vnd.android.cursor.dir")){
+				// load from the network first...
+				syncNetworkList(toSync, MediaProvider.getPublicPath(cr, toSync), sync, syncProgress);
+			}
+
+			// then load locally.
+
+
+			try {
+				Log.d(TAG, "have " + c.getCount() + " local items to sync");
+				for (c.moveToFirst(); (currentSyncTask != null && !currentSyncTask.isCancelled()) && ! c.isAfterLast(); c.moveToNext()){
+					try {
+						syncItem(toSync, c, null, sync, syncProgress);
+						syncProgress.completeTask();
+
+					}catch (final SyncItemDeletedException side){
+						Log.d(TAG, side.getLocalizedMessage() + " Deleting...");
+						cr.delete(side.getItem(), null, null);
+						//side.printStackTrace();
+						syncProgress.completeTask();
+						continue;
+					}
 				}
-			} catch (final SyncException se){
-				throw se;
-			} catch (final Exception e1) {
-				String message = e1.getLocalizedMessage();
-				if (message == null){
-					message = "caused by " + e1.getClass().getCanonicalName();
-				}
-				final SyncException se = new SyncException("Sync error: " + message);
-				se.initCause(e1);
-				throw se;
+			}finally{
+				c.close();
 			}
 		}
+	}
 
-		// then load locally.
-
+	private void syncNetworkList(Uri toSync, String netPath, JsonSyncableItem sync, SyncProgressNotifier syncProgress) throws SyncException{
+		JSONArray remObjs;
 
 		try {
-			Log.d(TAG, "have " + c.getCount() + " local items to sync");
-			for (c.moveToFirst(); (currentSyncTask != null && !currentSyncTask.isCancelled()) && ! c.isAfterLast(); c.moveToNext()){
-				try {
-					syncItem(toSync, c, null, sync, syncProgress);
-					syncProgress.completeTask();
+			remObjs = nc.getArray(netPath);
+			// TODO figure out how to use getContentResolver().bulkInsert(url, values); for this:
+			syncProgress.addPendingTasks(remObjs.length());
 
-				}catch (final SyncItemDeletedException side){
-					Log.d(TAG, side.getLocalizedMessage() + " Deleting...");
-					cr.delete(side.getItem(), null, null);
-					//side.printStackTrace();
-					syncProgress.completeTask();
-					continue;
-				}
+			for (int i = 0; (currentSyncTask != null && !currentSyncTask.isCancelled()) && i < remObjs.length(); i++){
+				final JSONObject jo = remObjs.getJSONObject(i);
+				syncItem(toSync, null, jo, sync, syncProgress);
+				syncProgress.completeTask();
 			}
-		}finally{
-			c.close();
+		} catch (final SyncException se){
+			throw se;
+		} catch (final Exception e1) {
+			String message = e1.getLocalizedMessage();
+			if (message == null){
+				message = "caused by " + e1.getClass().getCanonicalName();
+			}
+			final SyncException se = new SyncException("Sync error: " + message);
+			se.initCause(e1);
+			throw se;
+		}
+	}
+
+	private void syncNetworkItem(Uri toSync, String netPath, JsonSyncableItem sync, SyncProgressNotifier syncProgress) throws SyncException{
+		JSONObject remObj;
+		try {
+			remObj = nc.getObject(netPath);
+			syncProgress.addPendingTasks(1);
+
+			syncItem(toSync, null, remObj, sync, syncProgress);
+			syncProgress.completeTask();
+
+		} catch (final SyncException se){
+			throw se;
+		} catch (final Exception e1) {
+			String message = e1.getLocalizedMessage();
+			if (message == null){
+				message = "caused by " + e1.getClass().getCanonicalName();
+			}
+			final SyncException se = new SyncException("Sync error: " + message);
+			se.initCause(e1);
+			throw se;
 		}
 	}
 
@@ -271,11 +343,17 @@ public class Sync extends Service {
 		final SyncMap syncMap = sync.getSyncMap();
 
 		Uri locUri = null;
+		final Uri origToSync = toSync;
 		ContentValues cvNet = null;
 
 		final Context context = getApplicationContext();
 		final ContentResolver cr = context.getContentResolver();
 		if (jsonObject != null){
+			if ("http".equals(toSync.getScheme()) || "https".equals(toSync.getScheme())){
+				// we successfully loaded it from the 'net, but toSync is really for local URIs. Erase it.
+
+				toSync = sync.getContentUri();
+			}
 			try {
 				cvNet = JsonSyncableItem.fromJSON(context, null, jsonObject, syncMap);
 				// XXX remove this when the API updates
@@ -450,6 +528,12 @@ public class Sync extends Service {
 		syncMap.onPostSyncItem(context, locUri, jsonObject, modified);
 
 		syncdItems.add(locUri);
+
+		// needed for things that may have requested a sync with a different URI than what was eventually produced.
+		if (origToSync != locUri){
+			syncdItems.add(origToSync);
+			cr.notifyChange(origToSync, null);
+		}
 
 		return modified;
 	}

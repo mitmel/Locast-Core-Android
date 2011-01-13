@@ -48,7 +48,7 @@ public class ViewProjectActivity extends TabActivity implements BasicCursorConte
 		getWindow().requestFeature(Window.FEATURE_NO_TITLE);
 		super.onCreate(savedInstanceState);
 
-		setContentView(R.layout.window_title_thick);
+		setContentView(R.layout.window_title_thick_tabhost);
 
 		final TabHost tabHost = getTabHost();
 		final Intent intent = getIntent();
@@ -98,7 +98,7 @@ public class ViewProjectActivity extends TabActivity implements BasicCursorConte
 
 		setTitle(mCursor.getString(mCursor.getColumnIndex(Project._TITLE)));
 
-		((TextView)(getWindow().findViewById(R.id.item_author)))
+		((TextView)(getWindow().findViewById(android.R.id.text1)))
 			.setText(mCursor.getString(mCursor.getColumnIndex(Project._AUTHOR)));
 
 		FavoriteClickHandler.setStarred(this, mCursor, getIntent().getData());
