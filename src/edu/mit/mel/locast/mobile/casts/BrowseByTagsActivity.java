@@ -26,7 +26,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.data.Cast;
-import edu.mit.mel.locast.mobile.data.TaggableItem;
 import edu.mit.mel.locast.mobile.widget.TagList;
 import edu.mit.mel.locast.mobile.widget.TagList.OnTagListChangeListener;
 
@@ -35,16 +34,12 @@ public class BrowseByTagsActivity extends CastListActivity implements OnTagListC
 
 	private Uri thisUri;
 
-	public static String[] projection = TaggableItem.getTagProjection(CastCursorAdapter.DEFAULT_PROJECTION);
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.cast_browse_tags);
 		new ArrayList<String>(CastCursorAdapter.DEFAULT_PROJECTION.length);
-
-
 
 		tagList = (TagList)findViewById(R.id.tag_list);
 		tagList.addedRecommendedTags(Cast.getPopularTags(getContentResolver()));
@@ -58,11 +53,10 @@ public class BrowseByTagsActivity extends CastListActivity implements OnTagListC
 		Cursor c;
 		if (tags.isEmpty()){
 			thisUri = Cast.CONTENT_URI;
-			c = managedQuery(thisUri, CastCursorAdapter.DEFAULT_PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
 		}else{
 			thisUri = Cast.getTagUri(Cast.CONTENT_URI, tags);
-			c = managedQuery(thisUri, projection, null, null, Cast.SORT_ORDER_DEFAULT);
 		}
+		c = managedQuery(thisUri, CastCursorAdapter.DEFAULT_PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
 		return c;
 	}
 

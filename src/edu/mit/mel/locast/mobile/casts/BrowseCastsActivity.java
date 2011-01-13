@@ -53,15 +53,28 @@ public class BrowseCastsActivity extends CastListActivity implements LocationLis
 		final ArrayList<String> tag = new ArrayList<String>();
 		tag.add(TaggableItem.addPrefixToTag(TaggableItem.SYSTEM_PREFIX, "_featured"));
 
-		adapter.addSection(getString(R.string.section_drafts), new CastCursorAdapter(this, managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._PUBLIC_URI + "=null OR "+Cast._DRAFT, null, null)));
-		adapter.addSection(getString(R.string.section_featured), new CastCursorAdapter(this, managedQuery(TaggableItem.getTagUri(Cast.CONTENT_URI, tag), TaggableItem.getTagProjection(Cast.PROJECTION), null, null, Cast.SORT_ORDER_DEFAULT)));
+		adapter.addSection(getString(R.string.section_drafts),
+				new CastCursorAdapter(this,
+						managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._PUBLIC_URI + "=null OR "+Cast._DRAFT, null, null)));
 
-		nearbyCursorAdapter = new CastCursorAdapter(this, managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._ID + "=-1", null, null));
+		adapter.addSection(getString(R.string.section_featured),
+				new CastCursorAdapter(this,
+						managedQuery(TaggableItem.getTagUri(Cast.CONTENT_URI, tag), Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT)));
 
-		adapter.addSection(getString(R.string.section_nearby), nearbyCursorAdapter);
+		nearbyCursorAdapter = new CastCursorAdapter(this,
+				managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._ID + "=-1", null, null));
 
-		adapter.addSection(getString(R.string.section_starred), new CastCursorAdapter(this, managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._FAVORITED + " != 0", null, null)));
-		adapter.addSection(getString(R.string.section_all), new CastCursorAdapter(this, managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, null, null, null)));
+		adapter.addSection(getString(R.string.section_nearby),
+				nearbyCursorAdapter);
+
+		adapter.addSection(getString(R.string.section_starred),
+				new CastCursorAdapter(this,
+						managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._FAVORITED + " != 0", null, null)));
+
+		adapter.addSection(getString(R.string.section_all),
+				new CastCursorAdapter(this,
+						managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, null, null, null)));
+
 		iloc = new IncrementalLocator(this);
 
 		getListView().setFastScrollEnabled(true);

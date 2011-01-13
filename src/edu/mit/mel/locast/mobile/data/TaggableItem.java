@@ -271,24 +271,6 @@ public abstract class TaggableItem extends JsonSyncableItem {
 		return popTags.subList(0, limit);
 	}
 
-	/**
-	 * A hack to work around duplicate column names when selecting with tags.
-	 * @param projection The TaggableItem's projection
-	 * @return a projection with appropriate namespacing to avoid conflicts.
-	 */
-	public static String[] getTagProjection(String[] projection){
-		final List<String> l = new ArrayList<String>(projection.length);
-		// horrible hack to get around duplicate column names.
-		for (final String col: projection){
-			if (TaggableItem._ID.equals(col)){
-				l.add("c."+col +" AS "+TaggableItem._ID);
-			}else{
-				l.add(col);
-			}
-		}
-		return l.toArray(new String[]{});
-	}
-
 	public static Uri getTagUri(Uri baseUri, Collection<String> tags){
 		if (tags.isEmpty()){
 			return baseUri;

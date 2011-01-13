@@ -63,7 +63,7 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
     	final ArrayList<String> featuredTag = new ArrayList<String>();
     	featuredTag.add(TaggableItem.addPrefixToTag(TaggableItem.SYSTEM_PREFIX, "_featured"));
     	separatedList.addSection("featured", getString(R.string.section_featured), new ProjectListAdapter(getApplicationContext(),
-    			managedQuery(TaggableItem.getTagUri(Project.CONTENT_URI, featuredTag), TaggableItem.getTagProjection(ProjectListAdapter.PROJECTION), null, null, Project.SORT_ORDER_DEFAULT), this));
+    			managedQuery(TaggableItem.getTagUri(Project.CONTENT_URI, featuredTag), ProjectListAdapter.PROJECTION, null, null, Project.SORT_ORDER_DEFAULT), this));
     	// TODO need nearby
     	separatedList.addSection("all", getString(R.string.section_all), new ProjectListAdapter(getApplicationContext(),
     			managedQuery(Project.CONTENT_URI, ProjectListAdapter.PROJECTION, null, null, Project.SORT_ORDER_DEFAULT), this));

@@ -38,6 +38,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.provider.BaseColumns;
 import android.util.Log;
 import edu.mit.mel.locast.mobile.ListUtils;
 
@@ -620,7 +621,16 @@ public class MediaProvider extends ContentProvider {
 			// limit to only items of the given object class
 			qb.appendWhere(" AND t."+Tag._REF_CLASS + "=\""+taggableItemTable+"\"");
 
-			c = qb.query(db, projection, selection, selectionArgs,
+			// Modify the projection so that _ID explicitly refers to that of the objects being searched,
+			// not the tags. Without this, _ID is ambiguous and the query fails.
+			final String[] projection2 = projection.clone();
+			final List<String> projectionList = Arrays.asList(projection2);
+			final int idPos = projectionList.indexOf(BaseColumns._ID);
+			if (idPos >= 0){
+				projection2[idPos] = "c."+BaseColumns._ID + " as " + BaseColumns._ID;
+			}
+
+			c = qb.query(db, projection2, selection, selectionArgs,
 					"c."+TaggableItem._ID,
 					"COUNT ("+"c."+TaggableItem._ID+")="+tags.size(),
 					sortOrder);
