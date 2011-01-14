@@ -33,6 +33,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -607,14 +608,13 @@ public class MediaProvider extends ContentProvider {
 				taggableItemTable = PROJECT_TABLE_NAME;
 			}
 			qb.setTables(taggableItemTable + " AS c, "+TAG_TABLE_NAME +" AS t");
-			final Set<String> tags = Tag.toSet(uri.getLastPathSegment());
+
+			final Set<String> tags = Tag.toSet(uri.getLastPathSegment().toLowerCase());
 			final List<String> tagFilterList = new ArrayList<String>(tags.size());
-			// as sets can't be gone through by index, this should help translate to a list
+
 			qb.appendWhere("t."+Tag._REF_ID+"=c."+TaggableItem._ID);
-			int i = 0;
 			for (final String tag : tags){
-				tagFilterList.add(i, "'"+tag+"'");
-				i++;
+				tagFilterList.add(DatabaseUtils.sqlEscapeString(tag));
 			}
 			qb.appendWhere(" AND (t."+Tag._NAME+" IN ("+ListUtils.join(tagFilterList, ",")+"))");
 
