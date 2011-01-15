@@ -30,6 +30,8 @@
 	<string name="error_sync_no_post">Sorry, there was a problem uploading your media to the server. Please try synchronizing again.</string>
 	<string name="error_cast_no_videos">Sorry, there aren\'t any videos for this cast yet.</string>
 	<string name="error_please_enter_a_title">Please enter a title</string>
+    <string name="error_uploading_cast_video">Error uploading cast video.</string>
+    <string name="error_loading_project">Error loading project.</string>
 	
 	<!-- user-facing alerts -->
 	<string name="added_cast_to">Added cast to %s</string>
@@ -60,7 +62,6 @@
     <string name="add_cast">Add Cast</string>
     <string name="description">Description</string>
     <string name="cast_play">Play Cast</string>
-
 	
 	<!-- dialogs -->
 	<string name="cast_delete_title">Delete Cast</string>
@@ -85,6 +86,7 @@
 	<string name="template_dialog_loading_camera">Setting up camera for recording…</string>
 	<string name="template_dialog_loading_preview">Loading preview…</string>
     <string name="template_no_video_for_this_segment">No video for this segment</string>
+    <string name="template_cast_saved_as_draft">Cast saved as draft</string>
 	<string name="template_done">Done!</string>
 	
 	<string name="dialog_button_delete">Delete</string>
@@ -126,6 +128,9 @@
 	<!-- Moments -->
    	<string name="moment_description_hint">Briefly describe this moment (optional)</string>
 	<string name="save_moment">Save Moment</string>
+	
+	<!-- Missions -->
+    <string name="play_introduction">Play Introduction</string>
 	
 	<!-- Preferences -->
 	<!-- account category -->
