@@ -97,7 +97,7 @@ public class PairingActivity extends Activity implements OnClickListener, OnEdit
 						cr.delete(Project.CONTENT_URI, null, null);
 						cr.delete(Comment.CONTENT_URI, null, null);
 						cr.delete(Tag.CONTENT_URI, null, null);
-						Toast.makeText(getApplicationContext(), "Databases reset.", Toast.LENGTH_LONG).show();
+						Toast.makeText(getApplicationContext(), R.string.notice_databases_reset, Toast.LENGTH_LONG).show();
 						android.os.Process.killProcess(android.os.Process.myPid());
 					}
 				});

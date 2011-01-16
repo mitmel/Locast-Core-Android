@@ -22,21 +22,14 @@
 	<string name="pairing_code_entry">Type pairing code</string>
 	<string name="pair_action">Pair</string>
 	
-	<!-- User-facing error messages -->
+	<!-- Generic user-facing error messages -->
 	<string name="error_no_providers">Error: no location providers</string>
 	<string name="error_no_maps">Error: no map handler present.</string>
-	<string name="error_sync">Could not synchronize with server. Do you have a network connection?</string>
 	<string name="error_cannot_edit">Sorry, you don\'t have permission to edit this item.</string>
-	<string name="error_sync_no_post">Sorry, there was a problem uploading your media to the server. Please try synchronizing again.</string>
-	<string name="error_cast_no_videos">Sorry, there aren\'t any videos for this cast yet.</string>
 	<string name="error_please_enter_a_title">Please enter a title</string>
-    <string name="error_uploading_cast_video">Error uploading cast video.</string>
-    <string name="error_loading_project">Error loading project.</string>
-	
-	<!-- user-facing alerts -->
-	<string name="added_cast_to">Added cast to %s</string>
-	<string name="project_you_joined">You have joined %s</string>
-	<string name="project_you_left">You have left %s</string>
+
+    <!-- Generic user-facing notices -->
+    <string name="notice_databases_reset">Local database reset.</string>
 	
 	<!-- List sections -->
 	<string name="section_featured">Featured</string>
@@ -62,6 +55,13 @@
     <string name="add_cast">Add Cast</string>
     <string name="description">Description</string>
     <string name="cast_play">Play Cast</string>
+    <string name="notice_cast_saved_uploading">Cast saved. Uploading to server...</string>
+    <string name="error_cast_saving">Error saving cast.</string>
+    <string name="cast_recording_canceled">Recording canceled</string>
+    <string name="cast_synchronizing">Synchronizing cast...</string>
+    <string name="notice_cast_video_has_not_been_uploaded_yet">Cast video has not been uploaded yet.</string>
+    <string name="error_cast_could_not_play_video">Could not play video.</string>
+	<string name="error_cast_no_videos">Sorry, there aren\'t any videos for this cast yet.</string>
 	
 	<!-- dialogs -->
 	<string name="cast_delete_title">Delete Cast</string>
@@ -74,20 +74,22 @@
 	<string name="project_new_cast">Record a cast</string>
 	<string name="project_pick_title">Pick a project</string>
 	<string name="project_list_view_title">Projects</string>
-   <string name="edit_project">Edit Project</string>
+    <string name="edit_project">Edit Project</string>
     <string name="add_project">Add Project</string>
+	<string name="added_cast_to">Added cast to %s</string>
+	<string name="project_you_joined">You have joined %s</string>
+	<string name="project_you_left">You have left %s</string>
+    <string name="error_loading_project">Error loading project.</string>
 	
 	<!-- template -->
-
-	<string name="template_error_setup_fail">Error: could not setup camera.</string>
-	
+	<string name="template_done">Done!</string>
 	<string name="template_rerecord_video_title">Rerecord Shot</string>
 	<string name="template_rerecord_video_body">Are you sure you want to rerecord this shot?</string>
 	<string name="template_dialog_loading_camera">Setting up camera for recording…</string>
 	<string name="template_dialog_loading_preview">Loading preview…</string>
     <string name="template_no_video_for_this_segment">No video for this segment</string>
     <string name="template_cast_saved_as_draft">Cast saved as draft</string>
-	<string name="template_done">Done!</string>
+	<string name="template_error_setup_fail">Error: could not setup camera.</string>
 	
 	<string name="dialog_button_delete">Delete</string>
 	<string name="dialog_button_rerecord">Rerecord</string>
@@ -117,9 +119,13 @@
 	<string name="sync_notification">Synchronizing Locast…</string>
 	<string name="sync_success">Sync successful.</string>
 	<string name="sync_menu">Synchronize</string>
-	
 	<string name="sync_upload_success">Cast uploaded successfully.</string>
+    <string name="error_uploading_cast_video">Error uploading cast video.</string>
 	<string name="sync_upload_fail">Error uploading cast.</string>
+    <string name="error_sync_canceled">Sync canceled.</string>
+	<string name="error_sync">Could not synchronize with server. Do you have a network connection?</string>
+	<string name="error_sync_no_post">Sorry, there was a problem uploading your media to the server. Please try synchronizing again.</string>
+    <string name="error_sync_no_data_network">Cannot sync Locast: no data network. Please check your connection and try again.</string>
 
 	<!-- Mobile Video -->
 	<string name="mobilevideo_video_edit_title">Locast Video Editor</string>
@@ -128,6 +134,8 @@
 	<!-- Moments -->
    	<string name="moment_description_hint">Briefly describe this moment (optional)</string>
 	<string name="save_moment">Save Moment</string>
+    <string name="error_moment_saving_moment">Error saving moment :-(</string>
+    <string name="moment_saved">Moment saved.</string>
 	
 	<!-- Missions -->
     <string name="play_introduction">Play Introduction</string>

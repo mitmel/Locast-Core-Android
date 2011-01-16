@@ -117,11 +117,14 @@ public class Sync extends Service {
 		}
 	};
 
+	/**
+	 * Stops the synchronization.
+	 */
 	private void stopSync(){
 		Log.d(TAG, "Stopping sync");
 		if(currentSyncTask != null){
 			currentSyncTask.cancel(true);
-			Toast.makeText(getApplicationContext(), "Sync cancelled.", Toast.LENGTH_LONG).show();
+			Toast.makeText(getApplicationContext(), R.string.error_sync_canceled, Toast.LENGTH_LONG).show();
 			currentSyncTask = null;
 		}
 		syncQueue.clear();
@@ -574,7 +577,7 @@ public class Sync extends Service {
     	final NetworkInfo ni = cm.getActiveNetworkInfo();
     	if (ni == null || !ni.isConnected()){
     		if (mNotifiedUserAboutNetworkStatus){
-    			Toast.makeText(this, "Cannot sync Locast: no data network. Please check your connection and try again.", Toast.LENGTH_LONG).show();
+    			Toast.makeText(this, R.string.error_sync_no_data_network, Toast.LENGTH_LONG).show();
     			mNotifiedUserAboutNetworkStatus = false;
     		}
     		Log.d(TAG, "not synchronizing, as it appears that there's no network connection");

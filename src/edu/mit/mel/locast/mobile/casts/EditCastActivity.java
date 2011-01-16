@@ -219,7 +219,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 				break;
 
 			case RESULT_CANCELED:
-				Toast.makeText(this, "Recording cancelled", Toast.LENGTH_SHORT).show();
+				Toast.makeText(this, R.string.cast_recording_canceled, Toast.LENGTH_SHORT).show();
 				finish();
 				break;
 
@@ -318,7 +318,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			if (castUri != null){
 				castMediaUri = Uri.withAppendedPath(castUri, CastMedia.PATH);
 			}else{
-				Toast.makeText(this, "Error saving cast.", Toast.LENGTH_LONG);
+				Toast.makeText(this, R.string.error_cast_saving, Toast.LENGTH_LONG);
 				return false;
 			}
 		}else{
@@ -330,7 +330,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		cr.bulkInsert(castMediaUri, allMediaCv);
 		Cast.putTags(getContentResolver(), castUri, ((TagList)findViewById(R.id.new_cast_tags)).getTags());
 
-		Toast.makeText(this, "Cast saved. Uploading to server...", Toast.LENGTH_LONG).show();
+		Toast.makeText(this, R.string.notice_cast_saved_uploading, Toast.LENGTH_LONG).show();
 		return true;
 	}
 

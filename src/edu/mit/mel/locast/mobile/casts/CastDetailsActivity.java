@@ -262,9 +262,9 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 
 		}else{
 			if (mediaPublicUri != null){
-				Toast.makeText(this, "Could not play video.", Toast.LENGTH_SHORT).show();
+				Toast.makeText(this, R.string.error_cast_could_not_play_video, Toast.LENGTH_SHORT).show();
 			}else{
-				Toast.makeText(this, "Cast video has not been uploaded yet.", Toast.LENGTH_SHORT).show();
+				Toast.makeText(this, R.string.notice_cast_video_has_not_been_uploaded_yet, Toast.LENGTH_SHORT).show();
 			}
 			return;
 		}
@@ -298,7 +298,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 			break;
 
 		case R.id.refresh:
-			Toast.makeText(this, "Synchronizing cast...", Toast.LENGTH_SHORT).show();
+			Toast.makeText(this, R.string.cast_synchronizing, Toast.LENGTH_SHORT).show();
 
 			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()).putExtra(Sync.EXTRA_EXPLICIT_SYNC, true));
 			break;

@@ -149,7 +149,7 @@ public class MainActivity extends TabActivity {
 				break;
 
 			case RESULT_CANCELED:
-				Toast.makeText(this, "Recording cancelled", Toast.LENGTH_SHORT).show();
+				Toast.makeText(this, R.string.cast_recording_canceled, Toast.LENGTH_SHORT).show();
 				break;
 			} // switch resultCode
 			break;
@@ -167,7 +167,7 @@ public class MainActivity extends TabActivity {
 		cr.delete(Tag.CONTENT_URI, null, null);
 		cr.delete(CastMedia.CONTENT_URI, null, null);
 		cr.delete(ShotList.CONTENT_URI, null, null);
-		Toast.makeText(context.getApplicationContext(), "Databases reset.", Toast.LENGTH_LONG).show();
+		Toast.makeText(context.getApplicationContext(), R.string.notice_databases_reset, Toast.LENGTH_LONG).show();
 	}
 
 	public static void resetDBWithConfirmation(final Activity context){

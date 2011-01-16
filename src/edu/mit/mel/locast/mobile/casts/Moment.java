@@ -102,7 +102,6 @@ public class Moment extends Activity implements LocationListener, OnClickListene
 			cv.put(Cast._LONGITUDE, mLocation.getLongitude());
 		}
 
-
 		return cv;
 	}
 
@@ -126,10 +125,10 @@ public class Moment extends Activity implements LocationListener, OnClickListene
 		case R.id.save:{
 			final Uri cast = save();
 			if (cast != null){
-				Toast.makeText(this, "Moment saved.", Toast.LENGTH_SHORT).show();
+				Toast.makeText(this, R.string.moment_saved, Toast.LENGTH_SHORT).show();
 				finish();
 			}else{
-				Toast.makeText(this, "Error saving moment :-(", Toast.LENGTH_LONG).show();
+				Toast.makeText(this, R.string.error_moment_saving_moment, Toast.LENGTH_LONG).show();
 			}
 		}break;
 
@@ -142,26 +141,15 @@ public class Moment extends Activity implements LocationListener, OnClickListene
 
 	@Override
 	public void onLocationChanged(Location location) {
-		// TODO Auto-generated method stub
 		updateLocation(location);
-
 	}
 
 	@Override
-	public void onProviderDisabled(String provider) {
-		// TODO Auto-generated method stub
-
-	}
+	public void onProviderDisabled(String provider) {}
 
 	@Override
-	public void onProviderEnabled(String provider) {
-		// TODO Auto-generated method stub
-
-	}
+	public void onProviderEnabled(String provider) {}
 
 	@Override
-	public void onStatusChanged(String provider, int status, Bundle extras) {
-		// TODO Auto-generated method stub
-
-	}
+	public void onStatusChanged(String provider, int status, Bundle extras) {}
 }
