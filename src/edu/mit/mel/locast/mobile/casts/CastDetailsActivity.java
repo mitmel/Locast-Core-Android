@@ -20,6 +20,8 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -42,7 +44,6 @@ import edu.mit.mel.locast.mobile.data.CastMedia;
 import edu.mit.mel.locast.mobile.data.Locatable;
 import edu.mit.mel.locast.mobile.data.MediaProvider;
 import edu.mit.mel.locast.mobile.data.Sync;
-import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.templates.TemplatePlayer;
 import edu.mit.mel.locast.mobile.widget.LocationLink;
 import edu.mit.mel.locast.mobile.widget.TagListView;
@@ -252,29 +253,40 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 	private void playCast(){
 		final boolean finishImmediately = ACTION_PLAY_CAST.equals(getIntent().getAction());
 
-		final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
-		if (mediaPublicUri != null && !hasLocalVids && AndroidNetworkClient.getInstance(this).isConnectionWorking()){
-			viewVideo.setDataAndType(mediaPublicUri, contentType);
+		final ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+		final NetworkInfo ni = cm.getActiveNetworkInfo();
 
-		}else if (hasLocalVids){
+		final boolean canStream = ni != null && ni.isConnected();
+
+		final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
+
+
+		if (hasLocalVids){
 			viewVideo.setData(castUri);
 			viewVideo.setClass(this, TemplatePlayer.class);
 
 		}else{
 			if (mediaPublicUri != null){
-				Toast.makeText(this, R.string.error_cast_could_not_play_video, Toast.LENGTH_SHORT).show();
+				if (canStream){
+					viewVideo.setDataAndType(mediaPublicUri, contentType);
+				}else{
+					Toast.makeText(this, R.string.cast_error_could_not_play_video_neither_net_nor_local, Toast.LENGTH_LONG).show();
+				}
 			}else{
 				Toast.makeText(this, R.string.notice_cast_video_has_not_been_uploaded_yet, Toast.LENGTH_SHORT).show();
 			}
-			return;
 		}
 
 		if (finishImmediately){
 			viewVideo.addFlags(Intent.FLAG_ACTIVITY_PREVIOUS_IS_TOP);
-			startActivity(viewVideo);
+			if (viewVideo.getData() != null){
+				startActivity(viewVideo);
+			}
 			finish();
 		}else{
-			startActivity(viewVideo);
+			if (viewVideo.getData() != null){
+				startActivity(viewVideo);
+			}
 		}
 	}
 

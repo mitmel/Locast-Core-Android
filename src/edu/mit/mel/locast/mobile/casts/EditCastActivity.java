@@ -28,6 +28,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.location.Location;
 import android.location.LocationListener;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -330,7 +332,14 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		cr.bulkInsert(castMediaUri, allMediaCv);
 		Cast.putTags(getContentResolver(), castUri, ((TagList)findViewById(R.id.new_cast_tags)).getTags());
 
-		Toast.makeText(this, R.string.notice_cast_saved_uploading, Toast.LENGTH_LONG).show();
+		final ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+		final NetworkInfo ni = cm.getActiveNetworkInfo();
+
+		if (ni != null && ni.isConnected()){
+			Toast.makeText(this, R.string.notice_cast_saved_uploading, Toast.LENGTH_LONG).show();
+		}else{
+			Toast.makeText(this, R.string.notice_cast_saved_no_network, Toast.LENGTH_LONG).show();
+		}
 		return true;
 	}
 

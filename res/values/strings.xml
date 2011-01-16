@@ -56,12 +56,14 @@
     <string name="description">Description</string>
     <string name="cast_play">Play Cast</string>
     <string name="notice_cast_saved_uploading">Cast saved. Uploading to server...</string>
+    <string name="notice_cast_saved_no_network">Cast has been saved and will be uploaded when a network connection is established and the synchronization is started.</string>
     <string name="error_cast_saving">Error saving cast.</string>
     <string name="cast_recording_canceled">Recording canceled</string>
     <string name="cast_synchronizing">Synchronizing cast...</string>
     <string name="notice_cast_video_has_not_been_uploaded_yet">Cast video has not been uploaded yet.</string>
     <string name="error_cast_could_not_play_video">Could not play video.</string>
 	<string name="error_cast_no_videos">Sorry, there aren\'t any videos for this cast yet.</string>
+    <string name="cast_error_could_not_play_video_neither_net_nor_local">Could not play video as the network is disconnected and there is no cached copy.</string>
 	
 	<!-- dialogs -->
 	<string name="cast_delete_title">Delete Cast</string>
