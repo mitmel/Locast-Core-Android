@@ -16,8 +16,6 @@ package edu.mit.mel.locast.mobile.casts;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import java.util.ArrayList;
-
 import org.jsharkey.blog.android.SeparatedListAdapter;
 
 import android.content.Intent;
@@ -50,8 +48,6 @@ public class BrowseCastsActivity extends CastListActivity implements LocationLis
 		super.onCreate(savedInstanceState);
 
 		final SeparatedListAdapter adapter = new SeparatedListAdapter(this, R.layout.list_section_header);
-		final ArrayList<String> tag = new ArrayList<String>();
-		tag.add(TaggableItem.addPrefixToTag(TaggableItem.SYSTEM_PREFIX, "_featured"));
 
 		adapter.addSection(getString(R.string.section_drafts),
 				new CastCursorAdapter(this,
@@ -59,7 +55,9 @@ public class BrowseCastsActivity extends CastListActivity implements LocationLis
 
 		adapter.addSection(getString(R.string.section_featured),
 				new CastCursorAdapter(this,
-						managedQuery(TaggableItem.getTagUri(Cast.CONTENT_URI, tag), Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT)));
+						managedQuery(TaggableItem.getTagUri(Cast.CONTENT_URI,
+								TaggableItem.addPrefixToTag(TaggableItem.SYSTEM_PREFIX, "_featured")),
+								Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT)));
 
 		nearbyCursorAdapter = new CastCursorAdapter(this,
 				managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._ID + "=-1", null, null));

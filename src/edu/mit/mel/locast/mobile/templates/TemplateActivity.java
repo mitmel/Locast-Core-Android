@@ -206,7 +206,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			Log.w(TAG, "got more than one project for " + mProjectUri);
 		}else if (parent.getCount() == 0){
 			Log.e(TAG, "did not find a project at "+ mProjectUri);
-			Toast.makeText(this, "Error loading project", Toast.LENGTH_LONG).show(); // XXX i18n
+			Toast.makeText(this, R.string.error_loading_project, Toast.LENGTH_LONG).show();
 			finish();
 		}
 		parent.moveToFirst();
@@ -233,7 +233,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		if (mCurrentCast != null){
 			save();
 			if (mIsDraft){
-				Toast.makeText(this, "Cast saved as draft", Toast.LENGTH_LONG).show();
+				Toast.makeText(this, R.string.template_cast_saved_as_draft, Toast.LENGTH_LONG).show();
 			}
 		}
 	}

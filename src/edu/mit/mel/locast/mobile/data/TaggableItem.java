@@ -18,6 +18,7 @@ package edu.mit.mel.locast.mobile.data;
  */
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -139,10 +140,10 @@ public abstract class TaggableItem extends JsonSyncableItem {
 		}
 
 		@Override
-		public void onPostSyncItem(Context context, Uri uri,
+		public void onPostSyncItem(Context context, JsonSyncableItem sync, Uri uri,
 				JSONObject item, boolean updated) throws SyncException,
 				IOException {
-			super.onPostSyncItem(context, uri, item, updated);
+			super.onPostSyncItem(context, sync, uri, item, updated);
 			if (updated){
 				// tags need to be loaded here, as they need a valid localUri in order to save.
 				final JSONArray ja = item.optJSONArray(remoteKey);
@@ -210,8 +211,9 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	}
 
 	/**
-	 * Set the tags of the given item
-	 * @param cv
+	 * Sets the tags of the given item. Any existing tags will be deleted.
+	 * @param cr
+	 * @param item
 	 * @param tags
 	 */
 	public static void putTags(ContentResolver cr, Uri item, Collection<String> tags) {
@@ -219,6 +221,14 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	}
 
 	public static String CV_TAG_PREFIX = "prefix";
+
+	/**
+	 * Sets the tags of a given prefix for the given item. Any existing tags using the given prefix will be deleted.
+	 * @param cr
+	 * @param item
+	 * @param tags
+	 * @param prefix
+	 */
 	public static void putTags(ContentResolver cr, Uri item, Collection<String> tags, String prefix) {
 		final ContentValues cv = new ContentValues();
 		cv.put(Tag.PATH, TaggableItem.toListString(addPrefixToTags(prefix, tags)));
@@ -232,7 +242,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 * TODO make this pick the set of tags for a set of content.
 	 *
 	 * @param cr a content resolver
-	 * @return the top MAX_POPULAR_TAGS most popular tags in the set.
+	 * @return the top MAX_POPULAR_TAGS most popular tags in the set, with the most popular first.
 	 */
 	public static List<String> getPopularTags(ContentResolver cr){
 
@@ -271,6 +281,26 @@ public abstract class TaggableItem extends JsonSyncableItem {
 		return popTags.subList(0, limit);
 	}
 
+	/**
+	 * Given a base content URI of a taggable item and a list of tags, constructs a URI
+	 * representing all the items of the baseUri that match all the listed tags.
+	 *
+	 * @param baseUri a content URI of a TaggableItem
+	 * @param tags a collection of tags
+	 * @return a URI representing all the items that match all the given tags
+	 */
+	public static Uri getTagUri(Uri baseUri, String ... tags){
+		return getTagUri(baseUri, Arrays.asList(tags));
+	}
+
+	/**
+	 * Given a base content URI of a taggable item and a list of tags, constructs a URI
+	 * representing all the items of the baseUri that match all the listed tags.
+	 *
+	 * @param baseUri a content URI of a TaggableItem
+	 * @param tags a collection of tags
+	 * @return a URI representing all the items that match all the given tags
+	 */
 	public static Uri getTagUri(Uri baseUri, Collection<String> tags){
 		if (tags.isEmpty()){
 			return baseUri;

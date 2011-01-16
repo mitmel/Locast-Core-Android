@@ -104,8 +104,8 @@ public class Project extends TaggableItem implements Favoritable.Columns, Locata
 		}
 
 		@Override
-		public void onPostSyncItem(Context context, Uri uri, JSONObject item, boolean updated) throws SyncException, IOException {
-			super.onPostSyncItem(context, uri, item, updated);
+		public void onPostSyncItem(Context context, JsonSyncableItem sync, Uri uri, JSONObject item, boolean updated) throws SyncException, IOException {
+			super.onPostSyncItem(context, sync, uri, item, updated);
 			if (updated){
 				OrderedList.onUpdate(context, uri, item, "shotlist", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new ShotList(), ShotList.PATH);
 			}

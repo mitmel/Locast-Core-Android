@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.http.HttpEntity;
@@ -41,6 +42,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore.Video.Media;
 import android.util.Log;
+import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.StreamUtils;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
@@ -172,8 +174,8 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		}
 
 		@Override
-		public void onPostSyncItem(Context context, Uri uri, JSONObject item, boolean updated) throws SyncException ,IOException {
-			super.onPostSyncItem(context, uri, item, updated);
+		public void onPostSyncItem(Context context, JsonSyncableItem sync, Uri uri, JSONObject item, boolean updated) throws SyncException ,IOException {
+			super.onPostSyncItem(context, sync, uri, item, updated);
 
 			final ContentResolver cr = context.getContentResolver();
 			//final Cursor c = cr.query(uri, PROJECTION, null, null, null);
@@ -191,6 +193,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 			final int idxCol = castMedia.getColumnIndex(CastMedia._LIST_IDX);
 			final int mediaContentTypeCol = castMedia.getColumnIndex(CastMedia._MIME_TYPE);
 			final int locIdCol = castMedia.getColumnIndex(CastMedia._ID);
+			final Set<String> systemTags = getTags(cr, uri, TaggableItem.SYSTEM_PREFIX);
 
 
 			for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
@@ -204,11 +207,20 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 						final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(context);
 						nc.uploadContentWithNotification(context, uri, pubCastMediaUri + castMedia.getLong(idxCol)+"/", locMediaUri, castMedia.getString(mediaContentTypeCol));
 					} catch (final Exception e){
-						final SyncException se = new SyncException("Error uploading content item.");
+						final SyncException se = new SyncException(context.getString(R.string.error_uploading_cast_video));
 						se.initCause(e);
 						throw se;
 					}
 				Log.d(TAG, "Cast Media #" + castMedia.getPosition() + " is " + castMedia.getString(castMedia.getColumnIndex(CastMedia._MEDIA_URL)));
+
+				}else if (!hasLocMediaUri && hasPubMediaUri && systemTags.contains("_featured")){
+					final Uri pubMediaUriUri = Uri.parse(pubMediaUri);
+					// only have a public copy, so download it and store locally.
+					final File destfile = getFilePath(pubMediaUriUri);
+					String newLocUri = null;
+					if (!((Cast) sync).downloadCastMedia(destfile, uri, pubMediaUri)){
+						newLocUri = checkForMediaEntry(context, uri, pubMediaUriUri);
+					}
 				}
 			}
 			castMedia.close();
@@ -272,7 +284,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	}*/
 
 	/**
-	 * @param pubUri
+	 * @param pubUri public media uri
 	 * @return The local path on disk for the given remote video.
 	 * @throws SyncException
 	 */
@@ -299,17 +311,17 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		try {
 			if (saveFile.exists()){
 				final HttpResponse headRes = nc.head(pubUri);
-				if (saveFile.length() > 2000000){
-					Log.w(TAG, "Video "+castUri+" is too large. Not downloading.");
-					return false;
-				}
-				if (saveFile.length() == Long.valueOf(headRes.getFirstHeader("Content-Length").getValue())){
+				final long serverLength = Long.valueOf(headRes.getFirstHeader("Content-Length").getValue());
+				headRes.getEntity().consumeContent();
+//				if (saveFile.length() > 2000000){
+//					Log.w(TAG, "Video "+castUri+" is too large. Not downloading.");
+//					return false;
+//				}
+				if (saveFile.length() == serverLength){
 					Log.i(TAG, "Local copy of cast "+saveFile+" seems to be the same as the one on the server. Not re-downloading.");
 					return false;
-				}else{
-					//Log.i(TAG, )
 				}
-				headRes.getEntity().consumeContent();
+				// fall through and re-download, as we have a different size file locally.
 			}
 			final HttpResponse res = nc.get(pubUri);
 			final HttpEntity ent = res.getEntity();
@@ -380,14 +392,15 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 
 	/**
 	 * Scans the media database to see if the given item is there.
+	 * If it is, update the cast to point to it.
 	 *
 	 * @param context
-	 * @param uri Local URI to the cast.
+	 * @param cast Local URI to the cast.
 	 * @param pubUri public URI to the media file.
 	 * @return local URI if it exists.
 	 * @throws SyncException
 	 */
-	public static String checkForMediaEntry(Context context, Uri uri, Uri pubUri) throws SyncException{
+	public static String checkForMediaEntry(Context context, Uri cast, Uri pubUri) throws SyncException{
 		String newLocUri = null;
 		final File destfile = getFilePath(pubUri);
 		final String[] projection = {Media.DATA, Media._ID};
@@ -407,13 +420,13 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 			final ContentValues cvCast = new ContentValues();
 			cvCast.put(_MEDIA_LOCAL_URI, newLocUri);
 			final String[] castProjection = {_ID, _MODIFIED_DATE};
-			final Cursor castCursor = context.getContentResolver().query(uri, castProjection, null, null, null);
+			final Cursor castCursor = context.getContentResolver().query(cast, castProjection, null, null, null);
 			castCursor.moveToFirst();
 			cvCast.put(_MODIFIED_DATE, castCursor.getLong(castCursor.getColumnIndex(_MODIFIED_DATE)));
 			castCursor.close();
 
-			Log.d("Locast", "new local uri " + newLocUri + " for cast "+uri);
-			context.getContentResolver().update(uri, cvCast, null, null);
+			Log.d("Locast", "new local uri " + newLocUri + " for cast "+cast);
+			context.getContentResolver().update(cast, cvCast, null, null);
 		}
 		return newLocUri;
 	}

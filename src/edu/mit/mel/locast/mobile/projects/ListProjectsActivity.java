@@ -16,8 +16,6 @@ package edu.mit.mel.locast.mobile.projects;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import java.util.ArrayList;
-
 import org.jsharkey.blog.android.SeparatedListAdapter;
 
 import android.app.ListActivity;
@@ -60,10 +58,11 @@ public class ListProjectsActivity extends ListActivity implements OnClickListene
 /*    	separatedList.addSection("unpublished", "Unpublished", new ProjectListAdapter(getApplicationContext(),
     			managedQuery(Project.CONTENT_URI, ProjectListAdapter.PROJECTION, Project._PUBLIC_ID+"=null", null, null), this));
     			*/
-    	final ArrayList<String> featuredTag = new ArrayList<String>();
-    	featuredTag.add(TaggableItem.addPrefixToTag(TaggableItem.SYSTEM_PREFIX, "_featured"));
     	separatedList.addSection("featured", getString(R.string.section_featured), new ProjectListAdapter(getApplicationContext(),
-    			managedQuery(TaggableItem.getTagUri(Project.CONTENT_URI, featuredTag), ProjectListAdapter.PROJECTION, null, null, Project.SORT_ORDER_DEFAULT), this));
+    			managedQuery(TaggableItem.getTagUri(Project.CONTENT_URI,
+    					TaggableItem.addPrefixToTag(TaggableItem.SYSTEM_PREFIX, "_featured")),
+    					ProjectListAdapter.PROJECTION, null, null, Project.SORT_ORDER_DEFAULT), this));
+
     	// TODO need nearby
     	separatedList.addSection("all", getString(R.string.section_all), new ProjectListAdapter(getApplicationContext(),
     			managedQuery(Project.CONTENT_URI, ProjectListAdapter.PROJECTION, null, null, Project.SORT_ORDER_DEFAULT), this));
