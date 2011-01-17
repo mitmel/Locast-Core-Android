@@ -75,6 +75,20 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 */
 	public abstract Uri getContentUri();
 
+	/**
+	 * Override this if you wish to handle any actions once the item has finished syncing.
+	 * Default implementation does nothing.
+	 *
+	 * @param context
+	 * @param sync
+	 * @param uri
+	 * @param item
+	 * @param updated
+	 * @throws SyncException
+	 * @throws IOException
+	 */
+	public void onPostSyncItem(Context context, Uri uri, JSONObject item, boolean updated) throws SyncException, IOException {}
+
 
 	private static String[] PUB_URI_PROJECTION = {_ID, _PUBLIC_URI};
 	/**
@@ -376,7 +390,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		 */
 		public abstract ContentValues fromJSON(Context context, Uri localItem, JSONObject item, String lProp) throws JSONException, NetworkProtocolException, IOException;
 
-		public void onPostSyncItem(Context context, JsonSyncableItem sync, Uri uri, JSONObject item, boolean updated)
+		public void onPostSyncItem(Context context, Uri uri, JSONObject item, boolean updated)
 			throws SyncException, IOException {}
 
 	}
@@ -604,10 +618,10 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		}
 
 		@Override
-		public void onPostSyncItem(Context context, JsonSyncableItem sync, Uri uri, JSONObject item,
+		public void onPostSyncItem(Context context, Uri uri, JSONObject item,
 				boolean updated) throws SyncException, IOException {
-			super.onPostSyncItem(context, sync, uri, item, updated);
-			chain.onPostSyncItem(context, sync, uri, item, updated);
+			super.onPostSyncItem(context, uri, item, updated);
+			chain.onPostSyncItem(context, uri, item, updated);
 		}
 	}
 
@@ -667,11 +681,11 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		}
 
 		@Override
-		public void onPostSyncItem(Context context, JsonSyncableItem sync, Uri uri, JSONObject item,
+		public void onPostSyncItem(Context context, Uri uri, JSONObject item,
 				boolean updated) throws SyncException, IOException {
-			super.onPostSyncItem(context, sync, uri, item, updated);
+			super.onPostSyncItem(context, uri, item, updated);
 			for (final SyncItem child : children){
-				child.onPostSyncItem(context, sync, uri, item, updated);
+				child.onPostSyncItem(context, uri, item, updated);
 			}
 		}
 

@@ -528,7 +528,9 @@ public class Sync extends Service {
 			throw new RuntimeException("Never got a local URI for a sync'd item.");
 		}
 
-		syncMap.onPostSyncItem(context, sync, locUri, jsonObject, modified);
+		// two calls are made in two different contexts. Which context you use depends on the application.
+		syncMap.onPostSyncItem(context, locUri, jsonObject, modified);
+		sync.onPostSyncItem(context, locUri, jsonObject, modified);
 
 		syncdItems.add(locUri);
 

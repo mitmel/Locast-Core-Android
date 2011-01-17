@@ -54,6 +54,12 @@ public class ProgressNotification extends Notification {
 		this(context, icon, null, false);
 	}
 
+	public ProgressNotification(Context context, CharSequence tickerText, int type, PendingIntent contentIntent, boolean leaveWhenDone) {
+		this(context, 0, tickerText, leaveWhenDone);
+		this.contentIntent = contentIntent;
+		setType(type);
+	}
+
 	public ProgressNotification(Context context, int icon, CharSequence tickerText, boolean leaveWhenDone) {
 		super(icon, null, System.currentTimeMillis());
 		flags |= Notification.FLAG_ONGOING_EVENT;
@@ -98,7 +104,21 @@ public class ProgressNotification extends Notification {
 	}
 
 	/**
-	 * Mark the progress done.
+	 * Make sure to call done() after this.
+	 *
+	 * @param message the reason why this transfer failed.
+	 */
+	public void setUnsuccessful(CharSequence message){
+		successful = false;
+		if (message != null){
+			doneText = message;
+		}
+	}
+
+	/**
+	 * Mark the progress done. This should be called even if the transfer is unsuccessful.
+	 * If you set leaveWhenDone, then make sure that you have set any doneTitle, doneText, and doneIntent that you want set.
+	 *
 	 * @param id an ID that's unique for the set of things being done.
 	 */
 	public void done(int id){

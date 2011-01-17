@@ -122,12 +122,16 @@
 	<string name="sync_success">Sync successful.</string>
 	<string name="sync_menu">Synchronize</string>
 	<string name="sync_upload_success">Cast uploaded successfully.</string>
+	<string name="sync_upload_success_message">\"%1$s\" has been uploaded.</string>
     <string name="error_uploading_cast_video">Error uploading cast video.</string>
 	<string name="sync_upload_fail">Error uploading cast.</string>
+	<string name="sync_upload_fail_message">\"%1$s\" failed to upload.</string>
     <string name="error_sync_canceled">Sync canceled.</string>
 	<string name="error_sync">Could not synchronize with server. Do you have a network connection?</string>
 	<string name="error_sync_no_post">Sorry, there was a problem uploading your media to the server. Please try synchronizing again.</string>
     <string name="error_sync_no_data_network">Cannot sync Locast: no data network. Please check your connection and try again.</string>
+    <string name="sync_downloading_cast">Downloading \"%1$s\"…</string>
+    <string name="sync_uploading_cast">Uploading \"%1$s\"…</string>
 
 	<!-- Mobile Video -->
 	<string name="mobilevideo_video_edit_title">Locast Video Editor</string>

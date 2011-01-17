@@ -683,6 +683,12 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	protected abstract InputStream getFileStream(String localFile) throws IOException;
 	protected abstract InputStream getFileStream(Context context, Uri localFile) throws IOException;
 
+	/**
+	 * Listener for use with InputStreamWatcher.
+	 *
+	 * @author steve
+	 *
+	 */
 	public static interface TransferProgressListener {
 		/**
 		 * @param bytes Total bytes transferred.
@@ -769,8 +775,6 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		}
 
 	}
-
-
 
 	public void uploadContent(Context context, TransferProgressListener progressListener, String serverPath, Uri localFile, String contentType) throws NetworkProtocolException, IOException{
 

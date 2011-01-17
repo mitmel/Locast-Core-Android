@@ -679,6 +679,12 @@ public class MediaProvider extends ContentProvider {
 		return c;
 	}
 
+	/**
+	 * Add this key to the values to tell update() to not mark the data as being dirty. This is useful
+	 * for updating local-only information that will not be synchronized and avoid triggering synchronization.
+	 */
+	public static final String CV_FLAG_DO_NOT_MARK_DIRTY = "_CV_FLAG_DO_NOT_MARK_DIRTY";
+
 	@Override
 	public int update(Uri uri, ContentValues values, String where,
 			String[] whereArgs) {
@@ -687,13 +693,12 @@ public class MediaProvider extends ContentProvider {
 		final long id;
 		boolean needSync = false;
 		final boolean canSync = canSync(uri);
-		if (canSync && !values.containsKey(JsonSyncableItem._MODIFIED_DATE)){
+		if (!values.containsKey(CV_FLAG_DO_NOT_MARK_DIRTY) &&
+				canSync && !values.containsKey(JsonSyncableItem._MODIFIED_DATE)){
 			values.put(JsonSyncableItem._MODIFIED_DATE, new Date().getTime());
 			needSync = true;
 		}
-
-		// XXX remove this when the API updates
-		translateIdToUri(getContext(), values, canSync, uri);
+		values.remove(CV_FLAG_DO_NOT_MARK_DIRTY);
 
 		switch (uriMatcher.match(uri)){
 		case MATCHER_CAST_DIR:
@@ -702,15 +707,12 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_PROJECT_CAST_ITEM:
 		case MATCHER_CAST_ITEM:{
 			id = ContentUris.parseId(uri);
-			//final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
 			if ( values.size() == 2 && values.containsKey(Favoritable.Columns._FAVORITED)){
 				values.put(JsonSyncableItem._MODIFIED_DATE, 0);
 			}
 			count = db.update(CAST_TABLE_NAME, values,
 					Cast._ID+"="+id+ (where != null && where.length() > 0 ? " AND ("+where+")":""),
 					whereArgs);
-			//update(Uri.withAppendedPath(uri, Tag.PATH), cvTags, null, null);
-
 			break;
 		}
 
@@ -739,7 +741,6 @@ public class MediaProvider extends ContentProvider {
 			break;
 		case MATCHER_PROJECT_ITEM:{
 			id = ContentUris.parseId(uri);
-			//final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
 			if ( values.size() == 2 && values.containsKey(Favoritable.Columns._FAVORITED)){
 				values.put(JsonSyncableItem._MODIFIED_DATE, 0);
 			}
@@ -747,8 +748,6 @@ public class MediaProvider extends ContentProvider {
 					Project._ID+"="+id+ (where != null && where.length() > 0 ? " AND ("+where+")":""),
 					whereArgs);
 
-
-			//update(Uri.withAppendedPath(uri, Tag.PATH), cvTags, null, null);
 			break;
 		}
 
@@ -914,7 +913,6 @@ public class MediaProvider extends ContentProvider {
 					addExtraWhere(where, 			Tag._REF_CLASS + "=?", 						Tag._REF_ID+"=?"),
 					addExtraWhereArgs(whereArgs, 	pathSegments.get(pathSegments.size() - 3), 	pathSegments.get(pathSegments.size() - 2)));
 			break;
-
 		}
 
 		case MATCHER_TAG_DIR:{
@@ -980,13 +978,18 @@ public class MediaProvider extends ContentProvider {
 		String path = null;
 		final String[] generalProjection = {JsonSyncableItem._ID, field};
 		final Cursor c = cr.query(uri, generalProjection, null, null, null);
-		if (c.getCount() == 1 && c.moveToFirst()){
-			final String storedPath = c.getString(c.getColumnIndex(field));
-			if (storedPath != null){
-				path = storedPath;
+		try{
+			if (c.getCount() == 1 && c.moveToFirst()){
+				final String storedPath = c.getString(c.getColumnIndex(field));
+				if (storedPath != null){
+					path = storedPath;
+				}
+			}else{
+				throw new IllegalArgumentException("could not get path from field '"+field+"' in uri "+uri);
 			}
+		}finally{
+			c.close();
 		}
-		c.close();
 		return path;
 	}
 
@@ -1054,7 +1057,6 @@ public class MediaProvider extends ContentProvider {
 		}
 
 		path = path.replaceAll("//", "/"); // hack to get around a tedious problem
-		//Log.d("MediaProvider", "gave "+path+" for a public "+(parent ? "parent ": "") +"path for "+uri + ((publicId != null && publicId >= 0) ? " with public ID "+publicId : ""));
 
 		return path;
 	}
@@ -1186,7 +1188,6 @@ public class MediaProvider extends ContentProvider {
 					}
 				}
 				path = path.replaceAll("//", "/");
-				//Log.d("MediaProvider", "Setting public URI for "+uri + " (or item inserted into it) to " + path);
 				values.put(JsonSyncableItem._PUBLIC_URI, path);
 
 			}

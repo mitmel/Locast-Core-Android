@@ -140,10 +140,10 @@ public abstract class TaggableItem extends JsonSyncableItem {
 		}
 
 		@Override
-		public void onPostSyncItem(Context context, JsonSyncableItem sync, Uri uri,
+		public void onPostSyncItem(Context context, Uri uri,
 				JSONObject item, boolean updated) throws SyncException,
 				IOException {
-			super.onPostSyncItem(context, sync, uri, item, updated);
+			super.onPostSyncItem(context, uri, item, updated);
 			if (updated){
 				// tags need to be loaded here, as they need a valid localUri in order to save.
 				final JSONArray ja = item.optJSONArray(remoteKey);
@@ -203,7 +203,12 @@ public abstract class TaggableItem extends JsonSyncableItem {
 		for (tags.moveToFirst(); !tags.isAfterLast(); tags.moveToNext()){
 			final String tag = tags.getString(tagColumn);
 			if (predicate.apply(tag)){
-				tagSet.add(tag);
+				final int separatorIndex = tag.indexOf(PREFIX_SEPARATOR);
+				if (separatorIndex == -1){
+					tagSet.add(tag);
+				}else{
+					tagSet.add(tag.substring(separatorIndex + 1));
+				}
 			}
 		}
 		tags.close();

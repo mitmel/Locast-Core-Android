@@ -59,6 +59,7 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 	private ImageView mediaThumbView;
 	private String contentType;
 	private Uri mediaPublicUri;
+	private Uri mediaLocalUri;
 	private boolean hasLocalVids = false;
 	private Uri geoUri;
 
@@ -99,11 +100,12 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 		c.moveToFirst();
 		castUri = data;
 
+
 		final Cursor castMedia = managedQuery(Cast.getCastMediaUri(castUri), CastMedia.PROJECTION, null, null, null);
 
 		Log.d("CastDetails", "Cast Media:");
 		final int localUriIdx = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
-		for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
+		for (castMedia.moveToFirst(); !hasLocalVids && ! castMedia.isAfterLast(); castMedia.moveToNext()){
 			if (!castMedia.isNull(localUriIdx) && castMedia.getString(localUriIdx).length() > 0){
 				hasLocalVids = true;
 			}
@@ -157,6 +159,9 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 			contentType = c.getString(c.getColumnIndex(Cast._CONTENT_TYPE));
 		}else{
 			contentType = "video/3gpp";
+		}
+		if (!c.isNull(c.getColumnIndex(Cast._MEDIA_LOCAL_URI))){
+			mediaLocalUri = Uri.parse(c.getString(c.getColumnIndex(Cast._MEDIA_LOCAL_URI)));
 		}
 
 		if (!c.isNull(c.getColumnIndex(Cast._MEDIA_PUBLIC_URI))){
@@ -260,20 +265,23 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 
 		final Intent viewVideo = new Intent(Intent.ACTION_VIEW);
 
-
-		if (hasLocalVids){
-			viewVideo.setData(castUri);
-			viewVideo.setClass(this, TemplatePlayer.class);
-
+		if (mediaLocalUri != null){
+			viewVideo.setDataAndType(mediaLocalUri, contentType);
 		}else{
-			if (mediaPublicUri != null){
-				if (canStream){
-					viewVideo.setDataAndType(mediaPublicUri, contentType);
-				}else{
-					Toast.makeText(this, R.string.cast_error_could_not_play_video_neither_net_nor_local, Toast.LENGTH_LONG).show();
-				}
+			if (hasLocalVids){
+				viewVideo.setData(castUri);
+				viewVideo.setClass(this, TemplatePlayer.class);
+
 			}else{
-				Toast.makeText(this, R.string.notice_cast_video_has_not_been_uploaded_yet, Toast.LENGTH_SHORT).show();
+				if (mediaPublicUri != null){
+					if (canStream){
+						viewVideo.setDataAndType(mediaPublicUri, contentType);
+					}else{
+						Toast.makeText(this, R.string.cast_error_could_not_play_video_neither_net_nor_local, Toast.LENGTH_LONG).show();
+					}
+				}else{
+					Toast.makeText(this, R.string.notice_cast_video_has_not_been_uploaded_yet, Toast.LENGTH_SHORT).show();
+				}
 			}
 		}
 

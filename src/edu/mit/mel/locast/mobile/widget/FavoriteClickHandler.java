@@ -41,6 +41,7 @@ public class FavoriteClickHandler implements ValidatedClickHandler {
 
 			final ContentValues cv = new ContentValues();
 			cv.put(Favoritable.Columns._FAVORITED, newState);
+			cv.put(MediaProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
 			cr.update(data, cv, null, null);
 
 			// instead of returning the new value, use DB listeners to update this. The DB will always contain

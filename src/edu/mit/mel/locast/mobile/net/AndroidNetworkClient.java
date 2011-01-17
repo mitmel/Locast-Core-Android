@@ -47,6 +47,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 import edu.mit.mel.locast.mobile.R;
+import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.notifications.ProgressNotification;
 
 public class AndroidNetworkClient extends NetworkClient implements OnSharedPreferenceChangeListener {
@@ -160,7 +161,6 @@ public class AndroidNetworkClient extends NetworkClient implements OnSharedPrefe
 	@Override
 	protected synchronized void loadCredentials() throws IOException {
 		if (prefs.contains(PREF_USERNAME) && ! prefs.getString(PREF_USERNAME, "").equals("")){
-			Log.d("NetworkClient", "u: "+prefs.getString(PREF_USERNAME, "") + "; p: "+prefs.getString(PREF_PASSWORD, ""));
 			setCredentials(prefs.getString(PREF_USERNAME, ""), prefs.getString(PREF_PASSWORD, ""));
 		}
 	}
@@ -239,48 +239,46 @@ public class AndroidNetworkClient extends NetworkClient implements OnSharedPrefe
 
 	}
 
-	private final static int NOTIFICATION_UPLOAD = 0x2000;
-	public void uploadContentWithNotification(Context context, Uri localItem, String serverPath, Uri localFile, String contentType) throws NetworkProtocolException, IOException{
-		final ProgressNotification notification = new ProgressNotification(context, 0, "Uploading cast...", true);
-		notification.setType(ProgressNotification.TYPE_UPLOAD);
-		notification.contentIntent = PendingIntent.getActivity(context, 0, new Intent(Intent.ACTION_VIEW, localItem), 0);
+	public void uploadContentWithNotification(Context context, Uri cast, String serverPath, Uri localFile, String contentType) throws NetworkProtocolException, IOException{
+		String castTitle = Cast.getTitle(context, cast);
+		if (castTitle == null){
+			castTitle = "untitled (cast #"+ cast.getLastPathSegment() + ")";
+		}
+		final ProgressNotification notification = new ProgressNotification(context,
+				context.getString(R.string.sync_uploading_cast, castTitle),
+				ProgressNotification.TYPE_UPLOAD,
+				PendingIntent.getActivity(context, 0, new Intent(Intent.ACTION_VIEW, cast).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0),
+				true);
+
+		// assume fail: when successful, all will be reset.
+		notification.successful = false;
+		notification.doneTitle = context.getString(R.string.sync_upload_fail);
+		notification.doneText = context.getString(R.string.sync_upload_fail_message, castTitle);
+
+		notification.doneIntent = PendingIntent.getActivity(context, 0,
+				new Intent(Intent.ACTION_VIEW, cast).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0);
+
 		final NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-		final AssetFileDescriptor afd = context.getContentResolver().openAssetFileDescriptor(localFile, "r");
-		final long max = afd.getLength();
-
-		final TransferProgressListener tpl = new TransferProgressListener() {
-			int completed;
-			public void publish(long bytes) {
-				completed = (int)((bytes * 1000) / max);
-				notification.setProgress(1000, completed);
-				nm.notify(NOTIFICATION_UPLOAD, notification);
-			}
-		};
+		final NotificationProgressListener tpl = new NotificationProgressListener(nm, notification, 0, (int)ContentUris.parseId(cast));
 
 		try {
-			// assume fail: when successful, all will be reset.
-			notification.doneTitle = context.getText(R.string.sync_upload_fail);
-			notification.doneIntent = PendingIntent.getActivity(context, 0,
-					new Intent(Intent.ACTION_VIEW, localItem).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0);
+			final AssetFileDescriptor afd = context.getContentResolver().openAssetFileDescriptor(localFile, "r");
+			final long max = afd.getLength();
+
+			tpl.setSize(max);
 
 			uploadContent(context, tpl, serverPath, localFile, contentType);
-			notification.doneTitle = context.getText(R.string.sync_upload_success);
+			notification.doneTitle = context.getString(R.string.sync_upload_success);
+			notification.doneText = context.getString(R.string.sync_upload_success_message, castTitle);
 		}catch (final NetworkProtocolException e){
-
-			notification.successful = false;
-			notification.doneText = e.getLocalizedMessage();
+			notification.setUnsuccessful(e.getLocalizedMessage());
 			throw e;
 		}catch (final IOException e){
-			notification.successful = false;
-			notification.doneText = e.getLocalizedMessage();
+			notification.setUnsuccessful(e.getLocalizedMessage());
 			throw e;
 		}finally{
-			nm.cancel(NOTIFICATION_UPLOAD);
-			notification.done((int) (NOTIFICATION_UPLOAD + ContentUris.parseId(localItem)));
+			tpl.done();
 		}
-
-
 	}
 
 	/**

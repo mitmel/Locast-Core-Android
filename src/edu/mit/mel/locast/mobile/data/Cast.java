@@ -19,22 +19,26 @@ package edu.mit.mel.locast.mobile.data;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.impl.cookie.DateUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.media.MediaScannerConnection;
 import android.media.MediaScannerConnection.MediaScannerConnectionClient;
@@ -46,6 +50,9 @@ import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.StreamUtils;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
 import edu.mit.mel.locast.mobile.net.NetworkProtocolException;
+import edu.mit.mel.locast.mobile.net.NotificationProgressListener;
+import edu.mit.mel.locast.mobile.net.NetworkClient.InputStreamWatcher;
+import edu.mit.mel.locast.mobile.notifications.ProgressNotification;
 
 public class Cast extends TaggableItem implements MediaScannerConnectionClient, Favoritable.Columns, Locatable.Columns, Commentable.Columns {
 	public final static String TAG = "LocastSyncCast";
@@ -94,7 +101,6 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		SORT_ORDER_DEFAULT = Cast._FAVORITED + " DESC," + Cast._MODIFIED_DATE+" DESC";
 
 	private Context context;
-	private AndroidNetworkClient nc;
 	private MediaScannerConnection msc;
 	private final Queue<String> toScan = new LinkedList<String>();
 	private final Map<String, ScanQueueItem> scanMap = new TreeMap<String, ScanQueueItem>();
@@ -172,65 +178,81 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 
 			put("_contents", new OrderedList.SyncMapItem("castvideos", new CastMedia(), CastMedia.PATH));
 		}
-
-		@Override
-		public void onPostSyncItem(Context context, JsonSyncableItem sync, Uri uri, JSONObject item, boolean updated) throws SyncException ,IOException {
-			super.onPostSyncItem(context, sync, uri, item, updated);
-
-			final ContentResolver cr = context.getContentResolver();
-			//final Cursor c = cr.query(uri, PROJECTION, null, null, null);
-			//c.moveToFirst();
-
-
-			OrderedList.onUpdate(context, uri, item, "castvideos", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new CastMedia(), CastMedia.PATH);
-			final Uri castMediaDirUri = Uri.withAppendedPath(uri, CastMedia.PATH);
-			final String pubCastMediaUri = MediaProvider.getPublicPath(cr, castMediaDirUri);
-
-			final Cursor castMedia = cr.query(castMediaDirUri, CastMedia.PROJECTION, null, null, null);
-
-			final int mediaUrlCol = castMedia.getColumnIndex(CastMedia._MEDIA_URL);
-			final int localUriCol = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
-			final int idxCol = castMedia.getColumnIndex(CastMedia._LIST_IDX);
-			final int mediaContentTypeCol = castMedia.getColumnIndex(CastMedia._MIME_TYPE);
-			final int locIdCol = castMedia.getColumnIndex(CastMedia._ID);
-			final Set<String> systemTags = getTags(cr, uri, TaggableItem.SYSTEM_PREFIX);
-
-
-			for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
-				final Uri locMediaUri = castMedia.isNull(localUriCol) ? null : parseMaybeUri(castMedia.getString(localUriCol));
-				final String pubMediaUri = castMedia.getString(mediaUrlCol);
-				final boolean hasLocMediaUri = locMediaUri != null;
-				final boolean hasPubMediaUri = pubMediaUri != null && pubMediaUri.length() > 0;
-				if (hasLocMediaUri && !hasPubMediaUri){
-					// upload
-					try {
-						final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(context);
-						nc.uploadContentWithNotification(context, uri, pubCastMediaUri + castMedia.getLong(idxCol)+"/", locMediaUri, castMedia.getString(mediaContentTypeCol));
-					} catch (final Exception e){
-						final SyncException se = new SyncException(context.getString(R.string.error_uploading_cast_video));
-						se.initCause(e);
-						throw se;
-					}
-				Log.d(TAG, "Cast Media #" + castMedia.getPosition() + " is " + castMedia.getString(castMedia.getColumnIndex(CastMedia._MEDIA_URL)));
-
-				}else if (!hasLocMediaUri && hasPubMediaUri && systemTags.contains("_featured")){
-					final Uri pubMediaUriUri = Uri.parse(pubMediaUri);
-					// only have a public copy, so download it and store locally.
-					final File destfile = getFilePath(pubMediaUriUri);
-					String newLocUri = null;
-					if (!((Cast) sync).downloadCastMedia(destfile, uri, pubMediaUri)){
-						newLocUri = checkForMediaEntry(context, uri, pubMediaUriUri);
-					}
-				}
-			}
-			castMedia.close();
-		}
 	}
 
 	@Override
 	public SyncMap getSyncMap() {
 		return SYNC_MAP;
 	}
+
+	@Override
+	public void onPostSyncItem(Context context, Uri uri, JSONObject item, boolean updated) throws SyncException, IOException {
+		this.context = context;
+
+		final ContentResolver cr = context.getContentResolver();
+		//final Cursor c = cr.query(uri, PROJECTION, null, null, null);
+		//c.moveToFirst();
+
+
+		OrderedList.onUpdate(context, uri, item, "castvideos", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new CastMedia(), CastMedia.PATH);
+		final Uri castMediaDirUri = Uri.withAppendedPath(uri, CastMedia.PATH);
+		final String pubCastMediaUri = MediaProvider.getPublicPath(cr, castMediaDirUri);
+
+		final Cursor castMedia = cr.query(castMediaDirUri, CastMedia.PROJECTION, null, null, null);
+
+		final int mediaUrlCol = castMedia.getColumnIndex(CastMedia._MEDIA_URL);
+		final int localUriCol = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
+		final int idxCol = castMedia.getColumnIndex(CastMedia._LIST_IDX);
+		final int mediaContentTypeCol = castMedia.getColumnIndex(CastMedia._MIME_TYPE);
+		final int locIdCol = castMedia.getColumnIndex(CastMedia._ID);
+
+		boolean haveAnyLocMedia = false;
+		for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
+			final Uri locMediaUri = castMedia.isNull(localUriCol) ? null : parseMaybeUri(castMedia.getString(localUriCol));
+			final String pubMediaUri = castMedia.getString(mediaUrlCol);
+			final boolean hasLocMediaUri = locMediaUri != null;
+			final boolean hasPubMediaUri = pubMediaUri != null && pubMediaUri.length() > 0;
+			haveAnyLocMedia = haveAnyLocMedia || hasLocMediaUri;
+
+			if (hasLocMediaUri && !hasPubMediaUri){
+				// upload
+				try {
+					final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(context);
+					nc.uploadContentWithNotification(context, uri, pubCastMediaUri + castMedia.getLong(idxCol)+"/", locMediaUri, castMedia.getString(mediaContentTypeCol));
+				} catch (final Exception e){
+					final SyncException se = new SyncException(context.getString(R.string.error_uploading_cast_video));
+					se.initCause(e);
+					throw se;
+				}
+			Log.d(TAG, "Cast Media #" + castMedia.getPosition() + " is " + castMedia.getString(castMedia.getColumnIndex(CastMedia._MEDIA_URL)));
+			}
+		}
+		castMedia.close();
+
+		if (!haveAnyLocMedia){
+			Log.d(TAG, "There are no local videos, so looking to see if we should download");
+			final Set<String> systemTags = getTags(cr, uri, TaggableItem.SYSTEM_PREFIX);
+			final Cursor cast = cr.query(uri, PROJECTION, null, null, null);
+			cast.moveToFirst();
+			MediaProvider.dumpCursorToLog(cast, Cast.PROJECTION);
+			final int pubMediaUrlCol = cast.getColumnIndex(_MEDIA_PUBLIC_URI);
+			final String pubMediaUri = cast.getString(pubMediaUrlCol);
+			cast.close();
+			final boolean hasPubMediaUri = pubMediaUri != null && pubMediaUri.length() > 0;
+
+			if (hasPubMediaUri && systemTags.contains("_featured")){
+				Log.d(TAG, "cast is featured, so we'll download it.");
+				final Uri pubMediaUriUri = Uri.parse(pubMediaUri);
+				// only have a public copy, so download it and store locally.
+				final File destfile = getFilePath(pubMediaUriUri);
+				String newLocUri = null;
+				if (!downloadCastMedia(context, destfile, uri, pubMediaUri)){
+					newLocUri = checkForMediaEntry(context, uri, pubMediaUriUri);
+				}
+			}
+		}
+	} // onPostSyncItem()
+
 
 	/**
 	 * A wrapper to catch any instances of paths stored in the database.
@@ -268,6 +290,22 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		return ContentUris.withAppendedId(Project.CONTENT_URI, cast.getLong(projectIdx));
 	}
 
+	/**
+	 * @param context
+	 * @param cast
+	 * @return the title of the cast or null if there's an error.
+	 */
+	public static String getTitle(Context context, Uri cast){
+		final String[] projection = {Cast._ID, Cast._TITLE};
+		final Cursor c = context.getContentResolver().query(cast, projection, null, null, null);
+		String castTitle = null;
+		if (c.moveToFirst()){
+			castTitle = c.getString(c.getColumnIndex(Cast._TITLE));
+		}
+		c.close();
+		return castTitle;
+	}
+
 	/*
 	public void updateCastMedia(String castVideoPath, String mimeType){
 		if (msc == null){
@@ -302,54 +340,85 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		return saveFile;
 	}
 	/**
+	 * Checks the local file system and checks to see if the given media resource has been downloaded successfully already.
+	 * If not, it will download it from the server and store it in the filesystem.
+	 * This uses the last-modified header to determine if a media resource is up to date.
+	 *
 	 * @param castUri the content:// uri of the cast
 	 * @param pubUri the http:// uri of the public video
 	 * @return true if anything has changed. False if this function has determined it doesn't need to do anything.
 	 * @throws SyncException
 	 */
-	public boolean downloadCastMedia(File saveFile, Uri castUri, String pubUri) throws SyncException {
+	public boolean downloadCastMedia(Context context, File saveFile, Uri castUri, String pubUri) throws SyncException {
+		final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(context);
 		try {
+			boolean dirty = true;
+			String contentType = null;
+
 			if (saveFile.exists()){
 				final HttpResponse headRes = nc.head(pubUri);
 				final long serverLength = Long.valueOf(headRes.getFirstHeader("Content-Length").getValue());
-				headRes.getEntity().consumeContent();
-//				if (saveFile.length() > 2000000){
-//					Log.w(TAG, "Video "+castUri+" is too large. Not downloading.");
-//					return false;
-//				}
-				if (saveFile.length() == serverLength){
+				// XXX should really be checking the e-tag too, but this will be fine for our application.
+				final Header remoteLastModifiedHeader = headRes.getFirstHeader("last-modified");
+
+				long remoteLastModified = 0;
+				if (remoteLastModifiedHeader != null){
+					remoteLastModified = DateUtils.parseDate(remoteLastModifiedHeader.getValue()).getTime();
+				}
+
+				final HttpEntity entity = headRes.getEntity();
+				if (entity != null){
+					entity.consumeContent();
+				}
+				if (saveFile.length() == serverLength && saveFile.lastModified() == remoteLastModified){
 					Log.i(TAG, "Local copy of cast "+saveFile+" seems to be the same as the one on the server. Not re-downloading.");
-					return false;
+
+					dirty = false;
 				}
 				// fall through and re-download, as we have a different size file locally.
 			}
-			final HttpResponse res = nc.get(pubUri);
-			final HttpEntity ent = res.getEntity();
-			final InputStream is = ent.getContent();
-			try {
-				final FileOutputStream fos = new FileOutputStream(saveFile);
-				StreamUtils.inputStreamToOutputStream(is, fos);
-				fos.close();
-				is.close();
-
-				final String filePath = saveFile.getAbsolutePath();
-				final String contentType = ent.getContentType().getValue();
-
-
-				if (msc == null){
-					this.msc = new MediaScannerConnection(context, this);
-					this.msc.connect();
-
-				}else if (msc.isConnected()){
-					msc.scanFile(filePath, contentType);
-
-				}else{
-					scanMap.put(filePath, new ScanQueueItem(castUri, contentType));
-					toScan.add(filePath);
+			if (dirty){
+				String castTitle = getTitle(context, castUri);
+				if (castTitle == null){
+					castTitle = "untitled";
 				}
-			}finally{
-				ent.consumeContent();
+
+				final HttpResponse res = nc.get(pubUri);
+				final HttpEntity ent = res.getEntity();
+				final ProgressNotification notification = new ProgressNotification(context,
+						context.getString(R.string.sync_downloading_cast, castTitle),
+						ProgressNotification.TYPE_DOWNLOAD,
+						PendingIntent.getActivity(context, 0, new Intent(Intent.ACTION_VIEW, castUri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0),
+						false);
+
+				final NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+				final NotificationProgressListener npl = new NotificationProgressListener(nm, notification, ent.getContentLength(), 0);
+				final InputStreamWatcher is = new InputStreamWatcher(ent.getContent(), npl);
+
+				try {
+					Log.d(TAG, "Downloading "+pubUri + " and saving it in "+ saveFile.getAbsolutePath());
+					final FileOutputStream fos = new FileOutputStream(saveFile);
+					StreamUtils.inputStreamToOutputStream(is, fos);
+					fos.close();
+
+					// set the file's last modified to match the remote.
+					// We can check this later to see if everything is up to date.
+					final Header lastModified = res.getFirstHeader("last-modified");
+					if (lastModified != null){
+						saveFile.setLastModified(DateUtils.parseDate(lastModified.getValue()).getTime());
+					}
+
+					contentType = ent.getContentType().getValue();
+
+				}finally{
+					npl.done();
+					ent.consumeContent();
+					is.close();
+				}
 			}
+
+			final String filePath = saveFile.getAbsolutePath();
+			scanMediaItem(castUri, filePath, contentType);
 
 		} catch (final Exception e) {
 			final SyncException se = new SyncException("Error downloading content item.");
@@ -359,18 +428,48 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		return true;
 	}
 
+	/**
+	 * Enqueues a media item to be scanned.
+	 * onScanComplete() will be called once the item has been scanned successfully.
+	 *
+	 * @param castUri
+	 * @param filePath
+	 * @param contentType
+	 */
+	public void scanMediaItem(Uri castUri, String filePath, String contentType){
+		if (msc == null){
+			scanMap.put(filePath, new ScanQueueItem(castUri, contentType));
+			toScan.add(filePath);
+			this.msc = new MediaScannerConnection(context, this);
+			this.msc.connect();
+
+		}else if (msc.isConnected()){
+			msc.scanFile(filePath, contentType);
+
+		// if we're not connected yet, we need to remember what we want scanned,
+		// so that we can queue it up once connected.
+		}else{
+			scanMap.put(filePath, new ScanQueueItem(castUri, contentType));
+			toScan.add(filePath);
+		}
+	}
+
 	public void onScanCompleted(String path, Uri uri) {
 		if (uri == null){
 			Log.e(TAG, "Scan failed for newly downloaded content: "+path);
 			return;
 		}
 
-
 		final ContentValues cvCast = new ContentValues();
 		cvCast.put(_MEDIA_LOCAL_URI, uri.toString());
+		cvCast.put(MediaProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
+
 		final ScanQueueItem item = scanMap.get(path);
-		Log.d("Locast", "new local uri " + uri + " for cast "+item.castUri);
-		// TODO should be passing in the modified date here to prevent marking the cast as dirty.
+		if (item == null){
+			Log.e(TAG, "Couldn't find media item ("+path+") in scan map, so we couldn't update any casts.");
+			return;
+		}
+		Log.d(TAG, "new local uri " + uri + " for cast "+item.castUri);
 		this.context.getContentResolver().update(item.castUri, cvCast, null, null);
 	}
 
@@ -381,6 +480,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 			this.msc.scanFile(scanme, item.contentType);
 		}
 	}
+
 	private class ScanQueueItem {
 		public Uri castUri;
 		public String contentType;
@@ -391,8 +491,8 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	}
 
 	/**
-	 * Scans the media database to see if the given item is there.
-	 * If it is, update the cast to point to it.
+	 * Scans the media database to see if the given item is currently there.
+	 * If it is, update the cast to point to the local content: URI for it.
 	 *
 	 * @param context
 	 * @param cast Local URI to the cast.
@@ -403,12 +503,11 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	public static String checkForMediaEntry(Context context, Uri cast, Uri pubUri) throws SyncException{
 		String newLocUri = null;
 		final File destfile = getFilePath(pubUri);
-		final String[] projection = {Media.DATA, Media._ID};
+		final String[] projection = {Media._ID, Media.DATA};
 		final String selection = Media.DATA + "=?";
 		final String[] selectionArgs = {destfile.getAbsolutePath()};
 		final Cursor mediaEntry = context.getContentResolver().query(Media.EXTERNAL_CONTENT_URI, projection, selection, selectionArgs, null);
-		if (mediaEntry.getCount() > 0){
-			mediaEntry.moveToFirst();
+		if (mediaEntry.moveToFirst()){
 			newLocUri = ContentUris.withAppendedId(Media.EXTERNAL_CONTENT_URI, mediaEntry.getLong(mediaEntry.getColumnIndex(Media._ID))).toString();
 		}else{
 			Log.e(TAG, "The media provider doesn't seem to know about "+destfile.getAbsolutePath()+" which is on the filesystem. Strange...");
@@ -419,11 +518,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		if (newLocUri != null){
 			final ContentValues cvCast = new ContentValues();
 			cvCast.put(_MEDIA_LOCAL_URI, newLocUri);
-			final String[] castProjection = {_ID, _MODIFIED_DATE};
-			final Cursor castCursor = context.getContentResolver().query(cast, castProjection, null, null, null);
-			castCursor.moveToFirst();
-			cvCast.put(_MODIFIED_DATE, castCursor.getLong(castCursor.getColumnIndex(_MODIFIED_DATE)));
-			castCursor.close();
+			cvCast.put(MediaProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
 
 			Log.d("Locast", "new local uri " + newLocUri + " for cast "+cast);
 			context.getContentResolver().update(cast, cvCast, null, null);
