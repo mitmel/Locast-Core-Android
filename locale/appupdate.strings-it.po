@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2011-01-17 20:11-0500\n"
-"PO-Revision-Date: 2011-01-14 17:47-0500\n"
+"PO-Revision-Date: 2011-01-17 20:11-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: it <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
@@ -18,23 +18,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 1.0dev\n"
 
-msgctxt "privacy:0"
-msgid "Public"
-msgstr ""
+#. AppUpdateChecker
+#. version_number ↓        ↓ app_name
+#, c-format
+msgctxt "app_update_new_version"
+msgid "There is a new version (%1$s) of %2$s available!"
+msgstr "C'è una nuova versione (%1$s) di %2$s disponibile!"
 
-msgctxt "privacy:1"
-msgid "Private"
-msgstr ""
-
-msgctxt "locast_sites:0"
-msgid "Connects"
-msgstr ""
-
-msgctxt "locast_sites:1"
-msgid "MIT Connects"
-msgstr ""
-
-msgctxt "locast_sites:2"
-msgid "H2Flow"
-msgstr ""
+msgctxt "upgrade"
+msgid "Upgrade"
+msgstr "Aggiorna"
 

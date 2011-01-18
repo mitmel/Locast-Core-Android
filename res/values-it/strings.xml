@@ -1,8 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
   <string name="app_name">Locast Connects</string>
-  <string name="default_api_url">http://locast.mit.edu/connects/api/</string>
-  <string name="app_update_url">http://locast.mit.edu/connects/static/lcc.json</string>
   <string name="about">Informazioni</string>
   <string name="settings">Impostazioni</string>
   <string name="tab_cast">Cast</string>
@@ -110,4 +108,8 @@
   <string name="error_sync_no_data_network">Non può sincronizzare Locast: no rete di dati. Per cortesia verifica la tua connessione e riprova.</string>
   <string name="error_moment_saving_moment">Errore nel salvare del momento :-(</string>
   <string name="moment_saved">Momento salvato.</string>
+  <string name="sync_upload_success_message">\"%1$s\" è stato caricato.</string>
+  <string name="sync_upload_fail_message">\"%1$s\" non è riuscito a caricare</string>
+  <string name="sync_downloading_cast">Sto caricando \"%1$s\"...</string>
+  <string name="sync_uploading_cast">Uploading \"%1$s\"…</string>
 </resources>

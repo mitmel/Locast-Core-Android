@@ -7,29 +7,21 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2011-01-17 12:54-0500\n"
-"PO-Revision-Date: 2011-01-17 16:56-0500\n"
+"POT-Creation-Date: 2011-01-17 20:11-0500\n"
+"PO-Revision-Date: 2011-01-17 17:10-0500\n"
 "Last-Translator: Zoe Schladow <zoe.schladow@gmail.com>\n"
 "Language-Team: it <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Pootle 1.1.0\n"
 "Generated-By: Babel 1.0dev\n"
 
 msgctxt "app_name"
 msgid "Locast Connects"
 msgstr "Locast Connects"
 
-msgctxt "default_api_url"
-msgid "http://locast.mit.edu/connects/api/"
-msgstr "http://locast.mit.edu/connects/api/"
-
-msgctxt "app_update_url"
-msgid "http://locast.mit.edu/connects/static/lcc.json"
-msgstr "http://locast.mit.edu/connects/static/lcc.json"
-
+#. Main screen
 msgctxt "about"
 msgid "About"
 msgstr "Informazioni"
@@ -38,6 +30,7 @@ msgctxt "settings"
 msgid "Settings"
 msgstr "Impostazioni"
 
+#. Tabs
 msgctxt "tab_cast"
 msgid "Cast"
 msgstr "Cast"
@@ -58,6 +51,7 @@ msgctxt "tab_discussion"
 msgid "Discussion"
 msgstr "Discussione"
 
+#. pairing
 msgctxt "pair_or"
 msgid "or"
 msgstr "oppure"
@@ -70,6 +64,7 @@ msgctxt "pair_action"
 msgid "Pair"
 msgstr "Accoppia"
 
+#. Generic user-facing error messages
 msgctxt "error_no_providers"
 msgid "Error: no location providers"
 msgstr "Errore: non ci sono location providers"
@@ -78,53 +73,20 @@ msgctxt "error_no_maps"
 msgid "Error: no map handler present."
 msgstr "Errore: non è presente il map handler present."
 
-msgctxt "error_sync"
-msgid "Could not synchronize with server. Do you have a network connection?"
-msgstr "Non ho potuto sincronizzarmi con il server. Sei connesso?"
-
 msgctxt "error_cannot_edit"
 msgid "Sorry, you don't have permission to edit this item."
 msgstr "Mi dispiace ma non hai il permesso per modificare questo oggetto."
-
-msgctxt "error_sync_no_post"
-msgid ""
-"Sorry, there was a problem uploading your media to the server. Please try"
-" synchronizing again."
-msgstr ""
-"Mi dispiace, c'è stato un problema nell'upload del tuo media sul server. "
-"Per cortesia riprova a sincronizzare."
-
-msgctxt "error_cast_no_videos"
-msgid "Sorry, there aren't any videos for this cast yet."
-msgstr "Mi dispiace ma non ci sono ancora video per questo cast."
 
 msgctxt "error_please_enter_a_title"
 msgid "Please enter a title"
 msgstr "Per cortesia inserisci un titolo."
 
-msgctxt "error_uploading_cast_video"
-msgid "Error uploading cast video."
-msgstr "Errore nell'upload del cast video"
+#. Generic user-facing notices
+msgctxt "notice_databases_reset"
+msgid "Local database reset."
+msgstr "Risistemazione di database locale."
 
-msgctxt "error_loading_project"
-msgid "Error loading project."
-msgstr "Errore nel caricare del progetto"
-
-#, python-format
-msgctxt "added_cast_to"
-msgid "Added cast to %s"
-msgstr "Aggiunto cast a %s"
-
-#, python-format
-msgctxt "project_you_joined"
-msgid "You have joined %s"
-msgstr "Hai raggiunto %s"
-
-#, python-format
-msgctxt "project_you_left"
-msgid "You have left %s"
-msgstr "Ti rimangono %s"
-
+#. List sections
 msgctxt "section_featured"
 msgid "Featured"
 msgstr "Consigliato"
@@ -145,6 +107,7 @@ msgctxt "section_all"
 msgid "All"
 msgstr "Tutti"
 
+#. casts
 msgctxt "cast_title_hint"
 msgid "Cast Title"
 msgstr "Titolo del Cast"
@@ -209,6 +172,51 @@ msgctxt "cast_play"
 msgid "Play Cast"
 msgstr "Play Cast"
 
+msgctxt "notice_cast_saved_uploading"
+msgid "Cast saved. Uploading to server..."
+msgstr "Cast salvato. Caricando al server..."
+
+msgctxt "notice_cast_saved_no_network"
+msgid ""
+"Cast has been saved and will be uploaded when a network connection is "
+"established and the synchronization is started."
+msgstr ""
+"Cast è stato salvato e sarà caricato quando ha una connessione di rete e "
+"sincronizzazione comincia."
+
+msgctxt "error_cast_saving"
+msgid "Error saving cast."
+msgstr "Errore nel salvare del cast"
+
+msgctxt "cast_recording_canceled"
+msgid "Recording canceled"
+msgstr "Registrazione annullato"
+
+msgctxt "cast_synchronizing"
+msgid "Synchronizing cast..."
+msgstr "Sincronizzando il cast..."
+
+msgctxt "notice_cast_video_has_not_been_uploaded_yet"
+msgid "Cast video has not been uploaded yet."
+msgstr "Cast video non è stato caricato ancora."
+
+msgctxt "error_cast_could_not_play_video"
+msgid "Could not play video."
+msgstr "Non poteva mostrare il video"
+
+msgctxt "error_cast_no_videos"
+msgid "Sorry, there aren't any videos for this cast yet."
+msgstr "Mi dispiace ma non ci sono ancora video per questo cast."
+
+msgctxt "cast_error_could_not_play_video_neither_net_nor_local"
+msgid ""
+"Could not play video as the network is disconnected and there is no "
+"cached copy."
+msgstr ""
+"Non poteva mostrare il video perché la rete è scollegata e non c'è altra "
+"copia (no cached copy)"
+
+#. dialogs
 msgctxt "cast_delete_title"
 msgid "Delete Cast"
 msgstr "Cancella Cast"
@@ -219,6 +227,7 @@ msgstr ""
 "Sei sicuro di voler cancellare questo cast? Tutte le riprese saranno "
 "perse."
 
+#. projects
 msgctxt "project_title"
 msgid "Project Title"
 msgstr "Titolo del progetto"
@@ -255,9 +264,29 @@ msgctxt "add_project"
 msgid "Add Project"
 msgstr "Aggiungi Progetto"
 
-msgctxt "template_error_setup_fail"
-msgid "Error: could not setup camera."
-msgstr "Errore: non posso inizializzare la macchina fotografica"
+#, c-format
+msgctxt "added_cast_to"
+msgid "Added cast to %s"
+msgstr "Aggiunto cast a %s"
+
+#, c-format
+msgctxt "project_you_joined"
+msgid "You have joined %s"
+msgstr "Hai raggiunto %s"
+
+#, c-format
+msgctxt "project_you_left"
+msgid "You have left %s"
+msgstr "Ti rimangono %s"
+
+msgctxt "error_loading_project"
+msgid "Error loading project."
+msgstr "Errore nel caricare del progetto"
+
+#. template
+msgctxt "template_done"
+msgid "Done!"
+msgstr "Finito!"
 
 msgctxt "template_rerecord_video_title"
 msgid "Rerecord Shot"
@@ -283,9 +312,9 @@ msgctxt "template_cast_saved_as_draft"
 msgid "Cast saved as draft"
 msgstr "Cast salvato come bozza"
 
-msgctxt "template_done"
-msgid "Done!"
-msgstr "Finito!"
+msgctxt "template_error_setup_fail"
+msgid "Error: could not setup camera."
+msgstr "Errore: non posso inizializzare la macchina fotografica"
 
 msgctxt "dialog_button_delete"
 msgid "Delete"
@@ -295,24 +324,27 @@ msgctxt "dialog_button_rerecord"
 msgid "Rerecord"
 msgstr "Registra"
 
+#. discussion
 msgctxt "discussion_hint"
 msgid "Comment"
 msgstr "Commento"
 
+#. LocationLink widget
 msgctxt "location_link_no_location"
 msgid "No Location"
 msgstr "Nessuna posizione"
 
-#, python-format
+#, c-format
 msgctxt "location_link_accuracy_meter"
 msgid "±%.0f meters"
 msgstr "±%1$.0f metri"
 
-#, python-format
+#, c-format
 msgctxt "location_link_accuracy_kilometer"
 msgid "±%.01f kilometers"
 msgstr "±%1$.01f Km"
 
+#. generic actions
 msgctxt "done"
 msgid "Done"
 msgstr "Finito!"
@@ -333,6 +365,7 @@ msgctxt "wipe_database"
 msgid "Wipe Database"
 msgstr "Cancella Database"
 
+#. privacy
 msgctxt "privacy_header"
 msgid "Privacy:"
 msgstr "Privacy:"
@@ -341,6 +374,7 @@ msgctxt "privacy_spinner"
 msgid "Privacy level"
 msgstr "Livello di Privacy"
 
+#. Sync
 msgctxt "sync_first"
 msgid "No local content detected. Starting first sync…"
 msgstr "Nessun contenuto trovato in locale. Comincio la prima syncronizzazione…"
@@ -361,10 +395,59 @@ msgctxt "sync_upload_success"
 msgid "Cast uploaded successfully."
 msgstr "Upload del Cast effettuato."
 
+#, c-format
+msgctxt "sync_upload_success_message"
+msgid "\"%1$s\" has been uploaded."
+msgstr "\"%1$s\" è stato caricato."
+
+msgctxt "error_uploading_cast_video"
+msgid "Error uploading cast video."
+msgstr "Errore nell'upload del cast video"
+
 msgctxt "sync_upload_fail"
 msgid "Error uploading cast."
 msgstr "Errore nell'upload del cast."
 
+#, c-format
+msgctxt "sync_upload_fail_message"
+msgid "\"%1$s\" failed to upload."
+msgstr "\"%1$s\" non è riuscito a caricare"
+
+msgctxt "error_sync_canceled"
+msgid "Sync canceled."
+msgstr "Sincronizzazione annullato"
+
+msgctxt "error_sync"
+msgid "Could not synchronize with server. Do you have a network connection?"
+msgstr "Non ho potuto sincronizzarmi con il server. Sei connesso?"
+
+msgctxt "error_sync_no_post"
+msgid ""
+"Sorry, there was a problem uploading your media to the server. Please try"
+" synchronizing again."
+msgstr ""
+"Mi dispiace, c'è stato un problema nell'upload del tuo media sul server. "
+"Per cortesia riprova a sincronizzare."
+
+msgctxt "error_sync_no_data_network"
+msgid ""
+"Cannot sync Locast: no data network. Please check your connection and try"
+" again."
+msgstr ""
+"Non può sincronizzare Locast: no rete di dati. Per cortesia verifica la "
+"tua connessione e riprova."
+
+#, c-format
+msgctxt "sync_downloading_cast"
+msgid "Downloading \"%1$s\"…"
+msgstr "Sto caricando \"%1$s\"..."
+
+#, c-format
+msgctxt "sync_uploading_cast"
+msgid "Uploading \"%1$s\"…"
+msgstr "Uploading \"%1$s\"…"
+
+#. Mobile Video
 msgctxt "mobilevideo_video_edit_title"
 msgid "Locast Video Editor"
 msgstr "Locast Video Editor"
@@ -373,6 +456,7 @@ msgctxt "annotate_cast"
 msgid "Annotate Cast"
 msgstr "Annota Cast"
 
+#. Moments
 msgctxt "moment_description_hint"
 msgid "Briefly describe this moment (optional)"
 msgstr "Descrivi brevemente questo momento (opzionale)"
@@ -381,10 +465,21 @@ msgctxt "save_moment"
 msgid "Save Moment"
 msgstr "Salva Momento"
 
+msgctxt "error_moment_saving_moment"
+msgid "Error saving moment :-("
+msgstr "Errore nel salvare del momento :-("
+
+msgctxt "moment_saved"
+msgid "Moment saved."
+msgstr "Momento salvato."
+
+#. Missions
 msgctxt "play_introduction"
 msgid "Play Introduction"
 msgstr "Mostra Introduzione"
 
+#. Preferences
+#. account category
 msgctxt "pref_cat_account"
 msgid "Account"
 msgstr "Account"
@@ -397,6 +492,7 @@ msgctxt "pref_title_password"
 msgid "Password"
 msgstr "Password"
 
+#. advanced category
 msgctxt "pref_cat_advanced"
 msgid "Advanced"
 msgstr "Avanzato"
@@ -423,85 +519,6 @@ msgid ""
 "local database. Any unpublished casts will be deleted."
 msgstr ""
 "Attenzione: modificazione di questo cancellerà l'attuale associazione "
-"(pairing) e anche il database locale. Tutti i casts non-pubblicati saranno "
-"cancellati."
+"(pairing) e anche il database locale. Tutti i casts non-pubblicati "
+"saranno cancellati."
 
-msgctxt "notice_databases_reset"
-msgid "Local database reset."
-msgstr "Risistemazione di database locale."
-
-msgctxt "notice_cast_saved_uploading"
-msgid "Cast saved. Uploading to server..."
-msgstr "Cast salvato. Caricando al server..."
-
-msgctxt "notice_cast_saved_no_network"
-msgid ""
-"Cast has been saved and will be uploaded when a network connection is "
-"established and the synchronization is started."
-msgstr ""
-"Cast è stato salvato e sarà caricato quando ha una connessione di rete e "
-"sincronizzazione comincia."
-
-msgctxt "error_cast_saving"
-msgid "Error saving cast."
-msgstr "Errore nel salvare del cast"
-
-msgctxt "cast_recording_canceled"
-msgid "Recording canceled"
-msgstr "Registrazione annullato"
-
-msgctxt "cast_synchronizing"
-msgid "Synchronizing cast..."
-msgstr "Sincronizzando il cast..."
-
-msgctxt "notice_cast_video_has_not_been_uploaded_yet"
-msgid "Cast video has not been uploaded yet."
-msgstr "Cast video non è stato caricato ancora."
-
-msgctxt "error_cast_could_not_play_video"
-msgid "Could not play video."
-msgstr "Non poteva mostrare il video"
-
-msgctxt "cast_error_could_not_play_video_neither_net_nor_local"
-msgid ""
-"Could not play video as the network is disconnected and there is no "
-"cached copy."
-msgstr ""
-"Non poteva mostrare il video perché la rete è scollegata e non c'è altra "
-"copia (no cached copy)"
-
-msgctxt "error_sync_canceled"
-msgid "Sync canceled."
-msgstr "Sincronizzazione annullato"
-
-msgctxt "error_sync_no_data_network"
-msgid ""
-"Cannot sync Locast: no data network. Please check your connection and try"
-" again."
-msgstr ""
-"Non può sincronizzare Locast: no rete di dati. Per cortesia verifica la tua "
-"connessione e riprova."
-
-msgctxt "error_moment_saving_moment"
-msgid "Error saving moment :-("
-msgstr "Errore nel salvare del momento :-("
-
-msgctxt "moment_saved"
-msgid "Moment saved."
-msgstr "Momento salvato."
-
-msgctxt "sync_upload_success_message"
-msgid "\"%1$s\" has been uploaded."
-msgstr ""
-
-msgctxt "sync_upload_fail_message"
-msgid "\"%1$s\" failed to upload."
-msgstr ""
-
-msgctxt "sync_downloading_cast"
-msgid "Downloading \"%1$s\"…"
-msgstr ""
-
-msgctxt "sync_uploading_cast"
-msgid "Uploading \"%1$s\"…"
-msgstr ""

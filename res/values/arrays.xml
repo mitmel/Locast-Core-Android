@@ -11,7 +11,7 @@
 		<item>H2Flow</item>
 	</string-array>
 	
-	<string-array name="locast_urls">
+	<string-array name="locast_urls" translatable="false">
 		<item>http://locast.mit.edu/connects/api/</item>
 		<item>http://locast.mit.edu/mitconnects/api/</item>
 		<item>http://locast.mit.edu/water/api/</item>
