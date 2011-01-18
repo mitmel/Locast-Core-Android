@@ -248,18 +248,17 @@ public class Sync extends Service {
 			final String contentType = getApplicationContext().getContentResolver().getType(toSync);
 
 			final Cursor c = cr.query(toSync, sync.getFullProjection(), null, null, null);
-			syncProgress.addPendingTasks(c.getCount());
-
-			// Handle a list of items.
-			if (contentType.startsWith("vnd.android.cursor.dir")){
-				// load from the network first...
-				syncNetworkList(toSync, MediaProvider.getPublicPath(cr, toSync), sync, syncProgress);
-			}
-
-			// then load locally.
-
-
 			try {
+				syncProgress.addPendingTasks(c.getCount());
+
+				// Handle a list of items.
+				if (contentType.startsWith("vnd.android.cursor.dir")){
+					// load from the network first...
+					syncNetworkList(toSync, MediaProvider.getPublicPath(cr, toSync), sync, syncProgress);
+				}
+
+				// then load locally.
+
 				Log.d(TAG, "have " + c.getCount() + " local items to sync");
 				for (c.moveToFirst(); (currentSyncTask != null && !currentSyncTask.isCancelled()) && ! c.isAfterLast(); c.moveToNext()){
 					try {

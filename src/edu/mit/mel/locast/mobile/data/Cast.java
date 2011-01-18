@@ -198,36 +198,39 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		final Uri castMediaDirUri = Uri.withAppendedPath(uri, CastMedia.PATH);
 		final String pubCastMediaUri = MediaProvider.getPublicPath(cr, castMediaDirUri);
 
+
 		final Cursor castMedia = cr.query(castMediaDirUri, CastMedia.PROJECTION, null, null, null);
-
-		final int mediaUrlCol = castMedia.getColumnIndex(CastMedia._MEDIA_URL);
-		final int localUriCol = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
-		final int idxCol = castMedia.getColumnIndex(CastMedia._LIST_IDX);
-		final int mediaContentTypeCol = castMedia.getColumnIndex(CastMedia._MIME_TYPE);
-		final int locIdCol = castMedia.getColumnIndex(CastMedia._ID);
-
 		boolean haveAnyLocMedia = false;
-		for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
-			final Uri locMediaUri = castMedia.isNull(localUriCol) ? null : parseMaybeUri(castMedia.getString(localUriCol));
-			final String pubMediaUri = castMedia.getString(mediaUrlCol);
-			final boolean hasLocMediaUri = locMediaUri != null;
-			final boolean hasPubMediaUri = pubMediaUri != null && pubMediaUri.length() > 0;
-			haveAnyLocMedia = haveAnyLocMedia || hasLocMediaUri;
+		try {
+			final int mediaUrlCol = castMedia.getColumnIndex(CastMedia._MEDIA_URL);
+			final int localUriCol = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
+			final int idxCol = castMedia.getColumnIndex(CastMedia._LIST_IDX);
+			final int mediaContentTypeCol = castMedia.getColumnIndex(CastMedia._MIME_TYPE);
+			final int locIdCol = castMedia.getColumnIndex(CastMedia._ID);
 
-			if (hasLocMediaUri && !hasPubMediaUri){
-				// upload
-				try {
-					final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(context);
-					nc.uploadContentWithNotification(context, uri, pubCastMediaUri + castMedia.getLong(idxCol)+"/", locMediaUri, castMedia.getString(mediaContentTypeCol));
-				} catch (final Exception e){
-					final SyncException se = new SyncException(context.getString(R.string.error_uploading_cast_video));
-					se.initCause(e);
-					throw se;
+			for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
+				final Uri locMediaUri = castMedia.isNull(localUriCol) ? null : parseMaybeUri(castMedia.getString(localUriCol));
+				final String pubMediaUri = castMedia.getString(mediaUrlCol);
+				final boolean hasLocMediaUri = locMediaUri != null;
+				final boolean hasPubMediaUri = pubMediaUri != null && pubMediaUri.length() > 0;
+				haveAnyLocMedia = haveAnyLocMedia || hasLocMediaUri;
+
+				if (hasLocMediaUri && !hasPubMediaUri){
+					// upload
+					try {
+						final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(context);
+						nc.uploadContentWithNotification(context, uri, pubCastMediaUri + castMedia.getLong(idxCol)+"/", locMediaUri, castMedia.getString(mediaContentTypeCol));
+					} catch (final Exception e){
+						final SyncException se = new SyncException(context.getString(R.string.error_uploading_cast_video));
+						se.initCause(e);
+						throw se;
+					}
+				Log.d(TAG, "Cast Media #" + castMedia.getPosition() + " is " + castMedia.getString(castMedia.getColumnIndex(CastMedia._MEDIA_URL)));
 				}
-			Log.d(TAG, "Cast Media #" + castMedia.getPosition() + " is " + castMedia.getString(castMedia.getColumnIndex(CastMedia._MEDIA_URL)));
 			}
+		}finally{
+			castMedia.close();
 		}
-		castMedia.close();
 
 		if (!haveAnyLocMedia){
 			Log.d(TAG, "There are no local videos, so looking to see if we should download");
