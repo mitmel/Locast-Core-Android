@@ -308,6 +308,28 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	}
 
 	/**
+	 * Gets the preferred full URI of the given cast. If it's a cast that's in a project,
+	 * returns that uri.
+	 *
+	 * Makes a single query.
+	 *
+	 * @param c a cursor pointing to a cast. Ensure the cursor has selected the Cast._PROJECT_ID field.
+	 * @return the canonical URI for the given cast.
+	 */
+	public static Uri getCanonicalUri(Cursor c){
+		Uri canonical = null;
+
+		final long castId = c.getLong(c.getColumnIndex(Cast._ID));
+		final Uri project = getProjectUri(c);
+		if (project != null){
+			canonical = project.buildUpon().appendPath(PATH).appendPath(Long.toString(castId)).build();
+		}else{
+			canonical = ContentUris.withAppendedId(CONTENT_URI, castId);
+		}
+		return canonical;
+	}
+
+	/**
 	 * @param cast a cursor pointing to a cast.
 	 * @return the uri of the project associated with this cast, or null if there is none.
 	 */
