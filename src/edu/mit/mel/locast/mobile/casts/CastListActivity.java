@@ -151,7 +151,7 @@ public abstract class CastListActivity extends ListActivity {
            return false;
        }
 
-       final Uri cast = ContentUris.withAppendedId(data, info.id);
+       final Uri cast = Cast.getCanonicalUri(this, ContentUris.withAppendedId(data, info.id));
 
        switch (item.getItemId()){
        case R.id.cast_view:

@@ -1194,28 +1194,41 @@ public class MediaProvider extends ContentProvider {
 		}
 
 		// add in the various directory URIs if missing.
-		switch (type){
-		case MATCHER_CAST_DIR:
-		case MATCHER_CAST_ITEM:
-		case MATCHER_PROJECT_CAST_DIR:
-		case MATCHER_PROJECT_CAST_ITEM:
-			if (!values.containsKey(Cast._CASTMEDIA_DIR_URI)){
-				values.put(Cast._CASTMEDIA_DIR_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + CastMedia.SERVER_PATH);
-			}
-			if (!values.containsKey(Cast._COMMENT_DIR_URI)){
-				values.put(Cast._COMMENT_DIR_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + Comment.SERVER_PATH);
-			}
-			break;
+		if (values.containsKey(JsonSyncableItem._PUBLIC_URI) && values.getAsString(JsonSyncableItem._PUBLIC_URI) != null){
+			switch (type){
+			case MATCHER_CAST_DIR:
+			case MATCHER_CAST_ITEM:
+			case MATCHER_PROJECT_CAST_DIR:
+			case MATCHER_PROJECT_CAST_ITEM:
+				if (!values.containsKey(Cast._CASTMEDIA_DIR_URI)
+						// the "null" bit is due to a bug in previous versions that didn't properly check to ensure
+						// that the value it would be setting would be valid.
+						// TODO This should be removed after a few revisions.
+						|| values.getAsString(Cast._CASTMEDIA_DIR_URI).startsWith("null")
+				){
+					values.put(Cast._CASTMEDIA_DIR_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + CastMedia.SERVER_PATH);
+				}
+				if (!values.containsKey(Cast._COMMENT_DIR_URI)
+						// TODO This should be removed after a few revisions.
+						|| values.getAsString(Cast._COMMENT_DIR_URI).startsWith("null")){
+					values.put(Cast._COMMENT_DIR_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + Comment.SERVER_PATH);
+				}
+				break;
 
-		case MATCHER_PROJECT_DIR:
-		case MATCHER_PROJECT_ITEM:
-			if (!values.containsKey(Project._CASTS_URI)){
-				values.put(Project._CASTS_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + Cast.SERVER_PATH);
+			case MATCHER_PROJECT_DIR:
+			case MATCHER_PROJECT_ITEM:
+				if (!values.containsKey(Project._CASTS_URI)
+						// TODO This should be removed after a few revisions.
+						|| values.getAsString(Project._CASTS_URI).startsWith("null")){
+					values.put(Project._CASTS_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + Cast.SERVER_PATH);
+				}
+				if (!values.containsKey(Project._COMMENT_DIR_URI)
+						// TODO This should be removed after a few revisions.
+						|| values.getAsString(Project._COMMENT_DIR_URI).startsWith("null")){
+					values.put(Project._COMMENT_DIR_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + Comment.SERVER_PATH);
+				}
+				break;
 			}
-			if (!values.containsKey(Project._COMMENT_DIR_URI)){
-				values.put(Project._COMMENT_DIR_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + Comment.SERVER_PATH);
-			}
-			break;
 		}
 	}
 
