@@ -263,19 +263,6 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	abstract public boolean isPaired();
 
 	/**
-	 * Adds a WWW-Authenticate header to a connection based on the currently set credentials
-	 *
-	 * @param con
-	 * @throws IOException
-	 */
-	/*protected void addBasicAuthHeader(HttpRequest con) throws IOException {
-		String encoded  = username + ":" + auth_secret;
-		encoded = Base64.encodeBytes(encoded.getBytes(), 0, encoded.length());
-
-		con.setHeader("Authorization", "Basic " + encoded);
-	}*/
-
-	/**
 	 * Makes a request to pair the device with the server. The server sends
 	 * back a set of credentials which are then stored for making further
 	 * queries.
