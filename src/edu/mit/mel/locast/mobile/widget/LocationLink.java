@@ -27,6 +27,8 @@ import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -50,9 +52,12 @@ public class LocationLink extends Button {
 	private final int noLocationResId = R.string.location_link_no_location;
 	private boolean showAccuracy = true;
 
+	final ConnectivityManager cm;
+
 	public LocationLink(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
 		setText(noLocationResId);
+		cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 	}
 
 	public LocationLink(Context context, AttributeSet attrs){
@@ -136,8 +141,12 @@ public class LocationLink extends Button {
 
 			if (geocodedName == null){
 				placename = String.format(LAT_LON_FORMAT, location.getLatitude(), location.getLongitude());
-				final GeocoderTask t = new GeocoderTask();
-				t.execute(location);
+		    	final NetworkInfo activeNet = cm.getActiveNetworkInfo();
+		    	final boolean hasNetConnection = activeNet != null && activeNet.isConnected();
+		    	if (hasNetConnection){
+					final GeocoderTask t = new GeocoderTask();
+					t.execute(location);
+		    	}
 			}else{
 				placename = geocodedName;
 			}

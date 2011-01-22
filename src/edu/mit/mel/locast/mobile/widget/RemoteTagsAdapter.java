@@ -20,6 +20,8 @@ import java.util.Date;
 import java.util.List;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.widget.ArrayAdapter;
 import edu.mit.mel.locast.mobile.net.AndroidNetworkClient;
@@ -29,17 +31,23 @@ public class RemoteTagsAdapter extends ArrayAdapter<String>{
 	private long lastUpdated = 0;
 	private boolean updating = false;
 
+	final ConnectivityManager cm;
+
 	public RemoteTagsAdapter(Context context, int textViewResourceId) {
 		super(context, textViewResourceId);
+    	cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 	}
-	
+
     public void refreshTags(){
-		if (!updating && (lastUpdated == 0 || (new Date().getTime() - lastUpdated > cacheAge))){
+
+    	final NetworkInfo activeNet = cm.getActiveNetworkInfo();
+    	final boolean hasNetConnection = activeNet != null && activeNet.isConnected();
+		if (hasNetConnection && !updating && (lastUpdated == 0 || (new Date().getTime() - lastUpdated > cacheAge))){
 			new TagLoaderTask().execute();
 		}
     }
-	
-	public class TagLoaderTask extends AsyncTask<Void, Integer, List<String>>{
+
+	private class TagLoaderTask extends AsyncTask<Void, Integer, List<String>>{
 
 		@Override
 		protected void onPreExecute() {
@@ -47,19 +55,19 @@ public class RemoteTagsAdapter extends ArrayAdapter<String>{
 		}
 		@Override
 		protected List<String> doInBackground(Void... params) {
-			
+
 			try {
 				final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(getContext());
 				final List<String> tags =  nc.getTagsList();
 				lastUpdated = new Date().getTime();
 				return tags;
-				
+
 			} catch (final Exception e) {
 				e.printStackTrace();
 			}
 			return null;
 		}
-		
+
 		@Override
 		protected void onPostExecute(List<String> result) {
 			if (result != null){
@@ -75,5 +83,5 @@ public class RemoteTagsAdapter extends ArrayAdapter<String>{
 			updating = false;
 		}
 	}
-	
+
 }
