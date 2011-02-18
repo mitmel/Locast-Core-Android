@@ -64,6 +64,7 @@ import edu.mit.mel.locast.mobile.ListUtils;
 import edu.mit.mel.locast.mobile.R;
 import edu.mit.mel.locast.mobile.data.Cast;
 import edu.mit.mel.locast.mobile.data.CastMedia;
+import edu.mit.mel.locast.mobile.data.Locatable;
 import edu.mit.mel.locast.mobile.data.MediaProvider;
 import edu.mit.mel.locast.mobile.data.Project;
 import edu.mit.mel.locast.mobile.data.ShotList;
@@ -372,7 +373,8 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		menu.findItem(R.id.publish_cast).setEnabled(isDone());
 		final int state = getState();
-		menu.findItem(R.id.delete_cast).setEnabled(state == STATE_PLAYBACK || state == STATE_RECORDER_READY);
+		final boolean isIdle = state == STATE_PLAYBACK || state == STATE_RECORDER_READY;
+		menu.findItem(R.id.delete_cast).setEnabled(isIdle);
 		return true;
 	};
 
@@ -727,6 +729,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	private void loadCast(Cursor cast){
 		((EditText)findViewById(R.id.cast_title)).setText(cast.getString(cast.getColumnIndex(Cast._TITLE)));
 		mIsDraft = cast.getInt(cast.getColumnIndex(Cast._DRAFT)) != 0;
+		mLocation = Locatable.toLocation(cast);
 	}
 
 	/**
@@ -781,13 +784,18 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	 * @return true if the cast was empty and was therefore deleted.
 	 */
 	private boolean deleteCastIfEmpty(){
-		boolean empty = true;
-		for (mCastMediaCursor.moveToFirst(); empty && !mCastMediaCursor.isAfterLast(); mCastMediaCursor.moveToNext()){
-			empty = mCastMediaCursor.isNull(mLocUriCol);
-		}
+		final boolean empty = isEmpty();
 		if (empty){
 			deleteCast();
 			Log.d(TAG, "deleted empty cast");
+		}
+		return empty;
+	}
+
+	private boolean isEmpty(){
+		boolean empty = true;
+		for (mCastMediaCursor.moveToFirst(); empty && !mCastMediaCursor.isAfterLast(); mCastMediaCursor.moveToNext()){
+			empty = mCastMediaCursor.isNull(mLocUriCol);
 		}
 		return empty;
 	}
@@ -851,6 +859,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	private boolean publish(){
 		final EditText title =((EditText)findViewById(R.id.cast_title));
 		if (title.getText().toString().trim().length() == 0){
+
 			title.setError(getString(R.string.error_please_enter_a_title));
 			title.requestFocus();
 			return false;
@@ -1270,7 +1279,10 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	}
 
 	public void onLocationChanged(Location location) {
-		this.mLocation = location;
+		if (mLocation == null){
+			this.mLocation = location;
+		}
+		// XXX need a smarter way to handle location saving.
 //		((LocationLink)findViewById(R.id.location)).setLocation(location);
 	}
 
