@@ -230,6 +230,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		super.onPause();
 		mIloc.removeLocationUpdates(this);
 		mCastMediaCursor.unregisterContentObserver(castMediaObserver);
+
 		if (mCurrentCast != null){
 			save();
 			if (mIsDraft){
@@ -610,6 +611,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 
 		selectCastVideo(index);
+		startPreview();
 		initRecorder();
 		setOutputFilename(mFilePrefix + "-" + (index + 1) +"-"+mInstanceId);
 		prepareRecorder();

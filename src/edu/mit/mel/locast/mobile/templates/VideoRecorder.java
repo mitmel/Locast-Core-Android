@@ -33,8 +33,6 @@ package edu.mit.mel.locast.mobile.templates;
  */
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import android.app.Activity;
 import android.hardware.Camera;
@@ -47,6 +45,9 @@ import android.os.Message;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.widget.Toast;
+
+import com.android.camera.CameraHardwareException;
+import com.android.camera.CameraHolder;
 
 /**
  * @author steve
@@ -113,6 +114,21 @@ public abstract class VideoRecorder extends Activity {
 
 		public void surfaceChanged(SurfaceHolder holder, int format, int width,
 				int height) {
+			if (holder.getSurface() == null){
+				Log.d(TAG, "holder.getSurface() == null");
+				return;
+			}
+
+	        if (mPausing) {
+	            // We're pausing, the screen is off and we already stopped
+	            // video recording. We don't want to start the camera again
+	            // in this case in order to conserve power.
+	            // The fact that surfaceChanged is called _after_ an onPause appears
+	            // to be legitimate since in that case the lockscreen always returns
+	            // to portrait orientation possibly triggering the notification.
+	            return;
+	        }
+
 			if (mCamera == null){
 				Log.d(TAG, "camera was null in surfaceChanged");
 				return;
@@ -120,6 +136,7 @@ public abstract class VideoRecorder extends Activity {
 
 			if (holder.isCreating()){
 				setPreviewDisplay(holder);
+				mCamera.unlock();
 				Log.d(TAG, "surface changed set preview display");
 				mInternalHandler.sendEmptyMessage(_MSG_INIT_RECORDER);
 			}
@@ -131,9 +148,12 @@ public abstract class VideoRecorder extends Activity {
 		holder.addCallback(mCameraSHListener);
 	}
 
+	private boolean mPausing;
+
 	@Override
 	protected void onResume() {
 		super.onResume();
+		mPausing = false;
 
 		if (!mIsPreviewing && mShouldPreview){
 			actualStartPreview();
@@ -143,6 +163,8 @@ public abstract class VideoRecorder extends Activity {
 	@Override
 	protected void onPause() {
 		super.onPause();
+
+		mPausing = true;
 
 		actualStopPreview();
 	}
@@ -202,18 +224,20 @@ public abstract class VideoRecorder extends Activity {
 			// already rolling...
 			return;
 		}
-		if (mCamera == null){
-			Log.d(TAG, "opening camera");
-			mCamera = Camera.open();
-		}
-
 		try {
-			lockCamera();
+			if (mCamera == null){
+				Log.d(TAG, "opening camera");
+				mCamera = CameraHolder.instance().open();
+			}
+			Log.d(TAG, "camera lock");
+			mCamera.lock();
 
 			setCameraParameters();
 
 			mCamera.setPreviewDisplay(mSurfaceHolder);
 		} catch (final IOException e) {
+			alertFailSetup(e);
+		} catch (final CameraHardwareException e){
 			alertFailSetup(e);
 		}
 
@@ -226,7 +250,8 @@ public abstract class VideoRecorder extends Activity {
 	    	return;
 	    }
 	    if (mSurfaceHolder != null){
-	    	unlockCamera();
+	    	Log.d(TAG, "camera unlock");
+	    	mCamera.unlock();
 	    }
 	}
 
@@ -245,8 +270,9 @@ public abstract class VideoRecorder extends Activity {
 		Log.d(TAG, "closing camera");
 
 		// need to lock the camera to release it(!)
-		lockCamera();
-		mCamera.release();
+		Log.d(TAG, "camera lock");
+		mCamera.lock();
+		CameraHolder.instance().release();
 		Log.d(TAG, "preview stopped");
 		mIsPreviewing = false;
 		mCamera = null;
@@ -264,61 +290,9 @@ public abstract class VideoRecorder extends Activity {
 	    }
 	}
 
-	/**
-	 * Call the lock() method (introduced in API level 5) if possible.
-	 */
-	private void lockCamera() {
-		try {
-			try {
-				final Method lock = mCamera.getClass().getDeclaredMethod("lock");
-				lock.invoke(mCamera);
-
-			}catch (final NoSuchMethodException m){
-				// no such method in api < 5
-			}
-
-			Log.d(TAG, "locked camera");
-			mIsLocked = true;
-
-		}catch (final InvocationTargetException ie){
-			throw new RuntimeException(ie.getTargetException());
-
-		} catch (final IllegalAccessException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * Call the unlock() method (introduced in API level 5) if possible
-	 * Otherwise just stop the preview to unlock.
-	 */
-	private void unlockCamera() {
-		try {
-			try {
-				final Method unlock = mCamera.getClass().getDeclaredMethod("unlock");
-				unlock.invoke(mCamera);
-
-			}catch (final NoSuchMethodException m){
-				// before API level 5, this seems to be the only way to unlock.
-				mCamera.stopPreview();
-			}
-
-			Log.d(TAG, "unlocked camera");
-			mIsLocked = false;
-
-		}catch (final InvocationTargetException ie){
-			throw new RuntimeException(ie);
-
-		} catch (final IllegalAccessException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	public void startRecorder(){
 		mInternalHandler.sendEmptyMessage(_MSG_START_RECORD);
 	}
-
-	private boolean mIsLocked;
 
 	/**
 	 * Call this after setOutputFilename(), but before startRecorder()
@@ -396,20 +370,30 @@ public abstract class VideoRecorder extends Activity {
 	 */
 	protected void initRecorder() {
 		Log.d(TAG, "initializing recorder...");
+//		if (mCamera == null){
+//			Log.d(TAG, "Camera was null. Starting preview...");
+//			actualStartPreview();
+//		}
 		if (mCamera == null){
-			Log.d(TAG, "Camera was null. Starting preview...");
-			actualStartPreview();
+			Log.d(TAG, "Camera was null on initRecorder");
+			return;
 		}
 
-		if (mIsLocked){
-			unlockCamera();
+		if (mSurfaceHolder == null){
+            Log.v(TAG, "Surface holder is null. Wait for surface changed.");
+            return;
 		}
+		//
+		//mCamera.unlock();
+
 		try {
 			if (mRecorder == null){
 				mRecorder = new MediaRecorder();
 			}else{
 				mRecorder.reset();
 			}
+			Log.d(TAG, "camera unlock");
+			mCamera.unlock();
 			mRecorder.setCamera(mCamera);
 			mRecorder.setPreviewDisplay(mSurfaceHolder.getSurface());
 
@@ -421,6 +405,9 @@ public abstract class VideoRecorder extends Activity {
 			// set the recorder parameters from the settings detected in setCameraParameters()
 			final Camera.Parameters params = mCamera.getParameters();
 			final Size vidSize = params.getPreviewSize();
+			if (vidSize == null){
+				throw new RuntimeException("got null when asking camera for preview size");
+			}
 			mRecorder.setVideoSize(vidSize.width, vidSize.height);
 			mRecorder.setVideoFrameRate(params.getPreviewFrameRate());
 
