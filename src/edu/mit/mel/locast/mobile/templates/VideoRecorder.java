@@ -50,10 +50,48 @@ import com.android.camera.CameraHardwareException;
 import com.android.camera.CameraHolder;
 
 /**
- * @author steve
+ * <p>An easy-to-use video recorder. You should extend this class and follow the simple setup instructions below.</p>
  *
- */
-/**
+ * <p>You will need a SurfaceView to display the camera viewfinder. In your onCreate() you should call:
+ *
+ * <pre class="prettyprint">
+ *     initSurfaceHolder(mSurfaceView.getHolder());
+ * </pre>
+ *
+ * where mSurfaceView is your SurfaceView.</p>
+ *
+ * <p>That's it! Now you can start recording by calling the methods in the following way.
+ * First, you need to tell it what to save as:
+ *
+ *<pre class="prettyprint">
+ *     setOutputFilename("example");
+ *</pre></p>
+ * <p>Once the filename is set you can query for the full path using:
+ * <pre>
+ *     getFullOutputFile()
+ * </pre>
+ *
+ * Next you need to prepare the recorder:
+ *
+ *<pre class="prettyprint">
+ *     prepareRecorder();
+ *</pre></p>
+ *
+ * <p>This might take a small amount of time, so if you want the code to start immediately when recording, you may wish to call this ASAP.
+ * Finally, possibly on your shutter button, you'll want to do:</p>
+ *
+ *<pre class="prettyprint">
+ *     startRecorder();
+ *</pre>
+ *
+ * <p>to start the recording. Of course,
+ * <pre class="prettyprint">
+ *     stopRecorder();
+ * </pre>
+ * will stop the recording.</p>
+ *
+ * Make sure to call the super of onPause() and onResume() so that video previews are handled properly.
+ *
  * @author steve
  *
  */
@@ -96,7 +134,9 @@ public abstract class VideoRecorder extends Activity {
 	public final static int MSG_RECORDER_INITIALIZED 	= 100,
 							MSG_RECORDER_SHUTDOWN 		= 101,
 							MSG_RECORDER_STARTED 		= 102,
-							MSG_PREVIEW_STOPPED			= 103;
+							MSG_RECORDER_STOPPED        = 103,
+							MSG_PREVIEW_STOPPED			= 104
+							;
 
 	public void setRecorderStateHandler(Handler recorderStateHandler) {
 		this.mRecorderStateHandler = recorderStateHandler;
@@ -136,9 +176,12 @@ public abstract class VideoRecorder extends Activity {
 
 			if (holder.isCreating()){
 				setPreviewDisplay(holder);
-				mCamera.unlock();
 				Log.d(TAG, "surface changed set preview display");
+				//mRecorderStateHandler.sendEmptyMessage(MSG_PREVIEW_STOPPED);
 				mInternalHandler.sendEmptyMessage(_MSG_INIT_RECORDER);
+			}else{
+				stopRecorder();
+				restartPreview();
 			}
 		}
 	};
@@ -156,7 +199,9 @@ public abstract class VideoRecorder extends Activity {
 		mPausing = false;
 
 		if (!mIsPreviewing && mShouldPreview){
-			actualStartPreview();
+			if (!restartPreview()){
+				return;
+			}
 		}
 	}
 
@@ -166,13 +211,22 @@ public abstract class VideoRecorder extends Activity {
 
 		mPausing = true;
 
-		actualStopPreview();
+		stopRecorder();
+		if (mCamera != null){
+			Log.d(TAG, "camera unlock");
+			mCamera.unlock();
+		}
+
+		closeCamera();
 	}
 
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
 	}
+
+	private Size mCameraPreviewSize;
+	private int mCameraFrameRate;
 
 	/**
 	 * Parameters must be set for the camera to the same settings as the media recorder.
@@ -197,7 +251,58 @@ public abstract class VideoRecorder extends Activity {
 			params.setPreviewFrameRate(10);
 		}
 
+		mCameraPreviewSize = params.getPreviewSize();
+		mCameraFrameRate = params.getPreviewFrameRate();
+
 		mCamera.setParameters(params);
+	}
+
+	/**
+	 * Override this if you wish to change the media format.
+	 *
+	 * @return the MediaRecorder.OutputFormat that you wish to use.
+	 */
+	protected int getOutputFormat(){
+		if (Build.MODEL.equals("Nexus One") || Build.MODEL.equals("Milestone")){
+			return MediaRecorder.OutputFormat.MPEG_4;
+		}
+		return MediaRecorder.OutputFormat.THREE_GPP;
+	}
+
+	protected String getOutputFileExtension(){
+		if (Build.MODEL.equals("Nexus One") || Build.MODEL.equals("Milestone")){
+			return "mp4";
+		}
+		return "3gp";
+	}
+
+	/**
+	 * Override this if you wish to change the audio encoder.
+	 *
+	 * @return the MediaRecorder.AudioEncoder that you wish to use.
+	 */
+	protected int getAudioEncoder(){
+		return MediaRecorder.AudioEncoder.AMR_NB;
+	}
+
+	/**
+	 * Override this if you wish to change the video encoder.
+	 *
+	 * @return the MediaRecorder.VideoEncoder that you wish to use.
+	 */
+	protected int getVideoEncoder(){
+		int encoder;
+		if (Build.MODEL.equals("Milestone")){
+			encoder = MediaRecorder.VideoEncoder.H264;
+
+		}else if (Build.MODEL.equals("Nexus One")) {
+			encoder = MediaRecorder.VideoEncoder.H264;
+
+
+		}else{ // for all other devices, fall back on a well-known default.
+			encoder = MediaRecorder.VideoEncoder.DEFAULT;
+		}
+		return encoder;
 	}
 
 	/**
@@ -205,7 +310,12 @@ public abstract class VideoRecorder extends Activity {
 	 */
 	public void stopPreview(){
 		mShouldPreview = false;
-		actualStopPreview();
+		releaseMediaRecorder();
+		if (mCamera != null){
+			Log.d(TAG, "camera unlock");
+			mCamera.unlock();
+		}
+		closeCamera();
 	}
 
 	/**
@@ -213,33 +323,29 @@ public abstract class VideoRecorder extends Activity {
 	 */
 	public void startPreview(){
 		mShouldPreview = true;
-		actualStartPreview();
+		try {
+			actualStartPreview();
+		}catch (final Throwable e){
+			alertFailSetup(e);
+		}
 	}
 
 	/**
 	 * Starts the camera preview on the given surface.
 	 */
-	private void actualStartPreview() {
+	private void actualStartPreview() throws CameraHardwareException {
+		if (mCamera == null){
+			Log.d(TAG, "opening camera");
+			mCamera = CameraHolder.instance().open();
+		}
+
 		if (mIsPreviewing){
-			// already rolling...
-			return;
+			mCamera.stopPreview();
+			mIsPreviewing = false;
 		}
-		try {
-			if (mCamera == null){
-				Log.d(TAG, "opening camera");
-				mCamera = CameraHolder.instance().open();
-			}
-			Log.d(TAG, "camera lock");
-			mCamera.lock();
 
-			setCameraParameters();
-
-			mCamera.setPreviewDisplay(mSurfaceHolder);
-		} catch (final IOException e) {
-			alertFailSetup(e);
-		} catch (final CameraHardwareException e){
-			alertFailSetup(e);
-		}
+		setPreviewDisplay(mSurfaceHolder);
+		setCameraParameters();
 
 	    try {
 			mCamera.startPreview();
@@ -249,23 +355,26 @@ public abstract class VideoRecorder extends Activity {
 	    	alertFailSetup(ex);
 	    	return;
 	    }
-	    if (mSurfaceHolder != null){
-	    	Log.d(TAG, "camera unlock");
-	    	mCamera.unlock();
-	    }
+	}
+
+	private boolean restartPreview(){
+		try {
+			actualStartPreview();
+
+		}catch (final CameraHardwareException e){
+			alertFailSetup(e);
+			return false;
+		}
+		return true;
 	}
 
 	/**
 	 * Stops the camera preview. Any further calls to the recorder will fail.
 	 */
-	private void actualStopPreview() {
+	private void closeCamera() {
+		Log.d(TAG, "closeCamera");
 		if (mCamera == null){
 			return;
-		}
-		if (mRecorder != null){
-			mRecorder.release();
-			// release unlocks the camera
-			mRecorder = null;
 		}
 		Log.d(TAG, "closing camera");
 
@@ -281,11 +390,27 @@ public abstract class VideoRecorder extends Activity {
 		mRecorderStateHandler.sendEmptyMessage(MSG_PREVIEW_STOPPED);
 	}
 
+	private void releaseMediaRecorder(){
+		Log.d(TAG, "releasing media recorder.");
+		if (mRecorder != null){
+			mRecorder.reset();
+			mRecorder.release();
+			mRecorder = null;
+			mRecorderStateHandler.sendEmptyMessage(MSG_RECORDER_SHUTDOWN);
+		}
+
+		if (mCamera != null){
+			// Take back the camera object control from media recorder.
+			Log.d(TAG, "camera lock");
+			mCamera.lock();
+		}
+	}
+
 	private void setPreviewDisplay(SurfaceHolder holder) {
 	    try {
 	        mCamera.setPreviewDisplay(holder);
 	    } catch (final Throwable ex) {
-	        actualStopPreview();
+	        closeCamera();
 	        throw new RuntimeException("setPreviewDisplay failed", ex);
 	    }
 	}
@@ -304,30 +429,46 @@ public abstract class VideoRecorder extends Activity {
 	private void prepareRecorderActual(){
 		try {
 			mRecorder.prepare();
-		} catch (final IllegalStateException e) {
-			alertFailSetup(e);
 		} catch (final IOException e) {
+			releaseMediaRecorder();
 			alertFailSetup(e);
 		}
 	}
+
+	private boolean mMediaRecorderRecording = false;
 
 	private void startRecorderActual(){
 		try {
 			mRecorder.start();
+			mMediaRecorderRecording = true;
+
 			mRecorderStateHandler.sendEmptyMessage(MSG_RECORDER_STARTED);
 		} catch (final IllegalStateException e) {
+			releaseMediaRecorder();
 			alertFailSetup(e);
+			return;
 		}
 	}
 
 	public void stopRecorder(){
-		if (mRecorder != null){
-			mRecorder.stop();
+		if (mMediaRecorderRecording){
+			if (mRecorder == null){
+				throw new RuntimeException("mRecorder is null");
+			}
+			try {
+				mRecorder.stop();
+			}catch (final RuntimeException e){
+				Log.e(TAG, "stop failed: " + e.getMessage());
+			}
+			mMediaRecorderRecording = false;
+			mRecorderStateHandler.sendEmptyMessage(MSG_RECORDER_STOPPED);
 		}
+
+		releaseMediaRecorder();
 	}
 
 	public void alertFailSetup(Throwable e){
-		actualStopPreview();
+		closeCamera();
 		Toast.makeText(getApplicationContext(), edu.mit.mel.locast.mobile.R.string.template_error_setup_fail, Toast.LENGTH_SHORT).show();
 		e.printStackTrace();
 		finish();
@@ -335,7 +476,7 @@ public abstract class VideoRecorder extends Activity {
 
 	private File mFullOutputFile;
 	/**
-	 * @param filename A pathless filename for this recording.
+	 * @param filename A pathless, extensionless filename for this recording.
 	 */
 	public void setOutputFilename(String filename){
 		final File storage = Environment.getExternalStorageDirectory();
@@ -353,7 +494,7 @@ public abstract class VideoRecorder extends Activity {
 			}
 		}
 
-		mFullOutputFile = new File(locastBase, filename +".3gp");
+		mFullOutputFile = new File(locastBase, filename +"."+getOutputFileExtension());
 		try {
 			mRecorder.setOutputFile(mFullOutputFile.getAbsolutePath());
 		}catch (final IllegalStateException ise){
@@ -370,10 +511,6 @@ public abstract class VideoRecorder extends Activity {
 	 */
 	protected void initRecorder() {
 		Log.d(TAG, "initializing recorder...");
-//		if (mCamera == null){
-//			Log.d(TAG, "Camera was null. Starting preview...");
-//			actualStartPreview();
-//		}
 		if (mCamera == null){
 			Log.d(TAG, "Camera was null on initRecorder");
 			return;
@@ -383,50 +520,44 @@ public abstract class VideoRecorder extends Activity {
             Log.v(TAG, "Surface holder is null. Wait for surface changed.");
             return;
 		}
-		//
-		//mCamera.unlock();
+		if (mRecorder != null){
+			Log.d(TAG, "already initialized");
+			return;
+		}
 
 		try {
-			if (mRecorder == null){
-				mRecorder = new MediaRecorder();
-			}else{
-				mRecorder.reset();
-			}
+			mRecorder = new MediaRecorder();
+
 			Log.d(TAG, "camera unlock");
 			mCamera.unlock();
 			mRecorder.setCamera(mCamera);
-			mRecorder.setPreviewDisplay(mSurfaceHolder.getSurface());
 
 			mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 			mRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 
-			mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+			mRecorder.setOutputFormat(getOutputFormat());
 
 			// set the recorder parameters from the settings detected in setCameraParameters()
 			final Camera.Parameters params = mCamera.getParameters();
-			final Size vidSize = params.getPreviewSize();
+			Size vidSize = params.getPreviewSize();
 			if (vidSize == null){
-				throw new RuntimeException("got null when asking camera for preview size");
+				Log.w(TAG, "got null when asking camera for preview size. Using cached values instead.");
+				vidSize = mCameraPreviewSize;
+				mRecorder.setVideoFrameRate(mCameraFrameRate);
+			}else{
+				mRecorder.setVideoFrameRate(params.getPreviewFrameRate());
 			}
 			mRecorder.setVideoSize(vidSize.width, vidSize.height);
-			mRecorder.setVideoFrameRate(params.getPreviewFrameRate());
+
 
 			// this would be for setting the aspect ratio properly, but causes occasional white screens
 			//final SurfaceView sv = ((SurfaceView)findViewById(R.id.camera_view));
 			//sv.setLayoutParams(new FrameLayout.LayoutParams((int)(sv.getHeight() * (720.0/480)), sv.getHeight()));
 
-			mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+			mRecorder.setAudioEncoder(getAudioEncoder());
+			mRecorder.setVideoEncoder(getVideoEncoder());
 
-			if (Build.MODEL.equals("Milestone")){
-				mRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-
-			}else if (Build.MODEL.equals("Nexus One")) {
-				mRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-
-			}else{ // for all other devices, fall back on a well-known default.
-				mRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
-			}
-
+			mRecorder.setPreviewDisplay(mSurfaceHolder.getSurface());
 
 			Log.d(TAG, "done setting recorder parameters");
 			if (mRecorderStateHandler != null){
@@ -437,7 +568,4 @@ public abstract class VideoRecorder extends Activity {
 			return;
 		}
 	}
-
-
-
 }

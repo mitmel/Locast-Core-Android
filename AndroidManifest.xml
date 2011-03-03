@@ -283,7 +283,14 @@
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>
 		</activity>
-		
+        <!-- test	
+		<activity android:name="test.BasicVideoRecorder" android:screenOrientation="landscape" android:label="Video Recorder test" android:taskAffinity="edu.mit.mel.locast.mobile.debug" >
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
+        -->
 	<!-- 
 		*****************************************************************************************************
 		*                                             Moment                                                *

@@ -611,8 +611,11 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		}
 
 		selectCastVideo(index);
+
+		stopRecorder();
 		startPreview();
 		initRecorder();
+
 		setOutputFilename(mFilePrefix + "-" + (index + 1) +"-"+mInstanceId);
 		prepareRecorder();
 		setState(STATE_RECORDER_READY);
@@ -920,6 +923,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 				@Override
 				public void run() {
+					stopRecorder();
 					stopPreview();
 				}
 			}).start();
