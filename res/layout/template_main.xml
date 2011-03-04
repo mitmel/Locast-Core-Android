@@ -8,9 +8,7 @@
 	    <edu.mit.mobile.android.widget.RelativeSizeListView android:id="@+id/progress" 
 	    	android:layout_width="fill_parent" android:layout_height="48dp"
 			android:layout_alignParentBottom="true"
-	        android:paddingTop="4dp"
-	        android:paddingBottom="4dp"
-	        style="@style/TemplatedVideoProgress"
+	        style="@style/TemplatedVideoProgress.Container"
 	       />
 	       
    	<ImageButton android:id="@+id/shutter" 
@@ -93,6 +91,14 @@
     		android:visibility="visible"
     		/>
     		
+   		<edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/osd_progress"
+		  	android:layout_width="wrap_content"
+		  	android:layout_height="wrap_content"
+
+		  	android:layout_alignParentTop="true"
+		  	android:layout_alignParentRight="true"
+		  	style="@style/TemplatedVideoTextPrompt.OSD" />
+
     		<EditText android:id="@+id/cast_title"
     		android:hint="@string/cast_title_hint"
     		android:layout_width="fill_parent"
@@ -103,6 +109,7 @@
 			android:visibility="invisible"
     		
     		/>
+
     	
 <TextSwitcher android:id="@+id/osd_switcher"
   	android:layout_width="fill_parent"

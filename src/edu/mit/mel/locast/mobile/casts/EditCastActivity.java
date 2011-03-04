@@ -61,15 +61,20 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		ACTION_CAST_FROM_MEDIA_URI = "edu.mit.mobile.android.locast.share.ACTION_CAST_FROM_MEDIA_URI",
 		ACTION_TOGGLE_STARRED = "edu.mit.mobile.android.locast.ACTION_TOGGLE_STARRED";
 
+	// stateful
+	private ArrayList<Uri> locCastMedia;
+	private String contentType;
+	private Location location;
+
 	private String castPublicUri = null;
 
 	private IncrementalLocator iloc;
 
 	private UpdateRecommendedTagsTask tagRecommendationTask = null;
 	private Uri mediaUri;
-	private String contentType;
-	private Location location;
-	private List<Uri> locCastMedia;
+
+
+
 	private Cursor c;
 	private Uri castUri;
 
@@ -79,7 +84,14 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		ACTIVITY_RECORD_SOUND = 1,
 		ACTIVITY_RECORD_VIDEO = 2;
 
-	WebImageLoader imgLoader;
+	private WebImageLoader imgLoader;
+
+
+	private static String
+		RUNTIME_STATE_CAST_MEDIA = "edu.mit.mobile.android.locast.RUNTIME_STATE_CAST_MEDIA_STATE",
+		RUNTIME_STATE_CONTENT_TYPE = "edu.mit.mobile.android.locast.RUNTIME_STATE_CONTENT_TYPE",
+		RUNTIME_STATE_LOCATION = "edu.mit.mobile.android.locast.RUNTIME_STATE_LOCATION";
+
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -104,6 +116,11 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		imgLoader = ((Application)getApplication()).getImageLoader();
 
 
+		if (savedInstanceState != null){
+			location = savedInstanceState.getParcelable(RUNTIME_STATE_LOCATION);
+			contentType = savedInstanceState.getString(RUNTIME_STATE_CONTENT_TYPE);
+			locCastMedia = savedInstanceState.getParcelableArrayList(RUNTIME_STATE_CAST_MEDIA);
+		}
 
 		final Button sendButton = (Button) findViewById(R.id.done);
 		((Button) findViewById(R.id.cancel)).setOnClickListener(this);
@@ -138,6 +155,17 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
         }
 
         iloc = new IncrementalLocator(this);
+
+	}
+
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+
+		outState.putParcelableArrayList(RUNTIME_STATE_CAST_MEDIA, locCastMedia);
+		outState.putString(RUNTIME_STATE_CONTENT_TYPE, contentType);
+		outState.putParcelable(RUNTIME_STATE_LOCATION, location);
 
 	}
 

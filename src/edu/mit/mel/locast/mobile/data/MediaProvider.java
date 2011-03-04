@@ -106,7 +106,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 26;
+		private static final int DB_VER = 28;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -207,6 +207,7 @@ public class MediaProvider extends ContentProvider {
 					+ ShotList._LIST_IDX      + " INTEGER,"
 					+ ShotList._DIRECTION     + " TEXT,"
 					+ ShotList._DURATION      + " INTEGER,"
+					+ ShotList._HARD_DURATION + " BOOLEAN,"
 					// this ensures that each cast has only one cast media in each list position.
 					// List_idx is the index in the cast media array.
 					+ "CONSTRAINT shot_list_unique UNIQUE ("+ ShotList._LIST_IDX+ ","+ShotList._PARENT_ID+") ON CONFLICT REPLACE"
@@ -217,15 +218,25 @@ public class MediaProvider extends ContentProvider {
 
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			db.execSQL("DROP TABLE IF EXISTS " + CAST_TABLE_NAME);
-			db.execSQL("DROP TABLE IF EXISTS " + PROJECT_TABLE_NAME);
-			db.execSQL("DROP TABLE IF EXISTS " + COMMENT_TABLE_NAME);
-			db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
-			db.execSQL("DROP TABLE IF EXISTS " + CAST_MEDIA_TABLE_NAME);
-			db.execSQL("DROP TABLE IF EXISTS " + SHOTLIST_TABLE_NAME);
-			onCreate(db);
-		}
+			// If it's a step greater than 1, step through all older versions and incrementally upgrade to the latest
+			for (; oldVersion < newVersion - 1; oldVersion++){
+				onUpgrade(db, oldVersion, oldVersion + 1);
+			}
 
+			if (oldVersion == 27 && newVersion == 28){
+				// explicitly don't use constants here, so as to avoid breaking upgrade paths upon changing names.
+				db.execSQL("ALTER TABLE " + SHOTLIST_TABLE_NAME + " ADD hard_duration BOOLEAN");
+			}else{
+				db.execSQL("DROP TABLE IF EXISTS " + CAST_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + PROJECT_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + COMMENT_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + CAST_MEDIA_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + SHOTLIST_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + MISSION_TABLE_NAME);
+				onCreate(db);
+			}
+		}
 	}
 
 	private DatabaseHelper dbHelper;

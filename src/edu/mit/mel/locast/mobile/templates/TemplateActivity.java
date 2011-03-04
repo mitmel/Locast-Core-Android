@@ -55,6 +55,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextSwitcher;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -370,6 +371,8 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		menu.findItem(R.id.publish_cast).setEnabled(isDone());
+		final int state = getState();
+		menu.findItem(R.id.delete_cast).setEnabled(state == STATE_PLAYBACK || state == STATE_RECORDER_READY);
 		return true;
 	};
 
@@ -438,6 +441,24 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 	private boolean isDone(){
 		return getNextUnrecordedCastVideo() == CAST_VIDEO_DONE;
+	}
+
+	private void updateProgressOSD(int position, int progress){
+
+			final int shotLength = mCastMediaProgressAdapter.getShotLength(position);
+			final boolean hardLimit = mCastMediaProgressAdapter.getHardLimit(position);
+
+			final CharSequence number = hardLimit
+			? (Integer.toString((shotLength - progress) / 1000))
+			:		((progress == 0 ? "" : Integer.toString(progress / 1000) + "/") +
+						(shotLength == 0 ? getString(R.string.infinite) : Integer.toString(shotLength / 1000)));
+
+			((TextView)findViewById(R.id.osd_progress)).setText(progress == 0 && shotLength != 0
+					? getString(
+							((hardLimit) ? R.string.template_progress_hard_limit : R.string.template_progress_no_hard_limit),
+							number)
+						: number);
+
 	}
 
 	/*********************** cast video manipulators *************************/
@@ -515,6 +536,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 				}else{
 					setOsdText("");
 				}
+				updateProgressOSD(index, mCastMediaProgressAdapter.getProgress(index));
 			}else{
 				setOsdText("");
 			}
@@ -532,11 +554,22 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	}
 
 	private final ContentObserver castMediaObserver = new ContentObserver(new Handler()) {
+
+		@Override
+		public boolean deliverSelfNotifications() {
+			return true;
+		};
+
 		@Override
 		public void onChange(boolean selfChange) {
-			mCastMediaCursor.requery();
+			if (!selfChange){
+				mCastMediaCursor.requery();
+			}
 			shotHandler.sendEmptyMessage(MSG_SHOT_CAST_MEDIA_UPDATED);
-
+			// handle case when cast is deleted.
+			if (mCastMediaCursor.getCount() != 0){
+				updateProgressOSD(mCurrentCastVideo, mCastMediaProgressAdapter.getProgress(mCurrentCastVideo));
+			}
 		}
 	};
 
@@ -610,15 +643,19 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			return;
 		}
 
-		selectCastVideo(index);
+		try {
+			selectCastVideo(index);
 
-		stopRecorder();
-		startPreview();
-		initRecorder();
+			stopRecorder();
+			startPreview();
+			initRecorder();
 
-		setOutputFilename(mFilePrefix + "-" + (index + 1) +"-"+mInstanceId);
-		prepareRecorder();
-		setState(STATE_RECORDER_READY);
+			setOutputFilename(mFilePrefix + "-" + (index + 1) +"-"+mInstanceId);
+			prepareRecorder();
+			setState(STATE_RECORDER_READY);
+		}catch (final TemplateSetupError e){
+			Toast.makeText(this, getString(R.string.template_error_setup_fail_reason, e.getLocalizedMessage()), Toast.LENGTH_LONG).show();
+		}
 	}
 
 
@@ -1133,6 +1170,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 				case MSG_SHOT_SET_PROGRESS:{
 					mCastMediaProgressAdapter.updateProgress(msg.arg1, msg.arg2);
+					updateProgressOSD(msg.arg1, msg.arg2);
 				}break;
 
 				case MSG_SHOT_CAST_MEDIA_UPDATED:{
@@ -1183,7 +1221,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			mShotIndex = shotIndex;
 			if (mShotList.moveToPosition(mShotIndex)){
 				mMaxTime = mShotList.getInt(mShotList.getColumnIndex(ShotList._DURATION)) * 1000;
-				mStoppable = mMaxTime > 7000;  // XXX switch to database
+				mStoppable = mShotList.getInt(mShotList.getColumnIndex(ShotList._HARD_DURATION)) == 0;
 			}else{
 				mMaxTime = 0;
 			}

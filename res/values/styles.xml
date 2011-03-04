@@ -96,10 +96,20 @@
 		<item name="android:textStyle">bold</item>
 		<item name="android:padding">2sp</item>
 	</style>
-	<style name="TemplatedVideoProgress" parent="@android:style/Widget.ProgressBar.Horizontal">
+	<style name="TemplatedVideoProgress" parent="@android:style/TextAppearance.Medium">
+		<item name="android:textColor">#ddd</item>
+		<item name="android:gravity">center</item>
+		<item name="android:shadowColor">#000</item>
+		<item name="android:shadowRadius">2.0</item>
+	</style>
+	<style name="TemplatedVideoProgress.Container" parent="@android:style/Widget.ProgressBar.Horizontal">
 		<item name="android:background">@drawable/progress_selector</item>
+		<item name="android:paddingTop">4dp</item>
+		<item name="android:paddingBottom">4dp</item>
 	</style>
 	<style name="TemplatedVideoProgress.Item" parent="@android:style/Widget.ProgressBar.Horizontal">
 		<item name="android:background">@drawable/progress_selector</item>
+	</style>
+	<style name="TemplatedVideoProgress.ItemText">
 	</style>
 </resources>

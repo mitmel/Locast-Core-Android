@@ -83,6 +83,10 @@
 	<string name="project_you_left">You have left %s</string>
     <string name="error_loading_project">Error loading project.</string>
 	
+	<!-- Video recorder -->
+    <string name="video_recorder_error_could_not_make_directory">Could not make directory, \'%1$s\', for recording videos.</string>
+    <string name="video_recorder_error_cannot_write_to_sd_card">Cannot write to SD card.</string>
+    
 	<!-- template -->
 	<string name="template_done">Done!</string>
 	<string name="template_rerecord_video_title">Rerecord Shot</string>
@@ -92,6 +96,11 @@
     <string name="template_no_video_for_this_segment">No video for this segment</string>
     <string name="template_cast_saved_as_draft">Cast saved as draft</string>
 	<string name="template_error_setup_fail">Error: could not setup camera.</string>
+	<string name="template_error_setup_fail_reason">Error: could not setup templated recording: %1$s</string>
+	<string name="template_select_template">Select a template</string>
+	<string name="template_progress_hard_limit">%1$s</string>
+	<string name="template_progress_no_hard_limit">≤%1$s</string>
+    <string name="infinite">∞</string>
 	
 	<string name="dialog_button_delete">Delete</string>
 	<string name="dialog_button_rerecord">Rerecord</string>

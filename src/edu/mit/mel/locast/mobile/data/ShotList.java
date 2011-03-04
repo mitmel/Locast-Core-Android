@@ -17,6 +17,7 @@ public class ShotList extends JsonSyncableItem {
 		_PUBLIC_URI,
 		_DIRECTION,
 		_DURATION,
+		_HARD_DURATION,
 		_PARENT_ID,
 		_LIST_IDX
 	};

@@ -11,9 +11,11 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.CompoundButton;
 import android.widget.TextSwitcher;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import edu.mit.mel.locast.mobile.R;
+import edu.mit.mel.locast.mobile.templates.TemplateSetupError;
 import edu.mit.mel.locast.mobile.templates.VideoRecorder;
 
 public class BasicVideoRecorder extends VideoRecorder implements OnClickListener, OnCheckedChangeListener {
@@ -69,6 +71,7 @@ public class BasicVideoRecorder extends VideoRecorder implements OnClickListener
 
 	@Override
 	public void onClick(View v) {
+		try {
 		switch (v.getId()){
 		case R.id.start:
 			Log.d(TAG, "start button pressed");
@@ -91,6 +94,9 @@ public class BasicVideoRecorder extends VideoRecorder implements OnClickListener
 			startActivity(intent);
 			break;
 
+		}
+		}catch (final TemplateSetupError e){
+			Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
 		}
 	}
 

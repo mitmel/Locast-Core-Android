@@ -45,6 +45,7 @@ import android.os.Message;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.widget.Toast;
+import edu.mit.mel.locast.mobile.R;
 
 import com.android.camera.CameraHardwareException;
 import com.android.camera.CameraHolder;
@@ -469,7 +470,12 @@ public abstract class VideoRecorder extends Activity {
 
 	public void alertFailSetup(Throwable e){
 		closeCamera();
-		Toast.makeText(getApplicationContext(), edu.mit.mel.locast.mobile.R.string.template_error_setup_fail, Toast.LENGTH_SHORT).show();
+		final String reason = e.getLocalizedMessage();
+		Toast.makeText(getApplicationContext(),
+				reason != null
+				? getString(R.string.template_error_setup_fail_reason, reason)
+				: getString(R.string.template_error_setup_fail),
+			Toast.LENGTH_LONG).show();
 		e.printStackTrace();
 		finish();
 	}
@@ -478,19 +484,19 @@ public abstract class VideoRecorder extends Activity {
 	/**
 	 * @param filename A pathless, extensionless filename for this recording.
 	 */
-	public void setOutputFilename(String filename){
+	public void setOutputFilename(String filename) throws TemplateSetupError {
 		final File storage = Environment.getExternalStorageDirectory();
 
 		if (!storage.canWrite()){
 			// something's wrong; can't access SD card.
-			throw new RuntimeException("cannot write to SD card");
+			throw new TemplateSetupError(getString(R.string.video_recorder_error_cannot_write_to_sd_card));
 		}
 
 		final File locastBase = new File(storage, "locast");
 
 		if (!locastBase.exists()){
 			if (!locastBase.mkdirs()){
-				throw new RuntimeException("could not make directory, "+locastBase+", for recording videos.");
+				throw new TemplateSetupError(getString(R.string.video_recorder_error_could_not_make_directory));
 			}
 		}
 
