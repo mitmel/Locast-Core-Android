@@ -181,7 +181,7 @@ public abstract class CastListActivity extends ListActivity {
 	protected void onListItemClick(ListView l, View v, int position,
 			long id) {
 		super.onListItemClick(l, v, position, id);
-		final Uri uri = ContentUris.withAppendedId(data, id);
+		final Uri uri =  Cast.getCanonicalUri(this, ContentUris.withAppendedId(data, id));
 
 		final String action = getIntent().getAction();
 

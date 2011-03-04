@@ -256,6 +256,9 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 
 		@Override
 		protected void onPostExecute(Bundle result) {
+			if (isFinishing()){
+				return;
+			}
 			final Intent intent = getIntent();
 			if (Intent.ACTION_VIEW.equals(intent.getAction())){
 				if (result != null){

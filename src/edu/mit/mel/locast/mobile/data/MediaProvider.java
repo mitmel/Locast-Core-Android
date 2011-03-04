@@ -700,6 +700,9 @@ public class MediaProvider extends ContentProvider {
 		}
 		values.remove(CV_FLAG_DO_NOT_MARK_DIRTY);
 
+		// XXX remove this when the API updates
+		translateIdToUri(getContext(), values, canSync, uri);
+
 		switch (uriMatcher.match(uri)){
 		case MATCHER_CAST_DIR:
 			count = db.update(CAST_TABLE_NAME, values, where, whereArgs);

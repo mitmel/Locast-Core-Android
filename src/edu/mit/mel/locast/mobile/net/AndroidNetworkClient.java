@@ -270,6 +270,7 @@ public class AndroidNetworkClient extends NetworkClient implements OnSharedPrefe
 			uploadContent(context, tpl, serverPath, localFile, contentType);
 			notification.doneTitle = context.getString(R.string.sync_upload_success);
 			notification.doneText = context.getString(R.string.sync_upload_success_message, castTitle);
+			notification.successful = true;
 		}catch (final NetworkProtocolException e){
 			notification.setUnsuccessful(e.getLocalizedMessage());
 			throw e;

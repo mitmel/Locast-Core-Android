@@ -387,6 +387,20 @@ public class Sync extends Service {
 			if (syncdItems.contains(locUri)) {
 				return false;
 			}
+			// XXX repair any broken fields.
+			final int castMediaCol = c.getColumnIndex(Cast._CASTMEDIA_DIR_URI);
+			if (castMediaCol >= 0) {
+				if (!c.isNull(castMediaCol)
+						&& c.getString(castMediaCol).startsWith("null")) {
+					final ContentValues cv = new ContentValues();
+					cv.put(MediaProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
+					cv.putNull(Cast._CASTMEDIA_DIR_URI);
+					cr.update(locUri, cv, null, null);
+					final int pos = c.getPosition();
+					c.requery();
+					c.moveToPosition(pos);
+				}
+			}
 
 			final int draftCol = c.getColumnIndex(TaggableItem._DRAFT);
 			if (draftCol != -1 && c.getInt(draftCol) != 0){
