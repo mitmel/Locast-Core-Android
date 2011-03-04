@@ -233,7 +233,6 @@ public class MediaProvider extends ContentProvider {
 				db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + CAST_MEDIA_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + SHOTLIST_TABLE_NAME);
-				db.execSQL("DROP TABLE IF EXISTS " + MISSION_TABLE_NAME);
 				onCreate(db);
 			}
 		}

@@ -7,7 +7,8 @@ public class ShotList extends JsonSyncableItem {
 		_DIRECTION   = "direction",
 		_DURATION    = "duration",
 		_PARENT_ID   = "parent_id",
-		_LIST_IDX    = "list_idx"
+		_LIST_IDX    = "list_idx",
+		_HARD_DURATION  = "hard_duration"
 		;
 
 	public final static String PATH = "shotlist";
@@ -39,6 +40,7 @@ public class ShotList extends JsonSyncableItem {
 
 	static {
 		SYNC_MAP.put(_DURATION,  new SyncFieldMap("duration", SyncFieldMap.DURATION));
+		SYNC_MAP.put(_HARD_DURATION,  new SyncFieldMap("hard_duration", SyncFieldMap.BOOLEAN, SyncFieldMap.FLAG_OPTIONAL));
 		SYNC_MAP.put(_DIRECTION, new SyncFieldMap("direction", SyncFieldMap.STRING));
 		SYNC_MAP.put(_PUBLIC_URI, new SyncFieldMap("id", SyncFieldMap.STRING, SyncFieldMap.SYNC_FROM));
 	}
