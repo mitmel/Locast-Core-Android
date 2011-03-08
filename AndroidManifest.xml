@@ -296,7 +296,7 @@
 		*                                             Moment                                                *
 		*****************************************************************************************************
 	 -->
-		<activity android:name=".casts.Moment" android:theme="@android:style/Theme.Dialog">
+		<activity android:name=".casts.Moment" android:theme="@android:style/Theme.Dialog" android:taskAffinity="edu.mit.mel.locast.mobile.moment">
 			<intent-filter>
 			<action android:name="android.intent.action.INSERT" />
 			<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.casts" />
