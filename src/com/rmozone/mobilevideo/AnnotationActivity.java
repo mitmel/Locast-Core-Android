@@ -53,8 +53,8 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 
 import com.rmozone.mobilevideo.AnnotationDBKey.Annotation;
 
-import edu.mit.mel.locast.mobile.R;
-import edu.mit.mel.locast.mobile.StreamUtils;
+import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.StreamUtils;
 
 public class AnnotationActivity extends Activity implements OnTouchListener, OnClickListener, OnSeekBarChangeListener, OnItemClickListener, OnItemLongClickListener {
 	public static final String ACTION_ANNOTATE_CAST_FROM_MEDIA_URI = "com.rmozone.mobilevideo.ACTION_ANNOTATE_CAST_FROM_MEDIA_URI";

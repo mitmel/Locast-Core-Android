@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="edu.mit.mel.locast.mobile"
+	package="edu.mit.mobile.android.locast"
 	android:versionCode="18" android:versionName="1.3.5"
 	>
 <!--	android:installLocation="auto" version 2.2+ -->
@@ -284,7 +284,7 @@
 			</intent-filter>
 		</activity>
         <!-- test	
-		<activity android:name="test.BasicVideoRecorder" android:screenOrientation="landscape" android:label="Video Recorder test" android:taskAffinity="edu.mit.mel.locast.mobile.debug" >
+		<activity android:name="test.BasicVideoRecorder" android:screenOrientation="landscape" android:label="Video Recorder test" android:taskAffinity="edu.mit.mobile.android.locast.debug" >
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER" />
@@ -296,7 +296,7 @@
 		*                                             Moment                                                *
 		*****************************************************************************************************
 	 -->
-		<activity android:name=".casts.Moment" android:theme="@android:style/Theme.Dialog" android:taskAffinity="edu.mit.mel.locast.mobile.moment">
+		<activity android:name=".casts.Moment" android:theme="@android:style/Theme.Dialog" android:taskAffinity="edu.mit.mobile.android.locast.moment">
 			<intent-filter>
 			<action android:name="android.intent.action.INSERT" />
 			<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.casts" />

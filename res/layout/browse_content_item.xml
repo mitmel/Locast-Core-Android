@@ -15,7 +15,7 @@
     		android:layout_alignParentBottom="true"
 			android:background="#ccc" />
     
-      <edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@android:id/text1"
+      <edu.mit.mobile.android.locast.widget.OutlinedTextView android:id="@android:id/text1"
       		android:text="text1"
           	android:layout_width="fill_parent"
           	android:layout_height="wrap_content"
@@ -26,7 +26,7 @@
 
           	style="@style/CastListItem.Title" 
         />
-    <edu.mit.mel.locast.mobile.widget.OutlinedTextView android:id="@+id/author" 
+    <edu.mit.mobile.android.locast.widget.OutlinedTextView android:id="@+id/author" 
 	      android:text="author" 
 	      android:layout_width="wrap_content" 
 	      android:layout_height="wrap_content" 

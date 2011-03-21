@@ -42,11 +42,11 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 
 import com.android.music.TouchInterceptor;
 
-import edu.mit.mel.locast.mobile.Application;
-import edu.mit.mel.locast.mobile.R;
-import edu.mit.mel.locast.mobile.StreamUtils;
-import edu.mit.mel.locast.mobile.WebImageLoader;
-import edu.mit.mel.locast.mobile.data.Cast;
+import edu.mit.mobile.android.locast.Application;
+import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.StreamUtils;
+import edu.mit.mobile.android.locast.WebImageLoader;
+import edu.mit.mobile.android.locast.data.Cast;
 
 public class VideoEditActivity extends Activity {
 

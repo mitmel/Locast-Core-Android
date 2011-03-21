@@ -27,7 +27,7 @@
 	  android:layout_width="fill_parent"
 	  android:layout_height="fill_parent" />
 	  
-  <edu.mit.mel.locast.mobile.widget.OutlinedTextView
+  <edu.mit.mobile.android.locast.widget.OutlinedTextView
   	android:layout_width="wrap_content"
   	android:layout_height="wrap_content"
   	android:layout_centerInParent="true"
@@ -47,12 +47,12 @@
   	android:layout_alignParentLeft="true"
 	style="@style/TemplatedVideoTextPromptSwitcher"
   >
-  <edu.mit.mel.locast.mobile.widget.OutlinedTextView
+  <edu.mit.mobile.android.locast.widget.OutlinedTextView
   	android:layout_width="wrap_content"
   	android:layout_height="wrap_content"
   	style="@style/TemplatedVideoTextPrompt.OSD" />
   	
-  	<edu.mit.mel.locast.mobile.widget.OutlinedTextView
+  	<edu.mit.mobile.android.locast.widget.OutlinedTextView
   	android:layout_width="wrap_content"
   	android:layout_height="wrap_content"
   	style="@style/TemplatedVideoTextPrompt.OSD" />

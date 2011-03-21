@@ -1,0 +1,900 @@
+package edu.mit.mobile.android.locast.net;
+/*
+ * Copyright (C) 2010  MIT Mobile Experience Lab
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.Vector;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthState;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HttpContext;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.content.Context;
+import android.content.res.AssetFileDescriptor;
+import android.location.Location;
+import android.net.Uri;
+import android.util.Log;
+import edu.mit.mobile.android.locast.StreamUtils;
+import edu.mit.mobile.android.locast.data.User;
+
+
+/**
+ * An client implementation of the JSON RESTful API for the WayfarerMobi project.
+ *
+ * @author stevep
+ * @see https://mobile-server.mit.edu/trac/rai/wiki/JsonRestInterface
+ *
+ */
+/**
+ * @author steve
+ *
+ */
+abstract public class NetworkClient extends DefaultHttpClient {
+	public final static String JSON_MIME_TYPE = "application/json";
+
+	private final static String
+		PATH_PAIR = "pair/",
+		PATH_UNPAIR = "un-pair/"
+		;
+
+	protected String baseurl;
+	protected URI baseuri;
+	// one of the formats from ISO 8601
+	public final static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+	private JSONObject user;
+
+	private boolean isAuthenticated = false;
+
+	private AuthScope authScope;
+	protected final static HttpRequestInterceptor PREEMPTIVE_AUTH = new HttpRequestInterceptor() {
+	    public void process(
+	            final HttpRequest request,
+	            final HttpContext context) throws HttpException, IOException {
+
+	        final AuthState authState = (AuthState) context.getAttribute(
+	                ClientContext.TARGET_AUTH_STATE);
+	        final CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(
+	                ClientContext.CREDS_PROVIDER);
+	        final HttpHost targetHost = (HttpHost) context.getAttribute(
+	                ExecutionContext.HTTP_TARGET_HOST);
+
+	        // If not auth scheme has been initialized yet
+	        if (authState.getAuthScheme() == null) {
+	            final AuthScope authScope = new AuthScope(
+	                    targetHost.getHostName(),
+	                    targetHost.getPort());
+	            // Obtain credentials matching the target host
+	            final Credentials creds = credsProvider.getCredentials(authScope);
+	            // If found, generate BasicScheme preemptively
+	            if (creds != null) {
+	            	if (creds.getUserPrincipal() != null){
+	            		Log.d("NetworkClient", "Pre-emptively authenticating as: " + creds.getUserPrincipal().getName());
+	            	}
+	                authState.setAuthScheme(new BasicScheme());
+	                authState.setCredentials(creds);
+	            }
+	        }
+	    }
+	};
+
+	protected final static HttpRequestInterceptor REMOVE_EXPECTATIONS = new HttpRequestInterceptor() {
+
+		public void process(HttpRequest request, HttpContext context)
+				throws HttpException, IOException {
+			if (request.containsHeader("Expect")){
+				request.removeHeader(request.getFirstHeader("Expect"));
+			}
+		}
+	};
+
+
+	public NetworkClient(ClientConnectionManager manager, HttpParams params){
+		super(manager, params);
+
+		this.addRequestInterceptor(PREEMPTIVE_AUTH, 0);
+
+		final HttpParams p = this.getParams();
+		p.setParameter("http.socket.timeout", new Integer(60000));
+		p.setParameter("http.protocol.expect-continue", true);
+
+		//this.addRequestInterceptor(removeExpectations);
+	}
+
+	protected void initClient(){
+
+		try {
+			final URL baseUrl = new URL(this.baseurl);
+			baseuri = baseUrl.toURI();
+
+			this.authScope = new AuthScope(baseUrl.getHost(), baseUrl.getPort());
+
+			loadCredentials();
+
+		} catch (final Exception e) {
+			showError(e);
+			e.printStackTrace();
+		}
+	}
+	abstract protected void showError(Exception e);
+	abstract protected void logDebug(String msg);
+
+	/************************* credentials and pairing **********************/
+
+	public String getUsername() {
+		String username = null;
+		final Credentials credentials = getCredentialsProvider().getCredentials(authScope);
+		if (credentials != null){
+			username = credentials.getUserPrincipal().getName();
+		}
+		return username;
+	}
+
+	/**
+	 * Set the login credentials.
+	 *
+	 * @param credentials
+	 * @throws RecordStoreException
+	 * @throws IOException
+	 */
+	protected void setCredentials(String username, String auth_secret) throws IOException {
+		this.user = null;
+
+
+		this.setCredentials(new UsernamePasswordCredentials(username, auth_secret));
+	}
+
+	/**
+	 * Set the login credentials. Most often you will want to pass in a UsernamePasswordCredentials() object.
+	 *
+	 * @param credentials
+	 */
+	protected void setCredentials(Credentials credentials){
+		this.user = null;
+
+
+		this.getCredentialsProvider().clear();
+		this.getCredentialsProvider().setCredentials(authScope, credentials);
+	}
+
+	/**
+	 * Gets the authenticated user.
+	 *
+	 * @return
+	 * @throws IllegalStateException
+	 * @throws NetworkProtocolException
+	 * @throws IOException
+	 * @throws JSONException
+	 */
+	public JSONObject getAuthenticatedUser() throws IllegalStateException, NetworkProtocolException, IOException, JSONException{
+		if (user == null){
+			user = getUser(getUsername());
+		}
+		return user;
+	}
+
+	/**
+	 * Retrieves the user credentials from local storage.
+	 *
+	 * @throws IOException
+	 */
+	protected abstract void loadCredentials() throws IOException;
+
+	/**
+	 * Save the user credentials for use later. This
+	 * will treat the client as being "paired" with the server.
+	 *
+	 * @param username
+	 * @param auth_secret
+	 * @throws IOException
+	 */
+	public abstract void saveCredentials(String username, String auth_secret) throws IOException;
+
+	/**
+	 * Clears all the credentials. This will effectively unpair the client, but won't
+	 * issue an unpair request.
+	 *
+	 */
+	public abstract void clearCredentials();
+
+	public boolean isAuthenticated(){
+		return isAuthenticated;
+	}
+
+	/**
+	 * @return true if the client is paired with the server.
+	 */
+	abstract public boolean isPaired();
+
+	/**
+	 * Makes a request to pair the device with the server. The server sends
+	 * back a set of credentials which are then stored for making further
+	 * queries.
+	 *
+	 * @param pairCode the unique code that is provided by the server.
+	 * @return true if pairing process was successful, otherwise false.
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws RecordStoreException
+	 * @throws NetworkProtocolException
+	 */
+	public boolean pairDevice(String pairCode) throws IOException, JSONException, NetworkProtocolException{
+		final DefaultHttpClient hc = new DefaultHttpClient();
+		hc.addRequestInterceptor(REMOVE_EXPECTATIONS);
+		final HttpPost r = new HttpPost(getFullUriAsString(PATH_PAIR));
+
+		final List<BasicNameValuePair> parameters = new ArrayList<BasicNameValuePair>();
+		parameters.add(new BasicNameValuePair("auth_secret", pairCode));
+		r.setEntity(new UrlEncodedFormEntity(parameters));
+
+		r.setHeader("Content-Type", URLEncodedUtils.CONTENT_TYPE);
+		final HttpResponse c = hc.execute(r);
+
+		checkStatusCode(c, false);
+
+		final JSONObject creds = returnJsonObject(c);
+		saveCredentials(creds.getString("username"), creds.getString("auth_secret"));
+		isAuthenticated = true;
+
+		return true;
+	}
+
+	/**
+	 * Requests that the device be unpaired with the server.
+	 * @return true if successful, false otherwise.
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 * @throws RecordStoreException
+	 */
+	public boolean unpairDevice() throws IOException, NetworkProtocolException{
+		final HttpPost r = new HttpPost(getFullUriAsString(PATH_UNPAIR));
+
+		final HttpResponse c = this.execute(r);
+		checkStatusCode(c, false);
+
+		if (c.getStatusLine().getStatusCode() == HttpStatus.SC_OK){
+			clearCredentials();
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/*************************** all request methods ******************/
+
+	public HttpResponse head(String path) throws IOException, JSONException, NetworkProtocolException {
+		final HttpHead req = new HttpHead(getFullUriAsString(path));
+
+		return this.execute(req);
+	}
+
+	/**
+	 * Given a HttpResponse, checks that the return types are all correct and returns
+	 * a JSONObject from the response.
+	 *
+	 * @param res
+	 * @return the full response body as a JSONObject
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 * @throws JSONException
+	 */
+	private JSONObject returnJsonObject(HttpResponse res) throws IllegalStateException, IOException, NetworkProtocolException, JSONException {
+		checkContentType(res, JSON_MIME_TYPE, false);
+
+		final HttpEntity ent = res.getEntity();
+		final JSONObject jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
+		ent.consumeContent();
+		return jo;
+
+	}
+
+	/**
+	 * Verifies that the HttpResponse has a good status code. Throws exceptions if they are not.
+	 *
+	 * @param res
+	 * @param createdOk true if a 201 (CREATED) code is ok. Otherwise, only 200 (OK) is allowed.
+	 * @throws HttpResponseException if the status code is 400 series.
+	 * @throws NetworkProtocolException for all status codes errors.
+	 * @throws IOException
+	 */
+	private boolean checkStatusCode(HttpResponse res, boolean createdOk) throws HttpResponseException, NetworkProtocolException, IOException {
+		final int statusCode = res.getStatusLine().getStatusCode();
+		if (statusCode == HttpStatus.SC_OK || (createdOk && statusCode == HttpStatus.SC_CREATED)){
+			return true;
+		}else if (statusCode >= HttpStatus.SC_BAD_REQUEST && statusCode < HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+			throw new HttpResponseException(statusCode, res.getStatusLine().getReasonPhrase());
+		}else{
+			final HttpEntity e = res.getEntity();
+			if (e.getContentType().getValue().equals("text/html") || e.getContentLength() > 40){
+				logDebug("Got long response body. Not showing.");
+			}else{
+				logDebug(StreamUtils.inputStreamToString(e.getContent()));
+			}
+			e.consumeContent();
+			throw new NetworkProtocolException("HTTP " + res.getStatusLine().getStatusCode() + " "+ res.getStatusLine().getReasonPhrase(), res);
+		}
+	}
+
+	/**
+	 * Verifies that the HttpResponse has a correct content type. Throws exceptions if not.
+	 * @param res
+	 * @param contentType
+	 * @param exact If false, will only check to see that the result content type starts with the desired contentType.
+	 * @return
+	 * @throws NetworkProtocolException
+	 * @throws IOException
+	 */
+	private boolean checkContentType(HttpResponse res, String contentType, boolean exact) throws NetworkProtocolException, IOException {
+		final String resContentType = res.getFirstHeader("Content-Type").getValue();
+		if (! (exact ? resContentType.equals(contentType) : resContentType.startsWith(contentType))) {
+			throw new NetworkProtocolException("Did not return content-type '"+contentType+"'. Got: '"+
+					resContentType + "'", res);
+		}
+		return true;
+	}
+
+	/************************************ GET *******************************/
+	/**
+	 * Gets an object and verifies that it got a successful response code.
+	 * @param path
+	 * @return
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws NetworkProtocolException
+	 * @throws HttpResponseException
+	 */
+	public HttpResponse get(String path) throws IOException, JSONException, NetworkProtocolException, HttpResponseException {
+		final String fullUri = getFullUriAsString(path);
+		final HttpGet req = new HttpGet(fullUri);
+		Log.d("NetworkClient", "GET "+ fullUri);
+		final HttpResponse res = this.execute(req);
+
+		checkStatusCode(res, false);
+
+		return res;
+	}
+	/**
+	 * Loads a JSON object from the given URI
+	 *
+	 * @param path
+	 * @return
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws NetworkProtocolException
+	 */
+	public JSONObject getObject(String path) throws IOException, JSONException, NetworkProtocolException{
+		final HttpEntity ent = getJson(path);
+		final JSONObject jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
+		ent.consumeContent();
+		return jo;
+	}
+
+	/**
+	 * GETs a JSON Array
+	 *
+	 * @param path
+	 * @return
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws NetworkProtocolException
+	 */
+	public JSONArray getArray(String path) throws IOException, JSONException, NetworkProtocolException{
+
+		final HttpEntity ent = getJson(path);
+		final JSONArray ja = new JSONArray(StreamUtils.inputStreamToString(ent.getContent()));
+		ent.consumeContent();
+		return ja;
+	}
+
+	private synchronized HttpEntity getJson(String path) throws IOException, JSONException, NetworkProtocolException {
+
+		final HttpResponse res = get(path);
+
+		checkContentType(res, JSON_MIME_TYPE, false);
+
+		isAuthenticated = true; // this should only get set if we managed to make it here
+
+		return res.getEntity();
+	}
+
+	/***************************** PUT ***********************************/
+
+	/**
+	 * PUTs a JSON object, returns an updated JSON object.
+	 *
+	 * @param path
+	 * @param jsonObject
+	 * @return
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 * @throws JSONException
+	 * @throws IllegalStateException
+	 */
+	public JSONObject putJson(String path, JSONObject jsonObject)  throws IOException,
+		NetworkProtocolException, IllegalStateException, JSONException {
+		return returnJsonObject(put(path, jsonObject.toString()));
+	}
+
+	public HttpResponse putJson(String path, boolean jsonValue)  throws IOException,
+		NetworkProtocolException {
+		return put(path, jsonValue ? "true" : "false");
+	}
+
+	/**
+	 * @param path
+	 * @param jsonString
+	 * @return A HttpResponse that has been checked for improper response codes.
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 */
+	protected synchronized HttpResponse put(String path, String jsonString) throws IOException,
+		NetworkProtocolException{
+		final String fullUri = getFullUriAsString(path);
+		final HttpPut r = new HttpPut(fullUri);
+		Log.d("NetworkClient", "PUT "+ fullUri);
+
+		r.setEntity(new StringEntity(jsonString, "utf-8"));
+
+		r.setHeader("Content-Type", JSON_MIME_TYPE);
+
+		Log.d("NetworkClient", "PUTting: "+jsonString);
+		final HttpResponse c = this.execute(r);
+
+		checkStatusCode(c, true);
+
+		return c;
+	}
+
+	protected synchronized HttpResponse put(String path, String contentType, InputStream is) throws IOException,
+		NetworkProtocolException {
+		final String fullUri = getFullUriAsString(path);
+		final HttpPut r = new HttpPut(fullUri);
+		Log.d("NetworkClient", "PUT "+ fullUri);
+		r.setEntity(new InputStreamEntity(is, 0));
+
+		r.setHeader("Content-Type", contentType);
+
+		final HttpResponse c = this.execute(r);
+
+		checkStatusCode(c, true);
+
+		return c;
+	}
+
+	public synchronized Uri getFullUri (String path){
+		Uri fullUri;
+		if (path.startsWith("http")){
+			fullUri = Uri.parse(path);
+
+		}else {
+
+			fullUri = Uri.parse(baseuri.resolve(path).normalize().toASCIIString());
+			Log.d("NetworkClient", "path: " + path + ", baseUri: " + baseuri + ", fullUri: "+fullUri);
+		}
+
+		return fullUri;
+	}
+
+	public synchronized String getFullUriAsString (String path){
+		String fullUri;
+		if (path.startsWith("http")){
+			fullUri = path;
+
+		}else {
+
+			fullUri = baseuri.resolve(path).normalize().toASCIIString();
+			Log.d("NetworkClient", "path: " + path + ", baseUri: " + baseuri + ", fullUri: "+fullUri);
+		}
+
+		return fullUri;
+	}
+
+	/************************** POST ******************************/
+
+	/**
+	 * @param path
+	 * @param jsonString
+	 * @return
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 */
+	public synchronized HttpResponse post(String path, String jsonString)
+		throws IOException, NetworkProtocolException {
+
+		final String fullUri = getFullUriAsString(path);
+		final HttpPost r = new HttpPost(fullUri);
+		Log.d("NetworkClient", "POST "+ fullUri);
+
+		r.setEntity(new StringEntity(jsonString, "utf-8"));
+
+		r.setHeader("Content-Type", JSON_MIME_TYPE);
+
+		final HttpResponse c = this.execute(r);
+
+		if (c.getStatusLine().getStatusCode() >= 300){
+			logDebug("just sent: " + jsonString);
+			c.getEntity().consumeContent();
+			// TODO should revise this to say that HTTP_CREATED is ok too.
+			throw new NetworkProtocolException(c, HttpStatus.SC_OK);
+		}
+		return c;
+	}
+
+	public JSONObject postJson(String path, JSONObject object) throws IllegalStateException, IOException, NetworkProtocolException, JSONException{
+		final HttpResponse res = post(path, object.toString());
+		return returnJsonObject(res);
+	}
+
+	/*********************************** User ******************************/
+
+	/**
+	 * Loads/returns the User for the authenticated user
+	 *
+	 * @return the User object for the authenticated user.
+	 * @throws NetworkProtocolException
+	 * @throws IOException
+	 * @throws JSONException
+	 */
+	public JSONObject getUser() throws NetworkProtocolException, IOException, JSONException{
+		if (user == null){
+
+			user = getUser(getUsername());
+		}
+		return user;
+	}
+
+	/**
+	 * Retrieves a User object representing the given user from the network.
+	 * @param username
+	 * @return a new instance of the user
+	 * @throws NetworkProtocolException
+	 * @throws IOException
+	 * @throws JSONException
+	 */
+	public JSONObject getUser(String username) throws NetworkProtocolException, IOException, JSONException {
+		if (username == null){
+			return null;
+		}
+		return getObject("user/"+username+"/");
+	}
+
+	public Vector<User> getUsers() throws NetworkProtocolException, IOException {
+		final Vector<User> outUsers = new Vector<User>();
+		try{
+			final JSONArray users =getArray("user/");
+			for (int i = 0; i < users.length(); i++){
+				outUsers.addElement(loadUser(users.getJSONObject(i)));
+
+			}
+		}catch(final JSONException e){
+			final NetworkProtocolException newe = new NetworkProtocolException(e);
+
+			throw newe;
+		}
+		return outUsers;
+	}
+
+	public User loadUser(JSONObject user) throws NetworkProtocolException, IOException{
+		User u = null;
+
+		try{
+			u = new User(user.getString("username"));
+
+			u.setName(user.getString("name"));
+			u.setLanguage(user.getString("language"));
+
+			/*
+			if (user.has("location")){
+				JSONObject locJson = user.getJSONObject("location");
+				u.setLoc(Locatable.locationToCoordinates(locJson));
+
+				u.setLastUpdated(new Date(DateParser.parse(locJson.getString("last_updated"))));
+			}*/
+			final String iconUrl = user.optString("icon");
+
+
+			if (iconUrl != null && iconUrl.length() > 0 && !iconUrl.equals("None")){
+//				Image userIcon = getUserIcon(iconUrl);
+//				if (userIcon != null){
+//					u.setIcon(userIcon);
+//				}else{
+//					logDebug("could not retrieve icon for " + u.username);
+//				}
+			}else{
+				logDebug(u.username + " has no user icon");
+			}
+
+		}catch(final JSONException e){
+			throw new NetworkProtocolException(e);
+		}
+		return u;
+	}
+
+	protected abstract InputStream getFileStream(String localFile) throws IOException;
+	protected abstract InputStream getFileStream(Context context, Uri localFile) throws IOException;
+
+	/**
+	 * Listener for use with InputStreamWatcher.
+	 *
+	 * @author steve
+	 *
+	 */
+	public static interface TransferProgressListener {
+		/**
+		 * @param bytes Total bytes transferred.
+		 */
+		public void publish(long bytes);
+	}
+
+	public static class InputStreamWatcher extends InputStream {
+		private static final int GRANULARITY = 1024 * 100; // bytes; number needed to trigger a publish()
+		private final InputStream mInputStream;
+		private final TransferProgressListener mProgressListener;
+		private long mCount = 0;
+		private long mIncrementalCount = 0;
+
+		public InputStreamWatcher(InputStream wrappedStream, TransferProgressListener progressListener) {
+			mInputStream = wrappedStream;
+			mProgressListener = progressListener;
+		}
+		private void incrementAndNotify(long count){
+			mCount += count;
+			mIncrementalCount += count;
+			if (mIncrementalCount > GRANULARITY){
+				mProgressListener.publish(mCount);
+				mIncrementalCount = 0;
+			}
+		}
+
+		@Override
+		public int read() throws IOException {
+			return mInputStream.read();
+		}
+
+		private int rcount;
+
+		@Override
+		public int read(byte[] b) throws IOException {
+			rcount = mInputStream.read(b);
+			incrementAndNotify(rcount);
+			return rcount;
+		}
+
+		@Override
+		public int read(byte[] b, int offset, int length) throws IOException {
+			rcount = mInputStream.read(b, offset, length);
+			incrementAndNotify(rcount);
+			return rcount;
+		}
+
+		@Override
+		public int available() throws IOException {
+			return mInputStream.available();
+		}
+		@Override
+		public void close() throws IOException {
+			mCount = 0;
+			mInputStream.close();
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			return mInputStream.equals(o);
+		}
+		@Override
+		public int hashCode() {
+			return mInputStream.hashCode();
+		}
+		@Override
+		public void mark(int readlimit) {
+			mInputStream.mark(readlimit);
+		}
+		@Override
+		public boolean markSupported() {
+			return mInputStream.markSupported();
+		}
+		@Override
+		public long skip(long n) throws IOException {
+			final long count = mInputStream.skip(n);
+			incrementAndNotify(count);
+			return count;
+		}
+		@Override
+		public synchronized void reset() throws IOException {
+			mInputStream.reset();
+		}
+
+	}
+
+	public void uploadContent(Context context, TransferProgressListener progressListener, String serverPath, Uri localFile, String contentType) throws NetworkProtocolException, IOException{
+
+		if (localFile == null) {
+			throw new IOException("Cannot send. Content item does not reference a local file.");
+		}
+
+		final InputStream is = getFileStream(context, localFile);
+
+		// next step is to send the file contents.
+		final HttpPut r = new HttpPut(getFullUriAsString(serverPath));
+
+		r.setHeader("Content-Type", contentType);
+
+		final AssetFileDescriptor afd = context.getContentResolver().openAssetFileDescriptor(localFile, "r");
+
+		final InputStreamWatcher isw = new InputStreamWatcher(is, progressListener);
+
+		r.setEntity(new InputStreamEntity(isw, afd.getLength()));
+
+		final HttpResponse c = this.execute(r);
+		checkStatusCode(c, true);
+		c.getEntity().consumeContent();
+	}
+
+
+	/***************************categories   **************************/
+
+	/**
+	 * Gets the categories.
+	 *
+	 * @return
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 * @throws JSONException
+	 */
+	public Map<String, Integer> getCategories() throws IOException, NetworkProtocolException, JSONException {
+		final JSONArray cats = getArray("categories/");
+		final Map<String, Integer> catOut = new HashMap<String, Integer>();
+
+		final int length = cats.length();
+		for (int i = 0; i < length; i++){
+			final JSONObject o = cats.getJSONObject(i);
+			String count = o.optString("count");
+			if (count == null){
+				count = o.getString("rough_count");
+			}
+			catOut.put(o.getString("name"), Integer.valueOf(count));
+		}
+		return catOut;
+	}
+
+
+	/**
+	 * @return A list of all tags, with the most popular one first.
+	 *
+	 * @throws JSONException
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 */
+	public List<String> getTagsList() throws JSONException, IOException, NetworkProtocolException {
+		return getTagsList("");
+	}
+
+	public List<String> getRecommendedTagsList(Location near) throws JSONException, IOException, NetworkProtocolException{
+		return getTagsList("?location=" + near.getLongitude() + ','+ near.getLatitude());
+	}
+
+	/**
+	 * Gets a specfic type of tag list.
+	 * @param path either 'favorite' or 'ignore'
+	 * @return
+	 * @throws JSONException
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 */
+	public List<String> getTagsList(String path) throws JSONException, IOException, NetworkProtocolException {
+		return toNativeStringList(getArray("tag/"+path));
+	}
+
+	/******************************** utils **************************/
+
+	public static JSONArray featureCollectionToList(JSONObject featureCollection) throws NetworkProtocolException, JSONException{
+		if (! featureCollection.getString("type").equals("FeatureCollection")) {
+			throw new NetworkProtocolException("Expecting a FeatureCollection but received a "+
+					featureCollection.getString("type"));
+		}
+
+		return featureCollection.getJSONArray("features");
+	}
+	public static List<String> toNativeStringList(JSONArray ja) throws JSONException {
+		final Vector<String> strs = new Vector<String>(ja.length());
+		for (int i = 0; i < ja.length(); i++){
+			strs.add(i, ja.getString(i));
+		}
+		return strs;
+	}
+
+	/**
+	 * Generates a query string from a hashmap of query parameters.
+	 *
+	 * @param parameters
+	 * @return
+	 */
+	static public String toQueryString(HashMap<String, Object>parameters){
+		final StringBuilder query = new StringBuilder();
+		for (final Iterator< String> i = parameters.keySet().iterator(); i.hasNext();){
+			final String key = i.next();
+			query.append(key)
+			.append('=');
+
+			final Object val = parameters.get(key);
+			if (val instanceof Date){
+				query.append(dateFormat.format(val));
+			}else{
+				query.append(val.toString());
+			}
+
+			if (i.hasNext()){
+				query.append("&");
+			}
+		}
+		return query.toString();
+	}
+
+	public static Date parseDate(String dateString) throws ParseException{
+	/*	if (dateString.endsWith("Z")){
+			dateString = dateString.substring(0, dateString.length()-2) + "GMT";
+		}*/
+		return dateFormat.parse(dateString);
+	}
+
+	static {
+		dateFormat.setCalendar(Calendar.getInstance(TimeZone.getTimeZone("GMT")));
+	}
+}

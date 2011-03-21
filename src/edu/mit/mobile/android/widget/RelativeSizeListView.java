@@ -38,7 +38,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.LinearLayout;
-import edu.mit.mel.locast.mobile.R;
+import edu.mit.mobile.android.locast.R;
 
 /**
  * Displays a list of views representing the contents of the adapter.

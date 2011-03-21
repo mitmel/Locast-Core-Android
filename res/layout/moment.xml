@@ -18,7 +18,7 @@
 		android:layout_height="wrap_content"
 		android:clickable="false"
 		 />
-		 	<edu.mit.mel.locast.mobile.widget.LocationLink android:id="@+id/location"
+		 	<edu.mit.mobile.android.locast.widget.LocationLink android:id="@+id/location"
 		android:layout_height="wrap_content"
 		android:layout_width="fill_parent"
 		android:shadowRadius="1.0" android:shadowColor="@android:color/black" 
@@ -29,7 +29,7 @@
 		 />
 	</FrameLayout>
 		  	
-	<edu.mit.mel.locast.mobile.widget.TagList
+	<edu.mit.mobile.android.locast.widget.TagList
 		android:id="@+id/tags"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"

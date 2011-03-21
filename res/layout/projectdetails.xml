@@ -13,7 +13,7 @@
 		<LinearLayout android:orientation="vertical"
 			android:layout_width="fill_parent" android:layout_height="wrap_content">
 				
-		    <edu.mit.mel.locast.mobile.widget.TagListView
+		    <edu.mit.mobile.android.locast.widget.TagListView
 			android:id="@+id/tags"
 			 android:layout_width="fill_parent"
 			 android:layout_height="wrap_content"

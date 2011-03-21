@@ -31,9 +31,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
-import edu.mit.mel.locast.mobile.R;
-import edu.mit.mel.locast.mobile.StreamUtils;
-import edu.mit.mel.locast.mobile.data.Cast;
+import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.StreamUtils;
+import edu.mit.mobile.android.locast.data.Cast;
 
 /*
  * Allows selection of a video clip from all available medias.

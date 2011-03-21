@@ -52,7 +52,7 @@
 	 android:layout_height="90sp"
 	/>
 	
-	<edu.mit.mel.locast.mobile.widget.TagList 
+	<edu.mit.mobile.android.locast.widget.TagList 
 	android:id="@+id/new_project_tags"
 	 android:layout_width="fill_parent"
 	 android:layout_height="wrap_content"

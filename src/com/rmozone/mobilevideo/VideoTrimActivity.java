@@ -32,7 +32,7 @@ import android.widget.LinearLayout.LayoutParams;
 
 import com.rmozone.mobilevideo.AnnotationDBKey.Annotation;
 
-import edu.mit.mel.locast.mobile.R;
+import edu.mit.mobile.android.locast.R;
 
 public class VideoTrimActivity extends Activity implements OnClickListener, OnItemClickListener {
 	public static final String ACTION_TRIM_CAST = "com.rmozone.mobilevideo.ACTION_TRIM_CAST";

@@ -31,13 +31,13 @@
     	/>
     </FrameLayout>
 
-	<edu.mit.mel.locast.mobile.widget.LocationLink android:id="@+id/location" 
+	<edu.mit.mobile.android.locast.widget.LocationLink android:id="@+id/location" 
 		android:layout_width="wrap_content" 
 		android:layout_height="wrap_content" 
 		android:textAppearance="?android:attr/textAppearanceMedium"
 		/>
 
-    <edu.mit.mel.locast.mobile.widget.TagListView
+    <edu.mit.mobile.android.locast.widget.TagListView
 		android:id="@+id/tags"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
