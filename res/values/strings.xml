@@ -143,6 +143,14 @@
     <string name="error_sync_no_data_network">Cannot sync Locast: no data network. Please check your connection and try again.</string>
     <string name="sync_downloading_cast">Downloading \"%1$s\"…</string>
     <string name="sync_uploading_cast">Uploading \"%1$s\"…</string>
+    
+    <!-- Android Sync -->
+    <string name="username_label">Locast username</string>
+    <string name="password_label">Password</string>
+    <string name="login_message_authenticating">authenticating…</string>
+    <string name="login_message_loginfail">Invalid username or password</string>
+    <string name="login_message_login_empty_password">Please enter a password</string>
+    <string name="login_message_login_empty_username">Please enter your Locast username and password.</string>
 
 	<!-- Mobile Video -->
 	<string name="mobilevideo_video_edit_title">Locast Video Editor</string>
