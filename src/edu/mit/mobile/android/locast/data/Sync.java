@@ -53,6 +53,7 @@ import android.widget.Toast;
 import edu.mit.mobile.android.locast.MainActivity;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
 
@@ -80,7 +81,7 @@ public class Sync extends Service {
 		EXTRA_EXPLICIT_SYNC = "edu.mit.mobile.android.locast.EXTRA_EXPLICIT_SYNC";
 
 	private final IBinder mBinder = new LocalBinder();
-	private AndroidNetworkClient nc;
+	private NetworkClient nc;
 	private ContentResolver cr;
 	private Set<Uri> syncdItems;
 	private boolean mNotifiedUserAboutNetworkStatus = true;
@@ -558,7 +559,7 @@ public class Sync extends Service {
 
 	public static void loadItemFromServer(Context context, String path, JsonSyncableItem sync) throws SyncException, IOException {
 		ContentValues cvNet;
-		final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(context);
+		final NetworkClient nc = AndroidNetworkClient.getInstance(context);
 		try {
 			cvNet = JsonSyncableItem.fromJSON(context, null, nc.getObject(path), sync.getSyncMap());
 		} catch (final JSONException e) {

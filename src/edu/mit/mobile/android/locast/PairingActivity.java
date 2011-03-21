@@ -42,10 +42,11 @@ import edu.mit.mobile.android.locast.data.Comment;
 import edu.mit.mobile.android.locast.data.Project;
 import edu.mit.mobile.android.locast.data.Tag;
 import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 
 public class PairingActivity extends Activity implements OnClickListener, OnEditorActionListener {
 
-	private AndroidNetworkClient nc;
+	private NetworkClient nc;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {

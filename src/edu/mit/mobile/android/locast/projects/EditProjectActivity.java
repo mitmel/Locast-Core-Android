@@ -42,6 +42,7 @@ import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Project;
 import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.widget.TagListView;
 
 public class EditProjectActivity extends Activity implements OnClickListener {
@@ -101,7 +102,7 @@ public class EditProjectActivity extends Activity implements OnClickListener {
 
 		}else if (ACTION_TOGGLE_MEMBERSHIP.equals(action)){
 			loadFromUri(data);
-			final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(this);
+			final NetworkClient nc = AndroidNetworkClient.getInstance(this);
 			final String me = nc.getUsername();
 			if (members.contains(me)){
 				members.remove(me);

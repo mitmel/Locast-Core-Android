@@ -42,6 +42,7 @@ import edu.mit.mobile.android.locast.data.ShotList;
 import edu.mit.mobile.android.locast.data.Sync;
 import edu.mit.mobile.android.locast.data.Tag;
 import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.projects.ListProjectsActivity;
 
 /**
@@ -52,7 +53,7 @@ import edu.mit.mobile.android.locast.projects.ListProjectsActivity;
  */
 public class MainActivity extends TabActivity {
 
-	private AndroidNetworkClient nc;
+	private NetworkClient nc;
 
 	private AppUpdateChecker updateChecker;
 

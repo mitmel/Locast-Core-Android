@@ -44,7 +44,7 @@ import android.util.Log;
 import com.stackoverflow.CollectionUtils;
 import com.stackoverflow.Predicate;
 
-import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 
 /**
  * DB entry for an item that can be tagged.
@@ -166,7 +166,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	public static boolean canEdit(Context context, Cursor c){
 		final String privacy = c.getString(c.getColumnIndex(_PRIVACY));
 		final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		final String username = prefs.getString(AndroidNetworkClient.PREF_USERNAME, null);
+		final String username = prefs.getString(NetworkClient.PREF_USERNAME, null);
 		return privacy == null || username == null || username.length() == 0 ||
 			username.equals(c.getString(c.getColumnIndex(_AUTHOR)));
 	}
@@ -177,7 +177,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 */
 	public static boolean canChangePrivacyLevel(Context context, Cursor c){
 		final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		final String username = prefs.getString(AndroidNetworkClient.PREF_USERNAME, null);
+		final String username = prefs.getString(NetworkClient.PREF_USERNAME, null);
 		return username == null || username.equals(c.getString(c.getColumnIndex(_AUTHOR)));
 	}
 

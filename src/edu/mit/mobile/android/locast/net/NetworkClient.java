@@ -16,6 +16,8 @@ package edu.mit.mobile.android.locast.net;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -53,25 +55,45 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetFileDescriptor;
 import android.location.Location;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.util.Log;
+import android.widget.Toast;
+import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.StreamUtils;
+import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.User;
+import edu.mit.mobile.android.locast.notifications.ProgressNotification;
 
 
 /**
@@ -85,7 +107,8 @@ import edu.mit.mobile.android.locast.data.User;
  * @author steve
  *
  */
-abstract public class NetworkClient extends DefaultHttpClient {
+public class NetworkClient extends DefaultHttpClient  implements OnSharedPreferenceChangeListener {
+	private static final String TAG = NetworkClient.class.getSimpleName();
 	public final static String JSON_MIME_TYPE = "application/json";
 
 	private final static String
@@ -103,6 +126,10 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	private boolean isAuthenticated = false;
 
 	private AuthScope authScope;
+
+	protected final Context context;
+
+	protected final SharedPreferences prefs;
 	protected final static HttpRequestInterceptor PREEMPTIVE_AUTH = new HttpRequestInterceptor() {
 	    public void process(
 	            final HttpRequest request,
@@ -144,9 +171,19 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		}
 	};
 
+	public static final String PREF_USERNAME = "username";
 
-	public NetworkClient(ClientConnectionManager manager, HttpParams params){
+	public static final String PREF_PASSWORD = "password";
+
+	public static final String PREF_SERVER_URL = "server_url";
+
+	public static final String PREF_LOCAST_SITE = "locast_site";
+
+
+	public NetworkClient(Context context, ClientConnectionManager manager, HttpParams params){
 		super(manager, params);
+		this.context = context;
+
 
 		this.addRequestInterceptor(PREEMPTIVE_AUTH, 0);
 
@@ -154,7 +191,26 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		p.setParameter("http.socket.timeout", new Integer(60000));
 		p.setParameter("http.protocol.expect-continue", true);
 
-		//this.addRequestInterceptor(removeExpectations);
+
+		prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		Log.i(TAG, prefs.getString(PREF_SERVER_URL, ""));
+		loadBaseUri();
+
+		prefs.registerOnSharedPreferenceChangeListener(this);
+
+		initClient();
+
+		/*addRequestInterceptor(new HttpRequestInterceptor() {
+
+			public void process(HttpRequest request, HttpContext context)
+					throws HttpException, IOException {
+
+				final AbstractClientConnAdapter connAdapter = (AbstractClientConnAdapter) context.getAttribute(ExecutionContext.HTTP_CONNECTION);
+
+				final HttpConnectionMetrics metrics = connAdapter.getMetrics();
+				metrics.getSentBytesCount();
+			}
+		});*/
 	}
 
 	protected void initClient(){
@@ -172,9 +228,6 @@ abstract public class NetworkClient extends DefaultHttpClient {
 			e.printStackTrace();
 		}
 	}
-	abstract protected void showError(Exception e);
-	abstract protected void logDebug(String msg);
-
 	/************************* credentials and pairing **********************/
 
 	public String getUsername() {
@@ -229,38 +282,9 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		return user;
 	}
 
-	/**
-	 * Retrieves the user credentials from local storage.
-	 *
-	 * @throws IOException
-	 */
-	protected abstract void loadCredentials() throws IOException;
-
-	/**
-	 * Save the user credentials for use later. This
-	 * will treat the client as being "paired" with the server.
-	 *
-	 * @param username
-	 * @param auth_secret
-	 * @throws IOException
-	 */
-	public abstract void saveCredentials(String username, String auth_secret) throws IOException;
-
-	/**
-	 * Clears all the credentials. This will effectively unpair the client, but won't
-	 * issue an unpair request.
-	 *
-	 */
-	public abstract void clearCredentials();
-
 	public boolean isAuthenticated(){
 		return isAuthenticated;
 	}
-
-	/**
-	 * @return true if the client is paired with the server.
-	 */
-	abstract public boolean isPaired();
 
 	/**
 	 * Makes a request to pair the device with the server. The server sends
@@ -667,9 +691,6 @@ abstract public class NetworkClient extends DefaultHttpClient {
 		return u;
 	}
 
-	protected abstract InputStream getFileStream(String localFile) throws IOException;
-	protected abstract InputStream getFileStream(Context context, Uri localFile) throws IOException;
-
 	/**
 	 * Listener for use with InputStreamWatcher.
 	 *
@@ -841,6 +862,199 @@ abstract public class NetworkClient extends DefaultHttpClient {
 	public List<String> getTagsList(String path) throws JSONException, IOException, NetworkProtocolException {
 		return toNativeStringList(getArray("tag/"+path));
 	}
+
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+		if (PREF_PASSWORD.equals(key) || PREF_USERNAME.equals(key) || PREF_SERVER_URL.equals(key)){
+			loadFromPreferences();
+		}
+	}
+
+	public void loadFromPreferences() {
+		Log.i(TAG, "Preferences changed. Updating network settings.");
+		loadBaseUri();
+		try {
+			loadCredentials();
+		} catch (final IOException e) {
+			e.printStackTrace();
+		}
+		//instances.clear();
+		initClient();
+	}
+
+	protected InputStream getFileStream(String localFilename) throws IOException {
+		if (localFilename.startsWith("content:")){
+			final ContentResolver cr = this.context.getContentResolver();
+			return cr.openInputStream(Uri.parse(localFilename));
+		}else{
+			return new FileInputStream(new File(localFilename));
+		}
+	}
+
+	protected InputStream getFileStream(Context context, Uri localFileUri)
+			throws IOException {
+				return context.getContentResolver().openInputStream(localFileUri);
+			}
+
+	public static NetworkClient getInstance(Context context) {
+
+		final HttpParams params = new BasicHttpParams();
+
+		String appVersion = "unknown";
+		try {
+			appVersion = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+		} catch (final NameNotFoundException e) {
+			e.printStackTrace();
+		}
+		final String userAgent = context.getString(R.string.app_name) + "/"+appVersion;
+
+	    // Set the specified user agent and register standard protocols.
+	    HttpProtocolParams.setUserAgent(params, userAgent);
+	    final SchemeRegistry schemeRegistry = new SchemeRegistry();
+	    schemeRegistry.register(new Scheme("http",
+	            PlainSocketFactory.getSocketFactory(), 80));
+	    schemeRegistry.register(new Scheme("https",
+	    		PlainSocketFactory.getSocketFactory(), 443));
+
+	    final ClientConnectionManager manager =
+	            new ThreadSafeClientConnManager(params, schemeRegistry);
+
+	    return new NetworkClient(context, manager, params);
+	}
+
+	protected synchronized void loadBaseUri() {
+		this.baseurl = prefs.getString(PREF_SERVER_URL, context.getString(R.string.default_api_url));
+		if (!baseurl.endsWith("/")){
+			Log.w(TAG, "Baseurl in preferences (" +baseurl+") didn't end in a slash, so we added one.");
+			baseurl = baseurl + "/";
+			prefs.edit().putString(PREF_SERVER_URL, baseurl).commit();
+		}
+	}
+
+	/**
+	 * Retrieves the user credentials from local storage.
+	 *
+	 * @throws IOException
+	 */
+	protected synchronized void loadCredentials() throws IOException {
+		if (prefs.contains(PREF_USERNAME) && ! prefs.getString(PREF_USERNAME, "").equals("")){
+			setCredentials(prefs.getString(PREF_USERNAME, ""), prefs.getString(PREF_PASSWORD, ""));
+		}
+	}
+
+	/**
+	 * Save the user credentials in a record store for use later. This
+	 * will treat the client as being "paired" with the server.
+	 *
+	 * @param username
+	 * @param auth_secret
+	 * @throws IOException
+	 */
+	public synchronized void saveCredentials(String username, String auth_secret)
+			throws IOException {
+				final Editor e = prefs.edit();
+				e.putString(PREF_USERNAME, username);
+				e.putString(PREF_PASSWORD, auth_secret);
+				e.commit();
+				loadCredentials();
+			}
+
+	/**
+	 * Clears all the credentials. This will effectively unpair the client, but won't
+	 * issue an unpair request.
+	 *
+	 */
+	public void clearCredentials() {
+		final Editor e = prefs.edit();
+		e.putString(PREF_USERNAME, "");
+		e.putString(PREF_PASSWORD, "");
+		e.commit();
+	}
+
+	/**
+	 * Perform an offline check to see if there is a pairing stored for this client.
+	 * Does not block on network connection.
+	 *
+	 * @return true if the client is paired with the server.
+	 */
+	public boolean isPaired() {
+		return (! prefs.getString(PREF_PASSWORD, "").equals(""));
+	}
+
+	/**
+	 * Perform an check to see if the network connection can contact
+	 * the server and return a valid object.
+	 *
+	 * @return true if the connection was deemed to be working correctly.
+	 *
+	 */
+	public boolean isConnectionWorking() {
+		if (isPaired()){
+			try {
+				final JSONObject u = getUser();
+				if(u != null) {
+					return true;
+				}
+			}catch(final Exception e){
+				return false;
+			}
+		}
+		return false;
+	}
+
+	protected void showError(Exception e) {
+		Toast.makeText(this.context, e.toString(), Toast.LENGTH_LONG).show();
+
+	}
+
+	protected void logDebug(String msg) {
+		Log.d(TAG, msg);
+
+	}
+
+	public void uploadContentWithNotification(Context context, Uri cast,
+			String serverPath, Uri localFile, String contentType)
+			throws NetworkProtocolException, IOException {
+				String castTitle = Cast.getTitle(context, cast);
+				if (castTitle == null){
+					castTitle = "untitled (cast #"+ cast.getLastPathSegment() + ")";
+				}
+				final ProgressNotification notification = new ProgressNotification(context,
+						context.getString(R.string.sync_uploading_cast, castTitle),
+						ProgressNotification.TYPE_UPLOAD,
+						PendingIntent.getActivity(context, 0, new Intent(Intent.ACTION_VIEW, cast).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0),
+						true);
+
+				// assume fail: when successful, all will be reset.
+				notification.successful = false;
+				notification.doneTitle = context.getString(R.string.sync_upload_fail);
+				notification.doneText = context.getString(R.string.sync_upload_fail_message, castTitle);
+
+				notification.doneIntent = PendingIntent.getActivity(context, 0,
+						new Intent(Intent.ACTION_VIEW, cast).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0);
+
+				final NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+				final NotificationProgressListener tpl = new NotificationProgressListener(nm, notification, 0, (int)ContentUris.parseId(cast));
+
+				try {
+					final AssetFileDescriptor afd = context.getContentResolver().openAssetFileDescriptor(localFile, "r");
+					final long max = afd.getLength();
+
+					tpl.setSize(max);
+
+					uploadContent(context, tpl, serverPath, localFile, contentType);
+					notification.doneTitle = context.getString(R.string.sync_upload_success);
+					notification.doneText = context.getString(R.string.sync_upload_success_message, castTitle);
+					notification.successful = true;
+				}catch (final NetworkProtocolException e){
+					notification.setUnsuccessful(e.getLocalizedMessage());
+					throw e;
+				}catch (final IOException e){
+					notification.setUnsuccessful(e.getLocalizedMessage());
+					throw e;
+				}finally{
+					tpl.done();
+				}
+			}
 
 	/******************************** utils **************************/
 

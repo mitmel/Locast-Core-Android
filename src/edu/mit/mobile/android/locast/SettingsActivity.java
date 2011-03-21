@@ -25,7 +25,7 @@ import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
 import android.preference.Preference.OnPreferenceChangeListener;
-import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 
 public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceChangeListener {
 
@@ -50,16 +50,16 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-		if (key.equals(AndroidNetworkClient.PREF_LOCAST_SITE)){
+		if (key.equals(NetworkClient.PREF_LOCAST_SITE)){
 
-			final String newUrl = sharedPreferences.getString(AndroidNetworkClient.PREF_LOCAST_SITE, null);
+			final String newUrl = sharedPreferences.getString(NetworkClient.PREF_LOCAST_SITE, null);
 			// only do this if something's actually changed.
-			if (newUrl != null && !newUrl.equals(sharedPreferences.getString(AndroidNetworkClient.PREF_SERVER_URL, null))){
+			if (newUrl != null && !newUrl.equals(sharedPreferences.getString(NetworkClient.PREF_SERVER_URL, null))){
 				MainActivity.resetDB(this);
 				final Editor editor = sharedPreferences.edit();
-				editor.putString(AndroidNetworkClient.PREF_USERNAME, "");
-				editor.putString(AndroidNetworkClient.PREF_PASSWORD, "");
-				editor.putString(AndroidNetworkClient.PREF_SERVER_URL, newUrl);
+				editor.putString(NetworkClient.PREF_USERNAME, "");
+				editor.putString(NetworkClient.PREF_PASSWORD, "");
+				editor.putString(NetworkClient.PREF_SERVER_URL, newUrl);
 				editor.commit();
 				finish();
 			}

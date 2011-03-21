@@ -17,6 +17,7 @@ import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Favoritable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.widget.ValidatingCheckBox.ValidatedClickHandler;
 
@@ -34,7 +35,7 @@ public class FavoriteClickHandler implements ValidatedClickHandler {
 		final String extraPath = currentState ? "unfavorite/" : "favorite/";
 		final ContentResolver cr = context.getContentResolver();
 		try {
-			final AndroidNetworkClient nc = AndroidNetworkClient.getInstance(context);
+			final NetworkClient nc = AndroidNetworkClient.getInstance(context);
 			final HttpResponse hr = nc.post(MediaProvider.getPublicPath(cr, data) + extraPath, currentState ? "false" : "true");
 			hr.getEntity().consumeContent();
 			final boolean newState = !currentState;
