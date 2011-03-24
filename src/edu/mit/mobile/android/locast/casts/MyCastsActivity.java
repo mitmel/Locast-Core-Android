@@ -18,7 +18,7 @@ package edu.mit.mobile.android.locast.casts;
  */
 import android.os.Bundle;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 
 public class MyCastsActivity extends CastListActivity {
@@ -26,7 +26,7 @@ public class MyCastsActivity extends CastListActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		final NetworkClient nc = AndroidNetworkClient.getInstance(getApplicationContext());
+		final NetworkClient nc = NetworkClient.getInstance(getApplicationContext());
 		
 		loadList(managedQuery(Cast.CONTENT_URI, CastCursorAdapter.DEFAULT_PROJECTION, 
 				Cast._AUTHOR+"=?", 

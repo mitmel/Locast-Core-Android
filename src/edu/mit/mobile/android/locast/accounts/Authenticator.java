@@ -16,6 +16,10 @@
 
 package edu.mit.mobile.android.locast.accounts;
 
+import java.io.IOException;
+
+import org.json.JSONException;
+
 import android.accounts.AbstractAccountAuthenticator;
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorResponse;
@@ -25,6 +29,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.net.NetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 
 /**
  * This class is an implementation of AbstractAccountAuthenticator for
@@ -49,7 +55,7 @@ class Authenticator extends AbstractAccountAuthenticator {
         String accountType, String authTokenType, String[] requiredFeatures,
         Bundle options) {
         final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
-        intent.putExtra(AuthenticatorActivity.PARAM_AUTHTOKEN_TYPE,
+        intent.putExtra(AuthenticatorActivity.EXTRA_AUTHTOKEN_TYPE,
             authTokenType);
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE,
             response);
@@ -75,8 +81,8 @@ class Authenticator extends AbstractAccountAuthenticator {
         }
         // Launch AuthenticatorActivity to confirm credentials
         final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
-        intent.putExtra(AuthenticatorActivity.PARAM_USERNAME, account.name);
-        intent.putExtra(AuthenticatorActivity.PARAM_CONFIRMCREDENTIALS, true);
+        intent.putExtra(AuthenticatorActivity.EXTRA_USERNAME, account.name);
+        intent.putExtra(AuthenticatorActivity.EXTRA_CONFIRMCREDENTIALS, true);
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE,
             response);
         final Bundle bundle = new Bundle();
@@ -122,8 +128,8 @@ class Authenticator extends AbstractAccountAuthenticator {
         // the password was missing or incorrect, return an Intent to an
         // Activity that will prompt the user for the password.
         final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
-        intent.putExtra(AuthenticatorActivity.PARAM_USERNAME, account.name);
-        intent.putExtra(AuthenticatorActivity.PARAM_AUTHTOKEN_TYPE,
+        intent.putExtra(AuthenticatorActivity.EXTRA_USERNAME, account.name);
+        intent.putExtra(AuthenticatorActivity.EXTRA_AUTHTOKEN_TYPE,
             authTokenType);
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE,
             response);
@@ -159,10 +165,22 @@ class Authenticator extends AbstractAccountAuthenticator {
      * Validates user's password on the server
      */
     private boolean onlineConfirmPassword(String username, String password) {
-       // return NetworkUtilities.authenticate(username, password,
-         //   null/* Handler */, null/* Context */);
+    	boolean success = false;
+    	try {
+			success = NetworkClient.authenticate(mContext, username, password);
+
+		} catch (final IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (final JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (final NetworkProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     	Log.d(TAG, "checking password...");
-            return username.equals(password);
+        return success;
     }
 
     /**
@@ -172,10 +190,10 @@ class Authenticator extends AbstractAccountAuthenticator {
     public Bundle updateCredentials(AccountAuthenticatorResponse response,
         Account account, String authTokenType, Bundle loginOptions) {
         final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
-        intent.putExtra(AuthenticatorActivity.PARAM_USERNAME, account.name);
-        intent.putExtra(AuthenticatorActivity.PARAM_AUTHTOKEN_TYPE,
+        intent.putExtra(AuthenticatorActivity.EXTRA_USERNAME, account.name);
+        intent.putExtra(AuthenticatorActivity.EXTRA_AUTHTOKEN_TYPE,
             authTokenType);
-        intent.putExtra(AuthenticatorActivity.PARAM_CONFIRMCREDENTIALS, false);
+        intent.putExtra(AuthenticatorActivity.EXTRA_CONFIRMCREDENTIALS, false);
         final Bundle bundle = new Bundle();
         bundle.putParcelable(AccountManager.KEY_INTENT, intent);
         return bundle;

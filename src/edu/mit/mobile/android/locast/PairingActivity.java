@@ -41,7 +41,7 @@ import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Comment;
 import edu.mit.mobile.android.locast.data.Project;
 import edu.mit.mobile.android.locast.data.Tag;
-import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 
 public class PairingActivity extends Activity implements OnClickListener, OnEditorActionListener {
@@ -52,7 +52,7 @@ public class PairingActivity extends Activity implements OnClickListener, OnEdit
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		this.nc = AndroidNetworkClient.getInstance(this);
+		this.nc = NetworkClient.getInstance(this);
 
 		setContentView(R.layout.pairing);
 

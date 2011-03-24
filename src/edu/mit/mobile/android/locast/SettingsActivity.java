@@ -57,8 +57,6 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 			if (newUrl != null && !newUrl.equals(sharedPreferences.getString(NetworkClient.PREF_SERVER_URL, null))){
 				MainActivity.resetDB(this);
 				final Editor editor = sharedPreferences.edit();
-				editor.putString(NetworkClient.PREF_USERNAME, "");
-				editor.putString(NetworkClient.PREF_PASSWORD, "");
 				editor.putString(NetworkClient.PREF_SERVER_URL, newUrl);
 				editor.commit();
 				finish();

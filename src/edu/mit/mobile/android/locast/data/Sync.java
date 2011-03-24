@@ -52,7 +52,7 @@ import android.util.Log;
 import android.widget.Toast;
 import edu.mit.mobile.android.locast.MainActivity;
 import edu.mit.mobile.android.locast.R;
-import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
@@ -152,7 +152,7 @@ public class Sync extends Service {
     public void onCreate() {
     	super.onCreate();
 
-		nc = AndroidNetworkClient.getInstance(this);
+		nc = NetworkClient.getInstance(this);
 		cr = getApplicationContext().getContentResolver();
 
 		registerReceiver(networkStateReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
@@ -559,7 +559,7 @@ public class Sync extends Service {
 
 	public static void loadItemFromServer(Context context, String path, JsonSyncableItem sync) throws SyncException, IOException {
 		ContentValues cvNet;
-		final NetworkClient nc = AndroidNetworkClient.getInstance(context);
+		final NetworkClient nc = NetworkClient.getInstance(context);
 		try {
 			cvNet = JsonSyncableItem.fromJSON(context, null, nc.getObject(path), sync.getSyncMap());
 		} catch (final JSONException e) {

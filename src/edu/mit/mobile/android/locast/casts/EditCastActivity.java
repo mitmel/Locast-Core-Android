@@ -52,7 +52,7 @@ import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Project;
-import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.widget.LocationLink;
 import edu.mit.mobile.android.locast.widget.TagList;
@@ -311,7 +311,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			cv.put(Cast._LONGITUDE, location.getLongitude());
 		}
 
-		cv.put(Cast._AUTHOR, AndroidNetworkClient.getInstance(this).getUsername());
+		cv.put(Cast._AUTHOR, NetworkClient.getInstance(this).getUsername());
 		cv.put(Cast._DRAFT, isDraft);
 
 		Log.d("EditCast", cv.toString());
@@ -445,7 +445,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 
 		@Override
 		protected List<String> doInBackground(Location... params) {
-			final NetworkClient nc = AndroidNetworkClient.getInstance(mContext);
+			final NetworkClient nc = NetworkClient.getInstance(mContext);
 			try {
 				// this is done first so that tags aren't cleared if there's an error getting new ones.
 				final List<String> recommended = nc.getRecommendedTagsList(params[0]);

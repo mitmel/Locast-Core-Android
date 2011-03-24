@@ -26,7 +26,7 @@ import edu.mit.mobile.android.locast.IncrementalLocator;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.casts.EditCastActivity.UpdateRecommendedTagsTask;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.widget.LocationLink;
 import edu.mit.mobile.android.locast.widget.TagList;
 
@@ -95,7 +95,7 @@ public class Moment extends Activity implements LocationListener, OnClickListene
 		final CharSequence time = DateFormat.format("k:mm:ss d MMM", new Date().getTime());
 		cv.put(Cast._TITLE, "moment "+ time +" @"+ mLocationLink.getText().toString());
 		cv.put(Cast._DESCRIPTION, ((EditText)findViewById(R.id.text)).getText().toString());
-		cv.put(Cast._AUTHOR, AndroidNetworkClient.getInstance(this).getUsername());
+		cv.put(Cast._AUTHOR, NetworkClient.getInstance(this).getUsername());
 		cv.put(Cast._PRIVACY, Cast.PRIVACY_PUBLIC);
 		if (mLocation != null){
 			cv.put(Cast._LATITUDE, mLocation.getLatitude());

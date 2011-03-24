@@ -41,7 +41,7 @@ import edu.mit.mobile.android.locast.data.Project;
 import edu.mit.mobile.android.locast.data.ShotList;
 import edu.mit.mobile.android.locast.data.Sync;
 import edu.mit.mobile.android.locast.data.Tag;
-import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.projects.ListProjectsActivity;
 
@@ -67,7 +67,7 @@ public class MainActivity extends TabActivity {
 	public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        this.nc = AndroidNetworkClient.getInstance(this);
+        this.nc = NetworkClient.getInstance(this);
 
         requestWindowFeature(Window.FEATURE_LEFT_ICON);
 

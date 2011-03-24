@@ -48,7 +48,7 @@ import android.provider.MediaStore.Video.Media;
 import android.util.Log;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.StreamUtils;
-import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;
@@ -218,7 +218,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 				if (hasLocMediaUri && !hasPubMediaUri){
 					// upload
 					try {
-						final NetworkClient nc = AndroidNetworkClient.getInstance(context);
+						final NetworkClient nc = NetworkClient.getInstance(context);
 						nc.uploadContentWithNotification(context,
 								getCanonicalUri(context, uri),
 								pubCastMediaUri + castMedia.getLong(idxCol)+"/",
@@ -404,7 +404,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	 * @throws SyncException
 	 */
 	public boolean downloadCastMedia(Context context, File saveFile, Uri castUri, String pubUri) throws SyncException {
-		final NetworkClient nc = AndroidNetworkClient.getInstance(context);
+		final NetworkClient nc = NetworkClient.getInstance(context);
 		try {
 			boolean dirty = true;
 			String contentType = null;

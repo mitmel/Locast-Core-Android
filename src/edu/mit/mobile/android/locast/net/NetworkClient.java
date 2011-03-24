@@ -30,7 +30,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.Vector;
 
@@ -73,6 +72,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
@@ -80,7 +81,6 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetFileDescriptor;
@@ -91,29 +91,24 @@ import android.util.Log;
 import android.widget.Toast;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.StreamUtils;
+import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.User;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
 
 
 /**
- * An client implementation of the JSON RESTful API for the WayfarerMobi project.
+ * An client implementation of the JSON RESTful API for the Locast project.
  *
  * @author stevep
- * @see https://mobile-server.mit.edu/trac/rai/wiki/JsonRestInterface
- *
  */
-/**
- * @author steve
- *
- */
-public class NetworkClient extends DefaultHttpClient  implements OnSharedPreferenceChangeListener {
+public class NetworkClient extends DefaultHttpClient implements OnSharedPreferenceChangeListener {
 	private static final String TAG = NetworkClient.class.getSimpleName();
 	public final static String JSON_MIME_TYPE = "application/json";
 
 	private final static String
 		PATH_PAIR = "pair/",
-		PATH_UNPAIR = "un-pair/"
+		PATH_UNPAIR = "un-pair/",
+		PATH_USER   = "user/"
 		;
 
 	protected String baseurl;
@@ -171,16 +166,12 @@ public class NetworkClient extends DefaultHttpClient  implements OnSharedPrefere
 		}
 	};
 
-	public static final String PREF_USERNAME = "username";
-
-	public static final String PREF_PASSWORD = "password";
-
 	public static final String PREF_SERVER_URL = "server_url";
 
 	public static final String PREF_LOCAST_SITE = "locast_site";
 
 
-	public NetworkClient(Context context, ClientConnectionManager manager, HttpParams params){
+	private NetworkClient(Context context, ClientConnectionManager manager, HttpParams params){
 		super(manager, params);
 		this.context = context;
 
@@ -284,6 +275,18 @@ public class NetworkClient extends DefaultHttpClient  implements OnSharedPrefere
 
 	public boolean isAuthenticated(){
 		return isAuthenticated;
+	}
+
+	public static boolean authenticate(Context context, String username, String password) throws IOException, JSONException, NetworkProtocolException{
+		final NetworkClient nc = getInstance(context);
+		nc.setCredentials(username, password);
+		final HttpResponse res = nc.get(PATH_USER);
+		final boolean authenticated = nc.checkStatusCode(res, false);
+		final HttpEntity ent = res.getEntity();
+		if (ent != null){
+			ent.consumeContent();
+		}
+		return authenticated;
 	}
 
 	/**
@@ -639,58 +642,6 @@ public class NetworkClient extends DefaultHttpClient  implements OnSharedPrefere
 		return getObject("user/"+username+"/");
 	}
 
-	public Vector<User> getUsers() throws NetworkProtocolException, IOException {
-		final Vector<User> outUsers = new Vector<User>();
-		try{
-			final JSONArray users =getArray("user/");
-			for (int i = 0; i < users.length(); i++){
-				outUsers.addElement(loadUser(users.getJSONObject(i)));
-
-			}
-		}catch(final JSONException e){
-			final NetworkProtocolException newe = new NetworkProtocolException(e);
-
-			throw newe;
-		}
-		return outUsers;
-	}
-
-	public User loadUser(JSONObject user) throws NetworkProtocolException, IOException{
-		User u = null;
-
-		try{
-			u = new User(user.getString("username"));
-
-			u.setName(user.getString("name"));
-			u.setLanguage(user.getString("language"));
-
-			/*
-			if (user.has("location")){
-				JSONObject locJson = user.getJSONObject("location");
-				u.setLoc(Locatable.locationToCoordinates(locJson));
-
-				u.setLastUpdated(new Date(DateParser.parse(locJson.getString("last_updated"))));
-			}*/
-			final String iconUrl = user.optString("icon");
-
-
-			if (iconUrl != null && iconUrl.length() > 0 && !iconUrl.equals("None")){
-//				Image userIcon = getUserIcon(iconUrl);
-//				if (userIcon != null){
-//					u.setIcon(userIcon);
-//				}else{
-//					logDebug("could not retrieve icon for " + u.username);
-//				}
-			}else{
-				logDebug(u.username + " has no user icon");
-			}
-
-		}catch(final JSONException e){
-			throw new NetworkProtocolException(e);
-		}
-		return u;
-	}
-
 	/**
 	 * Listener for use with InputStreamWatcher.
 	 *
@@ -811,30 +762,6 @@ public class NetworkClient extends DefaultHttpClient  implements OnSharedPrefere
 
 	/***************************categories   **************************/
 
-	/**
-	 * Gets the categories.
-	 *
-	 * @return
-	 * @throws IOException
-	 * @throws NetworkProtocolException
-	 * @throws JSONException
-	 */
-	public Map<String, Integer> getCategories() throws IOException, NetworkProtocolException, JSONException {
-		final JSONArray cats = getArray("categories/");
-		final Map<String, Integer> catOut = new HashMap<String, Integer>();
-
-		final int length = cats.length();
-		for (int i = 0; i < length; i++){
-			final JSONObject o = cats.getJSONObject(i);
-			String count = o.optString("count");
-			if (count == null){
-				count = o.getString("rough_count");
-			}
-			catOut.put(o.getString("name"), Integer.valueOf(count));
-		}
-		return catOut;
-	}
-
 
 	/**
 	 * @return A list of all tags, with the most popular one first.
@@ -864,7 +791,7 @@ public class NetworkClient extends DefaultHttpClient  implements OnSharedPrefere
 	}
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-		if (PREF_PASSWORD.equals(key) || PREF_USERNAME.equals(key) || PREF_SERVER_URL.equals(key)){
+		if (PREF_SERVER_URL.equals(key)){
 			loadFromPreferences();
 		}
 	}
@@ -895,30 +822,34 @@ public class NetworkClient extends DefaultHttpClient  implements OnSharedPrefere
 				return context.getContentResolver().openInputStream(localFileUri);
 			}
 
+	private static NetworkClient mInstance;
+
 	public static NetworkClient getInstance(Context context) {
+		if (mInstance == null){
+			final HttpParams params = new BasicHttpParams();
 
-		final HttpParams params = new BasicHttpParams();
+			String appVersion = "unknown";
+			try {
+				appVersion = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+			} catch (final NameNotFoundException e) {
+				e.printStackTrace();
+			}
+			final String userAgent = context.getString(R.string.app_name) + "/"+appVersion;
 
-		String appVersion = "unknown";
-		try {
-			appVersion = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
-		} catch (final NameNotFoundException e) {
-			e.printStackTrace();
+		    // Set the specified user agent and register standard protocols.
+		    HttpProtocolParams.setUserAgent(params, userAgent);
+		    final SchemeRegistry schemeRegistry = new SchemeRegistry();
+		    schemeRegistry.register(new Scheme("http",
+		            PlainSocketFactory.getSocketFactory(), 80));
+		    schemeRegistry.register(new Scheme("https",
+		    		PlainSocketFactory.getSocketFactory(), 443));
+
+		    final ClientConnectionManager manager =
+		            new ThreadSafeClientConnManager(params, schemeRegistry);
+
+		    mInstance = new NetworkClient(context, manager, params);
 		}
-		final String userAgent = context.getString(R.string.app_name) + "/"+appVersion;
-
-	    // Set the specified user agent and register standard protocols.
-	    HttpProtocolParams.setUserAgent(params, userAgent);
-	    final SchemeRegistry schemeRegistry = new SchemeRegistry();
-	    schemeRegistry.register(new Scheme("http",
-	            PlainSocketFactory.getSocketFactory(), 80));
-	    schemeRegistry.register(new Scheme("https",
-	    		PlainSocketFactory.getSocketFactory(), 443));
-
-	    final ClientConnectionManager manager =
-	            new ThreadSafeClientConnManager(params, schemeRegistry);
-
-	    return new NetworkClient(context, manager, params);
+	    return mInstance;
 	}
 
 	protected synchronized void loadBaseUri() {
@@ -936,38 +867,53 @@ public class NetworkClient extends DefaultHttpClient  implements OnSharedPrefere
 	 * @throws IOException
 	 */
 	protected synchronized void loadCredentials() throws IOException {
-		if (prefs.contains(PREF_USERNAME) && ! prefs.getString(PREF_USERNAME, "").equals("")){
-			setCredentials(prefs.getString(PREF_USERNAME, ""), prefs.getString(PREF_PASSWORD, ""));
+
+		final AccountManager am = AccountManager.get(context);
+		final Account[] accounts = am.getAccountsByType(AuthenticationService.ACCOUNT_TYPE);
+		if (accounts.length == 0){
+			Log.i(TAG, "There are no accounts currently set up");
+			return;
+		}if (accounts.length > 1){
+			Log.w(TAG, "more than one Locast account is defined. Using the first one");
 		}
+		setCredentials(accounts[0].name, am.getPassword(accounts[0]));
 	}
 
 	/**
 	 * Save the user credentials in a record store for use later. This
 	 * will treat the client as being "paired" with the server.
 	 *
+	 *@deprecated
 	 * @param username
 	 * @param auth_secret
 	 * @throws IOException
 	 */
+	@Deprecated
 	public synchronized void saveCredentials(String username, String auth_secret)
 			throws IOException {
+		/* XXX delete this method
 				final Editor e = prefs.edit();
 				e.putString(PREF_USERNAME, username);
 				e.putString(PREF_PASSWORD, auth_secret);
 				e.commit();
 				loadCredentials();
+				*/
 			}
 
 	/**
 	 * Clears all the credentials. This will effectively unpair the client, but won't
 	 * issue an unpair request.
-	 *
+	 *@deprecated
 	 */
+	@Deprecated
 	public void clearCredentials() {
+		// XXX delete this method
+		/*
 		final Editor e = prefs.edit();
 		e.putString(PREF_USERNAME, "");
 		e.putString(PREF_PASSWORD, "");
 		e.commit();
+		*/
 	}
 
 	/**
@@ -976,8 +922,11 @@ public class NetworkClient extends DefaultHttpClient  implements OnSharedPrefere
 	 *
 	 * @return true if the client is paired with the server.
 	 */
+	@Deprecated
 	public boolean isPaired() {
-		return (! prefs.getString(PREF_PASSWORD, "").equals(""));
+		final AccountManager am = AccountManager.get(context);
+		final Account[] accounts = am.getAccountsByType(AuthenticationService.ACCOUNT_TYPE);
+		return accounts.length >= 1;
 	}
 
 	/**

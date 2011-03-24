@@ -1,18 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-	<PreferenceCategory android:title="@string/pref_cat_account">
-	
-		<EditTextPreference android:key="username"
-			android:title="@string/pref_title_username"
-			android:singleLine="true"  />
-			
-		<EditTextPreference  android:key="password"
-			android:title="@string/pref_title_password"
-			android:password="true" android:singleLine="true" />
-
-	</PreferenceCategory>
-
 	<PreferenceCategory android:title="@string/pref_cat_advanced">
 	
 	<!-- The dialogLayout below is a hack to work around http://code.google.com/p/android/issues/detail?id=4497 -->

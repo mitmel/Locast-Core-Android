@@ -68,7 +68,7 @@ import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Project;
 import edu.mit.mobile.android.locast.data.ShotList;
-import edu.mit.mobile.android.locast.net.AndroidNetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.widget.RelativeSizeListView;
 
 public class TemplateActivity extends VideoRecorder implements OnClickListener, LocationListener, OnItemClickListener {
@@ -743,7 +743,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		cast.put(Cast._PROJECT_URI, mPublicProjectUri);
 		cast.put(Cast._PRIVACY, Cast.PRIVACY_PUBLIC);
 		cast.put(Cast._TITLE, ((EditText)findViewById(R.id.cast_title)).getText().toString());
-		cast.put(Cast._AUTHOR, AndroidNetworkClient.getInstance(this).getUsername());
+		cast.put(Cast._AUTHOR, NetworkClient.getInstance(this).getUsername());
 		cast.put(Cast._DRAFT, mIsDraft);
 
 		if (mLocation != null){

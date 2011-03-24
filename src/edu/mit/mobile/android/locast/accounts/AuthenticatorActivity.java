@@ -16,6 +16,10 @@
 
 package edu.mit.mobile.android.locast.accounts;
 
+import java.io.IOException;
+
+import org.json.JSONException;
+
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
@@ -24,8 +28,9 @@ import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -35,6 +40,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.MediaProvider;
+import edu.mit.mobile.android.locast.net.NetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 
 /**
  * Activity which displays login screen to the user.
@@ -42,15 +49,18 @@ import edu.mit.mobile.android.locast.data.MediaProvider;
 public class AuthenticatorActivity extends AccountAuthenticatorActivity implements OnClickListener {
 	private static final String TAG = AuthenticatorActivity.class.getSimpleName();
 
-    public static final String PARAM_CONFIRMCREDENTIALS = "confirmCredentials";
-    public static final String PARAM_PASSWORD = "password";
-    public static final String PARAM_USERNAME = "username";
-    public static final String PARAM_AUTHTOKEN_TYPE = "authtokenType";
+    public static final String
+    	EXTRA_CONFIRMCREDENTIALS 	= "confirmCredentials",
+    	EXTRA_PASSWORD 				= "password",
+    	EXTRA_USERNAME 				= "username",
+    	EXTRA_AUTHTOKEN_TYPE 		= "authtokenType";
 
     private AccountManager mAccountManager;
-    private Thread mAuthThread;
     private String mAuthtoken;
     private String mAuthtokenType;
+
+    private static final int
+    	DIALOG_PROGRESS = 0;
 
     /**
      * If set we are just checking that the user knows their credentials; this
@@ -58,8 +68,6 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
      */
     private Boolean mConfirmCredentials = false;
 
-    /** for posting authentication attempts back to UI thread */
-    private final Handler mHandler = new Handler();
     private TextView mMessage;
     private String mPassword;
     private EditText mPasswordEdit;
@@ -77,28 +85,44 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     public void onCreate(Bundle icicle) {
         Log.i(TAG, "onCreate(" + icicle + ")");
         super.onCreate(icicle);
+
         mAccountManager = AccountManager.get(this);
         Log.i(TAG, "loading data from Intent");
+
         final Intent intent = getIntent();
-        mUsername = intent.getStringExtra(PARAM_USERNAME);
-        mAuthtokenType = intent.getStringExtra(PARAM_AUTHTOKEN_TYPE);
+        mUsername = intent.getStringExtra(EXTRA_USERNAME);
+        mAuthtokenType = intent.getStringExtra(EXTRA_AUTHTOKEN_TYPE);
         mRequestNewAccount = mUsername == null;
         mConfirmCredentials =
-            intent.getBooleanExtra(PARAM_CONFIRMCREDENTIALS, false);
+            intent.getBooleanExtra(EXTRA_CONFIRMCREDENTIALS, false);
 
         Log.i(TAG, "    request new: " + mRequestNewAccount);
         requestWindowFeature(Window.FEATURE_LEFT_ICON);
+        // make the title based on the app name.
+        setTitle(getString(R.string.login_title, getString(R.string.app_name)));
+
         setContentView(R.layout.login);
-        getWindow().setFeatureDrawableResource(Window.FEATURE_LEFT_ICON,
-            android.R.drawable.ic_dialog_alert);
+        // this is done this way, so the associated icon is managed in XML.
+        try {
+			getWindow().setFeatureDrawable(Window.FEATURE_LEFT_ICON,
+			    getPackageManager().getActivityIcon(getComponentName()));
+		} catch (final NameNotFoundException e) {
+			e.printStackTrace();
+		}
 
         mMessage = (TextView) findViewById(R.id.message);
         mUsernameEdit = (EditText) findViewById(R.id.username);
         mPasswordEdit = (EditText) findViewById(R.id.password);
         findViewById(R.id.login).setOnClickListener(this);
+        findViewById(R.id.cancel).setOnClickListener(this);
 
         mUsernameEdit.setText(mUsername);
         mMessage.setText(getMessage());
+
+        mAuthenticationTask = (AuthenticationTask) getLastNonConfigurationInstance();
+        if (mAuthenticationTask != null){
+        	mAuthenticationTask.attach(this);
+        }
     }
 
     /*
@@ -113,8 +137,9 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
             public void onCancel(DialogInterface dialog) {
                 Log.i(TAG, "dialog cancel has been invoked");
-                if (mAuthThread != null) {
-                    mAuthThread.interrupt();
+                if (mAuthenticationTask != null) {
+                    mAuthenticationTask.cancel(true);
+                    mAuthenticationTask = null;
                     finish();
                 }
             }
@@ -129,6 +154,10 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 			handleLogin(v);
 			break;
 
+		case R.id.cancel:
+			finish();
+			break;
+
 		}
 	}
 
@@ -138,7 +167,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
      *
      * @param view The Submit button for which this method is invoked
      */
-    public void handleLogin(View view) {
+    private void handleLogin(View view) {
         if (mRequestNewAccount) {
             mUsername = mUsernameEdit.getText().toString();
         }
@@ -146,28 +175,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         if (TextUtils.isEmpty(mUsername) || TextUtils.isEmpty(mPassword)) {
             mMessage.setText(getMessage());
         } else {
-            showProgress();
-            // Start authenticating...
-           /* XXX mAuthThread =
-                NetworkUtilities.attemptAuth(mUsername, mPassword, mHandler,
-                    AuthenticatorActivity.this);*/
-
-            mAuthThread = new Thread(new Runnable() {
-
-				@Override
-				public void run() {
-					try {
-						Thread.sleep(3000);
-						onAuthenticationResult(true);
-					} catch (final InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-
-				}
-			});
-
-            mAuthThread.start();
+        	mAuthenticationTask = new AuthenticationTask(this);
+        	mAuthenticationTask.execute(mUsername, mPassword);
         }
     }
 
@@ -226,19 +235,11 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     }
 
     /**
-     * Hides the progress UI for a lengthy operation.
-     */
-    protected void hideProgress() {
-        dismissDialog(0);
-    }
-
-    /**
      * Called when the authentication process completes (see attemptLogin()).
      */
     public void onAuthenticationResult(boolean result) {
         Log.i(TAG, "onAuthenticationResult(" + result + ")");
-        // Hide the progress dialog
-        hideProgress();
+
         if (result) {
             if (!mConfirmCredentials) {
                 finishLogin();
@@ -280,10 +281,53 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         return null;
     }
 
-    /**
-     * Shows the progress UI for a lengthy operation.
-     */
-    protected void showProgress() {
-        showDialog(0);
+    private AuthenticationTask mAuthenticationTask = null;
+
+    @Override
+    public Object onRetainNonConfigurationInstance() {
+    	if (mAuthenticationTask != null){
+    		mAuthenticationTask.detach();
+    	}
+    	return mAuthenticationTask;
+    }
+
+    private class AuthenticationTask extends AsyncTask<String, Long, Boolean>{
+    	private AuthenticatorActivity mActivity;
+
+    	public AuthenticationTask(AuthenticatorActivity activity) {
+    		mActivity = activity;
+		}
+
+    	@Override
+    	protected void onPreExecute() {
+    		mActivity.showDialog(DIALOG_PROGRESS);
+    	}
+
+		@Override
+		protected Boolean doInBackground(String... userPass) {
+			try {
+				return NetworkClient.authenticate(AuthenticatorActivity.this, userPass[0], userPass[1]);
+
+			} catch (final IOException e) {
+				e.printStackTrace();
+			} catch (final JSONException e) {
+				e.printStackTrace();
+			} catch (final NetworkProtocolException e) {
+				e.printStackTrace();
+			}
+			return false;
+		}
+    	@Override
+    	protected void onPostExecute(Boolean result) {
+    		mActivity.dismissDialog(DIALOG_PROGRESS);
+    		mActivity.onAuthenticationResult(result);
+    	}
+
+    	public void detach(){
+    		mActivity = null;
+    	}
+    	public void attach(AuthenticatorActivity activity){
+    		mActivity = activity;
+    	}
     }
 }
