@@ -129,4 +129,15 @@
 	</style>
 	<style name="TemplatedVideoProgress.ItemText">
 	</style>
+	
+	<!-- Browser -->
+	
+	<style name="Browser" parent="LightTheme">
+		<item name="android:textColor">#4a4841</item>
+	</style>
+	
+	<style name="BrowserMainIcon">
+		<item name="android:gravity">center_horizontal</item>
+		<item name="android:layout_weight">1</item>
+	</style>
 </resources>

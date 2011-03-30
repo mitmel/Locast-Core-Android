@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent" android:orientation="vertical">
+  <include layout="@layout/action_bar" />
+  
+  <TextView android:id="@+id/message" android:text="Welcome! Locast Abruzzo is a location-based tourism application for visiting Abruzzo."
+    android:drawableLeft="@drawable/app_icon"
+     android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+       android:drawablePadding="5dip" android:fadingEdge="horizontal" 
+       />
+       
+       <LinearLayout 
+       		android:layout_width="fill_parent"
+       		android:layout_height="fill_parent"
+       		 android:layout_weight="1" 
+       		 android:orientation="horizontal" android:gravity="center_vertical">
+       <TextView android:id="@+id/itineraries"
+       		android:text="Itineraries"
+       		android:drawableTop="@drawable/app_icon"
+       		style="@style/BrowserMainIcon" 
+       		android:layout_width="wrap_content"
+       		android:layout_height="wrap_content"/>
+       		
+       <TextView android:id="@+id/nearby"
+       		android:text="Nearby" 
+       		android:drawableTop="@drawable/app_icon"
+       		style="@style/BrowserMainIcon" 
+       		android:layout_width="wrap_content" 
+       		android:layout_height="wrap_content" />
+       		
+       <TextView android:id="@+id/events"
+       		android:text="Events"
+       		android:drawableTop="@drawable/app_icon"
+       		style="@style/BrowserMainIcon"
+       		android:layout_width="wrap_content" 
+       		android:layout_height="wrap_content"  />
+       </LinearLayout>
+       
+       <Gallery android:id="@+id/casts"
+       		android:layout_width="fill_parent" android:spacing="0dip"
+       		android:layout_height="fill_parent" android:layout_weight="1" />
+       		
+       <TextView android:text="Featured Casts" android:layout_width="fill_parent"
+       android:layout_height="wrap_content"
+       android:paddingBottom="5dip"
+       android:paddingRight="5dip"
+       android:gravity="right" /> 
+</LinearLayout>
