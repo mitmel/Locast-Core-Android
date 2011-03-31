@@ -3,7 +3,7 @@
   xmlns:android="http://schemas.android.com/apk/res/android"
   android:layout_width="250dip"
   android:layout_height="wrap_content"
-  android:background="@android:drawable/picture_frame"
+  android:background="@drawable/picture_frame"
   >
   <ImageView android:id="@+id/media_thumbnail"
   	android:scaleType="fitXY"

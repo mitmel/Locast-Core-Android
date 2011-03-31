@@ -179,4 +179,6 @@
 	<string name="pref_locast_site_dialog_title">Choose a Locast site</string>
 	<string name="pref_locast_site_summary">Choose another Locast site.</string>
 	<string name="pref_locast_site_message">Warning: changing this will erase your current pairing as well as the local database. Any unpublished casts will be deleted.</string>
+	
+	<string name="itinerary_test_text">A sea generally refers to a large body of salt water, but the term is used in other contexts as well. Most commonly, the term refers to a large expanse of saline water connected with an ocean, and is commonly used as a synonym for ocean. It is also used sometimes to describe a large saline lake that lacks a natural outlet, such as the Caspian Sea.</string>
 </resources>

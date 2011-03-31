@@ -5,12 +5,23 @@
   android:layout_height="wrap_content"
   android:background="@drawable/title_background">
     <ImageButton android:id="@+id/home"
+    	style="@style/ActionBar.Button"
     	android:layout_height="wrap_content"
      	android:layout_width="wrap_content"
       	android:src="@drawable/app_icon"
       />
     <TextView  android:id="@+id/title" 
-    	android:text="Abruzzo"
+    	android:text="Locast Abruzzo"
+    	style="@style/ActionBar.Button"
     	android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_toRightOf="@+id/home" android:layout_toLeftOf="@+id/action1" android:layout_alignBottom="@+id/home" android:layout_alignTop="@+id/home" android:gravity="center_vertical"/>
-    <ImageButton android:layout_height="wrap_content" android:layout_width="wrap_content" android:layout_alignParentRight="true" android:src="@drawable/btn_minus" android:id="@+id/action1" android:layout_alignBottom="@+id/title" android:layout_alignTop="@+id/title"></ImageButton>
+    	
+    <ImageButton android:id="@+id/action1" 
+    	android:src="@drawable/ic_menu_refresh"
+    	style="@style/ActionBar.Button" 
+    	android:layout_height="wrap_content"
+     	android:layout_width="wrap_content" 
+     	android:layout_alignParentRight="true" 
+     	
+     	android:layout_alignBottom="@+id/title" 
+     	android:layout_alignTop="@+id/title" />
 </RelativeLayout>

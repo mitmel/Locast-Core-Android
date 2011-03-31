@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -19,8 +20,9 @@ import edu.mit.mobile.android.locast.Application;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.itineraries.ItineraryDetail;
 
-public class BrowserHome extends Activity implements OnItemClickListener{
+public class BrowserHome extends Activity implements OnItemClickListener, OnClickListener{
 
 	protected SimpleWebImageCache<ThumbnailBus, ThumbnailMessage> imgCache;
 
@@ -39,11 +41,25 @@ public class BrowserHome extends Activity implements OnItemClickListener{
 
 		casts.setAdapter(new ThumbnailAdapter(this, new CastCursorAdapter(this, c, R.layout.cast_large_thumbnail_item, from, to), imgCache, new int[]{R.id.media_thumbnail}));
 		casts.setOnItemClickListener(this);
+
+		findViewById(R.id.itineraries).setOnClickListener(this);
+		findViewById(R.id.events).setOnClickListener(this);
+		findViewById(R.id.nearby).setOnClickListener(this);
 	}
 
 	@Override
 	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
 		final Cursor c = (Cursor) adapter.getAdapter().getItem(position);
 		startActivity(new Intent(Intent.ACTION_VIEW, Cast.getCanonicalUri(c)));
+	}
+
+	@Override
+	public void onClick(View v) {
+		switch (v.getId()){
+		case R.id.itineraries:
+			startActivity(new Intent(this.getApplicationContext(), ItineraryDetail.class));
+			break;
+		}
+
 	}
 }
