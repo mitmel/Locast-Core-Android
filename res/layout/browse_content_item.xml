@@ -5,20 +5,24 @@
 	    android:layout_height="?android:attr/listPreferredItemHeight">
 
 	  <ImageView android:id="@+id/media_thumbnail" 
-    		android:layout_width="fill_parent"
-    		android:layout_height="?android:attr/listPreferredItemHeight"
-    		android:layout_centerInParent="true"
-    		android:adjustViewBounds="false"
+    		android:layout_width="48dip"
+    		android:layout_height="48dip"
+    		android:layout_centerVertical="true"
+    		android:layout_alignParentLeft="true"
+    		
+    		android:layout_margin="10dip"
+    		
+    		android:adjustViewBounds="true"
     		android:scaleType="centerCrop"
-    		android:tint="#aaffffff"
-    		android:layout_alignParentTop="true"
-    		android:layout_alignParentBottom="true"
-			android:background="#ccc" />
+			android:background="@drawable/picture_frame"
+			/>
     
-      <edu.mit.mobile.android.locast.widget.OutlinedTextView android:id="@android:id/text1"
+      <TextView android:id="@android:id/text1"
       		android:text="text1"
           	android:layout_width="fill_parent"
           	android:layout_height="wrap_content"
+          	android:layout_toRightOf="@id/media_thumbnail"
+          	
 		    android:paddingLeft="6dip"
 		    android:paddingTop="6dip"
 		    android:paddingBottom="1dip"
@@ -26,7 +30,7 @@
 
           	style="@style/CastListItem.Title" 
         />
-    <edu.mit.mobile.android.locast.widget.OutlinedTextView android:id="@+id/author" 
+    <TextView android:id="@+id/author" 
 	      android:text="author" 
 	      android:layout_width="wrap_content" 
 	      android:layout_height="wrap_content" 
