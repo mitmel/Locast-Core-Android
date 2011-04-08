@@ -57,6 +57,11 @@ public abstract class Locatable {
 		return Uri.parse("geo:"+c.getDouble(c.getColumnIndex(Columns._LATITUDE))+","+c.getDouble(c.getColumnIndex(Columns._LONGITUDE)));
 	}
 
+	/**
+	 * Get the latitude/longitude from the row currently selected in the cursor. Requires Locatable.Columns._LATITUDE and Locatable.Columns._LONGITUDE to be selected.
+	 * @param c
+	 * @return
+	 */
 	public static Location toLocation(Cursor c){
 		final int lat_idx = c.getColumnIndex(Columns._LATITUDE);
 		final int lon_idx = c.getColumnIndex(Columns._LONGITUDE);

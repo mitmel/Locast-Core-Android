@@ -1,10 +1,8 @@
 package edu.mit.mobile.android.locast.itineraries;
 
-import java.util.ArrayList;
-import java.util.Random;
-
 import android.content.Context;
 import android.database.Cursor;
+import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -28,6 +26,7 @@ import edu.mit.mobile.android.locast.Application;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.data.Locatable;
 
 public class ItineraryDetail extends MapActivity {
 
@@ -72,7 +71,7 @@ public class ItineraryDetail extends MapActivity {
 
 		@Override
 		protected Cursor doInBackground(Uri... params) {
-			final Cursor casts = ItineraryDetail.this.managedQuery(params[0], Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
+			final Cursor casts = ItineraryDetail.this.managedQuery(params[0], Cast.PROJECTION, Cast._LATITUDE+" not null", null, Cast.SORT_ORDER_DEFAULT);
 			return casts;
 		}
 
@@ -82,10 +81,9 @@ public class ItineraryDetail extends MapActivity {
 
 			final CastCursorAdapter castAdapter = new CastCursorAdapter(ItineraryDetail.this, casts);
 
-
 			mCastView.setAdapter((new ThumbnailAdapter(ItineraryDetail.this, castAdapter, imgCache, new int[]{R.id.media_thumbnail})));
 
-			final ItineraryOverlay itineraryOverlay = new ItineraryOverlay(ItineraryDetail.this);
+			final ItineraryOverlay itineraryOverlay = new ItineraryOverlay(ItineraryDetail.this, casts);
 			mMapView.getOverlays().add(itineraryOverlay);
 
 			mMapController.zoomToSpan(itineraryOverlay.getLatSpanE6(), itineraryOverlay.getLonSpanE6());
@@ -96,35 +94,35 @@ public class ItineraryDetail extends MapActivity {
 
 
 	private class ItineraryOverlay extends ItemizedOverlay<OverlayItem> {
-		Random r = new Random();
-		ArrayList<OverlayItem> items = new ArrayList<OverlayItem>();
+		private final Cursor mCasts;
+		private final int mTitleCol, mDescriptionCol;
 
-		public ItineraryOverlay(Context context) {
+		public ItineraryOverlay(Context context, Cursor casts) {
 			super(boundCenterBottom(context.getResources().getDrawable(R.drawable.map_marker_user_cast)));
 
-			int lat = 42464753;
-			int lon = 14230299;
-			for (int i = 0; i < 5; i++){
-				lat += r.nextInt(10000) - 5000;
-				lon += r.nextInt(10000) - 5000;
-				items.add(new OverlayItem(new GeoPoint(lat, lon), "foo", "bar"));
-			}
+			mCasts = casts;
+			mTitleCol = mCasts.getColumnIndex(Cast._TITLE);
+			mDescriptionCol = mCasts.getColumnIndex(Cast._DESCRIPTION);
+
 			populate();
 		}
 
 		@Override
 		protected OverlayItem createItem(int i) {
-			return items.get(i);
+			mCasts.moveToPosition(i);
 
+			final Location castLoc =  Locatable.toLocation(mCasts);
+			final GeoPoint castLocGP = new GeoPoint((int)(castLoc.getLatitude()*1E6), (int)(castLoc.getLongitude()*1E6));
+
+			return new OverlayItem(castLocGP, mCasts.getString(mTitleCol), mCasts.getString(mDescriptionCol));
 		}
 
 
 		@Override
 		public int size() {
 
-			return items.size();
+			return mCasts.getCount();
 		}
-
 	}
 
 

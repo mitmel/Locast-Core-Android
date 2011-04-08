@@ -23,8 +23,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Vector;
 import java.util.Map.Entry;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -145,14 +145,24 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	/**
 	 * Gets a list for the current item in the cursor.
 	 *
-	 * @param c
+	 * @param column column number
+	 * @param c cursor pointing to a row
 	 * @return
+	 * @see #getList(int, Cursor)
 	 */
 	public static List<String> getList(int column, Cursor c){
 		final String t = c.getString(column);
 		return getList(t);
 	}
 
+	/**
+	 * Given a string made by {@link JsonSyncableItem#putList(String, ContentValues, Collection) putList()},
+	 * return a List containing all the items.
+	 *
+	 * @param listString
+	 * @return a new list representing all the items in the list
+	 * @see #putList(String, ContentValues, Collection)
+	 */
 	public static List<String> getList(String listString){
 		if (listString != null && listString.length() > 0){
 			final String[] split = listString.split(LIST_SPLIT);
@@ -166,43 +176,28 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	}
 
 	/**
-	 * Gets a list for the current item in the cursor.
-	 *
-	 * @param c
-	 * @return
+	 * @param columnName the name of the key in cv to store the resulting list
+	 * @param cv a {@link ContentValues} to store the resulting list in
+	 * @param list
+	 * @return the same ContentValues that were passed in
+	 * @see #toListString(Collection)
 	 */
-	public static List<Long> getListLong(int column, Cursor c){
-		final String t = c.getString(column);
-
-		if (t != null && t.length() > 0){
-			final String[] split = t.split(LIST_SPLIT);
-			final List<Long> r = new Vector<Long>(split.length);
-			for (final String s : split){
-				r.add(Long.valueOf(s));
-			}
-			return r;
-		}else{
-			return new Vector<Long>();
-		}
+	public static ContentValues putList(String columnName, ContentValues cv, Collection<String> list){
+		cv.put(columnName, toListString(list));
+		return cv;
 	}
 
 	/**
-	 * @param v
-	 * @param tags
-	 * @return
+	 * Turns a collection of strings into a delimited string
+	 *
+	 * @param list a list of strings
+	 * @return a string representing the list, delimited by LIST_DELIM with any existing instances escaped.
+	 * @see #getList(String)
 	 */
-	public static ContentValues putList(String columnName, ContentValues v, List<?> list){
-		v.put(columnName, toListString(list));
-		return v;
-
-	}
-
-	public static String toListString(Collection<?> list){
-
+	public static String toListString(Collection<String> list){
 		final List<String> tempList = new Vector<String>(list.size());
 
-		for (final Object ob : list){
-			String s = ob.toString();
+		for (String s : list){
 			// escape all of the delimiters in the individual strings
 			s = s.replace(LIST_DELIM, "\\" + LIST_DELIM);
 			tempList.add(s);

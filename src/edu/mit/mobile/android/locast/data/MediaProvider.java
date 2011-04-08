@@ -42,8 +42,10 @@ import android.net.Uri;
 import android.provider.BaseColumns;
 import android.util.Log;
 import edu.mit.mobile.android.locast.ListUtils;
+import edu.mit.mobile.android.locast.data.Itinerary.ItineraryCastsColumns;
 
 public class MediaProvider extends ContentProvider {
+	@SuppressWarnings("unused")
 	private final static String TAG = MediaProvider.class.getSimpleName();
 	public final static String AUTHORITY = "edu.mit.mobile.android.locast.provider";
 
@@ -66,6 +68,9 @@ public class MediaProvider extends ContentProvider {
 		// XXX needed? TYPE_TAG_ITEM     = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.tags",
 		TYPE_TAG_DIR      = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.tags",
 
+		TYPE_ITINERARY_DIR  =  "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.itineraries",
+		TYPE_ITINERARY_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.itineraries",
+
 		TYPE_SHOTLIST_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.shotlist",
 		TYPE_SHOTLIST_DIR  = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.shotlist"
 		;
@@ -76,6 +81,8 @@ public class MediaProvider extends ContentProvider {
 		PROJECT_TABLE_NAME    = "projects",
 		COMMENT_TABLE_NAME    = "comments",
 		TAG_TABLE_NAME        = "tags",
+		ITINERARY_TABLE_NAME  = "itineraries",
+		ITINERARY_CASTS_TABLE_NAME = "itinerary_casts",
 		SHOTLIST_TABLE_NAME   = "shotlist";
 
 	private static UriMatcher uriMatcher;
@@ -102,11 +109,17 @@ public class MediaProvider extends ContentProvider {
 		MATCHER_SHOTLIST_DIR         = 19,
 		MATCHER_PROJECT_CAST_CASTMEDIA_DIR = 20,
 		MATCHER_PROJECT_CAST_CASTMEDIA_ITEM= 21, // wow...
-		MATCHER_CAST_CASTMEDIA_DIR 	 = 22;
+		MATCHER_CAST_CASTMEDIA_DIR 	 = 22,
+		MATCHER_ITINERARY_DIR        = 23,
+		MATCHER_ITINERARY_ITEM       = 24,
+		MATCHER_ITINERARY_CAST_DIR   = 25,
+		MATCHER_ITINERARY_CAST_ITEM  = 26,
+		MATCHER_ITINERARY_BY_TAGS    = 27
+		;
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 28;
+		private static final int DB_VER = 29;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -214,6 +227,30 @@ public class MediaProvider extends ContentProvider {
 			+ ")"
 			);
 
+			db.execSQL("CREATE TABLE " + ITINERARY_TABLE_NAME + " ("
+					+ JSON_SYNCABLE_ITEM_FIELDS
+					+ JSON_COMMENTABLE_FIELDS
+					+ Itinerary._TITLE 		+ " TEXT,"
+					+ Itinerary._AUTHOR		+ " TEXT,"
+					+ Itinerary._DESCRIPTION 	+ " TEXT,"
+					+ Itinerary._PRIVACY 		+ " TEXT,"
+					+ Itinerary._CASTS_URI	+ " TEXT,"
+
+					+ Itinerary._PATH 		+ " TEXT,"
+
+					+ Itinerary._DRAFT        + " BOOLEAN"
+
+					+ ");"
+			);
+
+			db.execSQL("CREATE TABLE "+ITINERARY_CASTS_TABLE_NAME + " ("
+				+ ItineraryCastsColumns._ID 			+ " INTEGER PRIMARY KEY,"
+				// TODO foreign keys are not supported in 2.1 or below
+				//+ "cast_id REFERENCES "+CAST_TABLE_NAME +  	"("+Cast._ID+")"
+				+ ItineraryCastsColumns._CAST_ID   		+ " INTEGER,"
+				+ ItineraryCastsColumns._ITINERARY_ID 	+ " INTEGER"
+				+ ");"
+			);
 		}
 
 		@Override
@@ -233,6 +270,7 @@ public class MediaProvider extends ContentProvider {
 				db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + CAST_MEDIA_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + SHOTLIST_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + ITINERARY_TABLE_NAME);
 				onCreate(db);
 			}
 		}
@@ -285,6 +323,11 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_PROJECT_CAST_ITEM:
 		case MATCHER_PROJECT_DIR:
 		case MATCHER_PROJECT_ITEM:
+
+		case MATCHER_ITINERARY_CAST_DIR:
+		case MATCHER_ITINERARY_CAST_ITEM:
+		case MATCHER_ITINERARY_DIR:
+		case MATCHER_ITINERARY_ITEM:
 			return true;
 
 		default:
@@ -348,6 +391,18 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_PROJECT_SHOTLIST_ITEM:
 			return TYPE_SHOTLIST_ITEM;
 
+			//////////////// itineraries
+
+		case MATCHER_ITINERARY_CAST_DIR:
+			return TYPE_CAST_DIR;
+		case MATCHER_ITINERARY_CAST_ITEM:
+			return TYPE_CAST_ITEM;
+
+		case MATCHER_ITINERARY_DIR:
+			return TYPE_ITINERARY_DIR;
+		case MATCHER_ITINERARY_ITEM:
+			return TYPE_ITINERARY_ITEM;
+
 		default:
 			throw new IllegalArgumentException("Cannot get type for URI "+uri);
 		}
@@ -365,7 +420,7 @@ public class MediaProvider extends ContentProvider {
 		values.remove(JsonSyncableItem._ID);
 
 		// XXX remove this when the API updates
-		translateIdToUri(context, values, syncable, uri);
+		//translateIdToUri(context, values, syncable, uri);
 
 		Uri newItem = null;
 		boolean isDraft = false;
@@ -494,6 +549,38 @@ public class MediaProvider extends ContentProvider {
 			newItem = ContentUris.withAppendedId(uri, ContentUris.parseId(newItem));
 		} break;
 
+		//////////////////////////////////////////////////////////////////////////////////
+		case MATCHER_ITINERARY_DIR:{
+			newItem = insertWithTags(values, db, ITINERARY_TABLE_NAME, Itinerary.CONTENT_URI);
+			if (newItem != null){
+				if (values.containsKey(Itinerary._DRAFT)){
+					isDraft = values.getAsBoolean(Project._DRAFT);
+				}else{
+					isDraft = false;
+				}
+			}
+		} break;
+		//////////////////////////////////////////////////////////////////////////////////
+
+		// itin/1/casts
+		case MATCHER_ITINERARY_CAST_DIR:{
+			final List<String> pathSegments = uri.getPathSegments();
+			final long itinId = Long.parseLong(pathSegments.get(pathSegments.size() - 2));
+			db.beginTransaction();
+			try {
+				newItem = insert(Cast.CONTENT_URI, values);
+				final ContentValues relation = new ContentValues();
+				// make a many-to-many relation to the itinerary.
+				relation.put(ItineraryCastsColumns._CAST_ID, ContentUris.parseId(newItem));
+				relation.put(ItineraryCastsColumns._ITINERARY_ID, itinId);
+				db.insert(ITINERARY_CASTS_TABLE_NAME, null, relation);
+				db.setTransactionSuccessful();
+			}finally{
+				db.endTransaction();
+			}
+		}break;
+
+
 		default:
 			throw new IllegalArgumentException("Unknown URI: "+uri);
 		}
@@ -506,6 +593,33 @@ public class MediaProvider extends ContentProvider {
 
 		if (syncable && !isDraft){
 			context.startService(new Intent(Intent.ACTION_SYNC, uri));
+		}
+		return newItem;
+	}
+
+	/**
+	 * Performs an insert on the database, taking the tags parameter from the ContentValues,
+	 * parsing it and inserting it into the appropriate tables.
+	 *
+	 * @param values standard ContentValues, but with a special Tag.PATH parameter.
+	 * @param db
+	 * @param table
+	 * @param contentUri
+	 * @return
+	 */
+	private Uri insertWithTags(ContentValues values, SQLiteDatabase db, String table, Uri contentUri){
+		Uri newItem = null;
+		final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
+		db.beginTransaction();
+		try {
+			final long rowid = db.insert(table, null, values);
+			if (rowid > 0){
+				newItem = ContentUris.withAppendedId(contentUri, rowid);
+				update(Uri.withAppendedPath(newItem, Tag.PATH), cvTags, null, null);
+				db.setTransactionSuccessful();
+			}
+		}finally{
+			db.endTransaction();
 		}
 		return newItem;
 	}
@@ -619,7 +733,7 @@ public class MediaProvider extends ContentProvider {
 			}
 			qb.setTables(taggableItemTable + " AS c, "+TAG_TABLE_NAME +" AS t");
 
-			final Set<String> tags = Tag.toSet(uri.getLastPathSegment().toLowerCase());
+			final Set<String> tags = Tag.toSet(uri.getQuery().toLowerCase());
 			final List<String> tagFilterList = new ArrayList<String>(tags.size());
 
 			qb.appendWhere("t."+Tag._REF_ID+"=c."+TaggableItem._ID);
@@ -633,12 +747,7 @@ public class MediaProvider extends ContentProvider {
 
 			// Modify the projection so that _ID explicitly refers to that of the objects being searched,
 			// not the tags. Without this, _ID is ambiguous and the query fails.
-			final String[] projection2 = projection.clone();
-			final List<String> projectionList = Arrays.asList(projection2);
-			final int idPos = projectionList.indexOf(BaseColumns._ID);
-			if (idPos >= 0){
-				projection2[idPos] = "c."+BaseColumns._ID + " as " + BaseColumns._ID;
-			}
+			final String[] projection2 = addPrefixToProjection("c", projection);
 
 			c = qb.query(db, projection2, selection, selectionArgs,
 					"c."+TaggableItem._ID,
@@ -680,6 +789,39 @@ public class MediaProvider extends ContentProvider {
 
 		} break;
 
+		case MATCHER_ITINERARY_DIR:{
+			if (sortOrder == null){
+				sortOrder = Itinerary.SORT_DEFAULT;
+			}
+			c = db.query(ITINERARY_TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+
+		}break;
+
+		case MATCHER_ITINERARY_ITEM:{
+			final String itemId = uri.getLastPathSegment();
+			c = db.query(ITINERARY_TABLE_NAME,
+					projection,
+					addExtraWhere(selection, Itinerary._ID+"=?"),
+					addExtraWhereArgs(selectionArgs, itemId),
+					null, null, sortOrder);
+		}break;
+
+		case MATCHER_ITINERARY_CAST_DIR:{
+			if (sortOrder == null){
+				sortOrder = Cast.SORT_ORDER_DEFAULT;
+			}
+			final List<String> pathSegments = uri.getPathSegments();
+			final String itinId = pathSegments.get(pathSegments.size() - 2);
+
+			c = db.query(CAST_TABLE_NAME
+					+ " INNER JOIN " + ITINERARY_CASTS_TABLE_NAME
+					+ " ON " + ITINERARY_CASTS_TABLE_NAME+"."+ItineraryCastsColumns._ITINERARY_ID + "=" + ITINERARY_TABLE_NAME + "." + Itinerary._ID,
+					addPrefixToProjection(CAST_TABLE_NAME, projection),
+					addExtraWhere(selection, ITINERARY_TABLE_NAME + "." + Itinerary._ID + "=?"),
+					addExtraWhereArgs(selectionArgs, itinId), null, null, sortOrder);
+
+		}break;
+
 			default:
 				throw new IllegalArgumentException("unknown URI "+uri);
 		}
@@ -711,7 +853,7 @@ public class MediaProvider extends ContentProvider {
 		values.remove(CV_FLAG_DO_NOT_MARK_DIRTY);
 
 		// XXX remove this when the API updates
-		translateIdToUri(getContext(), values, canSync, uri);
+		///translateIdToUri(getContext(), values, canSync, uri);
 
 		switch (uriMatcher.match(uri)){
 		case MATCHER_CAST_DIR:
@@ -851,9 +993,21 @@ public class MediaProvider extends ContentProvider {
 
 		}
 
+		case MATCHER_ITINERARY_DIR:{
+			count = db.update(ITINERARY_TABLE_NAME, values, where, whereArgs);
+		}break;
+
+		case MATCHER_ITINERARY_ITEM:{
+			final String itemId = uri.getLastPathSegment();
+			count = db.update(ITINERARY_TABLE_NAME, values,
+					addExtraWhere(where, Itinerary._ID+"=?"),
+					addExtraWhereArgs(whereArgs, itemId));
+		}break;
+
 			default:
 				throw new IllegalArgumentException("unknown URI "+uri);
 		}
+
 		getContext().getContentResolver().notifyChange(uri, null);
 		if (needSync && canSync){
 			getContext().startService(new Intent(Intent.ACTION_SYNC, uri));
@@ -866,14 +1020,15 @@ public class MediaProvider extends ContentProvider {
 		final SQLiteDatabase db = dbHelper.getWritableDatabase();
 		final long id;
 
+		int count;
 		switch (uriMatcher.match(uri)){
 		case MATCHER_CAST_DIR:
-			db.delete(CAST_TABLE_NAME, where, whereArgs);
+			count = db.delete(CAST_TABLE_NAME, where, whereArgs);
 			break;
 
 		case MATCHER_CAST_ITEM:
 			id = ContentUris.parseId(uri);
-			db.delete(CAST_TABLE_NAME, Cast._ID + "="+ id +
+			count = db.delete(CAST_TABLE_NAME, Cast._ID + "="+ id +
 					(where != null && where.length() > 0 ? " AND (" + where + ")" : ""),
 					whereArgs);
 			break;
@@ -881,29 +1036,29 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_PROJECT_CAST_ITEM:{
 			final List<String> pathSegs = uri.getPathSegments();
 			id = ContentUris.parseId(uri);
-			db.delete(CAST_TABLE_NAME,
+			count = db.delete(CAST_TABLE_NAME,
 					addExtraWhere(where, 			Cast._ID+"=?",		Cast._PROJECT_ID+"=?"),
 					addExtraWhereArgs(whereArgs,	Long.toString(id), 	pathSegs.get(pathSegs.size() - 3)));
 		}break;
 
 		case MATCHER_PROJECT_DIR:
-			db.delete(PROJECT_TABLE_NAME, where, whereArgs);
+			count = db.delete(PROJECT_TABLE_NAME, where, whereArgs);
 			break;
 
 		case MATCHER_PROJECT_ITEM:
 			id = ContentUris.parseId(uri);
-			db.delete(PROJECT_TABLE_NAME, Project._ID + "="+ id +
+			count = db.delete(PROJECT_TABLE_NAME, Project._ID + "="+ id +
 					(where != null && where.length() > 0 ? " AND (" + where + ")" : ""),
 					whereArgs);
 			break;
 
 		case MATCHER_COMMENT_DIR:
-			db.delete(COMMENT_TABLE_NAME, where, whereArgs);
+			count = db.delete(COMMENT_TABLE_NAME, where, whereArgs);
 			break;
 
 		case MATCHER_COMMENT_ITEM:{
 			id = ContentUris.parseId(uri);
-			db.delete(COMMENT_TABLE_NAME,
+			count = db.delete(COMMENT_TABLE_NAME,
 					addExtraWhere(where, Comment._ID + "=?"),
 					addExtraWhereArgs(whereArgs, String.valueOf(id)));
 		}break;
@@ -913,7 +1068,7 @@ public class MediaProvider extends ContentProvider {
 			final List<String>pathSegs = uri.getPathSegments();
 			id = ContentUris.parseId(uri);
 
-			db.delete(COMMENT_TABLE_NAME,
+			count = db.delete(COMMENT_TABLE_NAME,
 					addExtraWhere(where, Comment._ID+"=?", 				Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
 					addExtraWhereArgs(whereArgs, Long.toString(id),  	pathSegs.get(pathSegs.size() - 3), 	pathSegs.get(pathSegs.size() - 4)));
 		}break;
@@ -922,14 +1077,14 @@ public class MediaProvider extends ContentProvider {
 
 			final List<String> pathSegments = uri.getPathSegments();
 
-			db.delete(TAG_TABLE_NAME,
+			count = db.delete(TAG_TABLE_NAME,
 					addExtraWhere(where, 			Tag._REF_CLASS + "=?", 						Tag._REF_ID+"=?"),
 					addExtraWhereArgs(whereArgs, 	pathSegments.get(pathSegments.size() - 3), 	pathSegments.get(pathSegments.size() - 2)));
 			break;
 		}
 
 		case MATCHER_TAG_DIR:{
-			db.delete(TAG_TABLE_NAME, where, whereArgs);
+			count = db.delete(TAG_TABLE_NAME, where, whereArgs);
 			break;
 		}
 
@@ -937,7 +1092,7 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:{
 			final List<String> pathSegs = uri.getPathSegments();
 
-			db.delete(CAST_MEDIA_TABLE_NAME,
+			count = db.delete(CAST_MEDIA_TABLE_NAME,
 					addExtraWhere(where, 			CastMedia._PARENT_ID+"=?"),
 					addExtraWhereArgs(whereArgs,	pathSegs.get(pathSegs.size() - 2)));
 		}break;
@@ -945,21 +1100,30 @@ public class MediaProvider extends ContentProvider {
 
 
 		case MATCHER_CAST_MEDIA_DIR:{
-			db.delete(CAST_MEDIA_TABLE_NAME, where, whereArgs);
+			count = db.delete(CAST_MEDIA_TABLE_NAME, where, whereArgs);
 			break;
 		}
 
 		case MATCHER_SHOTLIST_DIR:{
 
-			db.delete(SHOTLIST_TABLE_NAME, where, whereArgs);
+			count = db.delete(SHOTLIST_TABLE_NAME, where, whereArgs);
 		}break;
+
+		case MATCHER_ITINERARY_DIR:{
+			count = db.delete(ITINERARY_TABLE_NAME, where, whereArgs);
+		}break;
+
+		case MATCHER_ITINERARY_ITEM:{
+			final String itemId = uri.getLastPathSegment();
+			count = db.delete(ITINERARY_TABLE_NAME, addExtraWhere(where, Itinerary._ID+"=?"), addExtraWhereArgs(whereArgs, itemId));
+		}
 
 			default:
 				throw new IllegalArgumentException("Unknown URI: "+uri);
 		}
 		db.execSQL("VACUUM");
 		getContext().getContentResolver().notifyChange(uri, null);
-		return 0;
+		return count;
 	}
 
 	/**
@@ -1023,6 +1187,10 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_PROJECT_DIR:{
 			path = Project.SERVER_PATH;
 		}break;
+
+		case MATCHER_ITINERARY_DIR:{
+			path = Itinerary.SERVER_PATH;
+		}
 
 		case MATCHER_COMMENT_DIR:
 			path = Comment.SERVER_PATH;
@@ -1143,6 +1311,23 @@ public class MediaProvider extends ContentProvider {
 		whereArgs2.addAll(0, Arrays.asList(extraArgs));
 		return whereArgs2.toArray(new String[]{});
 	}
+	/** Modify the projection so that _ID explicitly refers to that of the objects being searched,
+	 * 	not the tags. Without this, _ID is ambiguous and the query fails.
+	 *
+	 * @param tableName the name of the table whose _ID should be returned.
+	 * @param projection a projection for the object whose _ID should be returned.
+	 * @return a modified projection with the _ID field set to the given item.
+	 */
+	public static String[] addPrefixToProjection(String tableName, String[] projection){
+
+		final String[] projection2 = projection.clone();
+		final List<String> projectionList = Arrays.asList(projection2);
+		final int idPos = projectionList.indexOf(BaseColumns._ID);
+		if (idPos >= 0){
+			projection2[idPos] = tableName + "."+BaseColumns._ID + " as " + BaseColumns._ID;
+		}
+		return projection2;
+	}
 
 	/**
 	 * Handly helper
@@ -1174,11 +1359,13 @@ public class MediaProvider extends ContentProvider {
 	 * This is a workaround to help transition to an API with all objects having URIs
 	 * This should be removed ASAP.
 	 *
+	 * @Deprecated
 	 * @param context
 	 * @param values the values that should be modified
 	 * @param canSync if the object can sync
 	 * @param uri full URI of the object
 	 */
+	@Deprecated
 	public static void translateIdToUri(Context context, ContentValues values, boolean canSync, Uri uri){
 		final int type = uriMatcher.match(uri);
 
@@ -1276,6 +1463,8 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#/" + Comment.PATH + "/#", MATCHER_CHILD_COMMENT_ITEM);
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH + "/#/" + Comment.PATH, MATCHER_CHILD_COMMENT_DIR);
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH + "/#/" +Comment.PATH + "/#", MATCHER_CHILD_COMMENT_ITEM);
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Comment.PATH, MATCHER_CHILD_COMMENT_DIR);
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Comment.PATH + "/#", MATCHER_CHILD_COMMENT_ITEM);
 
 		// /project/1/content, etc
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH, MATCHER_PROJECT_CAST_DIR);
@@ -1290,12 +1479,20 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/"+Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 
-		// /content/tags/tag1,tag2
-		uriMatcher.addURI(AUTHORITY, Cast.PATH +'/'+ Tag.PATH + "/*", MATCHER_CAST_BY_TAGS);
-		uriMatcher.addURI(AUTHORITY, Project.PATH +'/'+Tag.PATH + "/*", MATCHER_PROJECT_BY_TAGS);
+		// /content/tags?tag1,tag2
+		uriMatcher.addURI(AUTHORITY, Cast.PATH +'/'+ Tag.PATH, MATCHER_CAST_BY_TAGS);
+		uriMatcher.addURI(AUTHORITY, Project.PATH +'/'+Tag.PATH, MATCHER_PROJECT_BY_TAGS);
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH +'/'+Tag.PATH, MATCHER_ITINERARY_BY_TAGS);
 
 		// tag list
 		uriMatcher.addURI(AUTHORITY, Tag.PATH, MATCHER_TAG_DIR);
+
+		// Itineraries
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH, 							MATCHER_ITINERARY_DIR);
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#", 					MATCHER_ITINERARY_ITEM);
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH,		MATCHER_ITINERARY_CAST_DIR);
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#", MATCHER_ITINERARY_CAST_ITEM);
 	}
 }

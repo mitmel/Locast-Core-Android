@@ -11,15 +11,15 @@
   	android:layout_height="wrap_content"
   	android:background="@android:color/white"
   	>
-  	<Button android:id="@+id/follow"
+  	<ToggleButton android:id="@+id/follow"
   		android:text="Follow"
-  		android:layout_width="wrap_content"
+  		android:layout_width="80sp"
   		android:layout_height="wrap_content"
   		
   		android:layout_alignParentLeft="true"
   		android:layout_centerVertical="true"
   		android:layout_marginRight="15dip"
-  		 />
+  		 android:textOn="Unfollow" android:textOff="Follow"/>
   		<TextView android:id="@+id/title"
   			android:text="The title of this itinerary is itinerary not 'not itinerary'"
   			android:textStyle="bold"

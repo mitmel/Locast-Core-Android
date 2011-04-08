@@ -66,9 +66,6 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	// the ordering of this must match the arrays.xml
 	public static final String[] PRIVACY_LIST = {PRIVACY_PUBLIC, PRIVACY_PRIVATE};
 
-	// key for ContentValues to temporarily store tags as a delimited list
-	public static final String TEMP_TAGS = "_tags";
-
 	public static final TaggableItemSyncMap SYNC_MAP = new TaggableItemSyncMap();
 
 	/**
@@ -293,6 +290,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 * @param baseUri a content URI of a TaggableItem
 	 * @param tags a collection of tags
 	 * @return a URI representing all the items that match all the given tags
+	 * @see #getTagUri(Uri, Collection)
 	 */
 	public static Uri getTagUri(Uri baseUri, String ... tags){
 		return getTagUri(baseUri, Arrays.asList(tags));
@@ -311,7 +309,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 			return baseUri;
 		}
 
-		return Uri.withAppendedPath(Uri.withAppendedPath(baseUri, Tag.PATH), Tag.toTagString(tags));
+		return Uri.withAppendedPath(baseUri, Tag.PATH).buildUpon().query(Tag.toTagQuery(tags)).build();
 	}
 
 	private final static char PREFIX_SEPARATOR = ':';
