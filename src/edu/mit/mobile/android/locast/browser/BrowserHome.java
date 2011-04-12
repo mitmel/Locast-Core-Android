@@ -6,7 +6,6 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Gallery;
@@ -20,7 +19,7 @@ import edu.mit.mobile.android.locast.Application;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.itineraries.ItineraryDetail;
+import edu.mit.mobile.android.locast.data.Itinerary;
 
 public class BrowserHome extends Activity implements OnItemClickListener, OnClickListener{
 
@@ -29,7 +28,6 @@ public class BrowserHome extends Activity implements OnItemClickListener, OnClic
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		imgCache = ((Application)getApplication()).getImageCache();
 		setContentView(R.layout.browser_main);
 
@@ -57,7 +55,7 @@ public class BrowserHome extends Activity implements OnItemClickListener, OnClic
 	public void onClick(View v) {
 		switch (v.getId()){
 		case R.id.itineraries:
-			startActivity(new Intent(this.getApplicationContext(), ItineraryDetail.class));
+			startActivity(new Intent(Intent.ACTION_VIEW, Itinerary.CONTENT_URI));
 			break;
 		}
 

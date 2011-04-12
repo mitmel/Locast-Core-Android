@@ -1,11 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-  android:layout_width="fill_parent"
-  android:layout_height="wrap_content">
-<TextView
-  xmlns:android="http://schemas.android.com/apk/res/android"
-  android:layout_width="fill_parent"
-  android:layout_height="wrap_content" android:id="@+id/description" android:padding="10dip" android:clickable="false">
-</TextView>
-<ProgressBar android:id="@+id/progress" android:layout_gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content"  android:indeterminateOnly="true" android:visibility="invisible" />
+<FrameLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:clickable="false"
+	android:padding="10dip"
+>
+	<LinearLayout
+		android:orientation="vertical"
+		android:id="@+id/linearLayout1"
+		android:layout_height="wrap_content"
+		android:layout_width="fill_parent"
+	>
+		<TextView
+			android:id="@+id/author"
+			android:text="Created by Itinerary Author"
+			android:layout_height="wrap_content"
+			android:paddingBottom="10dip"
+			android:layout_width="fill_parent" />
+		<TextView
+			android:id="@+id/description"
+			android:paddingBottom="10dip"
+			android:layout_height="wrap_content"
+			android:layout_width="fill_parent" />
+		<TextView
+			android:text="Casts"
+			android:textStyle="bold"
+			android:layout_height="wrap_content"
+			android:layout_width="wrap_content" />
+	</LinearLayout>
 </FrameLayout>

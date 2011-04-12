@@ -7,10 +7,10 @@
   
   <TextView android:id="@+id/message" 
   		android:text="Welcome! Locast Abruzzo is a location-based tourism application for visiting Abruzzo."
-    	style="@style/Browser.Notice"
+    	style="@style/Notice"
      	android:layout_width="fill_parent"
       	android:layout_height="wrap_content"
-       />
+       android:drawableLeft="@drawable/ic_info"/>
        
        <LinearLayout 
        		android:layout_width="fill_parent"
@@ -20,27 +20,24 @@
        		
        <Button android:id="@+id/itineraries"
        		android:text="Itineraries"
-       		android:drawableTop="@drawable/app_icon"
        		style="@style/BrowserMainIcon" 
        		android:layout_weight="1"
        		android:layout_width="fill_parent"
-       		android:layout_height="wrap_content"/>
+       		android:layout_height="wrap_content" android:drawableTop="@drawable/ic_itinerary"/>
        		
        <Button android:id="@+id/nearby"
        		android:text="Nearby" 
-       		android:drawableTop="@drawable/app_icon"
        		style="@style/BrowserMainIcon" 
        		android:layout_weight="1"
        		android:layout_width="fill_parent" 
-       		android:layout_height="wrap_content" />
+       		android:layout_height="wrap_content" android:drawableTop="@drawable/ic_nearby"/>
        		
        <Button android:id="@+id/events"
        		android:text="Events"
-       		android:drawableTop="@drawable/app_icon"
        		style="@style/BrowserMainIcon"
        		android:layout_weight="1"
        		android:layout_width="fill_parent" 
-       		android:layout_height="wrap_content"  />
+       		android:layout_height="wrap_content"  android:drawableTop="@drawable/ic_event"/>
        </LinearLayout>
        
        <Gallery android:id="@+id/casts"

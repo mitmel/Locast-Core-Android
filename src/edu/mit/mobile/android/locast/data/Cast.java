@@ -49,10 +49,9 @@ import android.util.Log;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.StreamUtils;
 import edu.mit.mobile.android.locast.net.NetworkClient;
-import edu.mit.mobile.android.locast.net.NetworkClient;
+import edu.mit.mobile.android.locast.net.NetworkClient.InputStreamWatcher;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;
-import edu.mit.mobile.android.locast.net.NetworkClient.InputStreamWatcher;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
 
 public class Cast extends TaggableItem implements MediaScannerConnectionClient, Favoritable.Columns, Locatable.Columns, Commentable.Columns {

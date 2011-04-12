@@ -3,8 +3,8 @@
 <resources>
 	<string name="app_name">Locast Connects</string>
 
-	<string name="default_api_url" translatable="false">http://locast.mit.edu/water/api/</string>
-	<string name="app_update_url" translatable="false">http://locast.mit.edu/water/static/lcc.json</string>
+	<string name="default_api_url" translatable="false">http://mel-pydev.mit.edu/travels/api/</string>
+	<string name="app_update_url" translatable="false">http://mel-pydev.mit.edu/travels/static/lcc.json</string>
 	
 	<!-- Main screen -->
     <string name="about">About</string>

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.json.JSONObject;
 
+import android.content.ContentUris;
 import android.content.Context;
 import android.net.Uri;
 import android.provider.BaseColumns;
@@ -51,6 +52,13 @@ public class Itinerary extends TaggableItem {
 	@Override
 	public Uri getContentUri() {
 		return CONTENT_URI;
+	}
+
+	public static Uri getCastsUri(Uri itinerary){
+		if (ContentUris.parseId(itinerary) == -1){
+			throw new IllegalArgumentException(itinerary + " does not appear to be an itinerary item URI");
+		}
+		return Uri.withAppendedPath(itinerary, Cast.PATH);
 	}
 
 	@Override

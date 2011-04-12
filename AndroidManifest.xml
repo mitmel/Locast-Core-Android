@@ -20,6 +20,7 @@
 		*****************************************************************************************************
 	 -->
 		
+ 
 		<activity android:name=".MainActivity" android:label="@string/app_name">
 			<intent-filter>
  				<action android:name="android.intent.action.MAIN" />
@@ -27,7 +28,7 @@
 				
 			</intent-filter>
 		</activity>
-		
+
 	<!-- 
 		*****************************************************************************************************
 		*                                             Projects                                              *
@@ -329,17 +330,26 @@
 		 -->
 		 
 		 <activity android:name=".browser.BrowserHome" android:screenOrientation="portrait" 
-		 	android:label="Locast Browser" android:taskAffinity="edu.mit.mobile.android.locast.browser">
+		 	android:label="Locast Browser">
 		 	<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER" />
 				
 			</intent-filter>
 		 </activity>
-		
-		<activity android:name=".itineraries.ItineraryDetail"  android:taskAffinity="edu.mit.mobile.android.locast.browser">
+
+		<activity android:name=".itineraries.ItineraryList">
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.itineraries" />
+			</intent-filter>
+		</activity>
+				
+		<activity android:name=".itineraries.ItineraryDetail">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<category android:name="android.intent.category.DEFAULT" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.itineraries" />
 			</intent-filter>
 		</activity>

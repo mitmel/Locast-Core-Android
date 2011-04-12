@@ -107,13 +107,13 @@ public class MediaProvider extends ContentProvider {
 		MATCHER_PROJECT_SHOTLIST_DIR = 17,
 		MATCHER_PROJECT_SHOTLIST_ITEM= 18,
 		MATCHER_SHOTLIST_DIR         = 19,
-		MATCHER_PROJECT_CAST_CASTMEDIA_DIR = 20,
-		MATCHER_PROJECT_CAST_CASTMEDIA_ITEM= 21, // wow...
-		MATCHER_CAST_CASTMEDIA_DIR 	 = 22,
-		MATCHER_ITINERARY_DIR        = 23,
-		MATCHER_ITINERARY_ITEM       = 24,
-		MATCHER_ITINERARY_CAST_DIR   = 25,
-		MATCHER_ITINERARY_CAST_ITEM  = 26,
+		MATCHER_CAST_CASTMEDIA_DIR 	 = 20,
+		MATCHER_ITINERARY_DIR        = 21,
+		MATCHER_ITINERARY_ITEM       = 22,
+		MATCHER_ITINERARY_CAST_DIR   = 23,
+		MATCHER_ITINERARY_CAST_ITEM  = 24,
+		MATCHER_CHILD_CAST_CASTMEDIA_DIR = 25,
+		MATCHER_CHILD_CAST_CASTMEDIA_ITEM= 26,
 		MATCHER_ITINERARY_BY_TAGS    = 27
 		;
 
@@ -242,6 +242,7 @@ public class MediaProvider extends ContentProvider {
 
 					+ ");"
 			);
+			//XXX db.execSQL(ManyToMany.DBHelper.createJoinTable(ITINERARY_CASTS_TABLE_NAME, CAST_TABLE_NAME, ITINERARY_TABLE_NAME));
 
 			db.execSQL("CREATE TABLE "+ITINERARY_CASTS_TABLE_NAME + " ("
 				+ ItineraryCastsColumns._ID 			+ " INTEGER PRIMARY KEY,"
@@ -297,8 +298,8 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CAST_MEDIA_DIR:
 		case MATCHER_CAST_MEDIA_ITEM:
 		case MATCHER_CAST_CASTMEDIA_DIR:
-		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:
-		case MATCHER_PROJECT_CAST_CASTMEDIA_ITEM:
+		case MATCHER_CHILD_CAST_CASTMEDIA_DIR:
+		case MATCHER_CHILD_CAST_CASTMEDIA_ITEM:
 
 		case MATCHER_COMMENT_ITEM:
 		case MATCHER_CHILD_COMMENT_ITEM:
@@ -352,10 +353,11 @@ public class MediaProvider extends ContentProvider {
 
 		case MATCHER_CAST_MEDIA_DIR:
 		case MATCHER_CAST_CASTMEDIA_DIR:
-		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:
+		case MATCHER_CHILD_CAST_CASTMEDIA_DIR:
 			return TYPE_CAST_MEDIA_DIR;
 
 		case MATCHER_CAST_MEDIA_ITEM:
+		case MATCHER_CHILD_CAST_CASTMEDIA_ITEM:
 			return TYPE_CAST_MEDIA_ITEM;
 
 		case MATCHER_PROJECT_DIR:
@@ -538,16 +540,6 @@ public class MediaProvider extends ContentProvider {
 			newItem = ContentUris.withAppendedId(uri, ContentUris.parseId(newItem));
 
 		} break;
-		//////////////////////////////////////////////////////////////////////////////////
-		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:{
-			final String castId = uri.getPathSegments().get(3);
-			values.put(CastMedia._PARENT_ID, castId);
-
-			// TODO figure out how to have it not sync twice here
-			newItem = insert(Cast.getCastMediaUri(Uri.withAppendedPath(Cast.CONTENT_URI, castId)), values);
-			// this adds the ID to the path that we sent in, instead of the base one.
-			newItem = ContentUris.withAppendedId(uri, ContentUris.parseId(newItem));
-		} break;
 
 		//////////////////////////////////////////////////////////////////////////////////
 		case MATCHER_ITINERARY_DIR:{
@@ -579,6 +571,18 @@ public class MediaProvider extends ContentProvider {
 				db.endTransaction();
 			}
 		}break;
+
+		//////////////////////////////////////////////////////////////////////////////////
+		case MATCHER_CHILD_CAST_CASTMEDIA_DIR:{
+			final Uri parent = removeLastPathSegment(uri);
+			final String castId = parent.getLastPathSegment();
+			values.put(CastMedia._PARENT_ID, castId);
+
+			// TODO figure out how to have it not sync twice here
+			newItem = insert(Cast.getCastMediaUri(Uri.withAppendedPath(Cast.CONTENT_URI, castId)), values);
+			// this adds the ID to the path that we sent in, instead of the base one.
+			newItem = ContentUris.withAppendedId(uri, ContentUris.parseId(newItem));
+		} break;
 
 
 		default:
@@ -756,8 +760,9 @@ public class MediaProvider extends ContentProvider {
 			break;
 		}
 
-		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:{
-			final String castId = uri.getPathSegments().get(3);
+		case MATCHER_CHILD_CAST_CASTMEDIA_DIR:{
+			final Uri parent = removeLastPathSegment(uri);
+			final String castId = parent.getLastPathSegment();
 
 			qb.setTables(CAST_MEDIA_TABLE_NAME);
 			qb.appendWhere(CastMedia._PARENT_ID + "="+castId);
@@ -860,6 +865,7 @@ public class MediaProvider extends ContentProvider {
 			count = db.update(CAST_TABLE_NAME, values, where, whereArgs);
 			break;
 		case MATCHER_PROJECT_CAST_ITEM:
+		case MATCHER_ITINERARY_CAST_ITEM:
 		case MATCHER_CAST_ITEM:{
 			id = ContentUris.parseId(uri);
 			if ( values.size() == 2 && values.containsKey(Favoritable.Columns._FAVORITED)){
@@ -881,14 +887,14 @@ public class MediaProvider extends ContentProvider {
 					whereArgs);
 		} break;
 
-		case MATCHER_PROJECT_CAST_CASTMEDIA_ITEM:{
-			final String castId = uri.getPathSegments().get(3);
-			final String castMediaId = uri.getPathSegments().get(5);
+		case MATCHER_CHILD_CAST_CASTMEDIA_ITEM:{
+			final Uri parent = removeLastPathSegments(uri, 2);
+			final String castId = parent.getLastPathSegment();
+			final String castMediaId = uri.getLastPathSegment();
+
 			count = db.update(CAST_MEDIA_TABLE_NAME, values,
-					CastMedia._PARENT_ID+"="+castId
-						+ " AND " + CastMedia._LIST_IDX+"=" + castMediaId
-						+ (where != null && where.length() > 0 ? " AND ("+where+")":""),
-					whereArgs);
+					addExtraWhere(where, CastMedia._PARENT_ID + "=? AND "+ CastMedia._LIST_IDX+"=?"),
+					addExtraWhereArgs(whereArgs, castId, castMediaId));
 		} break;
 
 		case MATCHER_PROJECT_DIR:
@@ -1089,7 +1095,7 @@ public class MediaProvider extends ContentProvider {
 		}
 
 		case MATCHER_CAST_CASTMEDIA_DIR:
-		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:{
+		case MATCHER_CHILD_CAST_CASTMEDIA_DIR:{
 			final List<String> pathSegs = uri.getPathSegments();
 
 			count = db.delete(CAST_MEDIA_TABLE_NAME,
@@ -1204,7 +1210,7 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CAST_MEDIA_ITEM:
 		case MATCHER_CHILD_COMMENT_ITEM:
 		case MATCHER_COMMENT_ITEM:
-		case MATCHER_PROJECT_CAST_CASTMEDIA_ITEM:
+		case MATCHER_CHILD_CAST_CASTMEDIA_ITEM:
 		case MATCHER_PROJECT_CAST_ITEM:
 		case MATCHER_PROJECT_ITEM:
 		case MATCHER_PROJECT_SHOTLIST_ITEM:{
@@ -1220,7 +1226,7 @@ public class MediaProvider extends ContentProvider {
 			path = getPathFromField(cr, removeLastPathSegment(uri), Project._CASTS_URI);
 		}break;
 
-		case MATCHER_PROJECT_CAST_CASTMEDIA_DIR:
+		case MATCHER_CHILD_CAST_CASTMEDIA_DIR:
 		case MATCHER_CAST_CASTMEDIA_DIR:
 		case MATCHER_CAST_MEDIA_DIR: {
 			path = getPathFromField(cr, removeLastPathSegment(uri), Cast._CASTMEDIA_DIR_URI);
@@ -1446,8 +1452,11 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, CastMedia.PATH, MATCHER_CAST_MEDIA_DIR);
 		uriMatcher.addURI(AUTHORITY, CastMedia.PATH+"/#", MATCHER_CAST_MEDIA_ITEM);
 
-		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH, MATCHER_PROJECT_CAST_CASTMEDIA_DIR);
-		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH + "/#/", MATCHER_PROJECT_CAST_CASTMEDIA_ITEM);
+		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH, MATCHER_CHILD_CAST_CASTMEDIA_DIR);
+		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH + "/#/", MATCHER_CHILD_CAST_CASTMEDIA_ITEM);
+
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH, MATCHER_CHILD_CAST_CASTMEDIA_DIR);
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH + "/#/", MATCHER_CHILD_CAST_CASTMEDIA_ITEM);
 
 		uriMatcher.addURI(AUTHORITY, Project.PATH, MATCHER_PROJECT_DIR);
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#", MATCHER_PROJECT_ITEM);
