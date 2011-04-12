@@ -115,26 +115,12 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 	@Override
 	protected void onPause() {
 		super.onPause();
-		if (c != null){
-			c.unregisterContentObserver(mContentObserver);
-		}
+		mContentObserver.onPause(c);
 	}
 	@Override
 	protected void onResume() {
 		super.onResume();
-		if (c != null){
-			c.registerContentObserver(mContentObserver);
-			if (c.moveToFirst()){
-				loadFromCursor();
-			}else{
-				// handle the case where this item is deleted
-				finish();
-			}
-		}
-	}
-
-	public Cursor getCursor() {
-		return c;
+		mContentObserver.onResume(c);
 	}
 
 	public void loadFromCursor(){

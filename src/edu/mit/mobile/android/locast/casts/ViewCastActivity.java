@@ -18,9 +18,9 @@ package edu.mit.mobile.android.locast.casts;
  */
 
 
+import android.app.AlertDialog.Builder;
 import android.app.Dialog;
 import android.app.TabActivity;
-import android.app.AlertDialog.Builder;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -78,26 +78,15 @@ public class ViewCastActivity extends TabActivity implements BasicCursorContentO
 	protected void onResume() {
 		super.onResume();
 
-		mCursor.registerContentObserver(mContentObserver);
-
-		if (mCursor.moveToFirst()){
-			loadFromCursor();
-			startService(new Intent(Intent.ACTION_SYNC, myUri));
-		}else{
-			// handle the case where this item is deleted
-			finish();
-		}
+		mContentObserver.onResume(mCursor);
+		startService(new Intent(Intent.ACTION_SYNC, myUri));
 	};
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		mCursor.unregisterContentObserver(mContentObserver);
+		mContentObserver.onPause(mCursor);
 	};
-
-	public Cursor getCursor() {
-		return mCursor;
-	}
 
 	public void loadFromCursor(){
 

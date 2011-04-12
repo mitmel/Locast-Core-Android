@@ -32,9 +32,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.casts.BasicCursorContentObserver;
+import edu.mit.mobile.android.locast.casts.BasicCursorContentObserver.BasicCursorContentObserverWatcher;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.casts.CastListActivity;
-import edu.mit.mobile.android.locast.casts.BasicCursorContentObserver.BasicCursorContentObserverWatcher;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Project;
 import edu.mit.mobile.android.locast.data.ShotList;
@@ -94,24 +94,13 @@ import edu.mit.mobile.android.locast.widget.TagListView;
 		@Override
 		protected void onPause() {
 			super.onPause();
-			c.unregisterContentObserver(mContentObserver);
+			mContentObserver.onPause(c);
 		}
 
 		@Override
 		protected void onResume() {
 			super.onResume();
-			c.registerContentObserver(mContentObserver);
-
-			if (c.moveToFirst()){
-				loadFromCursor();
-			}else{
-				// handle the case where this item is deleted
-				finish();
-			}
-		}
-
-		public Cursor getCursor() {
-			return c;
+			mContentObserver.onResume(c);
 		}
 
 		public void loadFromCursor(){

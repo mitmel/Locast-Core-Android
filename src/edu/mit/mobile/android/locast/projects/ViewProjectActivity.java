@@ -70,19 +70,16 @@ public class ViewProjectActivity extends TabActivity implements BasicCursorConte
 	@Override
 	protected void onResume() {
 		super.onResume();
-		mCursor.registerContentObserver(mBasicCursorContentObserver);
-		if (mCursor.moveToFirst()){
-			loadFromCursor();
+		mBasicCursorContentObserver.onResume(mCursor);
+		if (mCursor.getCount() != 0){
 			startService(new Intent(Intent.ACTION_SYNC, myUri));
-		}else{
-			finish();
 		}
 	};
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		mCursor.unregisterContentObserver(mBasicCursorContentObserver);
+		mBasicCursorContentObserver.onPause(mCursor);
 	};
 
 	public void loadFromCursor(){
@@ -132,11 +129,6 @@ public class ViewProjectActivity extends TabActivity implements BasicCursorConte
 		tabHost.setCurrentTab(currentTab);
 		}
 
-	}
-
-	@Override
-	public Cursor getCursor() {
-		return mCursor;
 	}
 
 	@Override
