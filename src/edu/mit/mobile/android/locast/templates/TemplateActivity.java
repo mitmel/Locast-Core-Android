@@ -18,9 +18,9 @@ package edu.mit.mobile.android.locast.templates;
  */
 import java.util.List;
 
+import android.app.AlertDialog.Builder;
 import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.app.AlertDialog.Builder;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -46,10 +46,11 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.View.OnClickListener;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -58,7 +59,6 @@ import android.widget.TextSwitcher;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
-import android.widget.AdapterView.OnItemClickListener;
 import edu.mit.mobile.android.locast.IncrementalLocator;
 import edu.mit.mobile.android.locast.ListUtils;
 import edu.mit.mobile.android.locast.R;
@@ -739,8 +739,6 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		final ContentResolver cr = getContentResolver();
 
 		final ContentValues cast = new ContentValues();
-		cast.put(Cast._PROJECT_ID, ContentUris.parseId(mProjectUri));
-		cast.put(Cast._PROJECT_URI, mPublicProjectUri);
 		cast.put(Cast._PRIVACY, Cast.PRIVACY_PUBLIC);
 		cast.put(Cast._TITLE, ((EditText)findViewById(R.id.cast_title)).getText().toString());
 		cast.put(Cast._AUTHOR, NetworkClient.getInstance(this).getUsername());
