@@ -39,10 +39,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
-import android.provider.BaseColumns;
 import android.util.Log;
 import edu.mit.mobile.android.locast.ListUtils;
-import edu.mit.mobile.android.locast.data.Itinerary.ItineraryCastsColumns;
 
 public class MediaProvider extends ContentProvider {
 	@SuppressWarnings("unused")
@@ -82,8 +80,14 @@ public class MediaProvider extends ContentProvider {
 		COMMENT_TABLE_NAME    = "comments",
 		TAG_TABLE_NAME        = "tags",
 		ITINERARY_TABLE_NAME  = "itineraries",
-		ITINERARY_CASTS_TABLE_NAME = "itinerary_casts",
+
 		SHOTLIST_TABLE_NAME   = "shotlist";
+
+	private static final ManyToMany.DBHelper
+		ITINERARY_CASTS_DBHELPER = new ManyToMany.DBHelper(ITINERARY_TABLE_NAME, CAST_TABLE_NAME);
+
+	private static final String
+		ITINERARY_CASTS_TABLE_NAME = ITINERARY_CASTS_DBHELPER.getJoinTableName();
 
 	private static UriMatcher uriMatcher;
 
@@ -110,8 +114,8 @@ public class MediaProvider extends ContentProvider {
 		MATCHER_CAST_CASTMEDIA_DIR 	 = 20,
 		MATCHER_ITINERARY_DIR        = 21,
 		MATCHER_ITINERARY_ITEM       = 22,
-		MATCHER_ITINERARY_CAST_DIR   = 23,
-		MATCHER_ITINERARY_CAST_ITEM  = 24,
+		MATCHER_CHILD_CAST_DIR   	 = 23,
+		MATCHER_CHILD_CAST_ITEM  	 = 24,
 		MATCHER_CHILD_CAST_CASTMEDIA_DIR = 25,
 		MATCHER_CHILD_CAST_CASTMEDIA_ITEM= 26,
 		MATCHER_ITINERARY_BY_TAGS    = 27
@@ -242,16 +246,8 @@ public class MediaProvider extends ContentProvider {
 
 					+ ");"
 			);
-			//XXX db.execSQL(ManyToMany.DBHelper.createJoinTable(ITINERARY_CASTS_TABLE_NAME, CAST_TABLE_NAME, ITINERARY_TABLE_NAME));
 
-			db.execSQL("CREATE TABLE "+ITINERARY_CASTS_TABLE_NAME + " ("
-				+ ItineraryCastsColumns._ID 			+ " INTEGER PRIMARY KEY,"
-				// TODO foreign keys are not supported in 2.1 or below
-				//+ "cast_id REFERENCES "+CAST_TABLE_NAME +  	"("+Cast._ID+")"
-				+ ItineraryCastsColumns._CAST_ID   		+ " INTEGER,"
-				+ ItineraryCastsColumns._ITINERARY_ID 	+ " INTEGER"
-				+ ");"
-			);
+			ITINERARY_CASTS_DBHELPER.createJoinTable(db);
 		}
 
 		@Override
@@ -272,6 +268,7 @@ public class MediaProvider extends ContentProvider {
 				db.execSQL("DROP TABLE IF EXISTS " + CAST_MEDIA_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + SHOTLIST_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + ITINERARY_TABLE_NAME);
+				ITINERARY_CASTS_DBHELPER.deleteJoinTable(db);
 				onCreate(db);
 			}
 		}
@@ -325,8 +322,8 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_PROJECT_DIR:
 		case MATCHER_PROJECT_ITEM:
 
-		case MATCHER_ITINERARY_CAST_DIR:
-		case MATCHER_ITINERARY_CAST_ITEM:
+		case MATCHER_CHILD_CAST_DIR:
+		case MATCHER_CHILD_CAST_ITEM:
 		case MATCHER_ITINERARY_DIR:
 		case MATCHER_ITINERARY_ITEM:
 			return true;
@@ -395,9 +392,9 @@ public class MediaProvider extends ContentProvider {
 
 			//////////////// itineraries
 
-		case MATCHER_ITINERARY_CAST_DIR:
+		case MATCHER_CHILD_CAST_DIR:
 			return TYPE_CAST_DIR;
-		case MATCHER_ITINERARY_CAST_ITEM:
+		case MATCHER_CHILD_CAST_ITEM:
 			return TYPE_CAST_ITEM;
 
 		case MATCHER_ITINERARY_DIR:
@@ -546,7 +543,7 @@ public class MediaProvider extends ContentProvider {
 			newItem = insertWithTags(values, db, ITINERARY_TABLE_NAME, Itinerary.CONTENT_URI);
 			if (newItem != null){
 				if (values.containsKey(Itinerary._DRAFT)){
-					isDraft = values.getAsBoolean(Project._DRAFT);
+					isDraft = values.getAsBoolean(Itinerary._DRAFT);
 				}else{
 					isDraft = false;
 				}
@@ -555,20 +552,26 @@ public class MediaProvider extends ContentProvider {
 		//////////////////////////////////////////////////////////////////////////////////
 
 		// itin/1/casts
-		case MATCHER_ITINERARY_CAST_DIR:{
-			final List<String> pathSegments = uri.getPathSegments();
-			final long itinId = Long.parseLong(pathSegments.get(pathSegments.size() - 2));
+		case MATCHER_CHILD_CAST_DIR:{
+			final Uri parent = removeLastPathSegment(uri);
+
+			final long parentId = ContentUris.parseId(parent);
 			db.beginTransaction();
 			try {
 				newItem = insert(Cast.CONTENT_URI, values);
-				final ContentValues relation = new ContentValues();
-				// make a many-to-many relation to the itinerary.
-				relation.put(ItineraryCastsColumns._CAST_ID, ContentUris.parseId(newItem));
-				relation.put(ItineraryCastsColumns._ITINERARY_ID, itinId);
-				db.insert(ITINERARY_CASTS_TABLE_NAME, null, relation);
+				if (TYPE_ITINERARY_ITEM.equals(getType(parent))){
+					ITINERARY_CASTS_DBHELPER.addRelation(db, ContentUris.parseId(newItem), parentId);
+				}else{
+					throw new IllegalArgumentException("Don't know how to add a cast to "+ parent);
+				}
 				db.setTransactionSuccessful();
 			}finally{
 				db.endTransaction();
+			}
+			if (values.containsKey(Cast._DRAFT)){
+				isDraft = values.getAsBoolean(Cast._DRAFT);
+			}else{
+				isDraft = false;
 			}
 		}break;
 
@@ -582,6 +585,12 @@ public class MediaProvider extends ContentProvider {
 			newItem = insert(Cast.getCastMediaUri(Uri.withAppendedPath(Cast.CONTENT_URI, castId)), values);
 			// this adds the ID to the path that we sent in, instead of the base one.
 			newItem = ContentUris.withAppendedId(uri, ContentUris.parseId(newItem));
+
+			if (values.containsKey(Cast._DRAFT)){
+				isDraft = values.getAsBoolean(Cast._DRAFT);
+			}else{
+				isDraft = false;
+			}
 		} break;
 
 
@@ -811,19 +820,20 @@ public class MediaProvider extends ContentProvider {
 					null, null, sortOrder);
 		}break;
 
-		case MATCHER_ITINERARY_CAST_DIR:{
+		// itin/1/casts
+		case MATCHER_CHILD_CAST_DIR:{
 			if (sortOrder == null){
 				sortOrder = Cast.SORT_ORDER_DEFAULT;
 			}
-			final List<String> pathSegments = uri.getPathSegments();
-			final String itinId = pathSegments.get(pathSegments.size() - 2);
+			final Uri parent = removeLastPathSegment(uri);
 
-			c = db.query(CAST_TABLE_NAME
-					+ " INNER JOIN " + ITINERARY_CASTS_TABLE_NAME
-					+ " ON " + ITINERARY_CASTS_TABLE_NAME+"."+ItineraryCastsColumns._ITINERARY_ID + "=" + ITINERARY_TABLE_NAME + "." + Itinerary._ID,
-					addPrefixToProjection(CAST_TABLE_NAME, projection),
-					addExtraWhere(selection, ITINERARY_TABLE_NAME + "." + Itinerary._ID + "=?"),
-					addExtraWhereArgs(selectionArgs, itinId), null, null, sortOrder);
+			final long parentId = ContentUris.parseId(parent);
+
+			if (TYPE_ITINERARY_ITEM.equals(getType(parent))){
+				c = ITINERARY_CASTS_DBHELPER.queryTo(parentId, db, projection, selection, selectionArgs, sortOrder);
+			}else{
+				throw new IllegalArgumentException("Don't know how to get a cast from a "+uri);
+			}
 
 		}break;
 
@@ -865,7 +875,7 @@ public class MediaProvider extends ContentProvider {
 			count = db.update(CAST_TABLE_NAME, values, where, whereArgs);
 			break;
 		case MATCHER_PROJECT_CAST_ITEM:
-		case MATCHER_ITINERARY_CAST_ITEM:
+		case MATCHER_CHILD_CAST_ITEM:
 		case MATCHER_CAST_ITEM:{
 			id = ContentUris.parseId(uri);
 			if ( values.size() == 2 && values.containsKey(Favoritable.Columns._FAVORITED)){
@@ -1122,7 +1132,31 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_ITINERARY_ITEM:{
 			final String itemId = uri.getLastPathSegment();
 			count = db.delete(ITINERARY_TABLE_NAME, addExtraWhere(where, Itinerary._ID+"=?"), addExtraWhereArgs(whereArgs, itemId));
-		}
+		}break;
+
+
+		// itin/1/casts/1
+		case MATCHER_CHILD_CAST_ITEM:{
+
+			try {
+				db.beginTransaction();
+				final Uri parent = removeLastPathSegments(uri, 2);
+				final long castId = ContentUris.parseId(uri);
+				count = db.delete(CAST_TABLE_NAME, Cast._ID+"=?", new String[]{uri.getLastPathSegment()});
+
+				if (TYPE_ITINERARY_ITEM.equals(getType(parent))){
+					final int rows = ITINERARY_CASTS_DBHELPER.removeRelation(db, ContentUris.parseId(parent), castId);
+					if (rows == 0){
+						throw new IllegalArgumentException("There is no relation between cast "+castId + " and "+parent);
+					}
+				}else{
+					throw new IllegalArgumentException("Don't know how to get a cast from a "+uri);
+				}
+
+			}finally{
+				db.endTransaction();
+			}
+		}break;
 
 			default:
 				throw new IllegalArgumentException("Unknown URI: "+uri);
@@ -1317,20 +1351,29 @@ public class MediaProvider extends ContentProvider {
 		whereArgs2.addAll(0, Arrays.asList(extraArgs));
 		return whereArgs2.toArray(new String[]{});
 	}
-	/** Modify the projection so that _ID explicitly refers to that of the objects being searched,
-	 * 	not the tags. Without this, _ID is ambiguous and the query fails.
+	/**
+	 * Modify the projection so that all columns refers to that of the specified table,
+	 * not any others that may be joined. Without this, _ID and other columns would be ambiguous
+	 * and the query fails.
 	 *
-	 * @param tableName the name of the table whose _ID should be returned.
-	 * @param projection a projection for the object whose _ID should be returned.
-	 * @return a modified projection with the _ID field set to the given item.
+	 * All columns are aliased as the column name in the original projection so that most queries
+	 * should Just Work™.
+	 *
+	 * @param tableName the name of the table whose columns should be returned.
+	 * @param projection
+	 * @return a modified projection with a table prefix for all columns.
 	 */
 	public static String[] addPrefixToProjection(String tableName, String[] projection){
 
-		final String[] projection2 = projection.clone();
-		final List<String> projectionList = Arrays.asList(projection2);
-		final int idPos = projectionList.indexOf(BaseColumns._ID);
-		if (idPos >= 0){
-			projection2[idPos] = tableName + "."+BaseColumns._ID + " as " + BaseColumns._ID;
+		final String[] projection2 = new String[projection.length];
+		//final List<String> projectionList = Arrays.asList(projection2);
+//		final int idPos = projectionList.indexOf(BaseColumns._ID);
+//		if (idPos >= 0){
+//			projection2[idPos] = tableName + "."+BaseColumns._ID + " as " + BaseColumns._ID;
+//		}
+		final int len = projection2.length;
+		for (int i = 0; i < len; i++){
+			projection2[i] = tableName + "."+projection[i] + " as " + projection[i];
 		}
 		return projection2;
 	}
@@ -1501,7 +1544,7 @@ public class MediaProvider extends ContentProvider {
 		// Itineraries
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH, 							MATCHER_ITINERARY_DIR);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#", 					MATCHER_ITINERARY_ITEM);
-		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH,		MATCHER_ITINERARY_CAST_DIR);
-		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#", MATCHER_ITINERARY_CAST_ITEM);
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH,		MATCHER_CHILD_CAST_DIR);
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#", MATCHER_CHILD_CAST_ITEM);
 	}
 }

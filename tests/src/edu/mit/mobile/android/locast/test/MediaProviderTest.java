@@ -84,18 +84,43 @@ public class MediaProviderTest extends ProviderTestCase2<MediaProvider> {
 		assertEquals(MediaProvider.TYPE_CAST_ITEM, mCr.getType(Uri.withAppendedPath(itineraryItem, Cast.PATH + "/1")));
 	}
 
-	public void testCastCRUD(){
-		// create
+	private static final String
+		T_TITLE = "title 1",
+		T_TITLE2 = "title 2",
+		T_DESCRIPTION = "description 1",
+		T_DESCRIPTION2 = "description 2",
+		T_AUTHOR = "author1",
+		T_AUTHOR2 = "author2";
+
+	private final Set<String> T_TAGS = new HashSet<String>(Arrays.asList(new String[]{"robots", "kittens"}));
+	private final Set<String> T_TAGS_AFTER_ADD1 = new HashSet<String>(Arrays.asList(new String[]{"robots", "kittens", "lasers"}));
+
+	private final String
+		T_TAG_TO_ADD1 = "lasers";
+
+
+	/**
+	 * Create a cast using the provided URI.
+	 *
+	 * @param uri
+	 * @return
+	 */
+	private Uri createCast(Uri uri){
 		final ContentValues cv = new ContentValues();
-		cv.put(Cast._TITLE, "title 1");
-		cv.put(Cast._DESCRIPTION, "description 1");
-		cv.put(Cast._AUTHOR, "author1");
+		cv.put(Cast._TITLE, T_TITLE);
+		cv.put(Cast._DESCRIPTION, T_DESCRIPTION);
+		cv.put(Cast._AUTHOR, T_AUTHOR);
 		cv.put(Cast._DRAFT, true);
-		final Set<String> tags = new HashSet<String>(Arrays.asList(new String[]{"robots", "kittens"}));
-		TaggableItem.putList(Tag.PATH, cv, tags);
-		final Uri cast = mCr.insert(Cast.CONTENT_URI, cv);
 
+		TaggableItem.putList(Tag.PATH, cv, T_TAGS);
+		final Uri cast = mCr.insert(uri, cv);
+		return cast;
 
+	}
+
+	private void testCastCRUD(Uri castUri){
+		// create
+		final Uri cast = createCast(castUri);
 
 		assertNotNull(cast);
 
@@ -105,13 +130,18 @@ public class MediaProviderTest extends ProviderTestCase2<MediaProvider> {
 		assertNotNull(c);
 		assertTrue(c.moveToFirst());
 
-		assertEquals("title 1", c.getString(c.getColumnIndex(Cast._TITLE)));
-		assertEquals("description 1", c.getString(c.getColumnIndex(Cast._DESCRIPTION)));
-		assertEquals("author1", c.getString(c.getColumnIndex(Cast._AUTHOR)));
+		assertEquals(T_TITLE, c.getString(c.getColumnIndex(Cast._TITLE)));
+		assertEquals(T_DESCRIPTION, c.getString(c.getColumnIndex(Cast._DESCRIPTION)));
+		assertEquals(T_AUTHOR, c.getString(c.getColumnIndex(Cast._AUTHOR)));
 		assertTrue(c.getInt(c.getColumnIndex(Cast._DRAFT)) != 0);
-		assertTagsEqual(tags, TaggableItem.getTags(mCr, cast));
+		assertTagsEqual(T_TAGS, TaggableItem.getTags(mCr, cast));
 		// update
 
+		assertEquals(1,mCr.delete(cast, null, null));
+	}
+
+	public void testCastCRUD(){
+		testCastCRUD(Cast.CONTENT_URI);
 	}
 
 	private void assertTagsEqual(Set<String> expected, Set<String> actual){
@@ -124,18 +154,45 @@ public class MediaProviderTest extends ProviderTestCase2<MediaProvider> {
 		}
 	}
 
-	public void testItineraryCRUD(){
-		// create
+	private Uri createItinerary(){
 		final ContentValues cv = new ContentValues();
-		cv.put(Cast._TITLE, "title 1");
-		cv.put(Cast._DESCRIPTION, "description 1");
-		cv.put(Cast._AUTHOR, "author1");
+		cv.put(Cast._TITLE, T_TITLE);
+		cv.put(Cast._DESCRIPTION, T_DESCRIPTION);
+		cv.put(Cast._AUTHOR, T_AUTHOR);
 		cv.put(Cast._DRAFT, true);
-		final Set<String> tags = new HashSet<String>(Arrays.asList(new String[]{"robots", "kittens"}));
-		TaggableItem.putList(Tag.PATH, cv, tags);
-		final Uri itinerary = mCr.insert(Itinerary.CONTENT_URI, cv);
 
-		assertNotNull(itinerary);
+		TaggableItem.putList(Tag.PATH, cv, T_TAGS);
+		return mCr.insert(Itinerary.CONTENT_URI, cv);
 	}
 
+	public void testItineraryCRUD(){
+		// create
+		final Uri itinerary = createItinerary();
+
+		assertNotNull(itinerary);
+
+		// read
+		final Cursor c = mCr.query(itinerary, Itinerary.PROJECTION, null, null, null);
+
+		assertNotNull(c);
+
+		assertTrue(c.moveToFirst());
+
+		assertEquals(T_TITLE, c.getString(c.getColumnIndex(Itinerary._TITLE)));
+		assertEquals(T_DESCRIPTION, c.getString(c.getColumnIndex(Itinerary._DESCRIPTION)));
+		assertEquals(T_AUTHOR, c.getString(c.getColumnIndex(Itinerary._AUTHOR)));
+		assertTrue(c.getInt(c.getColumnIndex(Itinerary._DRAFT)) != 0);
+		assertTagsEqual(T_TAGS, TaggableItem.getTags(mCr, itinerary));
+
+		assertEquals(1, mCr.delete(itinerary, null, null));
+
+	}
+
+	public void testItineraryCast(){
+		final Uri itinerary = createItinerary();
+
+		testCastCRUD(Itinerary.getCastsUri(itinerary));
+
+		assertEquals(1, mCr.delete(itinerary, null, null));
+	}
 }

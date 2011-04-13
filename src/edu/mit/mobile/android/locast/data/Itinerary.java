@@ -7,7 +7,6 @@ import org.json.JSONObject;
 import android.content.ContentUris;
 import android.content.Context;
 import android.net.Uri;
-import android.provider.BaseColumns;
 
 public class Itinerary extends TaggableItem {
 	public final static String PATH = "itineraries";
@@ -23,16 +22,6 @@ public class Itinerary extends TaggableItem {
 		_DESCRIPTION = "description",
 		_CASTS_URI = "casts";
 
-	/**
-	 * A through table to allow a many-to-many relation between itineraries and casts.
-	 *
-	 */
-	public static class ItineraryCastsColumns implements BaseColumns {
-		public static final String
-			_CAST_ID = "cast_id",
-			_ITINERARY_ID = "itinerary_id";
-	}
-
 	public static final String[] PROJECTION = {
 		_ID,
 		_AUTHOR,
@@ -42,6 +31,7 @@ public class Itinerary extends TaggableItem {
 		_CREATED_DATE,
 		_MODIFIED_DATE,
 		_PATH,
+		_DRAFT,
 	};
 
 	@Override
