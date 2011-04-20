@@ -1,9 +1,7 @@
 package edu.mit.mobile.android.locast.test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import android.content.ContentResolver;
@@ -16,7 +14,6 @@ import android.test.ProviderTestCase2;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Comment;
 import edu.mit.mobile.android.locast.data.Itinerary;
-import edu.mit.mobile.android.locast.data.JsonSyncableItem;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Project;
 import edu.mit.mobile.android.locast.data.Tag;
@@ -38,50 +35,103 @@ public class MediaProviderTest extends ProviderTestCase2<MediaProvider> {
 		mCr = getMockContentResolver();
 	}
 
+	private static final Uri
+		U_CAST_ITEM = ContentUris.withAppendedId(Cast.CONTENT_URI, 1),
+		U_COMMENT_ITEM = ContentUris.withAppendedId(Comment.CONTENT_URI, 1),
+
+		U_ITINERARY_ITEM = ContentUris.withAppendedId(Itinerary.CONTENT_URI, 1),
+		U_ITINERARY_CAST_DIR = Uri.withAppendedPath(U_ITINERARY_ITEM, Cast.PATH),
+		U_ITINERARY_CAST_ITEM = ContentUris.withAppendedId(U_ITINERARY_CAST_DIR, 1),
+
+		U_PROJECT_ITEM = ContentUris.withAppendedId(Project.CONTENT_URI, 1),
+		U_PROJECT_CAST_DIR = Uri.withAppendedPath(U_PROJECT_ITEM, Cast.PATH),
+		U_PROJECT_CAST_ITEM = ContentUris.withAppendedId(U_PROJECT_CAST_DIR, 1);
+
+	private static final Uri[] U_ALL = {
+		Cast.CONTENT_URI,
+		U_CAST_ITEM,
+
+		Comment.CONTENT_URI,
+		U_COMMENT_ITEM,
+
+		Itinerary.CONTENT_URI,
+		U_ITINERARY_ITEM,
+		U_ITINERARY_CAST_DIR,
+		U_ITINERARY_CAST_ITEM,
+
+		Project.CONTENT_URI,
+		U_PROJECT_ITEM,
+		U_PROJECT_CAST_DIR,
+		U_PROJECT_CAST_ITEM,
+	};
+
 	public void testContentTypes(){
 		// casts
 		assertEquals(MediaProvider.TYPE_CAST_DIR, mCr.getType(Cast.CONTENT_URI));
-		assertEquals(MediaProvider.TYPE_CAST_ITEM, mCr.getType(ContentUris.withAppendedId(Cast.CONTENT_URI, 1)));
+		assertEquals(MediaProvider.TYPE_CAST_ITEM, mCr.getType(U_CAST_ITEM));
 
 		// comments
 		assertEquals(MediaProvider.TYPE_COMMENT_DIR, mCr.getType(Comment.CONTENT_URI));
-		assertEquals(MediaProvider.TYPE_COMMENT_ITEM, mCr.getType(ContentUris.withAppendedId(Comment.CONTENT_URI, 1)));
+		assertEquals(MediaProvider.TYPE_COMMENT_ITEM, mCr.getType(U_COMMENT_ITEM));
 
-		final List<Class<? extends JsonSyncableItem>> commentableItems = new ArrayList<Class<? extends JsonSyncableItem>>();
-		commentableItems.add(Project.class);
-		commentableItems.add(Cast.class);
-		commentableItems.add(Itinerary.class);
-
-		for (final Class<? extends JsonSyncableItem> commentable: commentableItems){
-			Uri contentUri;
-			try {
-				contentUri = (Uri) commentable.getField("CONTENT_URI").get(null);
+		//
+		testAllContentTypes(new ContentUriTest() {
+			@Override
+			public void runUriTest(Uri contentUri) {
 				contentUri = ContentUris.withAppendedId(contentUri, 1);
 				final Uri commentUri = Uri.withAppendedPath(contentUri, Comment.PATH);
-				assertEquals(commentable.getSimpleName() + ": " + contentUri, MediaProvider.TYPE_COMMENT_DIR, mCr.getType(commentUri));
-				assertEquals(commentable.getSimpleName() + ": " + contentUri, MediaProvider.TYPE_COMMENT_ITEM, mCr.getType(ContentUris.withAppendedId(commentUri, 1)));
-			} catch (final Exception e) {
-				fail(e.getLocalizedMessage());
+				assertEquals(contentUri.toString(), MediaProvider.TYPE_COMMENT_DIR, mCr.getType(commentUri));
+				assertEquals(contentUri.toString(), MediaProvider.TYPE_COMMENT_ITEM, mCr.getType(ContentUris.withAppendedId(commentUri, 1)));
+
 			}
-		}
+		// these should all be indexes to things that are commentable.
+		}, Project.CONTENT_URI, Cast.CONTENT_URI, Itinerary.CONTENT_URI, U_PROJECT_CAST_DIR, U_ITINERARY_CAST_DIR);
 
 		// projects
 		assertEquals(MediaProvider.TYPE_PROJECT_DIR, mCr.getType(Project.CONTENT_URI));
-		assertEquals(MediaProvider.TYPE_PROJECT_ITEM, mCr.getType(ContentUris.withAppendedId(Project.CONTENT_URI, 1)));
+		assertEquals(MediaProvider.TYPE_PROJECT_ITEM, mCr.getType(U_PROJECT_ITEM));
 
 		// casts of projects
-		final Uri projectItem = ContentUris.withAppendedId(Project.CONTENT_URI, 1);
-		assertEquals(MediaProvider.TYPE_PROJECT_CAST_DIR, mCr.getType(Uri.withAppendedPath(projectItem, Cast.PATH)));
-		assertEquals(MediaProvider.TYPE_PROJECT_CAST_ITEM, mCr.getType(Uri.withAppendedPath(projectItem, Cast.PATH + "/1")));
+		assertEquals(MediaProvider.TYPE_PROJECT_CAST_DIR, mCr.getType(U_PROJECT_CAST_DIR));
+		assertEquals(MediaProvider.TYPE_PROJECT_CAST_ITEM, mCr.getType(U_PROJECT_CAST_ITEM));
 
 		// itineraries
 		assertEquals(MediaProvider.TYPE_ITINERARY_DIR, mCr.getType(Itinerary.CONTENT_URI));
-		assertEquals(MediaProvider.TYPE_ITINERARY_ITEM, mCr.getType(ContentUris.withAppendedId(Itinerary.CONTENT_URI, 1)));
+		assertEquals(MediaProvider.TYPE_ITINERARY_ITEM, mCr.getType(U_ITINERARY_ITEM));
 
 		// casts in itineraries
-		final Uri itineraryItem = ContentUris.withAppendedId(Itinerary.CONTENT_URI, 1);
-		assertEquals(MediaProvider.TYPE_CAST_DIR, mCr.getType(Uri.withAppendedPath(itineraryItem, Cast.PATH)));
-		assertEquals(MediaProvider.TYPE_CAST_ITEM, mCr.getType(Uri.withAppendedPath(itineraryItem, Cast.PATH + "/1")));
+		assertEquals(MediaProvider.TYPE_CAST_DIR, mCr.getType(U_ITINERARY_CAST_DIR));
+		assertEquals(MediaProvider.TYPE_CAST_ITEM, mCr.getType(U_ITINERARY_CAST_ITEM));
+	}
+
+	public void testSyncability(){
+		testAllContentTypes(new ContentUriTest(){
+			@Override
+			public void runUriTest(Uri contentUri) {
+				assertNotNull(MediaProvider.canSync(contentUri));
+			}
+
+		}, U_ALL);
+	}
+
+	public void testQueries(){
+		testAllContentTypes(new ContentUriTest(){
+			@Override
+			public void runUriTest(Uri contentUri) {
+				assertNotNull(contentUri.toString(), mCr.query(contentUri, null, null, null, null));
+			}
+
+		}, U_ALL);
+	}
+
+	private void testAllContentTypes(ContentUriTest test, Uri ... types){
+		for (final Uri contentUri: types){
+			test.runUriTest(contentUri);
+		}
+	}
+
+	private interface ContentUriTest{
+		public void runUriTest(Uri contentUri);
 	}
 
 	private static final String

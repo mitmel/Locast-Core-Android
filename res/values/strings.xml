@@ -181,4 +181,12 @@
 	<string name="pref_locast_site_message">Warning: changing this will erase your current pairing as well as the local database. Any unpublished casts will be deleted.</string>
 	
 	<string name="itinerary_test_text">A sea generally refers to a large body of salt water, but the term is used in other contexts as well. Most commonly, the term refers to a large expanse of saline water connected with an ocean, and is commonly used as a synonym for ocean. It is also used sometimes to describe a large saline lake that lacks a natural outlet, such as the Caspian Sea.</string>
+	
+	<string name="welcome_message">Welcome! Locast Abruzzo is a location-based tourism application for visiting Abruzzo.</string>
+	
+	<string name="auth_signin_or_skip_notice">You\'ll need an account to upload photos and videos to Locast Abruzzo</string>
+	
+	<string name="auth_signin_register">Sign In / Register</string>
+	
+	<string name="auth_skip">Skip</string>
 </resources>

@@ -123,7 +123,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 29;
+		private static final int DB_VER = 30;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -152,8 +152,6 @@ public class MediaProvider extends ContentProvider {
 					+ Cast._MEDIA_LOCAL_URI 	+ " TEXT,"
 					+ Cast._CONTENT_TYPE + " TEXT,"
 
-					+ Cast._PROJECT_ID  + " INTEGER,"
-					+ Cast._PROJECT_URI + " TEXT,"
 					+ Cast._CASTMEDIA_DIR_URI + " TEXT,"
 					+ Cast._PRIVACY 	+ " TEXT,"
 
@@ -233,7 +231,6 @@ public class MediaProvider extends ContentProvider {
 
 			db.execSQL("CREATE TABLE " + ITINERARY_TABLE_NAME + " ("
 					+ JSON_SYNCABLE_ITEM_FIELDS
-					+ JSON_COMMENTABLE_FIELDS
 					+ Itinerary._TITLE 		+ " TEXT,"
 					+ Itinerary._AUTHOR		+ " TEXT,"
 					+ Itinerary._DESCRIPTION 	+ " TEXT,"
@@ -488,13 +485,16 @@ public class MediaProvider extends ContentProvider {
 
 			final ContentValues cv2 = new ContentValues(values);
 			cv2.remove(Tag.PATH);
-			db.beginTransaction();
-			for (final String tag : TaggableItem.getList(values.getAsString(Tag.PATH))){
-				cv2.put(Tag._NAME, tag);
-				rowid = db.insert(TAG_TABLE_NAME, null, cv2);
+			try {
+				db.beginTransaction();
+				for (final String tag : TaggableItem.getList(values.getAsString(Tag.PATH))){
+					cv2.put(Tag._NAME, tag);
+					rowid = db.insert(TAG_TABLE_NAME, null, cv2);
+				}
+				db.setTransactionSuccessful();
+			}finally{
+				db.endTransaction();
 			}
-			db.setTransactionSuccessful();
-			db.endTransaction();
 
 			newItem = ContentUris.withAppendedId(uri, rowid);
 
@@ -520,23 +520,6 @@ public class MediaProvider extends ContentProvider {
 			}
 
 		} break;
-		//////////////////////////////////////////////////////////////////////////////////
-		case MATCHER_PROJECT_CAST_DIR:{
-			final String projectId = uri.getPathSegments().get(1);
-			values.put(Cast._PROJECT_ID, projectId);
-
-			// keep the actual isDraft flag, but mark it a draft when recursing in
-			// order to have the sync only happen on the outermost URI
-			if (values.containsKey(Project._DRAFT)){
-				isDraft = values.getAsBoolean(Project._DRAFT);
-			}
-			values.put(Cast._DRAFT, true);
-
-			newItem = insert(Cast.CONTENT_URI, values);
-			// this adds the ID to the path that we sent in, instead of the base one.
-			newItem = ContentUris.withAppendedId(uri, ContentUris.parseId(newItem));
-
-		} break;
 
 		//////////////////////////////////////////////////////////////////////////////////
 		case MATCHER_ITINERARY_DIR:{
@@ -560,7 +543,7 @@ public class MediaProvider extends ContentProvider {
 			try {
 				newItem = insert(Cast.CONTENT_URI, values);
 				if (TYPE_ITINERARY_ITEM.equals(getType(parent))){
-					ITINERARY_CASTS_DBHELPER.addRelation(db, ContentUris.parseId(newItem), parentId);
+					ITINERARY_CASTS_DBHELPER.addRelation(db, parentId, ContentUris.parseId(newItem));
 				}else{
 					throw new IllegalArgumentException("Don't know how to add a cast to "+ parent);
 				}
@@ -604,9 +587,10 @@ public class MediaProvider extends ContentProvider {
 			throw new SQLException("Failed to insert row into "+uri);
 		}
 
-		if (syncable && !isDraft){
-			context.startService(new Intent(Intent.ACTION_SYNC, uri));
-		}
+		// XXX figure out sync
+//		if (syncable && !isDraft){
+//			context.startService(new Intent(Intent.ACTION_SYNC, uri));
+//		}
 		return newItem;
 	}
 
@@ -709,11 +693,10 @@ public class MediaProvider extends ContentProvider {
 		}
 
 		case MATCHER_PROJECT_CAST_DIR:{
-			final String projectId = uri.getPathSegments().get(1);
 			qb.setTables(CAST_TABLE_NAME);
-			qb.appendWhere(Cast._PROJECT_ID + "="+projectId);
+			// XXX this is broken
 			c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
-		} break;
+		}break;
 
 		case MATCHER_PROJECT_CAST_ITEM:{
 			qb.setTables(CAST_TABLE_NAME);
@@ -835,6 +818,26 @@ public class MediaProvider extends ContentProvider {
 				throw new IllegalArgumentException("Don't know how to get a cast from a "+uri);
 			}
 
+		}break;
+
+		// itin/1/casts/1
+		case MATCHER_CHILD_CAST_ITEM:{
+			final Uri parent = removeLastPathSegments(uri, 2);
+
+			final long parentId = ContentUris.parseId(parent);
+
+			final String childId = uri.getLastPathSegment();
+
+			if (TYPE_ITINERARY_ITEM.equals(getType(parent))){
+				c = ITINERARY_CASTS_DBHELPER.queryTo(parentId,
+						db,
+						projection,
+						addExtraWhere(selection, Cast._ID+"=?"),
+						addExtraWhereArgs(selectionArgs, childId),
+						sortOrder);
+			}else{
+				throw new IllegalArgumentException("Don't know how to get a cast from a "+uri);
+			}
 		}break;
 
 			default:
@@ -1049,14 +1052,6 @@ public class MediaProvider extends ContentProvider {
 					whereArgs);
 			break;
 
-		case MATCHER_PROJECT_CAST_ITEM:{
-			final List<String> pathSegs = uri.getPathSegments();
-			id = ContentUris.parseId(uri);
-			count = db.delete(CAST_TABLE_NAME,
-					addExtraWhere(where, 			Cast._ID+"=?",		Cast._PROJECT_ID+"=?"),
-					addExtraWhereArgs(whereArgs,	Long.toString(id), 	pathSegs.get(pathSegs.size() - 3)));
-		}break;
-
 		case MATCHER_PROJECT_DIR:
 			count = db.delete(PROJECT_TABLE_NAME, where, whereArgs);
 			break;
@@ -1230,7 +1225,7 @@ public class MediaProvider extends ContentProvider {
 
 		case MATCHER_ITINERARY_DIR:{
 			path = Itinerary.SERVER_PATH;
-		}
+		}break;
 
 		case MATCHER_COMMENT_DIR:
 			path = Comment.SERVER_PATH;
@@ -1364,7 +1359,9 @@ public class MediaProvider extends ContentProvider {
 	 * @return a modified projection with a table prefix for all columns.
 	 */
 	public static String[] addPrefixToProjection(String tableName, String[] projection){
-
+		if (projection == null){
+			return null;
+		}
 		final String[] projection2 = new String[projection.length];
 		//final List<String> projectionList = Arrays.asList(projection2);
 //		final int idPos = projectionList.indexOf(BaseColumns._ID);
@@ -1399,88 +1396,6 @@ public class MediaProvider extends ContentProvider {
 		}
 		Log.d("CursorDump", testOut.toString());
 	}
-
-	/**
-	 * Translates a numerical public ID stored in JsonSyncableItem._PUBLIC_ID to a full path.
-	 * Stores results in JsonSyncableItem._PUBLIC_URI
-	 *
-	 * XXX hack!
-	 * This is a workaround to help transition to an API with all objects having URIs
-	 * This should be removed ASAP.
-	 *
-	 * @Deprecated
-	 * @param context
-	 * @param values the values that should be modified
-	 * @param canSync if the object can sync
-	 * @param uri full URI of the object
-	 */
-	@Deprecated
-	public static void translateIdToUri(Context context, ContentValues values, boolean canSync, Uri uri){
-		final int type = uriMatcher.match(uri);
-
-		if (canSync || type == MATCHER_CHILD_COMMENT_ITEM){
-			final ContentResolver cr = context.getContentResolver();
-			final String pubUri = values.getAsString(JsonSyncableItem._PUBLIC_URI);
-			if (pubUri == null && values.getAsLong(JsonSyncableItem._PUBLIC_ID) != null){
-				String path = getPublicPath(cr, uri, values.getAsLong(JsonSyncableItem._PUBLIC_ID));
-				if (type == MATCHER_CAST_DIR || type == MATCHER_CAST_ITEM ||
-					type == MATCHER_PROJECT_CAST_ITEM || type == MATCHER_PROJECT_CAST_DIR){
-					String projectUri = values.getAsString(Cast._PROJECT_URI);
-					if (projectUri != null){
-						if (!projectUri.contains("project")){
-							projectUri = getPublicPath(cr, Project.CONTENT_URI, Long.valueOf(projectUri));
-							values.put(Cast._PROJECT_URI, projectUri);
-						}
-						if (!path.contains("project")){
-							path = projectUri + path;
-						}
-					}
-				}
-				path = path.replaceAll("//", "/");
-				values.put(JsonSyncableItem._PUBLIC_URI, path);
-
-			}
-		}
-
-		// add in the various directory URIs if missing.
-		if (values.containsKey(JsonSyncableItem._PUBLIC_URI) && values.getAsString(JsonSyncableItem._PUBLIC_URI) != null){
-			switch (type){
-			case MATCHER_CAST_DIR:
-			case MATCHER_CAST_ITEM:
-			case MATCHER_PROJECT_CAST_DIR:
-			case MATCHER_PROJECT_CAST_ITEM:
-				if (!values.containsKey(Cast._CASTMEDIA_DIR_URI)
-						// the "null" bit is due to a bug in previous versions that didn't properly check to ensure
-						// that the value it would be setting would be valid.
-						// TODO This should be removed after a few revisions.
-						|| values.getAsString(Cast._CASTMEDIA_DIR_URI).startsWith("null")
-				){
-					values.put(Cast._CASTMEDIA_DIR_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + CastMedia.SERVER_PATH);
-				}
-				if (!values.containsKey(Cast._COMMENT_DIR_URI)
-						// TODO This should be removed after a few revisions.
-						|| values.getAsString(Cast._COMMENT_DIR_URI).startsWith("null")){
-					values.put(Cast._COMMENT_DIR_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + Comment.SERVER_PATH);
-				}
-				break;
-
-			case MATCHER_PROJECT_DIR:
-			case MATCHER_PROJECT_ITEM:
-				if (!values.containsKey(Project._CASTS_URI)
-						// TODO This should be removed after a few revisions.
-						|| values.getAsString(Project._CASTS_URI).startsWith("null")){
-					values.put(Project._CASTS_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + Cast.SERVER_PATH);
-				}
-				if (!values.containsKey(Project._COMMENT_DIR_URI)
-						// TODO This should be removed after a few revisions.
-						|| values.getAsString(Project._COMMENT_DIR_URI).startsWith("null")){
-					values.put(Project._COMMENT_DIR_URI, values.getAsString(JsonSyncableItem._PUBLIC_URI) + Comment.SERVER_PATH);
-				}
-				break;
-			}
-		}
-	}
-
 
 	static {
 		uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
@@ -1518,7 +1433,7 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Comment.PATH, MATCHER_CHILD_COMMENT_DIR);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Comment.PATH + "/#", MATCHER_CHILD_COMMENT_ITEM);
 
-		// /project/1/content, etc
+		// /project/1/casts, etc
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH, MATCHER_PROJECT_CAST_DIR);
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/" + Cast.PATH + "/#", MATCHER_PROJECT_CAST_ITEM);
 
@@ -1532,6 +1447,7 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 		uriMatcher.addURI(AUTHORITY, Project.PATH + "/#/"+Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/"+Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 
 		// /content/tags?tag1,tag2
 		uriMatcher.addURI(AUTHORITY, Cast.PATH +'/'+ Tag.PATH, MATCHER_CAST_BY_TAGS);

@@ -36,9 +36,11 @@ import edu.mit.mobile.android.locast.net.NetworkProtocolException;
  * This class is an implementation of AbstractAccountAuthenticator for
  * authenticating accounts in the com.example.android.samplesync domain.
  */
-class Authenticator extends AbstractAccountAuthenticator {
+public class Authenticator extends AbstractAccountAuthenticator {
 	private final static String TAG = Authenticator.class.getSimpleName();
     // Authentication Service context
+
+	public static final String PREF_SKIP_AUTH = "skip_authentication";
 
     private final Context mContext;
 

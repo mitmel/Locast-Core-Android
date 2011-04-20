@@ -87,7 +87,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 			});
 
 			final SyncMap authorSync = new SyncMap();
-			authorSync.put(_AUTHOR, new SyncFieldMap("username", SyncFieldMap.STRING));
+			authorSync.put(_AUTHOR, new SyncFieldMap("display_name", SyncFieldMap.STRING));
 			put("_author", 			new SyncMapChain("author", authorSync, SyncItem.SYNC_FROM));
 
 			put(_PRIVACY,          	new SyncFieldMap("privacy", SyncFieldMap.STRING));

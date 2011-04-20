@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <bitmap
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/bg_stripes_tile_800_480"
+    android:tileMode="repeat"
+    android:filter="false"
+    android:antialias="false"
+        />
+<!-- tiling is sometimes broken. See:
+http://code.google.com/p/android/issues/detail?id=15340
+ <bitmap
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:src="@drawable/bg_stripes_tile"
     android:tileMode="repeat"
     android:filter="false"
     android:antialias="false"
         />
+        -->

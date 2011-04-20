@@ -74,6 +74,22 @@ public abstract class Locatable {
 		return l;
 	}
 
+	/**
+	 * Fills the result array with the current location.
+	 *
+	 * @param c cursor pointing to row to get location of
+	 * @param result output array. Must have 2 or more elements. Latitude is in index 0.
+	 */
+	public static void toLocationArray(Cursor c, double[] result){
+		final int lat_idx = c.getColumnIndex(Columns._LATITUDE);
+		final int lon_idx = c.getColumnIndex(Columns._LONGITUDE);
+		if (c.isNull(lat_idx) || c.isNull(lon_idx)) {
+			return;
+		}
+		result[0] = c.getDouble(lat_idx);
+		result[1] = c.getDouble(lon_idx);
+	}
+
 	public static final SyncMap SYNC_MAP = new SyncMap();
 
 	static {

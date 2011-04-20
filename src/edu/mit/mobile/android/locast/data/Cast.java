@@ -22,14 +22,12 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.cookie.DateUtils;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.NotificationManager;
@@ -50,7 +48,6 @@ import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.StreamUtils;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient.InputStreamWatcher;
-import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
 
@@ -71,8 +68,6 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		_MEDIA_LOCAL_URI = "local_uri",
 		_MEDIA_PUBLIC_URI = "public_uri",
 		_CONTENT_TYPE = "content_type",
-		_PROJECT_ID   = "project_id",
-		_PROJECT_URI = "project_uri",
 		_CASTMEDIA_DIR_URI = "castmedia_dir_uri",
 		_THUMBNAIL_URI = "thumbnail_uri";
 
@@ -85,8 +80,6 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		_PRIVACY,
 		_AUTHOR,
 		_CREATED_DATE,
-		_PROJECT_ID,
-		_PROJECT_URI,
 		_MEDIA_LOCAL_URI,
 		_CASTMEDIA_DIR_URI,
 		_CONTENT_TYPE,
@@ -129,54 +122,13 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 			putAll(Locatable.SYNC_MAP);
 			putAll(Commentable.SYNC_MAP);
 
-
-			put(_DESCRIPTION, 		new SyncFieldMap("description", SyncFieldMap.STRING));
+			put(_DESCRIPTION, 		new SyncFieldMap("description", SyncFieldMap.STRING | SyncItem.FLAG_OPTIONAL));
 			put(_TITLE, 			new SyncFieldMap("title", SyncFieldMap.STRING));
 
-			put(_THUMBNAIL_URI, 	new SyncFieldMap("screenshot", SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
+			put(_THUMBNAIL_URI, 	new SyncFieldMap("preview_image", SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 			put(_MEDIA_PUBLIC_URI,  new SyncFieldMap("file_url",   SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
-			//put(_PROJECT_URI,		new SyncFieldMap("project",    SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
-			put(_PROJECT_URI,		new SyncFieldMap("project", SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 
-			// this is a local ID.
-			put(_PROJECT_ID, 		new SyncCustom("project", SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL) {
-
-				@Override
-				public Object toJSON(Context context, Uri localItem, Cursor c, String lProp)
-						throws JSONException, NetworkProtocolException, IOException {
-					return null;
-				}
-
-				/* (non-Javadoc)
-				 *
-				 * This field will only work if the project has been sync'd before the cast.
-				 *
-				 * @see edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncItem#fromJSON(android.content.Context, android.net.Uri, org.json.JSONObject, java.lang.String)
-				 */
-				@Override
-				public ContentValues fromJSON(Context context, Uri localItem,
-						JSONObject item, String lProp) throws JSONException,
-						NetworkProtocolException, IOException {
-					String projectUri;
-					if (item.optString(this.remoteKey).contains("project")){
-						projectUri = item.optString(this.remoteKey);
-					}else{
-						projectUri = MediaProvider.getPublicPath(context.getContentResolver(), Project.CONTENT_URI, item.optLong(this.remoteKey));
-					}
-					final String[] selectionArgs = {projectUri};
-
-					final Cursor c = context.getContentResolver().query(Project.CONTENT_URI, Project.SYNC_PROJECTION, Project._PUBLIC_URI + "=?", selectionArgs, null);
-					final ContentValues cv = new ContentValues();
-					if (c.moveToFirst()){
-						cv.put(lProp, c.getLong(c.getColumnIndex(_ID)));
-					}
-					c.close();
-					return cv;
-				}
-			});
-
-
-			put("_contents", new OrderedList.SyncMapItem("castvideos", new CastMedia(), CastMedia.PATH));
+			//put("_contents", new OrderedList.SyncMapItem("media", new CastMedia(), CastMedia.PATH));
 		}
 	}
 
@@ -191,70 +143,74 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 
 		final ContentResolver cr = context.getContentResolver();
 
-		OrderedList.onUpdate(context, uri, item, "castvideos", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new CastMedia(), CastMedia.PATH);
-		final Uri castMediaDirUri = Uri.withAppendedPath(uri, CastMedia.PATH);
-		final String pubCastMediaUri = MediaProvider.getPublicPath(cr, castMediaDirUri);
+		if (item.optBoolean("official", false)){
 
-		final Cursor cast = cr.query(uri, PROJECTION, null, null, null);
-		cast.moveToFirst();
-		final Cursor castMedia = cr.query(castMediaDirUri, CastMedia.PROJECTION, null, null, null);
-		boolean haveAnyLocMedia = cast.getInt(cast.getColumnIndex(_MEDIA_LOCAL_URI)) != 0;
-
-		try {
-			final int mediaUrlCol = castMedia.getColumnIndex(CastMedia._MEDIA_URL);
-			final int localUriCol = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
-			final int idxCol = castMedia.getColumnIndex(CastMedia._LIST_IDX);
-			final int mediaContentTypeCol = castMedia.getColumnIndex(CastMedia._MIME_TYPE);
-			final int locIdCol = castMedia.getColumnIndex(CastMedia._ID);
-
-			for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
-				final Uri locMediaUri = castMedia.isNull(localUriCol) ? null : parseMaybeUri(castMedia.getString(localUriCol));
-				final String pubMediaUri = castMedia.getString(mediaUrlCol);
-				final boolean hasLocMediaUri = locMediaUri != null;
-				final boolean hasPubMediaUri = pubMediaUri != null && pubMediaUri.length() > 0;
-				haveAnyLocMedia = haveAnyLocMedia || hasLocMediaUri;
-
-				if (hasLocMediaUri && !hasPubMediaUri){
-					// upload
-					try {
-						final NetworkClient nc = NetworkClient.getInstance(context);
-						nc.uploadContentWithNotification(context,
-								getCanonicalUri(context, uri),
-								pubCastMediaUri + castMedia.getLong(idxCol)+"/",
-								locMediaUri,
-								castMedia.getString(mediaContentTypeCol));
-					} catch (final Exception e){
-						final SyncException se = new SyncException(context.getString(R.string.error_uploading_cast_video));
-						se.initCause(e);
-						throw se;
-					}
-				Log.d(TAG, "Cast Media #" + castMedia.getPosition() + " is " + castMedia.getString(castMedia.getColumnIndex(CastMedia._MEDIA_URL)));
-				}
-			}
-
-			if (!haveAnyLocMedia){
-				Log.d(TAG, "There are no local videos, so looking to see if we should download");
-				final Set<String> systemTags = getTags(cr, uri, TaggableItem.SYSTEM_PREFIX);
-				MediaProvider.dumpCursorToLog(cast, Cast.PROJECTION);
-				final int pubMediaUrlCol = cast.getColumnIndex(_MEDIA_PUBLIC_URI);
-				final String pubMediaUri = cast.getString(pubMediaUrlCol);
-				final boolean hasPubMediaUri = pubMediaUri != null && pubMediaUri.length() > 0;
-
-				if (hasPubMediaUri && systemTags.contains("_featured")){
-					Log.d(TAG, "cast is featured, so we'll download it.");
-					final Uri pubMediaUriUri = Uri.parse(pubMediaUri);
-					// only have a public copy, so download it and store locally.
-					final File destfile = getFilePath(pubMediaUriUri);
-					String newLocUri = null;
-					if (!downloadCastMedia(context, destfile, uri, pubMediaUri)){
-						newLocUri = checkForMediaEntry(context, uri, pubMediaUriUri);
-					}
-				}
-			}
-		}finally{
-			castMedia.close();
-			cast.close();
 		}
+
+//		OrderedList.onUpdate(context, uri, item, "media", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new CastMedia(), CastMedia.PATH);
+//		final Uri castMediaDirUri = Uri.withAppendedPath(uri, CastMedia.PATH);
+//		final String pubCastMediaUri = MediaProvider.getPublicPath(cr, castMediaDirUri);
+//
+//		final Cursor cast = cr.query(uri, PROJECTION, null, null, null);
+//		cast.moveToFirst();
+//		final Cursor castMedia = cr.query(castMediaDirUri, CastMedia.PROJECTION, null, null, null);
+//		boolean haveAnyLocMedia = cast.getInt(cast.getColumnIndex(_MEDIA_LOCAL_URI)) != 0;
+//
+//		try {
+//			final int mediaUrlCol = castMedia.getColumnIndex(CastMedia._MEDIA_URL);
+//			final int localUriCol = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
+//			final int idxCol = castMedia.getColumnIndex(CastMedia._LIST_IDX);
+//			final int mediaContentTypeCol = castMedia.getColumnIndex(CastMedia._MIME_TYPE);
+//			final int locIdCol = castMedia.getColumnIndex(CastMedia._ID);
+//
+//			for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
+//				final Uri locMediaUri = castMedia.isNull(localUriCol) ? null : parseMaybeUri(castMedia.getString(localUriCol));
+//				final String pubMediaUri = castMedia.getString(mediaUrlCol);
+//				final boolean hasLocMediaUri = locMediaUri != null;
+//				final boolean hasPubMediaUri = pubMediaUri != null && pubMediaUri.length() > 0;
+//				haveAnyLocMedia = haveAnyLocMedia || hasLocMediaUri;
+//
+//				if (hasLocMediaUri && !hasPubMediaUri){
+//					// upload
+//					try {
+//						final NetworkClient nc = NetworkClient.getInstance(context);
+//						nc.uploadContentWithNotification(context,
+//								getCanonicalUri(context, uri),
+//								pubCastMediaUri + castMedia.getLong(idxCol)+"/",
+//								locMediaUri,
+//								castMedia.getString(mediaContentTypeCol));
+//					} catch (final Exception e){
+//						final SyncException se = new SyncException(context.getString(R.string.error_uploading_cast_video));
+//						se.initCause(e);
+//						throw se;
+//					}
+//				Log.d(TAG, "Cast Media #" + castMedia.getPosition() + " is " + castMedia.getString(castMedia.getColumnIndex(CastMedia._MEDIA_URL)));
+//				}
+//			}
+//
+//			if (!haveAnyLocMedia){
+//				Log.d(TAG, "There are no local videos, so looking to see if we should download");
+//				final Set<String> systemTags = getTags(cr, uri, TaggableItem.SYSTEM_PREFIX);
+//				MediaProvider.dumpCursorToLog(cast, Cast.PROJECTION);
+//				final int pubMediaUrlCol = cast.getColumnIndex(_MEDIA_PUBLIC_URI);
+//				final String pubMediaUri = cast.getString(pubMediaUrlCol);
+//				final boolean hasPubMediaUri = pubMediaUri != null && pubMediaUri.length() > 0;
+//
+//				if (hasPubMediaUri && systemTags.contains("_featured")){
+//					Log.d(TAG, "cast is featured, so we'll download it.");
+//					final Uri pubMediaUriUri = Uri.parse(pubMediaUri);
+//					// only have a public copy, so download it and store locally.
+//					final File destfile = getFilePath(pubMediaUriUri);
+//					String newLocUri = null;
+//					if (!downloadCastMedia(context, destfile, uri, pubMediaUri)){
+//						newLocUri = checkForMediaEntry(context, uri, pubMediaUriUri);
+//					}
+//				}
+//			}
+//		}finally{
+//			castMedia.close();
+//			cast.close();
+//		}
 	} // onPostSyncItem()
 
 
@@ -292,6 +248,8 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	 * @return the canonical URI for the given cast.
 	 */
 	public static Uri getCanonicalUri(Context context, Uri cast){
+
+		return cast;/*
 		Uri canonical = null;
 
 		final Cursor c = context.getContentResolver().query(cast, new String[]{Cast._ID, Cast._PROJECT_ID}, null, null, null);
@@ -305,7 +263,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 			}
 		}
 		c.close();
-		return canonical;
+		return canonical;*/
 	}
 
 	/**
@@ -335,12 +293,15 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	 * @return the uri of the project associated with this cast, or null if there is none.
 	 */
 	public static final Uri getProjectUri(Cursor cast){
+		/*
 		final int projectIdx = cast.getColumnIndex(Cast._PROJECT_ID);
 		if (cast.isNull(projectIdx)){
 			return null;
 		}
 
 		return ContentUris.withAppendedId(Project.CONTENT_URI, cast.getLong(projectIdx));
+		*/
+		return null;
 	}
 
 	/**

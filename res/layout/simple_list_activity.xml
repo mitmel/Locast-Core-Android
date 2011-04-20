@@ -13,12 +13,12 @@
 		android:layout_height="wrap_content"
 		android:layout_below="@id/action_bar" />
 	<ListView
-		android:id="@id/android:list"
+		android:id="@android:id/list"
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
-		android:layout_below="@id/title" />
+		android:layout_below="@android:id/title" />
 	<TextView
-		android:id="@id/android:empty"
+		android:id="@android:id/empty"
 		android:text="No items in this list"
 		android:textStyle="italic"
 		android:layout_width="fill_parent"

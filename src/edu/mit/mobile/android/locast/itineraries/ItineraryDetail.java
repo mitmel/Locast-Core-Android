@@ -1,16 +1,21 @@
 package edu.mit.mobile.android.locast.itineraries;
 
-import android.content.Context;
+import java.util.List;
+
+import android.content.ContentUris;
 import android.content.Intent;
 import android.database.Cursor;
-import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.content.Loader.OnLoadCompleteListener;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.Window;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -19,33 +24,35 @@ import com.commonsware.cwac.thumbnail.ThumbnailAdapter;
 import com.commonsware.cwac.thumbnail.ThumbnailBus;
 import com.commonsware.cwac.thumbnail.ThumbnailMessage;
 import com.google.android.maps.GeoPoint;
-import com.google.android.maps.ItemizedOverlay;
 import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
-import com.google.android.maps.OverlayItem;
+import com.google.android.maps.Overlay;
 
 import edu.mit.mobile.android.locast.Application;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
-import edu.mit.mobile.android.locast.data.Locatable;
 
-public class ItineraryDetail extends MapActivity implements OnLoadCompleteListener<Cursor> {
+public class ItineraryDetail extends MapActivity implements OnLoadCompleteListener<Cursor>, OnItemClickListener {
+	private static final String TAG = ItineraryDetail.class.getSimpleName();
 
 	private MapView mMapView;
 	private MapController mMapController;
 	private ListView mCastView;
+	private CastCursorAdapter mCastAdapter;
 
 	protected SimpleWebImageCache<ThumbnailBus, ThumbnailMessage> imgCache;
 
-	//private final BasicCursorContentObserver mContentObserver = new BasicCursorContentObserver(this);
-
-	private Cursor mItinerary;
 	private Uri mUri;
+	private Uri mCastsUri;
 
-	private ItineraryOverlay mItineraryOverlay;
+	private CastsOverlay mItineraryOverlay;
+	private PathOverlay mPathOverlay;
+
+	CursorLoader itinLoader;
+	CursorLoader castLoader;
 
 	@Override
 	protected void onCreate(Bundle icicle) {
@@ -59,8 +66,10 @@ public class ItineraryDetail extends MapActivity implements OnLoadCompleteListen
 		mCastView = (ListView)findViewById(R.id.casts);
 
 		final LayoutInflater layoutInflater = getLayoutInflater();
-		mCastView.addHeaderView(layoutInflater.inflate(R.layout.itinerary_detail_list_header, mCastView, false));
+		mCastView.addHeaderView(layoutInflater.inflate(R.layout.itinerary_detail_list_header, mCastView, false), null, false);
+		mCastView.addFooterView(layoutInflater.inflate(R.layout.itinerary_detail_list_footer, mCastView, false), null, false);
 		mCastView.setEmptyView(layoutInflater.inflate(R.layout.itinerary_detail_list_empty, mCastView, false));
+		mCastView.setOnItemClickListener(this);
 
 		mCastView.setAdapter(null);
 
@@ -72,16 +81,13 @@ public class ItineraryDetail extends MapActivity implements OnLoadCompleteListen
 
 		if (Intent.ACTION_VIEW.equals(action)){
 			mUri = intent.getData();
-			//new ItineraryLoader().execute(mUri);
-			final Uri casts = Itinerary.getCastsUri(mUri);
 
-			final CursorLoader itinCl = new CursorLoader(this, mUri, Itinerary.PROJECTION, null, null, null);
-			itinCl.registerListener(0, this);
-			mItinerary = itinCl.loadInBackground();
+			mCastsUri = Itinerary.getCastsUri(mUri);
 
-			final CursorLoader castCl = new CursorLoader(this, casts, Itinerary.PROJECTION, null, null, null);
-			castCl.registerListener(0, mCastLoadCompleteListener);
-			initCastList(castCl.loadInBackground());
+			itinLoader = new CursorLoader(this, mUri, Itinerary.PROJECTION, null, null, null);
+			castLoader = new CursorLoader(this, mCastsUri, Cast.PROJECTION, null, null, null);
+
+			initCastList();
 
 		}else{
 			finish();
@@ -89,107 +95,70 @@ public class ItineraryDetail extends MapActivity implements OnLoadCompleteListen
 	}
 
 	@Override
-	protected boolean isRouteDisplayed() {
-		return false;
-	}
+	protected void onResume() {
+		super.onResume();
 
-	public void loadFromCursor() {
-		final Cursor c = mItinerary;
 
-		((TextView)findViewById(R.id.description)).setText(c.getString(c.getColumnIndex(Itinerary._DESCRIPTION)));
-		((TextView)findViewById(R.id.title)).setText(c.getString(c.getColumnIndex(Itinerary._TITLE)));
-		((TextView)findViewById(R.id.author)).setText(c.getString(c.getColumnIndex(Itinerary._AUTHOR)));
-	}
-
-	public void onCursorItemDeleted() {
-		finish();
+		itinLoader.registerListener(0, this);
+		itinLoader.startLoading();
+		castLoader.registerListener(0, mCastLoadCompleteListener);
+		castLoader.startLoading();
 
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
+		itinLoader.stopLoading();
+		itinLoader.unregisterListener(this);
+		castLoader.stopLoading();
+		castLoader.unregisterListener(mCastLoadCompleteListener);
 	}
 
-//	private class ItineraryLoader extends AsyncTask<Uri, Long, Cursor>{
-//		private ProgressDialog mPd;
-//
-//		@Override
-//		protected void onPreExecute() {
-//			mPd = ProgressDialog.show(ItineraryDetail.this, "", "Loading itinerary...");
-//		}
-//
-//		@Override
-//		protected Cursor doInBackground(Uri... params) {
-//
-//			final Cursor casts = ItineraryDetail.this.managedQuery(params[0], Cast.PROJECTION, Cast._LATITUDE+" not null", null, Cast.SORT_ORDER_DEFAULT);
-//			return casts;
-//		}
-//
-//		@Override
-//		protected void onPostExecute(Cursor itinerary) {
-//			mPd.dismiss();
-//			final Uri castsUri = Itinerary.getCastsUri(itinerary);
-//			final CastCursorAdapter castAdapter = new CastCursorAdapter(ItineraryDetail.this, casts);
-//
-//		}
-//	}
+	@Override
+	protected boolean isRouteDisplayed() {
+		return false;
+	}
 
-	private void initCastList(Cursor casts){
-		final CastCursorAdapter castAdapter = new CastCursorAdapter(ItineraryDetail.this, casts);
-
-		mCastView.setAdapter((new ThumbnailAdapter(ItineraryDetail.this, castAdapter, imgCache, new int[]{R.id.media_thumbnail})));
-		mItineraryOverlay = new ItineraryOverlay(ItineraryDetail.this, casts);
-		mMapView.getOverlays().add(mItineraryOverlay);
+	private void initCastList(){
+		mCastAdapter = new CastCursorAdapter(ItineraryDetail.this, null);
+		mCastView.setAdapter(new ThumbnailAdapter(ItineraryDetail.this, mCastAdapter, imgCache, new int[]{R.id.media_thumbnail}));
+		mItineraryOverlay = new CastsOverlay(ItineraryDetail.this, null);
+		final List<Overlay> overlays = mMapView.getOverlays();
+		mPathOverlay = new PathOverlay(this);
+		overlays.add(mPathOverlay);
+		overlays.add(mItineraryOverlay);
 	}
 
 	private final OnLoadCompleteListener<Cursor> mCastLoadCompleteListener = new OnLoadCompleteListener<Cursor>() {
 		@Override
-		public void onLoadComplete(Loader<Cursor> loader, Cursor cast) {
-
-			mMapController.zoomToSpan(mItineraryOverlay.getLatSpanE6(), mItineraryOverlay.getLonSpanE6());
-			mMapController.setCenter(mItineraryOverlay.getCenter());
+		public void onLoadComplete(Loader<Cursor> loader, Cursor casts) {
+			mCastAdapter.swapCursor(casts);
+			mItineraryOverlay.swapCursor(casts);
+			if (casts.moveToFirst()){
+				mMapController.zoomToSpan(mItineraryOverlay.getLatSpanE6(), mItineraryOverlay.getLonSpanE6());
+				mMapController.setCenter(mItineraryOverlay.getCenter());
+				mMapView.setVisibility(View.VISIBLE);
+			}
 		}
 	};
 
 	@Override
 	public void onLoadComplete(Loader<Cursor> loader, Cursor c) {
-
-		((TextView)findViewById(R.id.description)).setText(c.getString(c.getColumnIndex(Itinerary._DESCRIPTION)));
-		((TextView)findViewById(R.id.title)).setText(c.getString(c.getColumnIndex(Itinerary._TITLE)));
-		((TextView)findViewById(R.id.author)).setText(c.getString(c.getColumnIndex(Itinerary._AUTHOR)));
-
+		if (c.moveToFirst()){
+			((TextView)findViewById(R.id.description)).setText(c.getString(c.getColumnIndex(Itinerary._DESCRIPTION)));
+			((TextView)findViewById(R.id.title)).setText(c.getString(c.getColumnIndex(Itinerary._TITLE)));
+			((TextView)findViewById(R.id.author)).setText("Itinerary by " + c.getString(c.getColumnIndex(Itinerary._AUTHOR)));
+			final List<GeoPoint> path = Itinerary.getPath(c);
+			mPathOverlay.setPath(path);
+		}else{
+			Log.e(TAG, "error loading itinerary");
+		}
 	}
 
-	private class ItineraryOverlay extends ItemizedOverlay<OverlayItem> {
-		private final Cursor mCasts;
-		private final int mTitleCol, mDescriptionCol;
+	@Override
+	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
+		startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mCastsUri, id)));
 
-		public ItineraryOverlay(Context context, Cursor casts) {
-			super(boundCenterBottom(context.getResources().getDrawable(R.drawable.ic_map_community)));
-
-			mCasts = casts;
-			mTitleCol = mCasts.getColumnIndex(Cast._TITLE);
-			mDescriptionCol = mCasts.getColumnIndex(Cast._DESCRIPTION);
-
-			populate();
-		}
-
-		@Override
-		protected OverlayItem createItem(int i) {
-			mCasts.moveToPosition(i);
-
-			final Location castLoc =  Locatable.toLocation(mCasts);
-			final GeoPoint castLocGP = new GeoPoint((int)(castLoc.getLatitude()*1E6), (int)(castLoc.getLongitude()*1E6));
-
-			return new OverlayItem(castLocGP, mCasts.getString(mTitleCol), mCasts.getString(mDescriptionCol));
-		}
-
-
-		@Override
-		public int size() {
-
-			return mCasts.getCount();
-		}
 	}
 }

@@ -36,6 +36,7 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
@@ -79,11 +80,10 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 * Override this if you wish to handle any actions once the item has finished syncing.
 	 * Default implementation does nothing.
 	 *
-	 * @param context
-	 * @param sync
-	 * @param uri
-	 * @param item
-	 * @param updated
+	 * @param context Android context
+	 * @param uri URI of the sync'd item. Will not to be null.
+	 * @param item the item that was retrieved from the network
+	 * @param updated true if the item has been updated on the server
 	 * @throws SyncException
 	 * @throws IOException
 	 */
@@ -368,6 +368,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		 * @param context Android context
 		 * @param localItem uri of the local item
 		 * @param c cursor pointing to the item
+		 * @param lProp the local property where the data should be stored in the CV
 		 * @return JSONObject, JSONArray or any other type that JSONObject.put() supports.
 		 * @throws JSONException
 		 * @throws NetworkProtocolException
@@ -376,8 +377,9 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		public abstract Object toJSON(Context context, Uri localItem, Cursor c, String lProp) throws JSONException, NetworkProtocolException, IOException;
 		/**
 		 * @param context Android context
-		 * @param localItem uri of the local item
+		 * @param localItem uri of the local item or null if it is new
 		 * @param item the JSONObject of the item. It's your job to pull out the desired field(s) here.
+		 * @param lProp the local property where the data should be stored in the CV
 		 * @return a new ContentValues, that will be merged into the new ContentValues object
 		 * @throws JSONException
 		 * @throws NetworkProtocolException
@@ -572,6 +574,112 @@ public abstract class JsonSyncableItem implements BaseColumns {
         		throw new IllegalArgumentException(this.toString() + " has an invalid type.");
         	}
 			return retval;
+		}
+	}
+
+	/**
+	 * Given a URI as the value, resolves the item(s) and stores the relations in the database.
+	 * Each URI represents a list of items that should be related to the parent object.
+	 *
+	 * The type of the child is defined by the type of the URI that is returned in the Relationship.
+	 * Synchronization of this field simply stores the public URI in the given local field as a string
+	 * and then calls a synchronization on that URI with the context of the destination URI (as defined
+	 * by the Relationship).
+	 *
+	 * For example, one could define a simple comment system to allow commenting on a Cast. In the Cast's sync map,
+	 * <pre>
+	 * SYNC_MAP.put(_COMMENTS_URI, new SyncChildRelation("comments", new SyncChildRelation.SimpleRelationship("castcomments"), SyncFieldMap.SYNC_FROM | SyncFieldMap.FLAG_OPTIONAL));
+	 * </pre>
+	 *
+	 * This stores the public URI that's in the JSON object's "comments" value in the Cast's _COMMENTS_URI field.
+	 * Additionally, it starts a sync on that same public URI with the extra information of {@code content://casts/1/castcomments}
+	 * so that the results of the public URI sync will be stored in the local URI provided. The type of the child object is entirely
+	 * determined by the type of the local URI.
+	 *
+	 * @author steve
+	 *
+	 */
+	public static class SyncChildRelation extends SyncItem {
+		Relationship mRelationship;
+
+		public SyncChildRelation(String remoteKey, Relationship relationship, int flags) {
+			super(remoteKey, flags);
+			mRelationship = relationship;
+		}
+
+		@Override
+		public Object toJSON(Context context, Uri localItem, Cursor c,
+				String lProp) throws JSONException, NetworkProtocolException,
+				IOException {
+			// This doesn't need to do anything, as the sync framework will automatically
+			return null;
+		}
+
+		@Override
+		public ContentValues fromJSON(Context context, Uri localItem,
+				JSONObject item, String lProp) throws JSONException,
+				NetworkProtocolException, IOException {
+			final ContentValues cv = new ContentValues();
+			final String childPubUri = item.getString(remoteKey);
+			// store the URI so we can refresh from it later
+			cv.put(lProp, childPubUri);
+
+			return cv;
+		}
+
+		@Override
+		public void onPostSyncItem(Context context, Uri uri, JSONObject item,
+				boolean updated) throws SyncException, IOException {
+
+			final Uri childDir = mRelationship.getChildDirUri(uri);
+			try {
+				final String childPubUri = item.getString(remoteKey);
+				final NetworkClient nc = NetworkClient.getInstance(context);
+				final Uri serverUri = nc.getFullUri(childPubUri);
+				context.startService(new Intent(Intent.ACTION_SYNC, serverUri).putExtra(Sync.EXTRA_DESTINATION_URI, childDir));
+			} catch (final JSONException e) {
+				final IOException ioe = new IOException("JSON encoding error");
+				ioe.initCause(e);
+				throw ioe;
+			}
+		}
+
+		/**
+		 * A simple relationship where the path is the relationship name. eg.
+		 *
+		 * parent is: {@code content://itinerary/1} and the relationship is "casts" so the child items are all at {@code content://itinerary/1/casts}
+		 *
+		 * @author steve
+		 *
+		 */
+		public static class SimpleRelationship extends Relationship {
+
+			public SimpleRelationship(String relationship) {
+				super(relationship);
+			}
+
+			@Override
+			public Uri getChildDirUri(Uri parent) {
+				return Uri.withAppendedPath(parent, getRelation());
+			}
+		}
+
+		/**
+		 * Defines a relationship between one object and another.
+		 *
+		 * @author steve
+		 *
+		 */
+		public static abstract class Relationship {
+			private final String mRelation;
+			public Relationship(String relationship) {
+				mRelation = relationship;
+			}
+
+			public abstract Uri getChildDirUri(Uri parent);
+			public String getRelation(){
+				return mRelation;
+			}
 		}
 	}
 

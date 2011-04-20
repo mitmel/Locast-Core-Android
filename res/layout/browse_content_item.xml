@@ -18,7 +18,6 @@
 			/>
     
       <TextView android:id="@android:id/text1"
-      		android:text="text1"
           	android:layout_width="fill_parent"
           	android:layout_height="wrap_content"
           	android:layout_toRightOf="@id/media_thumbnail"
@@ -30,8 +29,7 @@
 
           	style="@style/CastListItem.Title" 
         />
-    <TextView android:id="@+id/author" 
-	      android:text="author" 
+    <TextView android:id="@android:id/text2" 
 	      android:layout_width="wrap_content" 
 	      android:layout_height="wrap_content" 
 	      android:layout_alignLeft="@android:id/text1"
@@ -42,23 +40,5 @@
 	      style="@style/CastListItem.Author"
 	      
 	      android:singleLine="true" />
-
-        <TextView android:id="@android:id/text2"
-				android:text="text2"
-				android:maxLines="1"
-				android:ellipsize="end"
-                android:layout_width="wrap_content"
-                android:textColor="#000"
-                android:layout_height="wrap_content"
-                android:paddingRight="6sp"
-                android:paddingLeft="6sp"
-                android:layout_marginLeft="30sp"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentBottom="true"
-        		android:layout_toRightOf="@id/author"
-        		android:gravity="left"
-        		android:background="#aaffffff"
-                style="@style/CastListItem.Description"
-        />
 
 </RelativeLayout>

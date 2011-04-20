@@ -20,7 +20,7 @@
 		*****************************************************************************************************
 	 -->
 		
- 
+ <!-- 
 		<activity android:name=".MainActivity" android:label="@string/app_name">
 			<intent-filter>
  				<action android:name="android.intent.action.MAIN" />
@@ -28,6 +28,7 @@
 				
 			</intent-filter>
 		</activity>
+		 -->
 
 	<!-- 
 		*****************************************************************************************************
@@ -374,6 +375,8 @@
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.comments" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.comments" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.itineraries" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.itineraries" />
 			</intent-filter>
 			<intent-filter>
 				<action android:name="android.intent.action.SYNC" />
@@ -414,6 +417,11 @@
 			who explicitly knows the class name
 		-->
 	</activity>
+	
+	<activity
+		android:name=".accounts.SigninOrSkip" android:excludeFromRecents="true">
+		
+		</activity>
 			
 	<uses-library android:name="com.google.android.maps" />
 

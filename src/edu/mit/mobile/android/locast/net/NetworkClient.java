@@ -118,8 +118,6 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 	private JSONObject user;
 
-	private boolean isAuthenticated = false;
-
 	private AuthScope authScope;
 
 	protected final Context context;
@@ -274,7 +272,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	}
 
 	public boolean isAuthenticated(){
-		return isAuthenticated;
+		return getUsername() != null;
 	}
 
 	public static boolean authenticate(Context context, String username, String password) throws IOException, JSONException, NetworkProtocolException{
@@ -317,7 +315,6 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 		final JSONObject creds = returnJsonObject(c);
 		saveCredentials(creds.getString("username"), creds.getString("auth_secret"));
-		isAuthenticated = true;
 
 		return true;
 	}
@@ -476,7 +473,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 		checkContentType(res, JSON_MIME_TYPE, false);
 
-		isAuthenticated = true; // this should only get set if we managed to make it here
+		//XXX possibly untrue isAuthenticated = true; // this should only get set if we managed to make it here
 
 		return res.getEntity();
 	}

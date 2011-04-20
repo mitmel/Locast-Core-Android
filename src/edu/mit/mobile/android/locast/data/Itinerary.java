@@ -1,12 +1,24 @@
 package edu.mit.mobile.android.locast.data;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
+
+import com.google.android.maps.GeoPoint;
+
+import edu.mit.mobile.android.locast.ListUtils;
+import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 
 public class Itinerary extends TaggableItem {
 	public final static String PATH = "itineraries";
@@ -56,6 +68,37 @@ public class Itinerary extends TaggableItem {
 		return SYNC_MAP;
 	}
 
+	public static List<GeoPoint> getPath(Cursor c){
+		final ArrayList<GeoPoint> path = new ArrayList<GeoPoint>();
+		final String encodedPath = c.getString(c.getColumnIndex(_PATH));
+		if (encodedPath == null){
+			return new ArrayList<GeoPoint>();
+		}
+
+		int prevI = 0;
+
+		int i = 0;
+		while(i != -1){
+			i = encodedPath.indexOf(',', i+1);
+			// handle the case for empty paths
+			if (i == -1){
+				break;
+			}
+			final int lat = Integer.parseInt(encodedPath.substring(prevI, i));
+			prevI = i+1;
+			i = encodedPath.indexOf(',', prevI);
+
+			int end = i;
+			if (i == -1){
+				end = encodedPath.length();
+			}
+			final int lon = Integer.parseInt(encodedPath.substring(prevI, end));
+			path.add(new GeoPoint(lat, lon));
+			prevI = i+1;
+		}
+		return path;
+	}
+
 	public static final ItemSyncMap SYNC_MAP = new ItemSyncMap();
 
 	public static class ItemSyncMap extends TaggableItemSyncMap {
@@ -70,21 +113,48 @@ public class Itinerary extends TaggableItem {
 
 			put(_DESCRIPTION, 		new SyncFieldMap("description", SyncFieldMap.STRING));
 			put(_TITLE, 			new SyncFieldMap("title", SyncFieldMap.STRING));
-			put(_CASTS_URI,			new SyncFieldMap("casts", SyncFieldMap.STRING, SyncFieldMap.SYNC_FROM | SyncFieldMap.FLAG_OPTIONAL));
+			put(_CASTS_URI,			new SyncChildRelation("casts", new SyncChildRelation.SimpleRelationship("casts"), SyncFieldMap.SYNC_FROM | SyncFieldMap.FLAG_OPTIONAL));
+			put(_PATH,				new SyncCustom("path", SyncFieldMap.SYNC_FROM) {
 
-			putAll(Locatable.SYNC_MAP);
-			putAll(Commentable.SYNC_MAP);
-			put("_shotlist",   new OrderedList.SyncMapItem("shotlist", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new ShotList(), ShotList.PATH));
+				@Override
+				public Object toJSON(Context context, Uri localItem, Cursor c, String lProp)
+						throws JSONException, NetworkProtocolException, IOException {
+					// TODO Auto-generated method stub
+					return null;
+				}
+
+				@Override
+				public ContentValues fromJSON(Context context, Uri localItem,
+						JSONObject item, String lProp) throws JSONException,
+						NetworkProtocolException, IOException {
+					final JSONArray jsonPath = item.getJSONArray(remoteKey);
+					final String[] path = new String[jsonPath.length() * 2];
+
+					// TODO loads it all into memory. May make more sense to use a StringBuilder
+					final int len = jsonPath.length();
+					for (int i = 0; i < len; i++){
+						final JSONArray point = jsonPath.getJSONArray(i);
+						// stored in [lon,lat] form. Internally, we use lat,lon.
+						path[i*2] = String.valueOf((long)(point.getDouble(1) * 1E6));
+						path[i*2+1] = String.valueOf((long)(point.getDouble(0) * 1E6));
+					}
+					final ContentValues cv = new ContentValues();
+
+					cv.put(lProp, ListUtils.join(Arrays.asList(path), ","));
+
+					return cv;
+
+				}
+			});
 
 			remove(_PRIVACY);
 		}
+	}
 
-		@Override
-		public void onPostSyncItem(Context context, Uri uri, JSONObject item, boolean updated) throws SyncException, IOException {
-			super.onPostSyncItem(context, uri, item, updated);
-			if (updated){
-				OrderedList.onUpdate(context, uri, item, "shotlist", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new ShotList(), ShotList.PATH);
-			}
+	public Uri getChildDirUri(Uri parent, String relation) {
+		if("casts".equals(relation)){
+			return getCastsUri(parent);
 		}
+		return null;
 	}
 }

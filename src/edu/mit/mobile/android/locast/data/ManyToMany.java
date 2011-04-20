@@ -102,11 +102,16 @@ public class ManyToMany {
 		 * @return
 		 */
 		public Cursor queryTo(long fromId, SQLiteDatabase db, String[] toProjection, String selection, String[] selectionArgs, String sortOrder){
+			// XXX hack to get around ambiguous column names. Is there a better way to write this query?
+			if (selection != null){
+				selection = selection.replaceAll("(\\w+=\\?)", mToTable + ".$1");
+			}
+
 			return db.query(mToTable
 					+ " INNER JOIN " + mJoinTable
-					+ " ON " + mJoinTable+"."+ManyToManyColumns.FROM_ID + "=" + mFromTable + "." + BaseColumns._ID,
+					+ " ON " + mJoinTable+"."+ManyToManyColumns.TO_ID + "=" + mToTable + "." + BaseColumns._ID,
 					MediaProvider.addPrefixToProjection(mToTable, toProjection),
-					MediaProvider.addExtraWhere(selection, mFromTable + "." + BaseColumns._ID + "=?"),
+					MediaProvider.addExtraWhere(selection, mJoinTable + "." + ManyToManyColumns.FROM_ID + "=?"),
 					MediaProvider.addExtraWhereArgs(selectionArgs, Long.toString(fromId)), null, null, sortOrder);
 		}
 	}

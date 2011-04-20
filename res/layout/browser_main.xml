@@ -6,11 +6,11 @@
   <include layout="@layout/action_bar" />
   
   <TextView android:id="@+id/message" 
-  		android:text="Welcome! Locast Abruzzo is a location-based tourism application for visiting Abruzzo."
-    	style="@style/Notice"
+  		android:text="@string/welcome_message"
+    	style="@style/Notice.Info"
      	android:layout_width="fill_parent"
       	android:layout_height="wrap_content"
-       android:drawableLeft="@drawable/ic_info"/>
+       />
        
        <LinearLayout 
        		android:layout_width="fill_parent"
@@ -40,6 +40,18 @@
        		android:layout_height="wrap_content"  android:drawableTop="@drawable/ic_event"/>
        </LinearLayout>
        
+       <TextView android:id="@android:id/empty"
+       		android:text="There are no featured casts"
+        	android:spacing="0dip"
+       		android:layout_width="fill_parent"
+       		android:layout_height="fill_parent"
+       		android:layout_weight="1"
+       		android:gravity="center"
+       		android:textAppearance="?android:attr/textAppearanceLarge"
+       		android:textStyle="italic"
+       		android:visibility="gone"
+       		 />
+       		       	
        <Gallery android:id="@+id/casts"
         	android:spacing="0dip"
        		android:layout_width="fill_parent"

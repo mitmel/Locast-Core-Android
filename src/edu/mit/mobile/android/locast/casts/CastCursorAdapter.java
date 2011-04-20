@@ -19,16 +19,16 @@ package edu.mit.mobile.android.locast.casts;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.SimpleCursorAdapter;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Cast;
 
 public class CastCursorAdapter extends SimpleCursorAdapter {
-	private final static String[] DEFAULT_FROM = new String[] {	Cast._THUMBNAIL_URI, 	Cast._AUTHOR, 	Cast._TITLE, 		Cast._DESCRIPTION};
-	private final static int[] DEFAULT_TO      = new int[] {	R.id.media_thumbnail, 	R.id.author, 	android.R.id.text1, android.R.id.text2};
+	private final static String[] DEFAULT_FROM = new String[] {	Cast._THUMBNAIL_URI, 	Cast._AUTHOR, 	Cast._TITLE};
+	private final static int[] DEFAULT_TO      = new int[] {	R.id.media_thumbnail, 	R.id.author, 	android.R.id.text1};
 	public final static int[] IMAGE_IDS = {R.id.media_thumbnail};
 	private final Drawable defaultImage;
 
@@ -50,7 +50,7 @@ public class CastCursorAdapter extends SimpleCursorAdapter {
 	 * @param to resource IDs to map data to
 	 */
 	public CastCursorAdapter(Context context, Cursor c, int layout, String[]from, int[] to) {
-		super(context, layout, c, from, to);
+		super(context, layout, c, from,to, 0);
 		final View v = LayoutInflater.from(context).inflate(layout, null, false);
 		final ImageView thumb = (ImageView)v.findViewById(IMAGE_IDS[0]);
 		defaultImage = thumb.getDrawable();

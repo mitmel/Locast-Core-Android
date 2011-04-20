@@ -18,7 +18,6 @@ package edu.mit.mobile.android.locast.data;
  */
 import java.io.IOException;
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -45,6 +44,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -52,7 +52,6 @@ import android.util.Log;
 import android.widget.Toast;
 import edu.mit.mobile.android.locast.MainActivity;
 import edu.mit.mobile.android.locast.R;
-import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
@@ -80,13 +79,24 @@ public class Sync extends Service {
 	public final static String
 		EXTRA_EXPLICIT_SYNC = "edu.mit.mobile.android.locast.EXTRA_EXPLICIT_SYNC";
 
+	/**
+	 * If syncing a server URI that is destined for a specific local URI space, add the destination URI here.
+	 */
+	public final static String
+		EXTRA_DESTINATION_URI = "edu.mit.mobile.android.locast.EXTRA_DESTINATION_URI";
+
+	public final static String
+		EXTRA_DESTINATION_TYPE = "edu.mit.mobile.android.locast.EXTRA_DESTINATION_TYPE";
+
+	private static final String CONTENT_TYPE_PREFIX_DIR = "vnd.android.cursor.dir";
+
 	private final IBinder mBinder = new LocalBinder();
 	private NetworkClient nc;
 	private ContentResolver cr;
 	private Set<Uri> syncdItems;
 	private boolean mNotifiedUserAboutNetworkStatus = true;
 
-	protected final ConcurrentLinkedQueue<Uri> syncQueue = new ConcurrentLinkedQueue<Uri>();
+	protected final ConcurrentLinkedQueue<SyncQueueItem> syncQueue = new ConcurrentLinkedQueue<SyncQueueItem>();
 	private SyncTask currentSyncTask = null;
 
 	private static int NOTIFICATION_SYNC = 0;
@@ -138,7 +148,7 @@ public class Sync extends Service {
 				if (intent.getBooleanExtra(EXTRA_EXPLICIT_SYNC, false)){
 					mNotifiedUserAboutNetworkStatus = true;
 				}
-				startSync(intent.getData());
+				startSync(intent.getData(), intent.getExtras());
 			}else if (ACTION_CANCEL_SYNC.equals(intent.getAction())){
 				stopSync();
 			}
@@ -164,55 +174,52 @@ public class Sync extends Service {
     	unregisterReceiver(networkStateReceiver);
     }
 
+    private JsonSyncableItem getSyncItem(Uri toSync){
+    	JsonSyncableItem syncItem;
+    	final String contentType = getApplicationContext().getContentResolver().getType(toSync);
+		if (MediaProvider.TYPE_COMMENT_DIR.equals(contentType)
+				|| MediaProvider.TYPE_COMMENT_ITEM.equals(contentType)){
+			syncItem = new Comment();
 
-	private void sync(Uri toSync, SyncProgressNotifier syncProgress) throws SyncException, IOException {
-		JsonSyncableItem syncItem = null;
-		if ("http".equals(toSync.getScheme()) || "https".equals(toSync.getScheme())){
-			// XXX hack. This should really get the type from the server somehow.
-			final List<String> path = toSync.getPathSegments();
-			final int size = path.size();
-			final String lastPath = size >= 1  ? path.get(size - 1): null;
-			final String secondToLastPath = size >= 2 ? path.get(size - 2) : null;
-			String type = null;
-			try {
-				Integer.parseInt(lastPath);
-				type = secondToLastPath;
-			}catch (final NumberFormatException ne){
-				type = lastPath;
-			}
-			if (Cast.SERVER_PATH.startsWith(type)){
-				syncItem = new Cast();
-			}else if (Project.SERVER_PATH.startsWith(type)){
-				syncItem = new Project();
-			}else if (Comment.SERVER_PATH.startsWith(type)) {
-				syncItem = new Comment();
-			}else{
-				throw new RuntimeException("Cannot determine the type of "+toSync);
-			}
+		}else if (MediaProvider.TYPE_CAST_DIR.equals(contentType)
+				|| MediaProvider.TYPE_CAST_ITEM.equals(contentType)
+				|| MediaProvider.TYPE_PROJECT_CAST_DIR.equals(contentType)
+				|| MediaProvider.TYPE_PROJECT_CAST_ITEM.equals(contentType)){
+			syncItem = new Cast();
+
+		}else if (MediaProvider.TYPE_PROJECT_DIR.equals(contentType)
+				|| MediaProvider.TYPE_PROJECT_ITEM.equals(contentType)){
+			syncItem = new Project();
+
+		}else if (MediaProvider.TYPE_ITINERARY_DIR.equals(contentType)
+				|| MediaProvider.TYPE_ITINERARY_ITEM.equals(contentType)){
+			syncItem = new Itinerary();
+
 		}else{
-			final String contentType = getApplicationContext().getContentResolver().getType(toSync);
-			if (!MediaProvider.canSync(toSync)){
+			throw new RuntimeException("URI " + toSync + " is syncable, but there is no type mapping for it in getSyncItem().");
+		}
+		return syncItem;
+    }
+
+	private void sync(Uri toSync, SyncProgressNotifier syncProgress, Bundle extras) throws SyncException, IOException {
+		Uri localUri;
+		if ("http".equals(toSync.getScheme()) || "https".equals(toSync.getScheme())){
+			if (!extras.containsKey(EXTRA_DESTINATION_URI)){
+				throw new IllegalArgumentException("missing EXTRA_DESTINATION_URI when syncing HTTP URIs");
+			}
+
+			localUri = (Uri) extras.get(EXTRA_DESTINATION_URI);
+			if (!MediaProvider.canSync(localUri)){
 				throw new IllegalArgumentException("URI " + toSync + " is not syncable.");
 			}
-			if (MediaProvider.TYPE_COMMENT_DIR.equals(contentType)
-					|| MediaProvider.TYPE_COMMENT_ITEM.equals(contentType)){
-				syncItem = new Comment();
-
-			}else if (MediaProvider.TYPE_CAST_DIR.equals(contentType)
-					|| MediaProvider.TYPE_CAST_ITEM.equals(contentType)
-					|| MediaProvider.TYPE_PROJECT_CAST_DIR.equals(contentType)
-					|| MediaProvider.TYPE_PROJECT_CAST_ITEM.equals(contentType)){
-				syncItem = new Cast();
-
-			}else if (MediaProvider.TYPE_PROJECT_DIR.equals(contentType)
-					|| MediaProvider.TYPE_PROJECT_ITEM.equals(contentType)){
-				syncItem = new Project();
-
-			}else{
-				throw new RuntimeException("URI " + toSync + " is syncable, but don't know what type of object it is.");
-			}
+		}else{
+			localUri = toSync;
 		}
-		sync(toSync, syncItem, syncProgress);
+		if (!MediaProvider.canSync(localUri)){
+			throw new IllegalArgumentException("URI " + toSync + " is not syncable.");
+		}
+
+		sync(toSync, getSyncItem(localUri), syncProgress, extras);
 	}
 	/**
 	 * Sync the given URI to the server. Will compare dates and do a two-way sync.
@@ -224,26 +231,18 @@ public class Sync extends Service {
 	 * serialization routine in it, as well as the sync map.
 	 * @throws IOException
 	 */
-	private void sync(Uri toSync, JsonSyncableItem sync, SyncProgressNotifier syncProgress) throws SyncException, IOException{
+	private void sync(Uri toSync, JsonSyncableItem sync, SyncProgressNotifier syncProgress, Bundle extras) throws SyncException, IOException{
 		syncdItems = new TreeSet<Uri>();
 
 		if ("http".equals(toSync.getScheme()) || "https".equals(toSync.getScheme())){
-			final List<String> path = toSync.getPathSegments();
-			final int size = path.size();
-			final String lastPath = size >= 1  ? path.get(size - 1): null;
-			boolean isList;
-			// XXX so much of a hack. OMG.
-			try {
-				Integer.parseInt(lastPath);
-				isList = false;
-			}catch (final NumberFormatException ne){
-				isList = true;
-			}
+			final String netPath = toSync.getPath();
+			toSync = (Uri) extras.get(EXTRA_DESTINATION_URI);
+			final String contentType = getContentResolver().getType(toSync);
 
-			if (isList){
-				syncNetworkList(toSync, toSync.getPath(), sync, syncProgress);
+			if (contentType.startsWith(CONTENT_TYPE_PREFIX_DIR)){
+				syncNetworkList(toSync, netPath, sync, syncProgress);
 			}else{
-				syncNetworkItem(toSync, toSync.getPath(), sync, syncProgress);
+				syncNetworkItem(toSync, netPath, sync, syncProgress);
 			}
 		}else{
 			final String contentType = getApplicationContext().getContentResolver().getType(toSync);
@@ -253,7 +252,7 @@ public class Sync extends Service {
 				syncProgress.addPendingTasks(c.getCount());
 
 				// Handle a list of items.
-				if (contentType.startsWith("vnd.android.cursor.dir")){
+				if (contentType.startsWith(CONTENT_TYPE_PREFIX_DIR)){
 					// load from the network first...
 					syncNetworkList(toSync, MediaProvider.getPublicPath(cr, toSync), sync, syncProgress);
 				}
@@ -360,11 +359,11 @@ public class Sync extends Service {
 			try {
 				cvNet = JsonSyncableItem.fromJSON(context, null, jsonObject, syncMap);
 				// XXX remove this when the API updates
-				Uri itemToGetPubPathOf = toSync;
+				/*Uri itemToGetPubPathOf = toSync;
 				if (itemToGetPubPathOf == null){
 					itemToGetPubPathOf = sync.getContentUri();
-				}
-				MediaProvider.translateIdToUri(context, cvNet, true, itemToGetPubPathOf);
+				}*/
+				//MediaProvider.translateIdToUri(context, cvNet, true, itemToGetPubPathOf);
 
 			}catch (final Exception e){
 				final SyncException se = new SyncException("Problem loading JSON object.");
@@ -376,7 +375,7 @@ public class Sync extends Service {
 		final String contentType = cr.getType(toSync);
 
 		if (c != null) {
-			if (contentType.startsWith("vnd.android.cursor.dir")){
+			if (contentType.startsWith(CONTENT_TYPE_PREFIX_DIR)){
 				locUri = ContentUris.withAppendedId(toSync,
 						c.getLong(c.getColumnIndex(JsonSyncableItem._ID)));
 				toSyncIsIndex = true;
@@ -557,6 +556,14 @@ public class Sync extends Service {
 		return modified;
 	}
 
+	/**
+	 * Retrieve an object from the server
+	 * @param context
+	 * @param path
+	 * @param sync
+	 * @throws SyncException
+	 * @throws IOException
+	 */
 	public static void loadItemFromServer(Context context, String path, JsonSyncableItem sync) throws SyncException, IOException {
 		ContentValues cvNet;
 		final NetworkClient nc = NetworkClient.getInstance(context);
@@ -623,13 +630,13 @@ public class Sync extends Service {
      *
      * @param uri
      */
-    public void startSync(Uri uri){
+    public void startSync(Uri uri, Bundle extras){
     	if (!isDataConnected()){
     		return;
     	}
 
     	if (! syncQueue.contains(uri)){
-    		syncQueue.add(uri);
+    		syncQueue.add(new SyncQueueItem(uri, extras));
     		Log.d(TAG, "enqueing " + uri + " to sync queue");
     	}else{
     		Log.d(TAG, "NOT enqueing " + uri + " to sync queue, as it's already present");
@@ -699,8 +706,8 @@ public class Sync extends Service {
 			try {
 				while (!syncQueue.isEmpty()){
 					Log.d(TAG, syncQueue.size() + " items in the sync queue");
-					final Uri toSync = syncQueue.remove();
-					Sync.this.sync(toSync, this);
+					final SyncQueueItem toSync = syncQueue.remove();
+					Sync.this.sync(toSync.uri, this, toSync.extras);
 
 				}
 			} catch (final SyncException e) {
@@ -761,5 +768,15 @@ public class Sync extends Service {
 		 * @param taskCount
 		 */
 		public void addPendingTasks(int taskCount);
+	}
+
+	private class SyncQueueItem {
+		public SyncQueueItem(Uri uri, Bundle extras) {
+			this.uri = uri;
+			this.extras = extras;
+		}
+
+		Uri uri;
+		Bundle extras;
 	}
 }
