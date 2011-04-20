@@ -12,6 +12,7 @@ import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
@@ -19,8 +20,9 @@ import android.widget.TextView;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.MediaProvider;
+import edu.mit.mobile.android.locast.data.Sync;
 
-public class ItineraryList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener {
+public class ItineraryList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
 
 	private CursorAdapter mAdapter;
 	private ListView mListView;
@@ -31,6 +33,8 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.simple_list_activity);
+
+		findViewById(R.id.refresh).setOnClickListener(this);
 
 		mListView = (ListView) findViewById(android.R.id.list);
 		mListView.setOnItemClickListener(this);
@@ -65,9 +69,19 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	}
 
 	@Override
+	protected void onResume() {
+		super.onResume();
+		refresh(false);
+	}
+
+	@Override
 	public void setTitle(CharSequence title){
 		super.setTitle(title);
 		((TextView)findViewById(android.R.id.title)).setText(title);
+	}
+
+	private void refresh(boolean explicitSync){
+		startService(new Intent(Intent.ACTION_SYNC, mUri).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
 	}
 
 	@Override
@@ -92,5 +106,14 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	@Override
 	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
 		startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mUri, id)));
+	}
+
+	@Override
+	public void onClick(View v) {
+		switch (v.getId()){
+		case R.id.refresh:
+			refresh(true);
+			break;
+		}
 	}
 }

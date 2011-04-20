@@ -377,4 +377,27 @@ public abstract class TaggableItem extends JsonSyncableItem {
 		}
 		return prefixedTags;
 	}
+
+	/**
+	 * Strips prefixes from tags.
+	 *
+	 * @param tags
+	 * @return a list of the tags with any prefix removed.
+	 */
+	public static Set<String> removePrefixesFromTags(Collection<String> tags){
+		if (tags == null){
+			return null;
+		}
+
+		final Set<String> nonPrefixedTags = new HashSet<String>(tags.size());
+		for (final String tag: tags){
+			final int sepIndex = tag.indexOf(PREFIX_SEPARATOR);
+			if (sepIndex != -1){
+				nonPrefixedTags.add(tag.substring(sepIndex+1));
+			}else{
+				nonPrefixedTags.add(tag);
+			}
+		}
+		return nonPrefixedTags;
+	}
 }

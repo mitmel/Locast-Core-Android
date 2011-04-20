@@ -1261,6 +1261,14 @@ public class MediaProvider extends ContentProvider {
 			path = getPathFromField(cr, removeLastPathSegment(uri), Cast._CASTMEDIA_DIR_URI);
 		}break;
 
+		// TODO figure out a better way to do this without needing to hard-code this logic.
+		case MATCHER_CAST_BY_TAGS:
+		case MATCHER_ITINERARY_BY_TAGS:{
+			final Set<String> tags = TaggableItem.removePrefixesFromTags(Tag.toSet(uri.getQuery()));
+
+			path = getPublicPath(cr, removeLastPathSegment(uri)) + "?tags=" + ListUtils.join(tags, ",");
+		}break;
+
 		default:
 			throw new IllegalArgumentException("Don't know how to get the public path for "+uri);
 		}

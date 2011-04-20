@@ -13,6 +13,7 @@ import android.support.v4.content.Loader.OnLoadCompleteListener;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -34,8 +35,9 @@ import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
+import edu.mit.mobile.android.locast.data.Sync;
 
-public class ItineraryDetail extends MapActivity implements OnLoadCompleteListener<Cursor>, OnItemClickListener {
+public class ItineraryDetail extends MapActivity implements OnLoadCompleteListener<Cursor>, OnItemClickListener, OnClickListener {
 	private static final String TAG = ItineraryDetail.class.getSimpleName();
 
 	private MapView mMapView;
@@ -64,6 +66,7 @@ public class ItineraryDetail extends MapActivity implements OnLoadCompleteListen
 		imgCache = ((Application)getApplication()).getImageCache();
 
 		mCastView = (ListView)findViewById(R.id.casts);
+		findViewById(R.id.refresh).setOnClickListener(this);
 
 		final LayoutInflater layoutInflater = getLayoutInflater();
 		mCastView.addHeaderView(layoutInflater.inflate(R.layout.itinerary_detail_list_header, mCastView, false), null, false);
@@ -98,11 +101,12 @@ public class ItineraryDetail extends MapActivity implements OnLoadCompleteListen
 	protected void onResume() {
 		super.onResume();
 
-
 		itinLoader.registerListener(0, this);
 		itinLoader.startLoading();
 		castLoader.registerListener(0, mCastLoadCompleteListener);
 		castLoader.startLoading();
+
+		refresh(false);
 
 	}
 
@@ -128,6 +132,10 @@ public class ItineraryDetail extends MapActivity implements OnLoadCompleteListen
 		mPathOverlay = new PathOverlay(this);
 		overlays.add(mPathOverlay);
 		overlays.add(mItineraryOverlay);
+	}
+
+	private void refresh(boolean explicitSync){
+		startService(new Intent(Intent.ACTION_SYNC, mUri).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
 	}
 
 	private final OnLoadCompleteListener<Cursor> mCastLoadCompleteListener = new OnLoadCompleteListener<Cursor>() {
@@ -160,5 +168,14 @@ public class ItineraryDetail extends MapActivity implements OnLoadCompleteListen
 	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
 		startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mCastsUri, id)));
 
+	}
+
+	@Override
+	public void onClick(View v) {
+		switch(v.getId()){
+		case R.id.refresh:
+			refresh(true);
+			break;
+		}
 	}
 }

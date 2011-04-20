@@ -3,6 +3,7 @@ package edu.mit.mobile.android.locast.browser;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
@@ -27,6 +28,7 @@ import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
+import edu.mit.mobile.android.locast.data.Sync;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 
 public class BrowserHome extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener{
@@ -35,12 +37,15 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 	private CastCursorAdapter mAdapter;
 
+	private static final Uri FEATURED_CASTS = Cast.getTagUri(Cast.CONTENT_URI, Cast.addPrefixToTag(Cast.SYSTEM_PREFIX, "_featured"));
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		imgCache = ((Application)getApplication()).getImageCache();
 		setContentView(R.layout.browser_main);
+		findViewById(R.id.refresh).setOnClickListener(this);
 
 		final Gallery casts = (Gallery) findViewById(R.id.casts);
 
@@ -59,6 +64,12 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		findViewById(R.id.nearby).setOnClickListener(this);
 
 		checkFirstTime();
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		refresh(false);
 	}
 
 	@Override
@@ -85,6 +96,11 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		return true;
 	}
 
+
+	private void refresh(boolean explicitSync){
+		startService(new Intent(Intent.ACTION_SYNC, FEATURED_CASTS).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
+	}
+
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch (requestCode) {
@@ -105,6 +121,10 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		case R.id.itineraries:
 			startActivity(new Intent(Intent.ACTION_VIEW, Itinerary.CONTENT_URI));
 			break;
+
+		case R.id.refresh:
+			refresh(true);
+			break;
 		}
 
 	}
@@ -117,7 +137,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		switch(id){
 		case LOADER_FEATURED_CASTS:
 			return new CursorLoader(this,
-					Cast.getTagUri(Cast.CONTENT_URI, Cast.addPrefixToTag(Cast.SYSTEM_PREFIX, "_featured")),
+					FEATURED_CASTS,
 					Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
 
 			default:
