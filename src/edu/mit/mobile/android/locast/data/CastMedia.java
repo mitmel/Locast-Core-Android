@@ -19,7 +19,6 @@ public class CastMedia extends JsonSyncableItem {
 	public final static String[] PROJECTION = {
 		_ID,
 		_PUBLIC_URI,
-		_PUBLIC_ID,
 		_MODIFIED_DATE,
 		_CREATED_DATE,
 		_MEDIA_URL,

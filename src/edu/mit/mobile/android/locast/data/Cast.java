@@ -146,10 +146,6 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 
 		final ContentResolver cr = context.getContentResolver();
 
-		if (item.optBoolean("official", false)){
-
-		}
-
 //		OrderedList.onUpdate(context, uri, item, "media", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_FROM, new CastVideo(), CastVideo.PATH);
 //		final Uri castVideoDirUri = Uri.withAppendedPath(uri, CastVideo.PATH);
 //		final String pubCastVideoUri = MediaProvider.getPublicPath(cr, castVideoDirUri);

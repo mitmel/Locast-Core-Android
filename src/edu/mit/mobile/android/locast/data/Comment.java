@@ -44,7 +44,6 @@ public class Comment extends JsonSyncableItem {
 	public final static String[] PROJECTION = {
 			_ID,
 			_PUBLIC_URI,
-			_PUBLIC_ID,
 			_AUTHOR,
 			_AUTHOR_ICON,
 			_MODIFIED_DATE,

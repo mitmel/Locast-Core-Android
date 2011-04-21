@@ -135,7 +135,6 @@ public class MediaProvider extends ContentProvider {
 		private static final String JSON_SYNCABLE_ITEM_FIELDS =
 			JsonSyncableItem._ID 			 + " INTEGER PRIMARY KEY,"
 			+ JsonSyncableItem._PUBLIC_URI 	 + " TEXT UNIQUE,"
-			+ JsonSyncableItem._PUBLIC_ID 	 + " INTEGER UNIQUE,"
 			+ JsonSyncableItem._MODIFIED_DATE+ " INTEGER,"
 			+ JsonSyncableItem._CREATED_DATE + " INTEGER,";
 
@@ -424,6 +423,7 @@ public class MediaProvider extends ContentProvider {
 
 		switch (uriMatcher.match(uri)){
 		//////////////////////////////////////////////////////////////////////////////////
+		case MATCHER_CAST_BY_TAGS:
 		case MATCHER_CAST_DIR:{
 			Assert.assertNotNull(values);
 			final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
@@ -443,6 +443,7 @@ public class MediaProvider extends ContentProvider {
 			break;
 		}
 		//////////////////////////////////////////////////////////////////////////////////
+		case MATCHER_PROJECT_BY_TAGS:
 		case MATCHER_PROJECT_DIR:{
 			Assert.assertNotNull(values);
 			final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
@@ -523,6 +524,7 @@ public class MediaProvider extends ContentProvider {
 		} break;
 
 		//////////////////////////////////////////////////////////////////////////////////
+		case MATCHER_ITINERARY_BY_TAGS:
 		case MATCHER_ITINERARY_DIR:{
 			newItem = insertWithTags(values, db, ITINERARY_TABLE_NAME, Itinerary.CONTENT_URI);
 			if (newItem != null){
@@ -542,7 +544,17 @@ public class MediaProvider extends ContentProvider {
 			final long parentId = ContentUris.parseId(parent);
 			db.beginTransaction();
 			try {
-				newItem = insert(Cast.CONTENT_URI, values);
+				// TODO make this more generic and handle the case where relations can be added locally.
+				if (values.containsKey(Cast._PUBLIC_URI)){
+					final Cursor existingCast = db.query(CAST_TABLE_NAME, new String[]{Cast._ID, Cast._PUBLIC_URI}, Cast._PUBLIC_URI+"=?", new String[]{values.getAsString(Cast._PUBLIC_URI)}, null, null, null);
+					if (existingCast.moveToFirst()){
+						newItem = ContentUris.withAppendedId(Cast.CONTENT_URI, existingCast.getLong(existingCast.getColumnIndex(Cast._ID)));
+					}
+					existingCast.close();
+				}
+				if (newItem == null){
+					newItem = insert(Cast.CONTENT_URI, values);
+				}
 				if (TYPE_ITINERARY_ITEM.equals(getType(parent))){
 					ITINERARY_CASTS_DBHELPER.addRelation(db, parentId, ContentUris.parseId(newItem));
 				}else{
@@ -723,7 +735,7 @@ public class MediaProvider extends ContentProvider {
 
 		case MATCHER_CAST_BY_TAGS:
 			taggableItemTable = CAST_TABLE_NAME;
-
+		// TODO redo this with the addExtraWhere
 		case MATCHER_PROJECT_BY_TAGS:{
 			if (taggableItemTable == null){
 				taggableItemTable = PROJECT_TABLE_NAME;
