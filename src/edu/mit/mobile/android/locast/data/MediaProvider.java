@@ -63,7 +63,6 @@ public class MediaProvider extends ContentProvider {
 		TYPE_COMMENT_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.comments",
 		TYPE_COMMENT_DIR  = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.comments",
 
-		// XXX needed? TYPE_TAG_ITEM     = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.tags",
 		TYPE_TAG_DIR      = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.tags",
 
 		TYPE_ITINERARY_DIR  =  "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.itineraries",
@@ -87,10 +86,6 @@ public class MediaProvider extends ContentProvider {
 	private static final ManyToMany.DBHelper
 		ITINERARY_CASTS_DBHELPER = new ManyToMany.DBHelper(ITINERARY_TABLE_NAME, CAST_TABLE_NAME),
 		CASTS_CASTMEDIA_DBHELPER = new ManyToMany.DBHelper(CAST_TABLE_NAME, CASTMEDIA_TABLE_NAME);
-
-	private static final String
-		ITINERARY_CASTS_TABLE_NAME = ITINERARY_CASTS_DBHELPER.getJoinTableName(),
-		CASTS_CASTMEDIA_TABLE_NAME = CASTS_CASTMEDIA_DBHELPER.getJoinTableName();;
 
 	private static UriMatcher uriMatcher;
 
@@ -415,9 +410,6 @@ public class MediaProvider extends ContentProvider {
 		}
 		values.remove(JsonSyncableItem._ID);
 
-		// XXX remove this when the API updates
-		//translateIdToUri(context, values, syncable, uri);
-
 		Uri newItem = null;
 		boolean isDraft = false;
 
@@ -604,6 +596,7 @@ public class MediaProvider extends ContentProvider {
 //		if (syncable && !isDraft){
 //			context.startService(new Intent(Intent.ACTION_SYNC, uri));
 //		}
+
 		return newItem;
 	}
 
@@ -882,9 +875,6 @@ public class MediaProvider extends ContentProvider {
 			needSync = true;
 		}
 		values.remove(CV_FLAG_DO_NOT_MARK_DIRTY);
-
-		// XXX remove this when the API updates
-		///translateIdToUri(getContext(), values, canSync, uri);
 
 		switch (uriMatcher.match(uri)){
 		case MATCHER_CAST_DIR:
