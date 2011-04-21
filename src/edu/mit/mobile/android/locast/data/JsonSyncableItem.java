@@ -602,6 +602,12 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	public static class SyncChildRelation extends SyncItem {
 		Relationship mRelationship;
 
+		/**
+		 *
+		 * @param remoteKey the key in the JSON
+		 * @param relationship how this field relates to the local database
+		 * @param flags standard {@link SyncItem} flags
+		 */
 		public SyncChildRelation(String remoteKey, Relationship relationship, int flags) {
 			super(remoteKey, flags);
 			mRelationship = relationship;
@@ -645,15 +651,20 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		}
 
 		/**
-		 * A simple relationship where the path is the relationship name. eg.
+		 * A simple relationship where the local URI path is the relationship name. eg.
 		 *
-		 * parent is: {@code content://itinerary/1} and the relationship is "casts" so the child items are all at {@code content://itinerary/1/casts}
+		 * Given the parent {@code content://itinerary/1} with a relationship of "casts", the child items are all at {@code content://itinerary/1/casts}
 		 *
 		 * @author steve
 		 *
 		 */
 		public static class SimpleRelationship extends Relationship {
 
+			/**
+			 * Create a new simple relationship.
+			 *
+			 * @param relationship local uri path suffix for the item.
+			 */
 			public SimpleRelationship(String relationship) {
 				super(relationship);
 			}
@@ -666,6 +677,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 
 		/**
 		 * Defines a relationship between one object and another.
+		 * For most cases, you'll want to use {@link SimpleRelationship}.
 		 *
 		 * @author steve
 		 *
@@ -725,6 +737,23 @@ public abstract class JsonSyncableItem implements BaseColumns {
 				boolean updated) throws SyncException, IOException {
 			super.onPostSyncItem(context, uri, item, updated);
 			chain.onPostSyncItem(context, uri, item, updated);
+		}
+	}
+
+	/**
+	 * One-directional sync of a child item.
+	 * @author steve
+	 *
+	 */
+	public static class SyncChildField extends SyncMapChain {
+		public SyncChildField(String remoteKey, String remoteField, int fieldType) {
+			this(remoteKey, remoteField, fieldType, 0);
+		}
+
+		public SyncChildField(String remoteKey, String remoteField, int fieldType, int fieldFlags) {
+			super(remoteKey, new SyncMap(), SyncMapChain.SYNC_FROM);
+
+			getChain().put("_" + remoteField, new SyncFieldMap(remoteField, fieldType, fieldFlags));
 		}
 	}
 

@@ -63,7 +63,7 @@ import edu.mit.mobile.android.locast.IncrementalLocator;
 import edu.mit.mobile.android.locast.ListUtils;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.CastMedia;
+import edu.mit.mobile.android.locast.data.CastVideo;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Project;
@@ -87,15 +87,15 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	private Uri mProjectUri;
 	private String mPublicProjectUri;
 	private Cursor mShotListCursor;
-	private Cursor mCastMediaCursor;
+	private Cursor mCastVideoCursor;
 	private boolean mStoppable;
 	private int mLocUriCol;
 
-	private Uri mCastMediaUri;
+	private Uri mCastVideoUri;
 	private TextSwitcher mOsdSwitcher;
 	private ImageButton mActionButton;
 	private RelativeSizeListView mProgressBar;
-	private CastMediaProgressAdapter mCastMediaProgressAdapter;
+	private CastVideoProgressAdapter mCastVideoProgressAdapter;
 	private String mFilePrefix;
 
 	private IncrementalLocator mIloc;
@@ -196,12 +196,12 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		if (mCurrentCast == null){
 			mCurrentCast = save();
 		}
-		mCastMediaUri = Cast.getCastMediaUri(mCurrentCast);
-		mCastMediaCursor = managedQuery(mCastMediaUri, CastMedia.PROJECTION, null, null, CastMedia.DEFAULT_SORT);
-		mLocUriCol = mCastMediaCursor.getColumnIndex(CastMedia._LOCAL_URI);
+		mCastVideoUri = Cast.getCastVideoUri(mCurrentCast);
+		mCastVideoCursor = managedQuery(mCastVideoUri, CastVideo.PROJECTION, null, null, CastVideo.DEFAULT_SORT);
+		mLocUriCol = mCastVideoCursor.getColumnIndex(CastVideo._LOCAL_URI);
 
-		mCastMediaProgressAdapter = new CastMediaProgressAdapter(this, mCastMediaCursor, mShotListCursor);
-		mProgressBar.setAdapter(mCastMediaProgressAdapter);
+		mCastVideoProgressAdapter = new CastVideoProgressAdapter(this, mCastVideoCursor, mShotListCursor);
+		mProgressBar.setAdapter(mCastVideoProgressAdapter);
 
 		final Cursor parent = managedQuery(mProjectUri, Project.PROJECTION, null, null, null);
 		if (parent.getCount() > 1){
@@ -231,7 +231,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		setState(STATE_INITIAL);
 		super.onPause();
 		mIloc.removeLocationUpdates(this);
-		mCastMediaCursor.unregisterContentObserver(castMediaObserver);
+		mCastVideoCursor.unregisterContentObserver(castVideoObserver);
 
 		if (mCurrentCast != null){
 			save();
@@ -250,7 +250,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		mCastMediaCursor.registerContentObserver(castMediaObserver);
+		mCastVideoCursor.registerContentObserver(castVideoObserver);
 		mIloc.requestLocationUpdates(this);
 		findViewById(R.id.shutter).requestFocus();
 	}
@@ -435,8 +435,8 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	private void updateControls(){
 		mProgressBar.setEnabled(mTemplateState == STATE_PLAYBACK
 				|| mTemplateState == STATE_RECORDER_READY);
-		updateRecordingIndicator(mTemplateState == STATE_RECORDER_RECORDING, mStoppable, mCastMediaCursor != null && mCurrentCastVideo >= 0 && hasCastVideo(mCurrentCastVideo));
-		if (mCastMediaCursor != null){
+		updateRecordingIndicator(mTemplateState == STATE_RECORDER_RECORDING, mStoppable, mCastVideoCursor != null && mCurrentCastVideo >= 0 && hasCastVideo(mCurrentCastVideo));
+		if (mCastVideoCursor != null){
 			updateDoneState(getNextUnrecordedCastVideo() == CAST_VIDEO_DONE);
 		}
 	}
@@ -447,8 +447,8 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 	private void updateProgressOSD(int position, int progress){
 
-			final int shotLength = mCastMediaProgressAdapter.getShotLength(position);
-			final boolean hardLimit = mCastMediaProgressAdapter.getHardLimit(position);
+			final int shotLength = mCastVideoProgressAdapter.getShotLength(position);
+			final boolean hardLimit = mCastVideoProgressAdapter.getHardLimit(position);
 
 			final CharSequence number = hardLimit
 			? (Integer.toString((shotLength - progress) / 1000))
@@ -468,10 +468,10 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	public static final int CAST_VIDEO_DONE = -2;
 
 	private int getNextUnrecordedCastVideo(){
-		for (mCastMediaCursor.moveToFirst(); !mCastMediaCursor.isAfterLast(); mCastMediaCursor.moveToNext()){
+		for (mCastVideoCursor.moveToFirst(); !mCastVideoCursor.isAfterLast(); mCastVideoCursor.moveToNext()){
 
-			if (mCastMediaCursor.isNull(mLocUriCol)){
-				return mCastMediaCursor.getPosition();
+			if (mCastVideoCursor.isNull(mLocUriCol)){
+				return mCastVideoCursor.getPosition();
 			}
 		}
 		return CAST_VIDEO_DONE;
@@ -484,9 +484,9 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	 * @return the next position or AdapterView.INVALID_POSITION if the end has been reached.
 	 */
 	private int getNextCastVideo(int index){
-		mCastMediaCursor.moveToPosition(index);
-		if (mCastMediaCursor.moveToNext()){
-			return mCastMediaCursor.getPosition();
+		mCastVideoCursor.moveToPosition(index);
+		if (mCastVideoCursor.moveToNext()){
+			return mCastVideoCursor.getPosition();
 		}else{
 			return AdapterView.INVALID_POSITION;
 		}
@@ -494,8 +494,8 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 
 	private boolean hasCastVideo(int index){
-		if (mCastMediaCursor.moveToPosition(index)){
-			return !mCastMediaCursor.isNull(mLocUriCol);
+		if (mCastVideoCursor.moveToPosition(index)){
+			return !mCastVideoCursor.isNull(mLocUriCol);
 		}else{
 			return false;
 		}
@@ -505,8 +505,8 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		if (hasCastVideo(index)){
 
 			final ContentValues cv = new ContentValues();
-			cv.putNull(CastMedia._LOCAL_URI);
-			getContentResolver().update(ContentUris.withAppendedId(mCastMediaUri, index), cv, null, null);
+			cv.putNull(CastVideo._LOCAL_URI);
+			getContentResolver().update(ContentUris.withAppendedId(mCastVideoUri, index), cv, null, null);
 
 		}else{
 			throw new IllegalArgumentException("No cast video for given position");
@@ -538,7 +538,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 				}else{
 					setOsdText("");
 				}
-				updateProgressOSD(index, mCastMediaProgressAdapter.getProgress(index));
+				updateProgressOSD(index, mCastVideoProgressAdapter.getProgress(index));
 			}else{
 				setOsdText("");
 			}
@@ -555,7 +555,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		mCurrentCastVideo = index;
 	}
 
-	private final ContentObserver castMediaObserver = new ContentObserver(new Handler()) {
+	private final ContentObserver castVideoObserver = new ContentObserver(new Handler()) {
 
 		@Override
 		public boolean deliverSelfNotifications() {
@@ -565,12 +565,12 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 		@Override
 		public void onChange(boolean selfChange) {
 			if (!selfChange){
-				mCastMediaCursor.requery();
+				mCastVideoCursor.requery();
 			}
 			shotHandler.sendEmptyMessage(MSG_SHOT_CAST_MEDIA_UPDATED);
 			// handle case when cast is deleted.
-			if (mCastMediaCursor.getCount() != 0){
-				updateProgressOSD(mCurrentCastVideo, mCastMediaProgressAdapter.getProgress(mCurrentCastVideo));
+			if (mCastVideoCursor.getCount() != 0){
+				updateProgressOSD(mCurrentCastVideo, mCastVideoProgressAdapter.getProgress(mCurrentCastVideo));
 			}
 		}
 	};
@@ -671,7 +671,7 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 			throw new IllegalStateException("Must call prepareToRecord() first (state="+getState()+")");
 		}
 
-		if(mCastMediaCursor.moveToPosition(shot)){
+		if(mCastVideoCursor.moveToPosition(shot)){
 			if (hasCastVideo(shot)){
 				deleteCastVideo(shot);
 			}
@@ -686,11 +686,11 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 	private void saveCastVideo(int shot, int duration){
 		final ContentValues cv = new ContentValues();
 		final Uri localUri = Uri.fromFile(getFullOutputFile());
-		cv.put(CastMedia._LIST_IDX, shot);
-		cv.put(CastMedia._DURATION, duration);
-		cv.put(CastMedia._MIME_TYPE, localUri != null ? "video/3gpp": null);
-		cv.put(CastMedia._LOCAL_URI, localUri.toString());
-		if (getContentResolver().update(ContentUris.withAppendedId(mCastMediaUri, shot), cv, null, null) != 1){
+		cv.put(CastVideo._LIST_IDX, shot);
+		cv.put(CastVideo._DURATION, duration);
+		cv.put(CastVideo._MIME_TYPE, localUri != null ? "video/3gpp": null);
+		cv.put(CastVideo._LOCAL_URI, localUri.toString());
+		if (getContentResolver().update(ContentUris.withAppendedId(mCastVideoUri, shot), cv, null, null) != 1){
 			Log.e(TAG, "got non-1 result from update in SaveCastVideo*()");
 		}
 	}
@@ -754,14 +754,14 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 			// ensure that there's always one cast video.
 			final int castVideoCount = Math.max(1, mShotListCursor.getCount());
-			final ContentValues[] castMedia = new ContentValues[castVideoCount];
+			final ContentValues[] castVideo = new ContentValues[castVideoCount];
 			for (int i = 0; i < castVideoCount; i++){
-				castMedia[i] = new ContentValues();
-				castMedia[i].put(CastMedia._LIST_IDX, i);
+				castVideo[i] = new ContentValues();
+				castVideo[i].put(CastVideo._LIST_IDX, i);
 			}
-			final Uri castMediaUri = Cast.getCastMediaUri(mCurrentCast);
+			final Uri castVideoUri = Cast.getCastVideoUri(mCurrentCast);
 
-			final int inserts = cr.bulkInsert(castMediaUri, castMedia);
+			final int inserts = cr.bulkInsert(castVideoUri, castVideo);
 			if (inserts != castVideoCount){
 				Log.e(TAG, "only created template for some of the cast videos");
 			}
@@ -792,18 +792,18 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 	private boolean isEmpty(){
 		boolean empty = true;
-		for (mCastMediaCursor.moveToFirst(); empty && !mCastMediaCursor.isAfterLast(); mCastMediaCursor.moveToNext()){
-			empty = mCastMediaCursor.isNull(mLocUriCol);
+		for (mCastVideoCursor.moveToFirst(); empty && !mCastVideoCursor.isAfterLast(); mCastVideoCursor.moveToNext()){
+			empty = mCastVideoCursor.isNull(mLocUriCol);
 		}
 		return empty;
 	}
 
 	private void deleteCast(){
 		final ContentResolver cr = getContentResolver();
-		cr.delete(mCastMediaUri, null, null);
+		cr.delete(mCastVideoUri, null, null);
 		cr.delete(mCurrentCast, null, null);
 		mCurrentCast = null;
-		mCastMediaUri = null;
+		mCastVideoUri = null;
 	}
 
 	private final Handler recorderStateHandler = new Handler(){
@@ -1064,17 +1064,17 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 
 		selectCastVideo(position);
 
-		mCastMediaCursor.moveToPosition(position);
+		mCastVideoCursor.moveToPosition(position);
 
 
 		final VideoView playback = ((VideoView)findViewById(R.id.playback));
 
-		if (!mCastMediaCursor.isNull(mLocUriCol)){
-			final String castMediaUri = mCastMediaCursor.getString(mLocUriCol);
-			playback.setVideoURI(Uri.parse(castMediaUri));
+		if (!mCastVideoCursor.isNull(mLocUriCol)){
+			final String castVideoUri = mCastVideoCursor.getString(mLocUriCol);
+			playback.setVideoURI(Uri.parse(castVideoUri));
 
 			// next is handled by onPrepared
-			Log.d(TAG, "cast media uri is " + castMediaUri);
+			Log.d(TAG, "cast media uri is " + castVideoUri);
 		}else{
 			mStaticUiHandler.sendEmptyMessage(MSG_STATIC_SHOW);
 			mStaticUiHandler.sendMessageDelayed(mStaticUiHandler.obtainMessage(MSG_STATIC_HIDE), 3000); //
@@ -1176,12 +1176,12 @@ public class TemplateActivity extends VideoRecorder implements OnClickListener, 
 				}break;
 
 				case MSG_SHOT_SET_PROGRESS:{
-					mCastMediaProgressAdapter.updateProgress(msg.arg1, msg.arg2);
+					mCastVideoProgressAdapter.updateProgress(msg.arg1, msg.arg2);
 					updateProgressOSD(msg.arg1, msg.arg2);
 				}break;
 
 				case MSG_SHOT_CAST_MEDIA_UPDATED:{
-					if (mCastMediaCursor.getCount() > 0){
+					if (mCastVideoCursor.getCount() > 0){
 						if (getState() == STATE_RECORDER_STOPPED){
 							prepareToRecordNext();
 						}

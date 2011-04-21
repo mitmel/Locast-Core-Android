@@ -36,8 +36,8 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
 import android.view.View.OnClickListener;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -48,11 +48,10 @@ import edu.mit.mobile.android.locast.IncrementalLocator;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.WebImageLoader;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.CastMedia;
+import edu.mit.mobile.android.locast.data.CastVideo;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Project;
-import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.widget.LocationLink;
 import edu.mit.mobile.android.locast.widget.TagList;
@@ -63,7 +62,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		ACTION_TOGGLE_STARRED = "edu.mit.mobile.android.locast.ACTION_TOGGLE_STARRED";
 
 	// stateful
-	private ArrayList<Uri> locCastMedia;
+	private ArrayList<Uri> locCastVideo;
 	private String contentType;
 	private Location location;
 
@@ -120,7 +119,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		if (savedInstanceState != null){
 			location = savedInstanceState.getParcelable(RUNTIME_STATE_LOCATION);
 			contentType = savedInstanceState.getString(RUNTIME_STATE_CONTENT_TYPE);
-			locCastMedia = savedInstanceState.getParcelableArrayList(RUNTIME_STATE_CAST_MEDIA);
+			locCastVideo = savedInstanceState.getParcelableArrayList(RUNTIME_STATE_CAST_MEDIA);
 		}
 
 		final Button sendButton = (Button) findViewById(R.id.done);
@@ -131,16 +130,16 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
         sendButton.setOnClickListener(this);
 
         if (ACTION_CAST_FROM_MEDIA_URI.equals(action) ){
-        	locCastMedia = new ArrayList<Uri>();
-        	locCastMedia.add(data);
+        	locCastVideo = new ArrayList<Uri>();
+        	locCastVideo.add(data);
         	contentType = type;
 
         } else if ((Intent.ACTION_SEND.equals(action)
 				&& (type != null && (type.startsWith("video/")
 						|| type.startsWith("audio/"))))) {
         	final Bundle extras = i.getExtras();
-        	locCastMedia = new ArrayList<Uri>();
-        	locCastMedia.add((Uri)extras.get(Intent.EXTRA_STREAM));
+        	locCastVideo = new ArrayList<Uri>();
+        	locCastVideo.add((Uri)extras.get(Intent.EXTRA_STREAM));
 
         	sendButton.setText("Send");
 
@@ -164,7 +163,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 
-		outState.putParcelableArrayList(RUNTIME_STATE_CAST_MEDIA, locCastMedia);
+		outState.putParcelableArrayList(RUNTIME_STATE_CAST_MEDIA, locCastVideo);
 		outState.putString(RUNTIME_STATE_CONTENT_TYPE, contentType);
 		outState.putParcelable(RUNTIME_STATE_LOCATION, location);
 
@@ -211,16 +210,16 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			privacy.setEnabled(Cast.canChangePrivacyLevel(this, c));
 		}
 
-		final Cursor castMedia = managedQuery(Uri.withAppendedPath(castUri, CastMedia.PATH), CastMedia.PROJECTION, null, null, null);
+		final Cursor castVideo = managedQuery(Uri.withAppendedPath(castUri, CastVideo.PATH), CastVideo.PROJECTION, null, null, null);
 
-		locCastMedia = new ArrayList<Uri>(castMedia.getCount());
-		final int locUriCol = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
-		for (castMedia.moveToFirst(); ! castMedia.isAfterLast(); castMedia.moveToNext()){
-			MediaProvider.dumpCursorToLog(castMedia, CastMedia.PROJECTION);
-			if (! castMedia.isNull(locUriCol)){
-				locCastMedia.add(Uri.parse(castMedia.getString(locUriCol)));
+		locCastVideo = new ArrayList<Uri>(castVideo.getCount());
+		final int locUriCol = castVideo.getColumnIndex(CastVideo._LOCAL_URI);
+		for (castVideo.moveToFirst(); ! castVideo.isAfterLast(); castVideo.moveToNext()){
+			MediaProvider.dumpCursorToLog(castVideo, CastVideo.PROJECTION);
+			if (! castVideo.isNull(locUriCol)){
+				locCastVideo.add(Uri.parse(castVideo.getString(locUriCol)));
 			}else{
-				locCastMedia.add(null);
+				locCastVideo.add(null);
 			}
 		}
 
@@ -243,8 +242,8 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			switch (resultCode){
 
 			case RESULT_OK:
-	        	locCastMedia = new ArrayList<Uri>();
-	        	locCastMedia.add(data.getData());
+	        	locCastVideo = new ArrayList<Uri>();
+	        	locCastVideo.add(data.getData());
 	        	contentType = data.getType();
 
 				break;
@@ -318,26 +317,26 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		return cv;
 	}
 
-	protected ContentValues[] toCastMediaCV(){
-		final int size = locCastMedia.size();
+	protected ContentValues[] toCastVideoCV(){
+		final int size = locCastVideo.size();
 		final ContentValues[] cvAll = new ContentValues[size];
 		for (int i = 0; i < size; i++){
 			cvAll[i] = new ContentValues();
-			cvAll[i].put(CastMedia._LIST_IDX, i);
-			if (locCastMedia.get(i) != null){
-				cvAll[i].put(CastMedia._LOCAL_URI, locCastMedia.get(i).toString());
+			cvAll[i].put(CastVideo._LIST_IDX, i);
+			if (locCastVideo.get(i) != null){
+				cvAll[i].put(CastVideo._LOCAL_URI, locCastVideo.get(i).toString());
 			}
-			cvAll[i].put(CastMedia._DURATION, 0);
-			cvAll[i].put(CastMedia._MIME_TYPE, contentType);
+			cvAll[i].put(CastVideo._DURATION, 0);
+			cvAll[i].put(CastVideo._MIME_TYPE, contentType);
 		}
 		return cvAll;
 	}
 
 	protected boolean saveCast(){
 
-		final ContentValues[] allMediaCv = toCastMediaCV();
+		final ContentValues[] allMediaCv = toCastVideoCV();
 		final ContentResolver cr = getContentResolver();
-		Uri castMediaUri;
+		Uri castVideoUri;
 
 		final String action = getIntent().getAction();
 		if (ACTION_CAST_FROM_MEDIA_URI.equals(action)
@@ -347,18 +346,18 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 
 			castUri = cr.insert(Cast.CONTENT_URI, toContentValues());
 			if (castUri != null){
-				castMediaUri = Uri.withAppendedPath(castUri, CastMedia.PATH);
+				castVideoUri = Uri.withAppendedPath(castUri, CastVideo.PATH);
 			}else{
 				Toast.makeText(this, R.string.error_cast_saving, Toast.LENGTH_LONG);
 				return false;
 			}
 		}else{
-			 castMediaUri = Uri.withAppendedPath(castUri, CastMedia.PATH);
+			 castVideoUri = Uri.withAppendedPath(castUri, CastVideo.PATH);
 			cr.update(castUri, toContentValues(), null, null);
 		}
 
 		// cast media is special in that inserts into it overwrite any existing data.
-		cr.bulkInsert(castMediaUri, allMediaCv);
+		cr.bulkInsert(castVideoUri, allMediaCv);
 		Cast.putTags(getContentResolver(), castUri, ((TagList)findViewById(R.id.new_cast_tags)).getTags());
 
 		final ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
@@ -395,8 +394,8 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			break;
 
 		case R.id.cast_thumb:
-			if (locCastMedia.size() > 0 && locCastMedia.get(0) != null){
-				startActivity(new Intent(Intent.ACTION_VIEW, locCastMedia.get(0)));
+			if (locCastVideo.size() > 0 && locCastVideo.get(0) != null){
+				startActivity(new Intent(Intent.ACTION_VIEW, locCastVideo.get(0)));
 			}else{
 				Toast.makeText(this, R.string.error_cast_no_videos, Toast.LENGTH_SHORT).show();
 			}

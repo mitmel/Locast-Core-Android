@@ -9,13 +9,13 @@ import android.widget.CursorAdapter;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import edu.mit.mobile.android.locast.R;
-import edu.mit.mobile.android.locast.data.CastMedia;
+import edu.mit.mobile.android.locast.data.CastVideo;
 import edu.mit.mobile.android.locast.data.ShotList;
 import edu.mit.mobile.android.widget.RelativeSizeListAdapter;
 
-public class CastMediaProgressAdapter extends CursorAdapter implements RelativeSizeListAdapter {
+public class CastVideoProgressAdapter extends CursorAdapter implements RelativeSizeListAdapter {
 	@SuppressWarnings("unused")
-	private static final String TAG = CastMediaProgressAdapter.class.getSimpleName();
+	private static final String TAG = CastVideoProgressAdapter.class.getSimpleName();
 	/**
 	 * length of any recorded shots. 0 if not yet recorded.
 	 */
@@ -34,11 +34,11 @@ public class CastMediaProgressAdapter extends CursorAdapter implements RelativeS
 	private final int shotListDurationCol, hardLimitCol;
 	private final Cursor shotListCursor;
 
-	public CastMediaProgressAdapter(Context context, Cursor castMedia, Cursor shotList) {
-		super(context, castMedia);
+	public CastVideoProgressAdapter(Context context, Cursor castVideo, Cursor shotList) {
+		super(context, castVideo);
 
-		durationCol = castMedia.getColumnIndex(CastMedia._DURATION);
-		videoCol = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
+		durationCol = castVideo.getColumnIndex(CastVideo._DURATION);
+		videoCol = castVideo.getColumnIndex(CastVideo._LOCAL_URI);
 
 		this.shotListCursor = shotList;
 		shotListDurationCol = shotList.getColumnIndex(ShotList._DURATION);

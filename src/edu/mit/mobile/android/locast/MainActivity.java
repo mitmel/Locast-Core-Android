@@ -35,7 +35,7 @@ import android.widget.Toast;
 import edu.mit.mobile.android.locast.casts.BrowseCastsActivity;
 import edu.mit.mobile.android.locast.casts.EditCastActivity;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.CastMedia;
+import edu.mit.mobile.android.locast.data.CastVideo;
 import edu.mit.mobile.android.locast.data.Comment;
 import edu.mit.mobile.android.locast.data.Project;
 import edu.mit.mobile.android.locast.data.ShotList;
@@ -166,7 +166,7 @@ public class MainActivity extends TabActivity {
 		cr.delete(Project.CONTENT_URI, null, null);
 		cr.delete(Comment.CONTENT_URI, null, null);
 		cr.delete(Tag.CONTENT_URI, null, null);
-		cr.delete(CastMedia.CONTENT_URI, null, null);
+		cr.delete(CastVideo.CONTENT_URI, null, null);
 		cr.delete(ShotList.CONTENT_URI, null, null);
 		Toast.makeText(context.getApplicationContext(), R.string.notice_databases_reset, Toast.LENGTH_LONG).show();
 	}

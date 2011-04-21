@@ -38,7 +38,7 @@ import android.widget.VideoView;
 import android.widget.ViewSwitcher;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.CastMedia;
+import edu.mit.mobile.android.locast.data.CastVideo;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Project;
 import edu.mit.mobile.android.locast.data.ShotList;
@@ -53,7 +53,7 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 	private VideoView mVideoView;
 	private MediaController mMc;
 	private ViewSwitcher osdSwitcher;
-	private Cursor mCastMediaCursor = null;
+	private Cursor mCastVideoCursor = null;
 	private Cursor castCursor = null;
 	private Cursor mShotListCursor = null;
 	private Uri mCurrentCastVideo = null;
@@ -146,11 +146,11 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 	}
 
 	private boolean playCastVideo(){
-		if (mCastMediaCursor != null && (mCastMediaCursor.isAfterLast() || mCastMediaCursor.isBeforeFirst())){
+		if (mCastVideoCursor != null && (mCastVideoCursor.isAfterLast() || mCastVideoCursor.isBeforeFirst())){
 			return false;
 		}
 		if (mShotListCursor != null){
-			mShotListCursor.moveToPosition(mCastMediaCursor.getPosition());
+			mShotListCursor.moveToPosition(mCastVideoCursor.getPosition());
 		}
 		setVideoFromCursor();
 		if (mCurrentCastVideo == null){
@@ -165,8 +165,8 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 	}
 
 	private void nextOrFinish(){
-		if (mCastMediaCursor != null && ! mCastMediaCursor.isLast()){
-			mCastMediaCursor.moveToNext();
+		if (mCastVideoCursor != null && ! mCastVideoCursor.isLast()){
+			mCastVideoCursor.moveToNext();
 			playCastVideo();
 
 		}else{ // done!
@@ -188,18 +188,18 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 	}
 
 	private void setVideoFromCursor(){
-		if (mCastMediaCursor.isClosed() || mCastMediaCursor.isBeforeFirst() || mCastMediaCursor.isAfterLast()){
+		if (mCastVideoCursor.isClosed() || mCastVideoCursor.isBeforeFirst() || mCastVideoCursor.isAfterLast()){
 			return;
 		}
-		mCurrentCastVideoPosition = mCastMediaCursor.getPosition();
-		MediaProvider.dumpCursorToLog(mCastMediaCursor, CastMedia.PROJECTION);
-		final int localUriCol = mCastMediaCursor.getColumnIndex(CastMedia._LOCAL_URI);
+		mCurrentCastVideoPosition = mCastVideoCursor.getPosition();
+		MediaProvider.dumpCursorToLog(mCastVideoCursor, CastVideo.PROJECTION);
+		final int localUriCol = mCastVideoCursor.getColumnIndex(CastVideo._LOCAL_URI);
 
-		if (mCastMediaCursor.isNull(localUriCol)){
+		if (mCastVideoCursor.isNull(localUriCol)){
 			mVideoView.setVideoURI(null);
 			mCurrentCastVideo = null;
 		}else{
-			final Uri localUri = Cast.parseMaybeUri(mCastMediaCursor.getString(localUriCol));
+			final Uri localUri = Cast.parseMaybeUri(mCastVideoCursor.getString(localUriCol));
 			mVideoView.setVideoURI(localUri);
 			mCurrentCastVideo = localUri;
 		}
@@ -239,9 +239,9 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 					Log.d(TAG, "It's a cast!");
 					castCursor = managedQuery(data, Cast.PROJECTION, null, null, null);
 					castCursor.moveToFirst();
-					mCastMediaCursor = managedQuery(Cast.getCastMediaUri(data), CastMedia.PROJECTION, null, null, null);
+					mCastVideoCursor = managedQuery(Cast.getCastVideoUri(data), CastVideo.PROJECTION, null, null, null);
 					if (savedInstanceState != null){
-						mCastMediaCursor.moveToPosition(savedInstanceState.getInt(RUNTIME_STATE_CURRENT_CAST_VIDEO, 0));
+						mCastVideoCursor.moveToPosition(savedInstanceState.getInt(RUNTIME_STATE_CURRENT_CAST_VIDEO, 0));
 					}
 
 					loadShotList();

@@ -39,7 +39,7 @@ import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.WebImageLoader;
 import edu.mit.mobile.android.locast.casts.BasicCursorContentObserver.BasicCursorContentObserverWatcher;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.CastMedia;
+import edu.mit.mobile.android.locast.data.CastVideo;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Sync;
@@ -99,15 +99,15 @@ public class CastDetailsActivity extends Activity implements OnClickListener, Ba
 		castUri = data;
 
 
-		final Cursor castMedia = managedQuery(Cast.getCastMediaUri(castUri), CastMedia.PROJECTION, null, null, null);
+		final Cursor castVideo = managedQuery(Cast.getCastVideoUri(castUri), CastVideo.PROJECTION, null, null, null);
 
 		Log.d("CastDetails", "Cast Media:");
-		final int localUriIdx = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
-		for (castMedia.moveToFirst(); !hasLocalVids && ! castMedia.isAfterLast(); castMedia.moveToNext()){
-			if (!castMedia.isNull(localUriIdx) && castMedia.getString(localUriIdx).length() > 0){
+		final int localUriIdx = castVideo.getColumnIndex(CastVideo._LOCAL_URI);
+		for (castVideo.moveToFirst(); !hasLocalVids && ! castVideo.isAfterLast(); castVideo.moveToNext()){
+			if (!castVideo.isNull(localUriIdx) && castVideo.getString(localUriIdx).length() > 0){
 				hasLocalVids = true;
 			}
-			MediaProvider.dumpCursorToLog(castMedia, CastMedia.PROJECTION);
+			MediaProvider.dumpCursorToLog(castVideo, CastVideo.PROJECTION);
 		}
 	}
 
