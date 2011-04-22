@@ -69,6 +69,11 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	public static final TaggableItemSyncMap SYNC_MAP = new TaggableItemSyncMap();
 
 	/**
+	 * The name of the server query parameter to filter using tags.
+	 */
+	public static final String SERVER_QUERY_PARAMETER = "tags";
+
+	/**
 	 * An item that will sync "tags" and "system_tags" fields.
 	 * @author steve
 	 *
@@ -309,7 +314,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 			return baseUri;
 		}
 
-		return Uri.withAppendedPath(baseUri, Tag.PATH).buildUpon().query(Tag.toTagQuery(tags)).build();
+		return baseUri.buildUpon().appendQueryParameter(SERVER_QUERY_PARAMETER, Tag.toTagQuery(tags))  .build();
 	}
 
 	private final static char PREFIX_SEPARATOR = ':';

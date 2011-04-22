@@ -23,6 +23,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import junit.framework.Assert;
 import android.content.ContentProvider;
@@ -101,7 +103,6 @@ public class MediaProvider extends ContentProvider {
 		MATCHER_CHILD_COMMENT_DIR    = 9,
 		MATCHER_CHILD_COMMENT_ITEM   = 10,
 		MATCHER_PROJECT_BY_TAGS      = 11,
-		MATCHER_CAST_BY_TAGS         = 12,
 		MATCHER_TAG_DIR              = 13,
 		MATCHER_ITEM_TAGS    		 = 14,
 		MATCHER_CASTVIDEO_DIR        = 15,
@@ -136,12 +137,18 @@ public class MediaProvider extends ContentProvider {
 		private static final String JSON_COMMENTABLE_FIELDS =
 			Commentable.Columns._COMMENT_DIR_URI  + " TEXT,";
 
+		private static final String LOCATABLE_FIELDS =
+			Locatable.Columns._GEOCELL + " TEXT,"
+			+ Locatable.Columns._LATITUDE 	+ " REAL,"
+			+ Locatable.Columns._LONGITUDE 	+ " REAL,";
+
 		@Override
 		public void onCreate(SQLiteDatabase db) {
 
 			db.execSQL("CREATE TABLE "  + CAST_TABLE_NAME + " ("
 					+ JSON_SYNCABLE_ITEM_FIELDS
 					+ JSON_COMMENTABLE_FIELDS
+					+ LOCATABLE_FIELDS
 					+ Cast._TITLE 		+ " TEXT,"
 					+ Cast._AUTHOR 		+ " TEXT,"
 					+ Cast._DESCRIPTION + " TEXT,"
@@ -151,9 +158,6 @@ public class MediaProvider extends ContentProvider {
 
 					+ Cast._CASTVIDEO_DIR_URI + " TEXT,"
 					+ Cast._PRIVACY 	+ " TEXT,"
-
-					+ Cast._LATITUDE 	+ " REAL,"
-					+ Cast._LONGITUDE 	+ " REAL,"
 
 					+ Cast._FAVORITED   + " BOOLEAN,"
 					+ Cast._DRAFT       + " BOOLEAN,"
@@ -165,14 +169,12 @@ public class MediaProvider extends ContentProvider {
 			db.execSQL("CREATE TABLE " + PROJECT_TABLE_NAME + " ("
 					+ JSON_SYNCABLE_ITEM_FIELDS
 					+ JSON_COMMENTABLE_FIELDS
+					+ LOCATABLE_FIELDS
 					+ Project._TITLE 		+ " TEXT,"
 					+ Project._AUTHOR		+ " TEXT,"
 					+ Project._DESCRIPTION 	+ " TEXT,"
 					+ Project._PRIVACY 		+ " TEXT,"
 					+ Project._CASTS_URI	+ " TEXT,"
-
-					+ Project._LATITUDE 	+ " REAL,"
-					+ Project._LONGITUDE 	+ " REAL,"
 
 					+ Project._FAVORITED    + " BOOLEAN,"
 					+ Project._DRAFT        + " BOOLEAN"
@@ -303,7 +305,6 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_COMMENT_DIR:
 
 
-		case MATCHER_CAST_BY_TAGS:
 		case MATCHER_CAST_DIR:
 		case MATCHER_CAST_ITEM:
 
@@ -368,9 +369,6 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_ITEM_TAGS:
 			return TYPE_TAG_DIR;
 
-		case MATCHER_CAST_BY_TAGS:
-			return TYPE_CAST_DIR;
-
 		case MATCHER_PROJECT_BY_TAGS:
 			return TYPE_PROJECT_DIR;
 
@@ -415,7 +413,6 @@ public class MediaProvider extends ContentProvider {
 
 		switch (uriMatcher.match(uri)){
 		//////////////////////////////////////////////////////////////////////////////////
-		case MATCHER_CAST_BY_TAGS:
 		case MATCHER_CAST_DIR:{
 			Assert.assertNotNull(values);
 			final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
@@ -637,12 +634,20 @@ public class MediaProvider extends ContentProvider {
 		final long id;
 		Cursor c;
 
-		String taggableItemTable = null;
-
 		switch (uriMatcher.match(uri)){
 		case MATCHER_CAST_DIR:
 			qb.setTables(CAST_TABLE_NAME);
-			c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
+
+			final String tags = uri.getQueryParameter(TaggableItem.SERVER_QUERY_PARAMETER);
+			final String dist = uri.getQueryParameter(Locatable.SERVER_QUERY_PARAMETER);
+
+			if (tags != null){
+				c = queryByTags(qb, db, tags, CAST_TABLE_NAME, projection, selection, selectionArgs, sortOrder);
+			}else if (dist != null){
+				c = queryByLocation(qb, db, dist, CAST_TABLE_NAME, projection, selection, selectionArgs, sortOrder);
+			}else{
+				c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
+			}
 			break;
 
 		case MATCHER_CAST_ITEM:
@@ -723,38 +728,6 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_TAG_DIR:{
 			qb.setTables(TAG_TABLE_NAME);
 			c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
-			break;
-		}
-
-		case MATCHER_CAST_BY_TAGS:
-			taggableItemTable = CAST_TABLE_NAME;
-		// TODO redo this with the addExtraWhere
-		case MATCHER_PROJECT_BY_TAGS:{
-			if (taggableItemTable == null){
-				taggableItemTable = PROJECT_TABLE_NAME;
-			}
-			qb.setTables(taggableItemTable + " AS c, "+TAG_TABLE_NAME +" AS t");
-
-			final Set<String> tags = Tag.toSet(uri.getQuery().toLowerCase());
-			final List<String> tagFilterList = new ArrayList<String>(tags.size());
-
-			qb.appendWhere("t."+Tag._REF_ID+"=c."+TaggableItem._ID);
-			for (final String tag : tags){
-				tagFilterList.add(DatabaseUtils.sqlEscapeString(tag));
-			}
-			qb.appendWhere(" AND (t."+Tag._NAME+" IN ("+ListUtils.join(tagFilterList, ",")+"))");
-
-			// limit to only items of the given object class
-			qb.appendWhere(" AND t."+Tag._REF_CLASS + "=\""+taggableItemTable+"\"");
-
-			// Modify the projection so that _ID explicitly refers to that of the objects being searched,
-			// not the tags. Without this, _ID is ambiguous and the query fails.
-			final String[] projection2 = addPrefixToProjection("c", projection);
-
-			c = qb.query(db, projection2, selection, selectionArgs,
-					"c."+TaggableItem._ID,
-					"COUNT ("+"c."+TaggableItem._ID+")="+tags.size(),
-					sortOrder);
 			break;
 		}
 
@@ -853,6 +826,51 @@ public class MediaProvider extends ContentProvider {
 
 		c.setNotificationUri(getContext().getContentResolver(), uri);
 		return c;
+	}
+
+	// TODO rework tag system to use m2m relationship or at least rework this to use the builder
+	private Cursor queryByTags(SQLiteQueryBuilder qb, SQLiteDatabase db, String tagString, String taggableItemTable, String[] projection, String selection, String[] selectionArgs, String sortOrder){
+		qb.setTables(taggableItemTable + " AS c, "+TAG_TABLE_NAME +" AS t");
+
+		final Set<String> tags = Tag.toSet(tagString.toLowerCase());
+		final List<String> tagFilterList = new ArrayList<String>(tags.size());
+
+		qb.appendWhere("t."+Tag._REF_ID+"=c."+TaggableItem._ID);
+		for (final String tag : tags){
+			tagFilterList.add(DatabaseUtils.sqlEscapeString(tag));
+		}
+		qb.appendWhere(" AND (t."+Tag._NAME+" IN ("+ListUtils.join(tagFilterList, ",")+"))");
+
+		// limit to only items of the given object class
+		qb.appendWhere(" AND t."+Tag._REF_CLASS + "=\""+taggableItemTable+"\"");
+
+		// Modify the projection so that _ID explicitly refers to that of the objects being searched,
+		// not the tags. Without this, _ID is ambiguous and the query fails.
+		final String[] projection2 = addPrefixToProjection("c", projection);
+
+		return qb.query(db, projection2, selection, selectionArgs,
+				"c."+TaggableItem._ID,
+				"COUNT ("+"c."+TaggableItem._ID+")="+tags.size(),
+				sortOrder);
+	}
+
+	private static final Pattern LOC_STRING_REGEX =  Pattern.compile("^([\\d\\.-]+),([\\d\\.-]+),([\\d\\.]+)");
+	private Cursor queryByLocation(SQLiteQueryBuilder qb, SQLiteDatabase db, String locString, String locatableItemTable, String[] projection, String selection, String[] selectionArgs, String sortOrder){
+
+		qb.setTables(locatableItemTable);
+		final Matcher m = LOC_STRING_REGEX.matcher(locString);
+		if (!m.matches()){
+			throw new IllegalArgumentException("bad location string '"+locString+"'");
+		}
+		final String lon = m.group(1);
+		final String lat = m.group(2);
+		final String dist = m.group(3);
+
+		//final GeocellQuery gq = new GeocellQuery();
+		//GeocellUtils.compute(new Point(Double.valueOf(lat), Double.valueOf(lon)), resolution);
+		//String extraWhere = "(lat - 2) > ? AND (lon - 2) > ? AND (lat + 2) < ? AND (lat + 2) < ?";
+		final String[] extraArgs = {lat, lon};
+		return qb.query(db, projection, addExtraWhere(selection, Locatable.SELECTION_LAT_LON), addExtraWhereArgs(selectionArgs, extraArgs), null, null, sortOrder);
 	}
 
 	/**
@@ -1218,7 +1236,23 @@ public class MediaProvider extends ContentProvider {
 
 		// these should be the only hard-coded paths in the system.
 		case MATCHER_CAST_DIR:{
-			path = Cast.SERVER_PATH;
+			final String tags = uri.getQueryParameter(TaggableItem.SERVER_QUERY_PARAMETER);
+			final String dist = uri.getQueryParameter(Locatable.SERVER_QUERY_PARAMETER);
+			String query = null;
+
+			// TODO figure out a better way to do this without needing to hard-code this logic.
+			if (tags != null){
+				final Set<String> tagSet = TaggableItem.removePrefixesFromTags(Tag.toSet(tags));
+				query = TaggableItem.SERVER_QUERY_PARAMETER+"=" + ListUtils.join(tagSet, ",");
+			}
+
+			if (dist != null){
+				if (query != null){
+					query += "&";
+				}
+				query = Locatable.SERVER_QUERY_PARAMETER+"=" + dist;
+			}
+			path = Cast.SERVER_PATH + (query != null ? "?"+query : "");
 
 		}break;
 
@@ -1264,8 +1298,7 @@ public class MediaProvider extends ContentProvider {
 			path = getPathFromField(cr, removeLastPathSegment(uri), Cast._CASTVIDEO_DIR_URI);
 		}break;
 
-		// TODO figure out a better way to do this without needing to hard-code this logic.
-		case MATCHER_CAST_BY_TAGS:
+
 		case MATCHER_ITINERARY_BY_TAGS:{
 			final Set<String> tags = TaggableItem.removePrefixesFromTags(Tag.toSet(uri.getQuery()));
 
@@ -1461,7 +1494,6 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/"+Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 
 		// /content/tags?tag1,tag2
-		uriMatcher.addURI(AUTHORITY, Cast.PATH +'/'+ Tag.PATH, MATCHER_CAST_BY_TAGS);
 		uriMatcher.addURI(AUTHORITY, Project.PATH +'/'+Tag.PATH, MATCHER_PROJECT_BY_TAGS);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH +'/'+Tag.PATH, MATCHER_ITINERARY_BY_TAGS);
 

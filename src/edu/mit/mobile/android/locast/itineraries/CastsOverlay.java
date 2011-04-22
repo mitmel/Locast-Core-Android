@@ -12,7 +12,7 @@ import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Locatable;
 
-class CastsOverlay extends ItemizedOverlay<OverlayItem> {
+public class CastsOverlay extends ItemizedOverlay<OverlayItem> {
 	private Cursor mCasts;
 	private int mTitleCol, mDescriptionCol;
 
@@ -26,6 +26,15 @@ class CastsOverlay extends ItemizedOverlay<OverlayItem> {
 	public void swapCursor(Cursor casts){
 		mCasts = casts;
 		refresh();
+	}
+
+	public void changeCursor(Cursor casts){
+		final Cursor oldCursor = mCasts;
+		mCasts = casts;
+		refresh();
+		if (oldCursor != null && !oldCursor.isClosed()){
+			oldCursor.close();
+		}
 	}
 
 	private void refresh(){

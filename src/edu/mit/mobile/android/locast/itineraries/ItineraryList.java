@@ -11,6 +11,7 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -24,6 +25,7 @@ import edu.mit.mobile.android.locast.data.Sync;
 
 public class ItineraryList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
 
+	private static final String TAG = ItineraryList.class.getSimpleName();
 	private CursorAdapter mAdapter;
 	private ListView mListView;
 	private Uri mUri;
@@ -93,13 +95,17 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 
 	@Override
 	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
-		mAdapter.swapCursor(c);
+		Log.d(TAG, "onLoadFinished");
+		//mAdapter.swapCursor(c);
+		mAdapter.changeCursor(c);
 
 	}
 
 	@Override
 	public void onLoaderReset(Loader<Cursor> arg0) {
-		mAdapter.swapCursor(null);
+		Log.d(TAG, "onLoaderReset");
+		mAdapter.changeCursor(null);
+		//mAdapter.swapCursor(null);
 
 	}
 

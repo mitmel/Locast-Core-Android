@@ -25,6 +25,10 @@ import android.content.Context;
 import android.database.Cursor;
 import android.location.Location;
 import android.net.Uri;
+
+import com.beoui.geocell.GeocellUtils;
+import com.beoui.geocell.model.Point;
+
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncCustom;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncItem;
 
@@ -43,9 +47,13 @@ public abstract class Locatable {
 	public static interface Columns {
 	public static final String
 		_LATITUDE = "lat",
-		_LONGITUDE = "lon";
+		_LONGITUDE = "lon",
+		_GEOCELL = "geocell";
 
 	};
+
+	public static final String
+		SERVER_QUERY_PARAMETER = "dist";
 
 	public static final String
 		SELECTION_LAT_LON = "abs("+Columns._LATITUDE + " - ?) < 1 and abs("+Columns._LONGITUDE + " - ?) < 1";
@@ -55,6 +63,18 @@ public abstract class Locatable {
 			return null;
 		}
 		return Uri.parse("geo:"+c.getDouble(c.getColumnIndex(Columns._LATITUDE))+","+c.getDouble(c.getColumnIndex(Columns._LONGITUDE)));
+	}
+
+	/**
+	 * Makes a URI that queries the locatable item by distance.
+	 *
+	 * @param contentUri the Locatable content URI to build upon. Must be a dir, not an item.
+	 * @param location center point
+	 * @param distance distance in meters
+	 * @return
+	 */
+	public static Uri toDistanceSearchUri(Uri contentUri, Location location, double distance){
+		return contentUri.buildUpon().appendQueryParameter(SERVER_QUERY_PARAMETER, location.getLongitude()+","+location.getLatitude()+","+distance).build();
 	}
 
 	/**
@@ -117,8 +137,11 @@ public abstract class Locatable {
 					throws JSONException {
 				final JSONArray ja = item.getJSONArray(remoteKey);
 				final ContentValues cv = new ContentValues();
-				cv.put(Columns._LONGITUDE, ja.getDouble(0));
-				cv.put(Columns._LATITUDE, ja.getDouble(1));
+				final double lon = ja.getDouble(0);
+				final double lat = ja.getDouble(1);
+				cv.put(Columns._LONGITUDE, lon);
+				cv.put(Columns._LATITUDE, lat);
+				cv.put(Columns._GEOCELL, GeocellUtils.compute(new Point(lat, lon), 6));
 				return cv;
 			}
 		});

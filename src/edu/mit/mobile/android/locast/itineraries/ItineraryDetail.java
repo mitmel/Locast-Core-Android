@@ -50,7 +50,7 @@ public class ItineraryDetail extends MapActivity implements OnLoadCompleteListen
 	private Uri mUri;
 	private Uri mCastsUri;
 
-	private CastsOverlay mItineraryOverlay;
+	private CastsOverlay mCastsOverlay;
 	private PathOverlay mPathOverlay;
 
 	CursorLoader itinLoader;
@@ -127,11 +127,11 @@ public class ItineraryDetail extends MapActivity implements OnLoadCompleteListen
 	private void initCastList(){
 		mCastAdapter = new CastCursorAdapter(ItineraryDetail.this, null);
 		mCastView.setAdapter(new ThumbnailAdapter(ItineraryDetail.this, mCastAdapter, imgCache, new int[]{R.id.media_thumbnail}));
-		mItineraryOverlay = new CastsOverlay(ItineraryDetail.this, null);
+		mCastsOverlay = new CastsOverlay(ItineraryDetail.this, null);
 		final List<Overlay> overlays = mMapView.getOverlays();
 		mPathOverlay = new PathOverlay(this);
 		overlays.add(mPathOverlay);
-		overlays.add(mItineraryOverlay);
+		overlays.add(mCastsOverlay);
 	}
 
 	private void refresh(boolean explicitSync){
@@ -142,10 +142,10 @@ public class ItineraryDetail extends MapActivity implements OnLoadCompleteListen
 		@Override
 		public void onLoadComplete(Loader<Cursor> loader, Cursor casts) {
 			mCastAdapter.swapCursor(casts);
-			mItineraryOverlay.swapCursor(casts);
+			mCastsOverlay.swapCursor(casts);
 			if (casts.moveToFirst()){
-				mMapController.zoomToSpan(mItineraryOverlay.getLatSpanE6(), mItineraryOverlay.getLonSpanE6());
-				mMapController.setCenter(mItineraryOverlay.getCenter());
+				mMapController.zoomToSpan(mCastsOverlay.getLatSpanE6(), mCastsOverlay.getLonSpanE6());
+				mMapController.setCenter(mCastsOverlay.getCenter());
 				mMapView.setVisibility(View.VISIBLE);
 			}
 		}

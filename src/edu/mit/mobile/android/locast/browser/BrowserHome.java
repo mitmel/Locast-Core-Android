@@ -26,6 +26,7 @@ import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
+import edu.mit.mobile.android.locast.casts.LocatableListWithMap;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.Sync;
@@ -45,7 +46,6 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 		imgCache = ((Application)getApplication()).getImageCache();
 		setContentView(R.layout.browser_main);
-		findViewById(R.id.refresh).setOnClickListener(this);
 
 		final Gallery casts = (Gallery) findViewById(R.id.casts);
 
@@ -59,6 +59,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		final LoaderManager lm = getSupportLoaderManager();
 		lm.initLoader(LOADER_FEATURED_CASTS, null, this);
 
+		findViewById(R.id.refresh).setOnClickListener(this);
 		findViewById(R.id.itineraries).setOnClickListener(this);
 		findViewById(R.id.events).setOnClickListener(this);
 		findViewById(R.id.nearby).setOnClickListener(this);
@@ -122,6 +123,11 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 			startActivity(new Intent(Intent.ACTION_VIEW, Itinerary.CONTENT_URI));
 			break;
 
+		case R.id.nearby:
+
+			startActivity(new Intent(LocatableListWithMap.ACTION_SEARCH_NEARBY, Cast.CONTENT_URI));
+			break;
+
 		case R.id.refresh:
 			refresh(true);
 			break;
@@ -147,13 +153,13 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 	@Override
 	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
-		mAdapter.swapCursor(c);
+		mAdapter.changeCursor(c);
 
 	}
 
 	@Override
 	public void onLoaderReset(Loader<Cursor> arg0) {
-		mAdapter.swapCursor(null);
+		mAdapter.changeCursor(null);
 
 	}
 }
