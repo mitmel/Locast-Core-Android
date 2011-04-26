@@ -377,7 +377,8 @@ public class Sync extends Service {
 		if (c != null) {
 			if (contentType.startsWith(CONTENT_TYPE_PREFIX_DIR)){
 				locUri = ContentUris.withAppendedId(toSync,
-						c.getLong(c.getColumnIndex(JsonSyncableItem._ID)));
+						c.getLong(c.getColumnIndex(JsonSyncableItem._ID)))
+						.buildUpon().query(null).build();
 				toSyncIsIndex = true;
 			}else{
 				locUri = toSync;

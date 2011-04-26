@@ -1,107 +1,48 @@
 package edu.mit.mobile.android.locast.itineraries;
 
 import android.content.Context;
-import android.database.Cursor;
-import android.location.Location;
+import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 
-import com.google.android.maps.GeoPoint;
-import com.google.android.maps.ItemizedOverlay;
 import com.google.android.maps.OverlayItem;
 
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.Locatable;
 
-public class CastsOverlay extends ItemizedOverlay<OverlayItem> {
-	private Cursor mCasts;
-	private int mTitleCol, mDescriptionCol;
+public class CastsOverlay extends LocatableItemOverlay {
+	private int mOfficialCol, mTitleCol, mDescriptionCol;
+	private final Drawable mOfficialCastDrawable;
+	private final Drawable mCommunityCastDrawable;
 
-	public CastsOverlay(Context context, Cursor casts) {
-		super(boundCenterBottom(context.getResources().getDrawable(R.drawable.ic_map_community)));
-
-		mCasts = casts;
-
+	public CastsOverlay(Context context) {
+		super(context);
+		final Resources res = context.getResources();
+		mOfficialCastDrawable = boundCenterBottom(res.getDrawable(R.drawable.ic_map_official));
+		mCommunityCastDrawable = boundCenterBottom(res.getDrawable(R.drawable.ic_map_community));
 	}
 
-	public void swapCursor(Cursor casts){
-		mCasts = casts;
-		refresh();
-	}
-
-	public void changeCursor(Cursor casts){
-		final Cursor oldCursor = mCasts;
-		mCasts = casts;
-		refresh();
-		if (oldCursor != null && !oldCursor.isClosed()){
-			oldCursor.close();
-		}
-	}
-
-	private void refresh(){
-		if (mCasts != null){
-			mTitleCol = mCasts.getColumnIndex(Cast._TITLE);
-			mDescriptionCol = mCasts.getColumnIndex(Cast._DESCRIPTION);
-
-			populate();
+	@Override
+	protected void updateCursorCols() {
+		super.updateCursorCols();
+		if (mLocatableItems != null){
+			mTitleCol = mLocatableItems.getColumnIndex(Cast._TITLE);
+			mDescriptionCol = mLocatableItems.getColumnIndex(Cast._DESCRIPTION);
+			mOfficialCol =  mLocatableItems.getColumnIndex(Cast._OFFICIAL);
 		}
 	}
 
 	@Override
-	protected OverlayItem createItem(int i) {
-		mCasts.moveToPosition(i);
+	protected OverlayItem createItem(int i){
+		mLocatableItems.moveToPosition(i);
 
-		final Location castLoc =  Locatable.toLocation(mCasts);
-		final GeoPoint castLocGP = new GeoPoint((int)(castLoc.getLatitude()*1E6), (int)(castLoc.getLongitude()*1E6));
+		final OverlayItem item = new OverlayItem(getGeoPoint(mLocatableItems),
+				mLocatableItems.getString(mTitleCol), mLocatableItems.getString(mDescriptionCol));
 
-		final OverlayItem item = new OverlayItem(castLocGP, mCasts.getString(mTitleCol), mCasts.getString(mDescriptionCol));
-
-		//TODO set marker here item.setMarker(marker);
+		if (mLocatableItems.getInt(mOfficialCol) != 0){
+			item.setMarker(mOfficialCastDrawable);
+		}else{
+			item.setMarker(mCommunityCastDrawable);
+		}
 		return item;
-	}
-
-	/**
-	 * this does not work properly when crossing -180/180 boundaries.
-	 *
-	 * @see com.google.android.maps.ItemizedOverlay#getCenter()
-	 */
-	@Override
-	public GeoPoint getCenter() {
-		int maxLat, minLat;
-		int maxLon, minLon;
-
-		mCasts.moveToFirst();
-		final double[] latLon = new double[2];
-		Locatable.toLocationArray(mCasts, latLon);
-		maxLat = minLat = (int)(latLon[0] * 1E6);
-		maxLon = minLon = (int)(latLon[1] * 1E6);
-		mCasts.moveToNext();
-		for (; !mCasts.isAfterLast(); mCasts.moveToNext()){
-			Locatable.toLocationArray(mCasts, latLon);
-			maxLat = Math.max(maxLat, (int)(latLon[0] * 1E6));
-			minLat = Math.min(minLat, (int)(latLon[0] * 1E6));
-
-			maxLon = Math.max(maxLon, (int)(latLon[1] * 1E6));
-			minLon = Math.min(minLon, (int)(latLon[1] * 1E6));
-		}
-
-		return new GeoPoint((maxLat - minLat)/2 + minLat, (maxLon - minLon)/2 + minLon);
-	}
-
-
-	@Override
-	public int size() {
-		if (mCasts == null){
-			return 0;
-		}
-		return mCasts.getCount();
-	}
-
-	private class CastOverlayItem extends OverlayItem {
-
-		public CastOverlayItem(GeoPoint point, String title, String snippet) {
-			super(point, title, snippet);
-			// TODO Auto-generated constructor stub
-		}
-
 	}
 }

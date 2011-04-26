@@ -3,6 +3,7 @@ package edu.mit.mobile.android.locast.casts;
 import java.util.List;
 
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.location.Criteria;
@@ -12,17 +13,19 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.support.v4.content.Loader.OnLoadCompleteListener;
 import android.support.v4.widget.CursorAdapter;
+import android.support.v4_map.app.LoaderManager;
+import android.support.v4_map.app.MapFragmentActivity;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.maps.GeoPoint;
-import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 import com.google.android.maps.MyLocationOverlay;
@@ -30,26 +33,31 @@ import com.google.android.maps.Overlay;
 
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Sync;
 import edu.mit.mobile.android.locast.itineraries.CastsOverlay;
 
-public class LocatableListWithMap extends MapActivity implements OnItemClickListener, OnClickListener, OnLoadCompleteListener<Cursor> {
+public class LocatableListWithMap extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnClickListener, OnItemClickListener {
 
 	@SuppressWarnings("unused")
 	private static final String TAG = LocatableListWithMap.class.getSimpleName();
 	private CursorAdapter mAdapter;
 	private ListView mListView;
-	private Uri mUri;
-	private CursorLoader mLoader;
+	private Uri mContentNearLocation;
+	private Uri mContent;
 
 	private CastsOverlay mCastsOverlay;
 	private MapView mMapView;
 	private MapController mMapController;
-	private MyLocationOverlay mMyLocationOverlay;
+	private MyMyLocationOverlay mMyLocationOverlay;
 	private Location mLastLocation;
+	private LoaderManager mLoaderManager;
+	private long mLastUpdate;
+
+	// constants related to auto-refreshing
+	private static long AUTO_UPDATE_FREQUENCY = 15 * 1000 * 1000; // nano-seconds
+	private static float MIN_UPDATE_DISTANCE = 50; // meters
 
 	public static final String
 		ACTION_SEARCH_NEARBY = "edu.mit.mobile.android.locast.ACTION_SEARCH_NEARBY";
@@ -67,6 +75,8 @@ public class LocatableListWithMap extends MapActivity implements OnItemClickList
 		mListView.setOnItemClickListener(this);
 		mListView.setEmptyView(findViewById(android.R.id.empty));
 
+		mLoaderManager = getSupportLoaderManager();
+
 		final Intent intent = getIntent();
 		final String action = intent.getAction();
 
@@ -77,19 +87,16 @@ public class LocatableListWithMap extends MapActivity implements OnItemClickList
 
 			if (MediaProvider.TYPE_CAST_DIR.equals(type)){
 				mAdapter = new CastCursorAdapter(this, null);
-//				mAdapter = new SimpleCursorAdapter(this,
-//						R.layout.browse_content_item,
-//						null,
-//				new String[] {Cast._TITLE, Cast._AUTHOR},
-//				new int[] {android.R.id.text1, android.R.id.text2}, 0
-//				);
+
 				mListView.setAdapter(mAdapter);
-				initCastList();
+				initMapOverlays();
 
 				setTitle("Casts");
+				mContent = data;
+				mMyLocationOverlay.enableMyLocation();
 
-				//setDataUri(data);
-				updateLocation(data);
+				updateLocation();
+				setRefreshing(true);
 			}
 		}
 	}
@@ -97,47 +104,64 @@ public class LocatableListWithMap extends MapActivity implements OnItemClickList
 	@Override
 	protected void onResume() {
 		super.onResume();
-		if (mLoader != null){
-			mLoader.registerListener(0, this);
-			mLoader.startLoading();
-		}
-
 		refresh(false);
 	}
 
-	@Override
-	protected void onPause() {
-		super.onPause();
-		if (mLoader != null){
-			mLoader.stopLoading();
-			mLoader.unregisterListener(this);
+	private void updateLocation(){
+		final LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
+		final String provider = lm.getBestProvider(new Criteria(), true);
+		if (provider == null){
+			Toast.makeText(this, getString(R.string.error_no_providers), Toast.LENGTH_LONG).show();
+			finish();
+			return;
 		}
+
+		final Location loc = lm.getLastKnownLocation(provider);
+		if (loc != null){
+			updateLocation(loc);
+		}else{
+			Toast.makeText(this, "Finding your location...", Toast.LENGTH_LONG).show();
+			setRefreshing(true);
+			mMapView.setVisibility(View.VISIBLE); // show the map, even without location being found
+		}
+		mLastLocation = loc;
 	}
 
-	private void updateLocation(Uri data){
-		final LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
-		final Location loc = lm.getLastKnownLocation(lm.getBestProvider(new Criteria(), true));
-		setDataUri(Locatable.toDistanceSearchUri(data, loc, 500));
+	private void updateLocation(Location loc){
+		if (loc == null){
+			throw new NullPointerException();
+		}
+		setDataUri(Locatable.toDistanceSearchUri(mContent, loc, 500));
+
 		mLastLocation = loc;
 	}
 
 	private void setDataUri(Uri data){
-		if (mLoader != null){
-			mLoader.stopLoading();
-			mLoader.setUri(data);
-			mLoader.startLoading();
-		}else{
-			mLoader = new CursorLoader(this, data, Cast.PROJECTION, null, null, Itinerary.SORT_DEFAULT);
-		}
 
-		mUri = data;
-		startService(new Intent(Intent.ACTION_SYNC, data));
+		final Bundle args = new Bundle();
+		args.putParcelable(LOADER_ARG_DATA, data);
+		mLoaderManager.restartLoader(LOADER_ID_CAST, args, this);
+		setRefreshing(true);
+
+		mContentNearLocation = data;
+		if (data != null){
+			refresh(false);
+		}
 	}
 
-	private void initCastList(){
-		mCastsOverlay = new CastsOverlay(this, null);
+	private void setRefreshing(boolean isRefreshing){
+		if(isRefreshing){
+			((ImageButton)findViewById(R.id.refresh)).setImageResource(android.R.drawable.ic_dialog_alert);
+		}else{
+			((ImageButton)findViewById(R.id.refresh)).setImageResource(R.drawable.ic_refresh);
+		}
+	}
+
+	private void initMapOverlays(){
+		mCastsOverlay = new CastsOverlay(this);
 		final List<Overlay> overlays = mMapView.getOverlays();
-		mMyLocationOverlay = new MyLocationOverlay(this, mMapView);
+		mMyLocationOverlay = new MyMyLocationOverlay(this, mMapView);
+
 		overlays.add(mMyLocationOverlay);
 		overlays.add(mCastsOverlay);
 	}
@@ -149,12 +173,17 @@ public class LocatableListWithMap extends MapActivity implements OnItemClickList
 	}
 
 	private void refresh(boolean explicitSync){
-		startService(new Intent(Intent.ACTION_SYNC, mUri).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
+		if ((System.nanoTime() - mLastUpdate) < AUTO_UPDATE_FREQUENCY && !explicitSync){
+			// not enough time has elapsed for a non-explicit sync to be allowed
+			return;
+		}
+		mLastUpdate = System.nanoTime();
+		startService(new Intent(Intent.ACTION_SYNC, mContentNearLocation).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
 	}
 
 	@Override
 	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
-		startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mUri, id)));
+		startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mContent, id)));
 	}
 
 	@Override
@@ -171,15 +200,52 @@ public class LocatableListWithMap extends MapActivity implements OnItemClickList
 		return false;
 	}
 
+	private class MyMyLocationOverlay extends MyLocationOverlay {
+
+		private Location mPrevLocation = null;
+
+		public MyMyLocationOverlay(Context context, MapView mapView) {
+			super(context, mapView);
+		}
+
+		@Override
+		public synchronized void onLocationChanged(Location location) {
+			super.onLocationChanged(location);
+			if (mPrevLocation == null || location.distanceTo(mPrevLocation) > MIN_UPDATE_DISTANCE){
+				updateLocation(location);
+				mPrevLocation = location;
+			}
+		}
+	}
+
+	private static String LOADER_ARG_DATA = "edu.mit.mobile.android.locast.LOADER_ARG_DATA";
+	private final static int
+		LOADER_ID_CAST = 0;
+
 	@Override
-	public void onLoadComplete(Loader<Cursor> loader, Cursor c) {
-		mAdapter.changeCursor(c);
-		mCastsOverlay.changeCursor(c);
+	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+		switch (id){
+		case LOADER_ID_CAST:
+			return new CursorLoader(this, (Uri) args.getParcelable(LOADER_ARG_DATA), Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
+
+			default:
+				return null;
+		}
+	}
+
+	@Override
+	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
+		mAdapter.swapCursor(c);
+		mCastsOverlay.swapCursor(c);
 
 		if(mLastLocation != null){
-			mMapController.setCenter(new GeoPoint((int)(mLastLocation.getLatitude() * 1E6), (int)(mLastLocation.getLongitude() * 1E6)));
+			final GeoPoint myPosition = new GeoPoint((int)(mLastLocation.getLatitude() * 1E6), (int)(mLastLocation.getLongitude() * 1E6));
+			if (mMapView.getVisibility()==View.INVISIBLE){
+				mMapController.setCenter(myPosition);
+			}else{
+				mMapController.animateTo(myPosition);
+			}
 		}
-		mMyLocationOverlay.enableMyLocation();
 
 		if (c.moveToFirst()){
 			mMapController.zoomToSpan(mCastsOverlay.getLatSpanE6(), mCastsOverlay.getLonSpanE6());
@@ -188,5 +254,14 @@ public class LocatableListWithMap extends MapActivity implements OnItemClickList
 		}
 
 		mMapView.setVisibility(View.VISIBLE);
+
+		setRefreshing(false);
+	}
+
+	@Override
+	public void onLoaderReset(Loader<Cursor> loader) {
+		mAdapter.swapCursor(null);
+		mCastsOverlay.swapCursor(null);
+
 	}
 }

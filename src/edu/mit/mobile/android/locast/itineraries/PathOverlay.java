@@ -26,7 +26,6 @@ import com.google.android.maps.Projection;
 public class PathOverlay extends Overlay {
 	@SuppressWarnings("unused")
 	private static final String TAG = PathOverlay.class.getSimpleName();
-	private final Context mContext;
 	private final Paint mPathPaint;
 	private final Paint mPathPaintOutline;
 	private PathEffect mPathEffect;
@@ -42,7 +41,6 @@ public class PathOverlay extends Overlay {
 	}
 
 	public PathOverlay(Context context, Paint pathPaint) {
-		this.mContext = context;
 		if (pathPaint != null){
 			mPathPaint = pathPaint;
 		}else{
@@ -138,6 +136,5 @@ public class PathOverlay extends Overlay {
 				mapView.postInvalidateDelayed(50);
 			}
 		}
-
 	};
 }

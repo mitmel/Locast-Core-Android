@@ -95,19 +95,32 @@ public abstract class Locatable {
 	}
 
 	/**
+	 * Get the latitude/longitude from the row currently selected in the cursor. Requires Locatable.Columns._LATITUDE and Locatable.Columns._LONGITUDE to be selected.
+	 * @param c
+	 * @return
+	 */
+	public static Location toLocation(Cursor c, int latColumn, int lonColumn){
+		if (c.isNull(latColumn) || c.isNull(lonColumn)) {
+			return null;
+		}
+		final Location l = new Location("internal");
+		l.setLatitude(c.getDouble(latColumn));
+		l.setLongitude(c.getDouble(lonColumn));
+		return l;
+	}
+
+	/**
 	 * Fills the result array with the current location.
 	 *
 	 * @param c cursor pointing to row to get location of
 	 * @param result output array. Must have 2 or more elements. Latitude is in index 0.
 	 */
-	public static void toLocationArray(Cursor c, double[] result){
-		final int lat_idx = c.getColumnIndex(Columns._LATITUDE);
-		final int lon_idx = c.getColumnIndex(Columns._LONGITUDE);
-		if (c.isNull(lat_idx) || c.isNull(lon_idx)) {
+	public static void toLocationArray(Cursor c, int latColumn, int lonColumn, double[] result){
+		if (c.isNull(latColumn) || c.isNull(lonColumn)) {
 			return;
 		}
-		result[0] = c.getDouble(lat_idx);
-		result[1] = c.getDouble(lon_idx);
+		result[0] = c.getDouble(latColumn);
+		result[1] = c.getDouble(lonColumn);
 	}
 
 	public static final SyncMap SYNC_MAP = new SyncMap();
