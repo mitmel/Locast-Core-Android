@@ -177,6 +177,10 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 				((TextView)findViewById(R.id.author)).setText("Itinerary by " + c.getString(c.getColumnIndex(Itinerary._AUTHOR)));
 				final List<GeoPoint> path = Itinerary.getPath(c);
 				mPathOverlay.setPath(path);
+
+				mMapController.zoomToSpan(mPathOverlay.getLatSpanE6(), mPathOverlay.getLonSpanE6());
+				mMapController.setCenter(mPathOverlay.getCenter());
+				mMapView.setVisibility(View.VISIBLE);
 			}else{
 				Log.e(TAG, "error loading itinerary");
 			}
@@ -186,11 +190,6 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		case LOADER_CASTS:{
 			mCastAdapter.swapCursor(c);
 			mCastsOverlay.swapCursor(c);
-			if (c.moveToFirst()){
-				mMapController.zoomToSpan(mCastsOverlay.getLatSpanE6(), mCastsOverlay.getLonSpanE6());
-				mMapController.setCenter(mCastsOverlay.getCenter());
-				mMapView.setVisibility(View.VISIBLE);
-			}
 		}break;
 		}
 	}
