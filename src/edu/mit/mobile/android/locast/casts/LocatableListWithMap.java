@@ -91,9 +91,8 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 				mListView.setAdapter(mAdapter);
 				initMapOverlays();
 
-				setTitle("Casts");
+				setTitle("Nearby Casts");
 				mContent = data;
-				mMyLocationOverlay.enableMyLocation();
 
 				updateLocation();
 				setRefreshing(true);
@@ -104,7 +103,14 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	@Override
 	protected void onResume() {
 		super.onResume();
+		mMyLocationOverlay.enableMyLocation();
 		refresh(false);
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		mMyLocationOverlay.disableMyLocation();
 	}
 
 	private void updateLocation(){
