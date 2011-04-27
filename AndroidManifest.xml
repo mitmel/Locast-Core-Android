@@ -135,15 +135,16 @@
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
 				<action android:name="android.intent.action.DELETE" />
-				<category android:name="android.intent.category.DEFAULT" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>
 		</activity>
 		
-		<activity android:name=".casts.CastDetailsActivity">
+		<activity android:name=".casts.CastDetail">
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
+				<action android:name="android.intent.action.DELETE" />
+				<category android:name="android.intent.category.DEFAULT" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts" />
 			</intent-filter>
@@ -175,68 +176,6 @@
 				<category android:name="android.intent.category.DEFAULT" />
 				<data android:mimeType="video/*" />
 				<data android:mimeType="audio/*" />
-			</intent-filter>
-		</activity>
-		
-	<!-- 
-		*****************************************************************************************************
-		*                                           Video editing                                           *
-		*****************************************************************************************************
-	 -->
-	 
-		<activity android:name="com.rmozone.mobilevideo.AnnotationActivity"
-			android:screenOrientation="landscape">
-		
-			<intent-filter>
-				<action android:name="com.rmozone.mobilevideo.ACTION_ANNOTATE_CAST_FROM_MEDIA_URI" />
-				<category android:name="android.intent.category.DEFAULT" />
-				<data android:mimeType="video/*" />
-				<data android:mimeType="audio/*" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
-			</intent-filter>
-			
-			<intent-filter>
-				<action android:name="com.rmozone.mobilevideo.ACTION_ANNOTATE_CAST_FROM_LOCAST_ID" />
-				<category android:name="android.intent.category.DEFAULT" />
-				<data android:mimeType="video/*" />
-				<data android:mimeType="audio/*" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />				
-			</intent-filter>
-			
-			
-		</activity>
-
-		<provider android:name="com.rmozone.mobilevideo.AnnotationData"
-			android:authorities="com.rmozone.mobilevideo" />
-			
-		<activity android:name="com.rmozone.mobilevideo.VideoEditActivity"
-				  android:label="@string/mobilevideo_video_edit_title">
-			<intent-filter>
-				<action android:name="com.rmozone.mobilevideo.ACTION_EDIT_CASTS_IN_PROJECT" />
-				<category android:name="android.intent.category.DEFAULT" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects" />
-			</intent-filter>
-			
-			<intent-filter>
-				<action android:name="com.rmozone.mobilevideo.ACTION_APPEND_CAST_TO_EDIT" />
-				<category android:name="android.intent.category.DEFAULT" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
-			</intent-filter>
-		</activity>
-		
-		<activity android:name="com.rmozone.mobilevideo.VideoTrimActivity">
-			<intent-filter>
-				<action android:name="com.rmozone.mobilevideo.ACTION_TRIM_CAST" />
-				<category android:name="android.intent.category.DEFAULT" />
-				<data android:mimeType="*/*" />
-			</intent-filter>
-		</activity>		
-
-		<activity android:name="com.rmozone.mobilevideo.VideoChooseActivity">
-			<intent-filter>
-				<action android:name="com.rmozone.mobilevideo.ACTION_CHOOSE_VIDEO_FROM_PROJECT" />
-				<category android:name="android.intent.category.DEFAULT" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects" />
 			</intent-filter>
 		</activity>		
 
