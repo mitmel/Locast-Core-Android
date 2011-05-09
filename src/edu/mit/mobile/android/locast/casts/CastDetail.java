@@ -53,7 +53,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		findViewById(R.id.home).setOnClickListener(this);
 		final AbsListView castMediaView = (AbsListView) findViewById(R.id.cast_media);
 
-		mCastMedia = new SimpleCursorAdapter(this,
+		mCastMedia = new MediaThumbnailCursorAdapter(this,
 				R.layout.cast_media_item,
 				null,
 //				new String[]{CastMedia._TITLE, CastMedia._AUTHOR, CastMedia._THUMBNAIL},
