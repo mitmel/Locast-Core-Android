@@ -131,15 +131,6 @@
 			</intent-filter>
 		</activity>
 		
-		<activity android:name=".casts.ViewCastActivity">
-			<intent-filter>
-				<action android:name="android.intent.action.VIEW" />
-				<action android:name="android.intent.action.DELETE" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.casts" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects.casts" />
-			</intent-filter>
-		</activity>
-		
 		<activity android:name=".casts.CastDetail">
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
@@ -269,7 +260,7 @@
 		*****************************************************************************************************
 		 -->
 		 
-		 <activity android:name=".browser.BrowserHome" android:screenOrientation="portrait" 
+		 <activity android:name=".browser.BrowserHome" 
 		 	android:label="Locast Browser">
 		 	<intent-filter>
 				<action android:name="android.intent.action.MAIN" />

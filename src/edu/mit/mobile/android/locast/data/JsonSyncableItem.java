@@ -222,7 +222,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 
 		for (final String propName: mySyncMap.keySet()){
 			final SyncItem map = mySyncMap.get(propName);
-			if ((map.getDirection() & SyncItem.SYNC_FROM) == 0){
+			if (!map.isDirection(SyncItem.SYNC_FROM)){
 				continue;
 			}
 			if (map.isOptional() &&
@@ -254,7 +254,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		for (final String lProp: mySyncMap.keySet()){
 			final SyncItem map = mySyncMap.get(lProp);
 
-			if ((map.getDirection() & SyncItem.SYNC_TO) == 0){
+			if (!map.isDirection(SyncItem.SYNC_TO)){
 				continue;
 			}
 
@@ -299,16 +299,20 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	}
 
 	public static abstract class SyncItem {
+
 		protected final String remoteKey;
 		public static final int SYNC_BOTH = 0x3,
 								SYNC_TO   = 0x1,
 								SYNC_FROM = 0x2,
-								SYNC_NONE = 0x0,
+								SYNC_NONE = 0x4,
 								FLAG_OPTIONAL = 0x10;
+
+		private static final int DEFAULT_SYNC_DIRECTION = SYNC_BOTH;
+
 		private final int flags;
 
 		public SyncItem(String remoteKey) {
-			this(remoteKey, SYNC_BOTH);
+			this(remoteKey, DEFAULT_SYNC_DIRECTION);
 		}
 		public SyncItem(String remoteKey, int flags){
 			this.remoteKey = remoteKey;
@@ -322,11 +326,20 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		 */
 		public int getDirection() {
 			final int directionFlags = flags & 0x3;
+
+			if ((flags & SYNC_NONE) != 0){
+				return SYNC_NONE;
+			}
+
+			if (directionFlags == 0){
+				return DEFAULT_SYNC_DIRECTION;
+			}
+
 			return directionFlags;
 		}
 
 		public boolean isDirection(int syncDirection){
-			return (flags & syncDirection) > 0;
+			return (getDirection() & syncDirection) != 0;
 		}
 
 		public boolean isOptional() {
@@ -597,7 +610,21 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 *
 	 */
 	public static class SyncChildRelation extends SyncItem {
-		Relationship mRelationship;
+		private final Relationship mRelationship;
+		private final boolean mStartChildSync;
+
+		/**
+		 *
+		 * @param remoteKey the key in the JSON
+		 * @param relationship how this field relates to the local database
+		 * @param startChildSync if true, requests that the child be sync'd when the parent is sync'd. Defaults to true.
+		 * @param flags standard {@link SyncItem} flags
+		 */
+		public SyncChildRelation(String remoteKey, Relationship relationship, boolean startChildSync, int flags) {
+			super(remoteKey, flags);
+			mRelationship = relationship;
+			mStartChildSync = startChildSync;
+		}
 
 		/**
 		 *
@@ -606,8 +633,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		 * @param flags standard {@link SyncItem} flags
 		 */
 		public SyncChildRelation(String remoteKey, Relationship relationship, int flags) {
-			super(remoteKey, flags);
-			mRelationship = relationship;
+			this(remoteKey, relationship, true, flags);
 		}
 
 		@Override
@@ -633,7 +659,9 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		@Override
 		public void onPostSyncItem(Context context, Uri uri, JSONObject item,
 				boolean updated) throws SyncException, IOException {
-
+			if (!mStartChildSync){
+				return;
+			}
 			final Uri childDir = mRelationship.getChildDirUri(uri);
 			try {
 				final String childPubUri = item.getString(remoteKey);
@@ -743,14 +771,15 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 *
 	 */
 	public static class SyncChildField extends SyncMapChain {
-		public SyncChildField(String remoteKey, String remoteField, int fieldType) {
-			this(remoteKey, remoteField, fieldType, 0);
+		public SyncChildField(String localKey, String remoteKey, String remoteField, int fieldType) {
+			this(localKey, remoteKey, remoteField, fieldType, 0);
+
 		}
 
-		public SyncChildField(String remoteKey, String remoteField, int fieldType, int fieldFlags) {
+		public SyncChildField(String localKey, String remoteKey, String remoteField, int fieldType, int fieldFlags) {
 			super(remoteKey, new SyncMap(), SyncMapChain.SYNC_FROM);
 
-			getChain().put("_" + remoteField, new SyncFieldMap(remoteField, fieldType, fieldFlags));
+			getChain().put(localKey, new SyncFieldMap(remoteField, fieldType, fieldFlags));
 		}
 	}
 

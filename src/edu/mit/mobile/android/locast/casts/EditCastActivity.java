@@ -202,7 +202,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			}
 		}
 
-		contentType = c.getString(c.getColumnIndex(Cast._CONTENT_TYPE));
+		//XXX contentType = c.getString(c.getColumnIndex(Cast._CONTENT_TYPE));
 
 		if (! c.isNull(c.getColumnIndex(Cast._PRIVACY))){
 			final Spinner privacy = ((Spinner)findViewById(R.id.privacy));
@@ -298,7 +298,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		cv.put(Cast._TITLE, ((EditText) findViewById(R.id.cast_title)).getText().toString());
 		cv.put(Cast._DESCRIPTION, ((EditText) findViewById(R.id.cast_description)).getText().toString());
 		cv.put(Cast._MEDIA_PUBLIC_URI, (mediaUri != null && !mediaUri.equals("null")) ? mediaUri.toString(): null);
-		cv.put(Cast._CONTENT_TYPE, contentType);
+		//XXX cv.put(Cast._CONTENT_TYPE, contentType);
 
 		if (castPublicUri != null) {
 			cv.put(Cast._PUBLIC_URI, castPublicUri);

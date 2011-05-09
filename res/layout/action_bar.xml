@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
   xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:mel="http://mobile.mit.edu/schemas/android"
   android:layout_width="fill_parent"
   android:layout_height="wrap_content"
   android:id="@+id/action_bar"
@@ -11,10 +12,10 @@
     	
      	android:layout_width="wrap_content" android:drawableLeft="@drawable/title" android:layout_toLeftOf="@+id/refresh" android:layout_alignParentLeft="true" android:layout_alignBottom="@+id/refresh" android:layout_alignParentTop="true" android:paddingLeft="10dip"/>
     	
-    <ImageButton android:id="@+id/refresh" 
+    <edu.mit.mobile.android.widget.RefreshButton android:id="@+id/refresh" 
     	style="@style/ActionBar.Button" 
     	android:layout_alignParentRight="true" 
-     	
+     	mel:refreshingDrawable="@drawable/ic_refresh_refreshing"
      	android:layout_alignBottom="@+id/title" 
      	android:layout_alignTop="@+id/title" android:src="@drawable/ic_refresh" android:layout_width="48dip" android:layout_height="48dip"/>
 </RelativeLayout>

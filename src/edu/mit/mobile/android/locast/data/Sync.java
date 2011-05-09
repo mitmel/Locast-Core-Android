@@ -195,6 +195,10 @@ public class Sync extends Service {
 				|| MediaProvider.TYPE_ITINERARY_ITEM.equals(contentType)){
 			syncItem = new Itinerary();
 
+		}else if (MediaProvider.TYPE_CASTMEDIA_DIR.equals(contentType)
+				|| MediaProvider.TYPE_CASTMEDIA_ITEM.equals(contentType)){
+			syncItem = new CastMedia();
+
 		}else{
 			throw new RuntimeException("URI " + toSync + " is syncable, but there is no type mapping for it in getSyncItem().");
 		}
@@ -355,6 +359,10 @@ public class Sync extends Service {
 				// we successfully loaded it from the 'net, but toSync is really for local URIs. Erase it.
 
 				toSync = sync.getContentUri();
+				if (toSync == null){
+					Log.w(TAG, "cannot get local URI for "+origToSync+". Skipping...");
+					return false;
+				}
 			}
 			try {
 				cvNet = JsonSyncableItem.fromJSON(context, null, jsonObject, syncMap);
@@ -445,7 +453,7 @@ public class Sync extends Service {
 				modified = true;
 			}else {
 				locUri = ContentUris.withAppendedId(toSync,
-						c.getLong(c.getColumnIndex(JsonSyncableItem._ID)));
+						c.getLong(c.getColumnIndex(JsonSyncableItem._ID))).buildUpon().query(null).build();
 				syncMap.onPreSyncItem(cr, locUri, c);
 			}
 		}
@@ -466,6 +474,10 @@ public class Sync extends Service {
 							return false;
 
 						}else{
+							if (syncdItems.contains(nc.getFullUri(publicPath))){
+								Log.d(TAG, "already sync'd! "+publicPath);
+								return false;
+							}
 							if (jsonObject == null){
 								jsonObject = nc.getObject(publicPath);
 							}
@@ -503,7 +515,7 @@ public class Sync extends Service {
 					Log.d("LocastSync", cvNet + " is older than "+locUri);
 					modified = true;
 				}
-
+				syncdItems.add(nc.getFullUri(publicPath));
 			} catch (final JSONException e) {
 				final SyncException se = new SyncException("Item sync error for path "+publicPath+": invalid JSON.");
 				se.initCause(e);

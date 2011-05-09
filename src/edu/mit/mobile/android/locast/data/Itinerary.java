@@ -113,7 +113,7 @@ public class Itinerary extends TaggableItem {
 
 			put(_DESCRIPTION, 		new SyncFieldMap("description", SyncFieldMap.STRING));
 			put(_TITLE, 			new SyncFieldMap("title", SyncFieldMap.STRING));
-			put(_CASTS_URI,			new SyncChildRelation("casts", new SyncChildRelation.SimpleRelationship("casts"), SyncFieldMap.SYNC_FROM | SyncFieldMap.FLAG_OPTIONAL));
+			put(_CASTS_URI,			new SyncChildRelation("casts", new SyncChildRelation.SimpleRelationship("casts"), false, SyncFieldMap.SYNC_FROM | SyncFieldMap.FLAG_OPTIONAL));
 			put(_PATH,				new SyncCustom("path", SyncFieldMap.SYNC_FROM) {
 
 				@Override

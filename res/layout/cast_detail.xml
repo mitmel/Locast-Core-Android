@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="fill_parent"
 	android:layout_height="fill_parent"
+	android:orientation="vertical"
 	android:background="@android:color/white"
 >
 	<include
@@ -12,7 +13,6 @@
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
 		android:textStyle="bold"
-		android:layout_below="@id/action_bar"
 		android:layout_marginLeft="10dip"
 		android:layout_marginRight="10dip"
 		android:layout_marginTop="10dip"
@@ -20,36 +20,31 @@
 	<TextView android:id="@+id/author" 
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
-		android:layout_below="@id/title"
-		android:layout_alignLeft="@id/title"
-		android:layout_alignRight="@id/title"
+		android:layout_marginLeft="10dip"
+		android:layout_marginRight="10dip"
+
 	/>
 	<TextView  android:id="@+id/description"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
-		android:layout_below="@id/author"
-		android:layout_alignLeft="@id/author"
-		android:layout_alignRight="@id/title"
-		android:layout_marginTop="10dip"
+		android:layout_margin="10dip"
 		/>
 		
-	<GridView  android:id="@+id/cast_media"
-		android:stretchMode="spacingWidthUniform"
+	<GridView android:id="@+id/cast_media"
 		android:numColumns="auto_fit"
-		android:gravity="top|left"
+		android:gravity="center"
 		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:layout_below="@id/description"
-		android:layout_above="@+id/map"
-		android:layout_alignLeft="@id/description"
-		android:layout_alignRight="@id/description"
+		android:layout_height="fill_parent"
+
+		android:layout_weight="2"
 		
 	/>
 		
 	<com.google.android.maps.MapView
 		android:id="@+id/map"
 		android:layout_width="fill_parent"
-		android:layout_height="150dip"
+		android:layout_height="fill_parent"
+		android:layout_weight="3"
 		
 		android:layout_alignParentBottom="true"
 		
@@ -60,4 +55,4 @@
 	<!-- Android Debug key: 0mv3f-QVdQ_CF3MFrN2I0MO8Wgu_QPqzOKx2GHw (debug fprint 
 		FC:84:2A:A7:F4:7E:5C:49:CD:6A:C7:0C:3B:A6:BE:E1) -->
 
-</RelativeLayout>
+</LinearLayout>

@@ -4,6 +4,7 @@
   android:layout_width="wrap_content"
   android:layout_height="wrap_content"
   android:background="@drawable/picture_frame"
+  
   >
 	<!-- The layout size below is hard-coded because there doesn't seem to be 
 		a way to make it so that the ImageView adjusts its width based on a pre-defined 
@@ -14,10 +15,12 @@
   <ImageView android:id="@+id/media_thumbnail"
   	android:scaleType="centerCrop"
   	android:adjustViewBounds="false"
- 	android:layout_height="180dp"
-  	android:layout_width="240dp"
+ 	android:layout_height="100dp"
+  	android:layout_width="133dp"
   	/>
-
+<!--   	 	android:layout_height="100dp" -->
+<!--   	android:layout_width="133dp" -->
+ 
   	<TextView android:id="@+id/author"
   		android:text="author"
   		
@@ -34,9 +37,9 @@
   		android:layout_width="wrap_content"
   		android:layout_height="wrap_content"
   	 />  	
-  	
-  	<TextView android:id="@+id/cast_title"
-  	android:text="title"
+  	 
+  	<TextView android:id="@+id/title"
+  		android:text="title"
   		android:layout_above="@id/author"
   		android:background="#aaaaaaa0"
   		android:textColor="#fff"
@@ -44,14 +47,11 @@
   		android:paddingTop="10dip"
   		android:paddingLeft="10dip"
   		android:paddingRight="10dip"
-  		android:singleLine="true"
+		android:singleLine="true"
   		android:layout_alignLeft="@id/media_thumbnail"
   		android:layout_alignRight="@id/media_thumbnail"
   		android:layout_width="wrap_content"
   		android:layout_height="wrap_content"
   		
   	 />
-  	 
-
-  	
 </RelativeLayout>

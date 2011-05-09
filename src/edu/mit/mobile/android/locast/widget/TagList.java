@@ -34,7 +34,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
-import edu.mit.mobile.android.locast.MelAndroid;
+import edu.mit.mobile.android.MelAndroid;
 import edu.mit.mobile.android.locast.R;
 
 /**

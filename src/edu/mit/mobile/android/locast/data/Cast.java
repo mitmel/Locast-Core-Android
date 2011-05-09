@@ -66,10 +66,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		_OFFICIAL		= "official";
 
 	public static final String
-		_MEDIA_LOCAL_URI = "local_uri",
 		_MEDIA_PUBLIC_URI = "public_uri",
-		_CONTENT_TYPE = "content_type",
-		_CASTVIDEO_DIR_URI = "castvideo_dir_uri",
 		_THUMBNAIL_URI = "thumbnail_uri";
 
 	public static final String[] PROJECTION =
@@ -81,9 +78,6 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		_PRIVACY,
 		_AUTHOR,
 		_CREATED_DATE,
-		_MEDIA_LOCAL_URI,
-		_CASTVIDEO_DIR_URI,
-		_CONTENT_TYPE,
 		_MODIFIED_DATE,
 		_THUMBNAIL_URI,
 		_FAVORITED,
@@ -124,12 +118,13 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 			putAll(Locatable.SYNC_MAP);
 			putAll(Commentable.SYNC_MAP);
 
-			put(_DESCRIPTION, 		new SyncFieldMap("description", SyncFieldMap.STRING | SyncItem.FLAG_OPTIONAL));
+			put(_DESCRIPTION, 		new SyncFieldMap("description", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL));
 			put(_TITLE, 			new SyncFieldMap("title", SyncFieldMap.STRING));
 
 			put(_THUMBNAIL_URI, 	new SyncFieldMap("preview_image", SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
-			put(_MEDIA_PUBLIC_URI,  new SyncFieldMap("file_url",   SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
+			//put(_MEDIA_PUBLIC_URI,  new SyncFieldMap("file_url",   SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 			put(_OFFICIAL,			new SyncFieldMap("official", SyncFieldMap.BOOLEAN, SyncItem.SYNC_FROM));
+			put(_MEDIA_PUBLIC_URI,   new SyncChildRelation("media", new JsonSyncableItem.SyncChildRelation.SimpleRelationship(CastMedia.PATH), SyncItem.SYNC_FROM));
 
 			//put("_contents", new OrderedList.SyncMapItem("media", new CastVideo(), CastVideo.PATH));
 		}
@@ -234,6 +229,14 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 	 */
 	public static final Uri getCastVideoUri(Uri castUri){
 		return Uri.withAppendedPath(castUri, CastVideo.PATH);
+	}
+
+	/**
+	 * @param castUri uri for the cast.
+	 * @return The CastMedia URI of the given cast.
+	 */
+	public static final Uri getCastMediaUri(Uri castUri){
+		return Uri.withAppendedPath(castUri, CastMedia.PATH);
 	}
 
 	/**
@@ -474,7 +477,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 		}
 
 		final ContentValues cvCast = new ContentValues();
-		cvCast.put(_MEDIA_LOCAL_URI, uri.toString());
+		// XXX cvCast.put(_MEDIA_LOCAL_URI, uri.toString());
 		cvCast.put(MediaProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
 
 		final ScanQueueItem item = scanMap.get(path);
@@ -530,7 +533,7 @@ public class Cast extends TaggableItem implements MediaScannerConnectionClient, 
 
 		if (newLocUri != null){
 			final ContentValues cvCast = new ContentValues();
-			cvCast.put(_MEDIA_LOCAL_URI, newLocUri);
+			//XXX cvCast.put(_MEDIA_LOCAL_URI, newLocUri);
 			cvCast.put(MediaProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
 
 			Log.d("Locast", "new local uri " + newLocUri + " for cast "+cast);

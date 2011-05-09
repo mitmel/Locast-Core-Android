@@ -43,6 +43,7 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.util.Log;
 import edu.mit.mobile.android.locast.ListUtils;
+import edu.mit.mobile.android.locast.data.ManyToMany.DBHelperMapper;
 
 public class MediaProvider extends ContentProvider {
 	@SuppressWarnings("unused")
@@ -55,6 +56,9 @@ public class MediaProvider extends ContentProvider {
 
 		TYPE_CASTVIDEO_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.castvideo",
 		TYPE_CASTVIDEO_DIR  = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.castvideo",
+
+		TYPE_CASTMEDIA_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.castmedia",
+		TYPE_CASTMEDIA_DIR  = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.castmedia",
 
 		TYPE_PROJECT_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.projects",
 		TYPE_PROJECT_DIR  = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.projects",
@@ -76,8 +80,8 @@ public class MediaProvider extends ContentProvider {
 
 	private static final String
 		CAST_TABLE_NAME       = "casts",
-		CASTVIDEO_TABLE_NAME = "castvideo",
-		CASTMEDIA_TABLE_NAME = "castmedia",
+		CASTVIDEO_TABLE_NAME = "castvideo", // for templated video
+		CASTMEDIA_TABLE_NAME = "castmedia", // casts with multiple media objects
 		PROJECT_TABLE_NAME    = "projects",
 		COMMENT_TABLE_NAME    = "comments",
 		TAG_TABLE_NAME        = "tags",
@@ -86,10 +90,12 @@ public class MediaProvider extends ContentProvider {
 		SHOTLIST_TABLE_NAME   = "shotlist";
 
 	private static final ManyToMany.DBHelper
-		ITINERARY_CASTS_DBHELPER = new ManyToMany.DBHelper(ITINERARY_TABLE_NAME, CAST_TABLE_NAME),
+		ITINERARY_CASTS_DBHELPER = new ManyToMany.DBHelper(ITINERARY_TABLE_NAME, CAST_TABLE_NAME, Cast.CONTENT_URI),
 		CASTS_CASTMEDIA_DBHELPER = new ManyToMany.DBHelper(CAST_TABLE_NAME, CASTMEDIA_TABLE_NAME);
 
-	private static UriMatcher uriMatcher;
+	private final static UriMatcher uriMatcher;
+
+	private final static DBHelperMapper mDBHelperMapper = new DBHelperMapper();
 
 	private static final int
 		MATCHER_CAST_DIR             = 1,
@@ -117,12 +123,14 @@ public class MediaProvider extends ContentProvider {
 		MATCHER_CHILD_CAST_ITEM  	 = 24,
 		MATCHER_CHILD_CAST_CASTVIDEO_DIR = 25,
 		MATCHER_CHILD_CAST_CASTVIDEO_ITEM= 26,
-		MATCHER_ITINERARY_BY_TAGS    = 27
+		MATCHER_ITINERARY_BY_TAGS    = 27,
+		MATCHER_CHILD_CASTMEDIA_DIR = 28,
+		MATCHER_CHILD_CASTMEDIA_ITEM = 29;
 		;
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 31;
+		private static final int DB_VER = 32;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -153,10 +161,7 @@ public class MediaProvider extends ContentProvider {
 					+ Cast._AUTHOR 		+ " TEXT,"
 					+ Cast._DESCRIPTION + " TEXT,"
 					+ Cast._MEDIA_PUBLIC_URI 	+ " TEXT,"
-					+ Cast._MEDIA_LOCAL_URI 	+ " TEXT,"
-					+ Cast._CONTENT_TYPE + " TEXT,"
 
-					+ Cast._CASTVIDEO_DIR_URI + " TEXT,"
 					+ Cast._PRIVACY 	+ " TEXT,"
 
 					+ Cast._FAVORITED   + " BOOLEAN,"
@@ -211,6 +216,21 @@ public class MediaProvider extends ContentProvider {
 			+ ")"
 			);
 
+			db.execSQL("CREATE TABLE "+ CASTMEDIA_TABLE_NAME + " ("
+					+ JSON_SYNCABLE_ITEM_FIELDS
+					+ CastMedia._AUTHOR        + " TEXT,"
+					+ CastMedia._TITLE		   + " TEXT,"
+					+ CastMedia._DESCRIPTION   + " TEXT,"
+					+ CastMedia._LANGUAGE      + " TEXT,"
+
+					+ CastMedia._MEDIA_URL     + " TEXT,"
+					+ CastMedia._LOCAL_URI     + " TEXT,"
+					+ CastMedia._MIME_TYPE     + " TEXT,"
+					+ CastMedia._THUMBNAIL     + " TEXT,"
+					+ CastMedia._DURATION      + " INTEGER"
+			+ ")"
+			);
+
 			db.execSQL("CREATE TABLE "+ SHOTLIST_TABLE_NAME + " ("
 					+ JSON_SYNCABLE_ITEM_FIELDS
 					+ ShotList._PARENT_ID     + " INTEGER,"
@@ -259,6 +279,8 @@ public class MediaProvider extends ContentProvider {
 				db.execSQL("DROP TABLE IF EXISTS " + COMMENT_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + CASTVIDEO_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + CASTMEDIA_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + CASTMEDIA_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + SHOTLIST_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + ITINERARY_TABLE_NAME);
 				ITINERARY_CASTS_DBHELPER.deleteJoinTable(db);
@@ -308,6 +330,8 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CAST_DIR:
 		case MATCHER_CAST_ITEM:
 
+		case MATCHER_CHILD_CASTMEDIA_DIR:
+		case MATCHER_CHILD_CASTMEDIA_ITEM:
 
 		case MATCHER_PROJECT_BY_TAGS:
 		case MATCHER_PROJECT_CAST_DIR:
@@ -349,6 +373,12 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CASTVIDEO_ITEM:
 		case MATCHER_CHILD_CAST_CASTVIDEO_ITEM:
 			return TYPE_CASTVIDEO_ITEM;
+
+		case MATCHER_CHILD_CASTMEDIA_DIR:
+			return TYPE_CASTMEDIA_DIR;
+
+		case MATCHER_CHILD_CASTMEDIA_ITEM:
+			return TYPE_CASTMEDIA_ITEM;
 
 		case MATCHER_PROJECT_DIR:
 			return TYPE_PROJECT_DIR;
@@ -411,7 +441,8 @@ public class MediaProvider extends ContentProvider {
 		Uri newItem = null;
 		boolean isDraft = false;
 
-		switch (uriMatcher.match(uri)){
+		final int code = uriMatcher.match(uri);
+		switch (code){
 		//////////////////////////////////////////////////////////////////////////////////
 		case MATCHER_CAST_DIR:{
 			Assert.assertNotNull(values);
@@ -526,40 +557,6 @@ public class MediaProvider extends ContentProvider {
 		} break;
 		//////////////////////////////////////////////////////////////////////////////////
 
-		// itin/1/casts
-		case MATCHER_CHILD_CAST_DIR:{
-			final Uri parent = removeLastPathSegment(uri);
-
-			final long parentId = ContentUris.parseId(parent);
-			db.beginTransaction();
-			try {
-				// TODO make this more generic and handle the case where relations can be added locally.
-				if (values.containsKey(Cast._PUBLIC_URI)){
-					final Cursor existingCast = db.query(CAST_TABLE_NAME, new String[]{Cast._ID, Cast._PUBLIC_URI}, Cast._PUBLIC_URI+"=?", new String[]{values.getAsString(Cast._PUBLIC_URI)}, null, null, null);
-					if (existingCast.moveToFirst()){
-						newItem = ContentUris.withAppendedId(Cast.CONTENT_URI, existingCast.getLong(existingCast.getColumnIndex(Cast._ID)));
-					}
-					existingCast.close();
-				}
-				if (newItem == null){
-					newItem = insert(Cast.CONTENT_URI, values);
-				}
-				if (TYPE_ITINERARY_ITEM.equals(getType(parent))){
-					ITINERARY_CASTS_DBHELPER.addRelation(db, parentId, ContentUris.parseId(newItem));
-				}else{
-					throw new IllegalArgumentException("Don't know how to add a cast to "+ parent);
-				}
-				db.setTransactionSuccessful();
-			}finally{
-				db.endTransaction();
-			}
-			if (values.containsKey(Cast._DRAFT)){
-				isDraft = values.getAsBoolean(Cast._DRAFT);
-			}else{
-				isDraft = false;
-			}
-		}break;
-
 		//////////////////////////////////////////////////////////////////////////////////
 		case MATCHER_CHILD_CAST_CASTVIDEO_DIR:{
 			final Uri parent = removeLastPathSegment(uri);
@@ -580,7 +577,17 @@ public class MediaProvider extends ContentProvider {
 
 
 		default:
-			throw new IllegalArgumentException("Unknown URI: "+uri);
+			if (mDBHelperMapper.canInsert(code)){
+				// XXX draft should probably be looked at better.
+				if (values.containsKey(TaggableItem._DRAFT)){
+					isDraft = values.getAsBoolean(TaggableItem._DRAFT);
+				}else{
+					isDraft = false;
+				}
+				newItem = mDBHelperMapper.insert(code, this, db, uri, values);
+			}else{
+				throw new IllegalArgumentException("Unknown URI: "+uri);
+			}
 		}
 
 		if (newItem != null){
@@ -633,8 +640,8 @@ public class MediaProvider extends ContentProvider {
 
 		final long id;
 		Cursor c;
-
-		switch (uriMatcher.match(uri)){
+		final int code = uriMatcher.match(uri);
+		switch (code){
 		case MATCHER_CAST_DIR:
 			qb.setTables(CAST_TABLE_NAME);
 
@@ -782,47 +789,13 @@ public class MediaProvider extends ContentProvider {
 					null, null, sortOrder);
 		}break;
 
-		// itin/1/casts
-		case MATCHER_CHILD_CAST_DIR:{
-			if (sortOrder == null){
-				sortOrder = Cast.SORT_ORDER_DEFAULT;
-			}
-			final Uri parent = removeLastPathSegment(uri);
-
-			final long parentId = ContentUris.parseId(parent);
-
-			if (TYPE_ITINERARY_ITEM.equals(getType(parent))){
-				c = ITINERARY_CASTS_DBHELPER.queryTo(parentId, db, projection, selection, selectionArgs, sortOrder);
-			}else{
-				throw new IllegalArgumentException("Don't know how to get a cast from a "+uri);
-			}
-
-		}break;
-
-		// itin/1/casts/1
-		case MATCHER_CHILD_CAST_ITEM:{
-			final Uri parent = removeLastPathSegments(uri, 2);
-
-			final long parentId = ContentUris.parseId(parent);
-
-			final String childId = uri.getLastPathSegment();
-
-			if (TYPE_ITINERARY_ITEM.equals(getType(parent))){
-				c = ITINERARY_CASTS_DBHELPER.queryTo(parentId,
-						db,
-						projection,
-						addExtraWhere(selection, Cast._ID+"=?"),
-						addExtraWhereArgs(selectionArgs, childId),
-						sortOrder);
-			}else{
-				throw new IllegalArgumentException("Don't know how to get a cast from a "+uri);
-			}
-		}break;
-
 			default:
-				throw new IllegalArgumentException("unknown URI "+uri);
+				if (mDBHelperMapper.canQuery(code)){
+					c = mDBHelperMapper.query(code, this, db, uri, projection, selection, selectionArgs, sortOrder);
+				}else{
+					throw new IllegalArgumentException("unknown URI "+uri);
+				}
 		}
-
 
 		c.setNotificationUri(getContext().getContentResolver(), uri);
 		return c;
@@ -894,7 +867,8 @@ public class MediaProvider extends ContentProvider {
 		}
 		values.remove(CV_FLAG_DO_NOT_MARK_DIRTY);
 
-		switch (uriMatcher.match(uri)){
+		final int code = uriMatcher.match(uri);
+		switch (code){
 		case MATCHER_CAST_DIR:
 			count = db.update(CAST_TABLE_NAME, values, where, whereArgs);
 			break;
@@ -1045,7 +1019,11 @@ public class MediaProvider extends ContentProvider {
 		}break;
 
 			default:
-				throw new IllegalArgumentException("unknown URI "+uri);
+				if (mDBHelperMapper.canUpdate(code)){
+					count = mDBHelperMapper.update(code, this, db, uri, values, where, whereArgs);
+				}else{
+					throw new IllegalArgumentException("unknown URI "+uri);
+				}
 		}
 
 		getContext().getContentResolver().notifyChange(uri, null);
@@ -1061,7 +1039,8 @@ public class MediaProvider extends ContentProvider {
 		final long id;
 
 		int count;
-		switch (uriMatcher.match(uri)){
+		final int code = uriMatcher.match(uri);
+		switch (code){
 		case MATCHER_CAST_DIR:
 			count = db.delete(CAST_TABLE_NAME, where, whereArgs);
 			break;
@@ -1150,32 +1129,12 @@ public class MediaProvider extends ContentProvider {
 			count = db.delete(ITINERARY_TABLE_NAME, addExtraWhere(where, Itinerary._ID+"=?"), addExtraWhereArgs(whereArgs, itemId));
 		}break;
 
-
-		// itin/1/casts/1
-		case MATCHER_CHILD_CAST_ITEM:{
-
-			try {
-				db.beginTransaction();
-				final Uri parent = removeLastPathSegments(uri, 2);
-				final long castId = ContentUris.parseId(uri);
-				count = db.delete(CAST_TABLE_NAME, Cast._ID+"=?", new String[]{uri.getLastPathSegment()});
-
-				if (TYPE_ITINERARY_ITEM.equals(getType(parent))){
-					final int rows = ITINERARY_CASTS_DBHELPER.removeRelation(db, ContentUris.parseId(parent), castId);
-					if (rows == 0){
-						throw new IllegalArgumentException("There is no relation between cast "+castId + " and "+parent);
-					}
-				}else{
-					throw new IllegalArgumentException("Don't know how to get a cast from a "+uri);
-				}
-
-			}finally{
-				db.endTransaction();
-			}
-		}break;
-
 			default:
-				throw new IllegalArgumentException("Unknown URI: "+uri);
+				if (mDBHelperMapper.canDelete(code)){
+					count = mDBHelperMapper.delete(code, this, db, uri, where, whereArgs);
+				}else{
+					throw new IllegalArgumentException("Unknown URI: "+uri);
+				}
 		}
 		db.execSQL("VACUUM");
 		getContext().getContentResolver().notifyChange(uri, null);
@@ -1207,6 +1166,12 @@ public class MediaProvider extends ContentProvider {
 		return getPublicPath(cr, uri, publicId, false);
 	}
 
+	/**
+	 * @param cr
+	 * @param uri the URI of the item whose field should be queried
+	 * @param field the string name of the field
+	 * @return
+	 */
 	private static String getPathFromField(ContentResolver cr, Uri uri, String field){
 		String path = null;
 		final String[] generalProjection = {JsonSyncableItem._ID, field};
@@ -1292,11 +1257,19 @@ public class MediaProvider extends ContentProvider {
 			path = getPathFromField(cr, removeLastPathSegment(uri), Project._CASTS_URI);
 		}break;
 
-		case MATCHER_CHILD_CAST_CASTVIDEO_DIR:
+//		case MATCHER_CHILD_CAST_CASTVIDEO_DIR:
+//		case MATCHER_CAST_CASTVIDEO_DIR:
+//		case MATCHER_CASTVIDEO_DIR: {
+//			path = getPathFromField(cr, removeLastPathSegment(uri), Cast._CASTVIDEO_DIR_URI);
+//		}break;
+
+		case MATCHER_CHILD_CAST_DIR:
+			path = getPathFromField(cr, removeLastPathSegment(uri), Itinerary._CASTS_URI);
+			break;
+
 		case MATCHER_CAST_CASTVIDEO_DIR:
-		case MATCHER_CASTVIDEO_DIR: {
-			path = getPathFromField(cr, removeLastPathSegment(uri), Cast._CASTVIDEO_DIR_URI);
-		}break;
+			path = getPathFromField(cr, removeLastPathSegment(uri), Cast._MEDIA_PUBLIC_URI);
+			break;
 
 
 		case MATCHER_ITINERARY_BY_TAGS:{
@@ -1450,6 +1423,13 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastVideo.PATH, MATCHER_CAST_CASTVIDEO_DIR);
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastVideo.PATH+"/#", MATCHER_CASTVIDEO_ITEM);
 
+		// /cast/1/media
+		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH, MATCHER_CHILD_CASTMEDIA_DIR);
+		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH+"/#", MATCHER_CHILD_CASTMEDIA_ITEM);
+
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH, MATCHER_CHILD_CASTMEDIA_DIR);
+		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH + "/#/", MATCHER_CHILD_CASTMEDIA_ITEM);
+
 		// cast media
 		uriMatcher.addURI(AUTHORITY, CastVideo.PATH, MATCHER_CASTVIDEO_DIR);
 		uriMatcher.addURI(AUTHORITY, CastVideo.PATH+"/#", MATCHER_CASTVIDEO_ITEM);
@@ -1505,5 +1485,13 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#", 					MATCHER_ITINERARY_ITEM);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH,		MATCHER_CHILD_CAST_DIR);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#", MATCHER_CHILD_CAST_ITEM);
+
+		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CAST_DIR, ITINERARY_CASTS_DBHELPER, DBHelperMapper.TYPE_ALL);
+		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CAST_ITEM, ITINERARY_CASTS_DBHELPER, DBHelperMapper.TYPE_ALL);
+
+		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CASTMEDIA_DIR, CASTS_CASTMEDIA_DBHELPER, DBHelperMapper.TYPE_ALL);
+		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CASTMEDIA_ITEM, CASTS_CASTMEDIA_DBHELPER, DBHelperMapper.TYPE_ALL);
+
+
 	}
 }

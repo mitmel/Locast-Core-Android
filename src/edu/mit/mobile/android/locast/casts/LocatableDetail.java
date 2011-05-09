@@ -29,12 +29,6 @@ abstract public class LocatableDetail extends MapFragmentActivity {
 
 	}
 
-	@Override
-	protected void onPostCreate(Bundle savedInstanceState) {
-		super.onPostCreate(savedInstanceState);
-		initOverlays();
-	}
-
 	protected abstract LocatableItemOverlay createItemOverlay();
 
 	protected void initOverlays(){

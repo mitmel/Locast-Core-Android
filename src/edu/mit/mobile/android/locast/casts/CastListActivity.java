@@ -24,10 +24,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.AdapterView;
 import android.widget.ListAdapter;
@@ -166,9 +166,9 @@ public abstract class CastListActivity extends ListActivity {
     	   startActivity(new Intent(Intent.ACTION_DELETE, cast));
     	   return true;
 
-       case R.id.cast_play:
-    	   startActivity(new Intent(CastDetailsActivity.ACTION_PLAY_CAST, cast));
-    	   return true;
+//       case R.id.cast_play:
+//    	   startActivity(new Intent(CastDetailsActivity.ACTION_PLAY_CAST, cast));
+//    	   return true;
 
        default:
     	   return super.onContextItemSelected(item);

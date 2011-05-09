@@ -127,6 +127,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 	private void refresh(boolean explicitSync){
 		startService(new Intent(Intent.ACTION_SYNC, mUri).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
+		startService(new Intent(Intent.ACTION_SYNC, mCastsUri).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
 	}
 
 

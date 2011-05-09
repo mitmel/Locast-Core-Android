@@ -20,7 +20,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,6 +36,7 @@ import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Sync;
 import edu.mit.mobile.android.locast.itineraries.CastsOverlay;
+import edu.mit.mobile.android.widget.RefreshButton;
 
 public class LocatableListWithMap extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnClickListener, OnItemClickListener {
 
@@ -155,12 +155,17 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		}
 	}
 
-	private void setRefreshing(boolean isRefreshing){
-		if(isRefreshing){
-			((ImageButton)findViewById(R.id.refresh)).setImageResource(android.R.drawable.ic_dialog_alert);
-		}else{
-			((ImageButton)findViewById(R.id.refresh)).setImageResource(R.drawable.ic_refresh);
+	@Override
+	public void onWindowFocusChanged(boolean hasFocus) {
+		super.onWindowFocusChanged(hasFocus);
+		if (hasFocus){
+
 		}
+	}
+
+	private void setRefreshing(boolean isRefreshing){
+		final RefreshButton refresh = (RefreshButton)findViewById(R.id.refresh);
+		refresh.setRefreshing(isRefreshing);
 	}
 
 	private void initMapOverlays(){
@@ -262,6 +267,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		mMapView.setVisibility(View.VISIBLE);
 
 		setRefreshing(false);
+
 	}
 
 	@Override

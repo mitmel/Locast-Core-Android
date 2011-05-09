@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+	android:orientation="vertical"
+>
+	<include
+		layout="@layout/action_bar" />
+	<RelativeLayout
+		android:id="@+id/relativeLayout1"
+		android:padding="10dip"
+		android:background="@android:color/white"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+	>
+		<ToggleButton
+			android:id="@+id/follow"
+			android:layout_alignParentLeft="true"
+			android:layout_width="80sp"
+			android:textOff="Follow"
+			android:layout_centerVertical="true"
+			android:text="Follow"
+			android:layout_height="wrap_content"
+			android:textOn="Unfollow"
+			android:layout_marginRight="15dip"
+		></ToggleButton>
+		<TextView
+			android:text="TextView"
+			android:layout_width="fill_parent"
+			android:id="@+id/title"
+			android:layout_toRightOf="@id/follow"
+			android:layout_height="wrap_content"
+			android:textStyle="bold"
+			android:layout_alignParentTop="true"
+			android:maxLines="2"
+			android:ellipsize="end"
+			android:layout_alignParentRight="true"
+		></TextView>
+	</RelativeLayout>
+	<LinearLayout
+		android:id="@+id/linearLayout1"
+		android:layout_height="fill_parent"
+		android:layout_width="fill_parent"
+	>
+		<FrameLayout
+			android:id="@+id/frameLayout1"
+			android:layout_marginRight="-10dip"
+			android:layout_weight="3"
+			android:layout_width="fill_parent"
+			android:layout_height="fill_parent"
+			android:background="@drawable/shadow_right"
+		>
+			<com.google.android.maps.MapView
+				android:id="@+id/map"
+				android:visibility="invisible"
+				android:layout_height="fill_parent"
+				android:clickable="false"
+				android:layout_width="fill_parent"
+				android:apiKey="0mv3f-QVdQ_CF3MFrN2I0MO8Wgu_QPqzOKx2GHw" 
+			/>
+		</FrameLayout>
+		<ListView
+			android:scrollbarAlwaysDrawVerticalTrack="true"
+			android:layout_weight="2"
+			android:headerDividersEnabled="false"
+			android:id="@+id/casts"
+			android:scrollbarDefaultDelayBeforeFade="1000"
+			android:layout_width="fill_parent"
+			android:layout_height="fill_parent"
+			android:footerDividersEnabled="true"
+		></ListView>
+	</LinearLayout>
+
+	<!-- Android Debug key: 0mv3f-QVdQ_CF3MFrN2I0MO8Wgu_QPqzOKx2GHw (debug fprint 
+		FC:84:2A:A7:F4:7E:5C:49:CD:6A:C7:0C:3B:A6:BE:E1) -->
+
+</LinearLayout>
