@@ -130,7 +130,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 32;
+		private static final int DB_VER = 33;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -227,6 +227,7 @@ public class MediaProvider extends ContentProvider {
 					+ CastMedia._LOCAL_URI     + " TEXT,"
 					+ CastMedia._MIME_TYPE     + " TEXT,"
 					+ CastMedia._THUMBNAIL     + " TEXT,"
+					+ CastMedia._THUMB_LOCAL   + " TEXT,"
 					+ CastMedia._DURATION      + " INTEGER"
 			+ ")"
 			);

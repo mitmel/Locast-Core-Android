@@ -199,7 +199,7 @@ public class TemplatePlayer extends Activity implements OnCompletionListener {
 			mVideoView.setVideoURI(null);
 			mCurrentCastVideo = null;
 		}else{
-			final Uri localUri = Cast.parseMaybeUri(mCastVideoCursor.getString(localUriCol));
+			final Uri localUri = Uri.parse(mCastVideoCursor.getString(localUriCol));
 			mVideoView.setVideoURI(localUri);
 			mCurrentCastVideo = localUri;
 		}

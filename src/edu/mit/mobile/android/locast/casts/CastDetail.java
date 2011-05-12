@@ -10,15 +10,20 @@ import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v4_map.app.LoaderManager;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.GridView;
 import android.widget.TextView;
 
+import com.commonsware.cwac.cache.SimpleWebImageCache;
+import com.commonsware.cwac.thumbnail.ThumbnailAdapter;
+import com.commonsware.cwac.thumbnail.ThumbnailBus;
+import com.commonsware.cwac.thumbnail.ThumbnailMessage;
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 
+import edu.mit.mobile.android.locast.Application;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.browser.BrowserHome;
 import edu.mit.mobile.android.locast.data.Cast;
@@ -28,7 +33,7 @@ import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.itineraries.CastsOverlay;
 import edu.mit.mobile.android.locast.itineraries.LocatableItemOverlay;
 
-public class CastDetail extends LocatableDetail implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener{
+public class CastDetail extends LocatableDetail implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
 	private LoaderManager mLoaderManager;
 	private CastsOverlay mCastsOverlay;
 	private MapController mMapController;
@@ -38,11 +43,15 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		LOADER_CAST = 0,
 		LOADER_CAST_MEDIA = 1;
 
+	private SimpleWebImageCache<ThumbnailBus, ThumbnailMessage> imgCache;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.cast_detail);
+
+
 
 		initOverlays();
 
@@ -51,24 +60,20 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		mLoaderManager.initLoader(LOADER_CAST, null, this);
 		mLoaderManager.initLoader(LOADER_CAST_MEDIA, null, this);
 		findViewById(R.id.home).setOnClickListener(this);
-		final AbsListView castMediaView = (AbsListView) findViewById(R.id.cast_media);
+		findViewById(R.id.refresh).setOnClickListener(this);
+
+		final GridView castMediaView = (GridView) findViewById(R.id.cast_media);
 
 		mCastMedia = new MediaThumbnailCursorAdapter(this,
 				R.layout.cast_media_item,
 				null,
-//				new String[]{CastMedia._TITLE, CastMedia._AUTHOR, CastMedia._THUMBNAIL},
-//				new int[]{R.id.cast_title, R.id.author, R.id.media_thumbnail},
-				new String[]{CastMedia._TITLE, CastMedia._AUTHOR},
-				new int[]{R.id.title, R.id.author},
+				new String[]{CastMedia._TITLE, CastMedia._AUTHOR, CastMedia._THUMB_LOCAL},
+				new int[]{R.id.cast_title, R.id.author, R.id.media_thumbnail},
 				0);
 
-//		mCastMedia = new SimpleCursorAdapter(this,
-//				android.R.layout.simple_list_item_2,
-//				null,
-//				new String[]{CastMedia._TITLE, CastMedia._AUTHOR},
-//				new int[]{android.R.id.text1, android.R.id.text2}, 0);
+		imgCache = ((Application)getApplication()).getImageCache();
 
-		castMediaView.setAdapter(mCastMedia);
+		castMediaView.setAdapter(new ThumbnailAdapter(this, mCastMedia, imgCache, new int[]{R.id.media_thumbnail}));
 		castMediaView.setOnItemClickListener(this);
 
 		castMediaView.setEnabled(true);
@@ -85,6 +90,10 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		case R.id.home:
 			startActivity(new Intent(this, BrowserHome.class));
 			break;
+
+		case R.id.refresh:
+			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()));
+			break;
 		}
 	}
 
@@ -93,14 +102,22 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 
 		final Cursor c = (Cursor) adapter.getItemAtPosition(position);
 		final String mediaString = c.getString(c.getColumnIndex(CastMedia._MEDIA_URL));
+		final String locMediaString = c.getString(c.getColumnIndex(CastMedia._LOCAL_URI));
 		final String mimeType = c.getString(c.getColumnIndex(CastMedia._MIME_TYPE));
-		if (mediaString != null){
-			final Uri media = Uri.parse(mediaString);
+		Uri media;
 
-			final Intent i = new Intent(Intent.ACTION_VIEW, media);
-			// setting the MIME type for URLs doesn't work.
-			startActivity(i);
+		if (locMediaString != null){
+			media = Uri.parse(locMediaString);
+
+		}else if (mediaString != null){
+			media = Uri.parse(mediaString);
+
+		}else{
+			return;
 		}
+		final Intent i = new Intent(Intent.ACTION_VIEW, media);
+		// setting the MIME type for URLs doesn't work.
+		startActivity(i);
 
 	}
 

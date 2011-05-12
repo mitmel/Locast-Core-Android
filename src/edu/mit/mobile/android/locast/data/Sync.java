@@ -142,7 +142,7 @@ public class Sync extends Service {
 	}
 
 	@Override
-	public void onStart(Intent intent, int startId) {
+	public int onStartCommand(Intent intent, int flags, int startId) {
 		if (intent != null){
 			if (Intent.ACTION_SYNC.equals(intent.getAction())){
 				if (intent.getBooleanExtra(EXTRA_EXPLICIT_SYNC, false)){
@@ -156,6 +156,8 @@ public class Sync extends Service {
 			// restarted by system.
 			startSync();
 		}
+
+		return START_NOT_STICKY;
 	}
 
     @Override
@@ -721,6 +723,7 @@ public class Sync extends Service {
 
 			return true;
 		}
+
 		@Override
 		protected void onPostExecute(Boolean result) {
 			if (result){

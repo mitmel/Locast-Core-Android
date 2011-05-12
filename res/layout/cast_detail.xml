@@ -28,6 +28,7 @@
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
 		android:layout_margin="10dip"
+		android:maxLines="8"
 		/>
 		
 	<GridView android:id="@+id/cast_media"

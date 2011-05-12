@@ -7,6 +7,7 @@ import org.json.JSONObject;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
@@ -23,7 +24,8 @@ public class CastMedia extends JsonSyncableItem {
 		_LOCAL_URI    = "local_uri",	// any local copy of the main media
 		_MIME_TYPE    = "mimetype",		// type of the media
 		_DURATION	  = "duration",
-		_THUMBNAIL	  = "thumbnail"
+		_THUMBNAIL	  = "thumbnail",
+		_THUMB_LOCAL  = "local_thumb"   // filename of the local thumbnail
 		;
 	public final static String PATH = "media";
 	public final static String SERVER_PATH = "media/";
@@ -45,6 +47,7 @@ public class CastMedia extends JsonSyncableItem {
 		_MIME_TYPE,
 		_DURATION,
 		_THUMBNAIL,
+		_THUMB_LOCAL,
 	};
 
 	public static final String
@@ -66,6 +69,10 @@ public class CastMedia extends JsonSyncableItem {
 	public SyncMap getSyncMap() {
 
 		return SYNC_MAP;
+	}
+
+	public static Uri getCast(Uri castMediaUri){
+		return MediaProvider.removeLastPathSegments(castMediaUri, 2);
 	}
 
 	public final static ItemSyncMap SYNC_MAP = new ItemSyncMap();
@@ -140,8 +147,17 @@ public class CastMedia extends JsonSyncableItem {
 			// the media URL can come from either the flattened "url" attribute or the expanded "resources" structure above.
 			put(_MEDIA_URL, 	new SyncFieldMap("url", 			SyncFieldMap.STRING,         SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
 			put(_MIME_TYPE, 	new SyncFieldMap("mime_type",		SyncFieldMap.STRING,         SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
-			put(_DURATION,		new SyncFieldMap("duration", 		SyncFieldMap.DURATION, SyncItem.FLAG_OPTIONAL));
+			put(_DURATION,		new SyncFieldMap("duration", 		SyncFieldMap.DURATION, 		 SyncItem.FLAG_OPTIONAL));
 
+		}
+
+		@Override
+		public void onPostSyncItem(Context context, Uri uri, JSONObject item,
+				boolean updated) throws SyncException, IOException {
+			super.onPostSyncItem(context, uri, item, updated);
+			if (uri != null){
+				context.startService(new Intent(MediaSync.ACTION_SYNC_RESOURCES, uri));
+			}
 		}
 	}
 }

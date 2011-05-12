@@ -10,10 +10,9 @@
 		/>
 		
 	<EditText  android:id="@+id/username"
-		android:hint="Locast username"
+		android:hint="alice@example.org"
 		android:layout_height="wrap_content"
-		android:inputType="textNoSuggestions"
-		android:layout_width="fill_parent" />
+		android:layout_width="fill_parent" android:inputType="textEmailAddress" />
 		
 	<TextView android:text="@string/password_label"
 		android:layout_width="wrap_content"
