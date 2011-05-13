@@ -297,7 +297,7 @@
 		*                                              Sync                                                 *
 		*****************************************************************************************************
 	 -->
-		<service android:name=".data.Sync">
+		<service android:name=".data.Sync"  android:process="edu.mit.mobile.android.locast.Sync">
 			<intent-filter>
 				<action android:name="edu.mit.mobile.android.locast.ACTION_CANCEL_SYNC" />
 				<data android:mimeType="*/*" />
@@ -325,7 +325,13 @@
 				</intent-filter>
 		</service>
 		
-		
+		<!-- this has its own process so it can have more memory for thumbnail generation -->
+		<service android:name=".data.MediaSync" android:process="edu.mit.mobile.android.locast.MediaSync">
+			<intent-filter>
+				<action android:name="edu.mit.mobile.android.locast.ACTION_SYNC_RESOURCES" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.castmedia" />
+			</intent-filter>
+		</service>
 		<provider android:name=".data.MediaProvider"
 			android:authorities="edu.mit.mobile.android.locast.provider" />
 
