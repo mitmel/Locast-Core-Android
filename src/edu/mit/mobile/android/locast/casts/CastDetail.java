@@ -15,21 +15,18 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.GridView;
 import android.widget.TextView;
 
-import com.commonsware.cwac.cache.SimpleWebImageCache;
-import com.commonsware.cwac.thumbnail.ThumbnailAdapter;
-import com.commonsware.cwac.thumbnail.ThumbnailBus;
-import com.commonsware.cwac.thumbnail.ThumbnailMessage;
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 
-import edu.mit.mobile.android.locast.Application;
+import edu.mit.mobile.android.imagecache.ImageCache;
+import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
+import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.browser.BrowserHome;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.data.Locatable;
-import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.itineraries.CastsOverlay;
 import edu.mit.mobile.android.locast.itineraries.LocatableItemOverlay;
 
@@ -43,15 +40,11 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		LOADER_CAST = 0,
 		LOADER_CAST_MEDIA = 1;
 
-	private SimpleWebImageCache<ThumbnailBus, ThumbnailMessage> imgCache;
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.cast_detail);
-
-
 
 		initOverlays();
 
@@ -64,16 +57,16 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 
 		final GridView castMediaView = (GridView) findViewById(R.id.cast_media);
 
-		mCastMedia = new MediaThumbnailCursorAdapter(this,
+		mCastMedia = new SimpleThumbnailCursorAdapter(this,
 				R.layout.cast_media_item,
 				null,
-				new String[]{CastMedia._TITLE, CastMedia._AUTHOR, CastMedia._THUMB_LOCAL},
-				new int[]{R.id.cast_title, R.id.author, R.id.media_thumbnail},
+				new String[]{CastMedia._TITLE, CastMedia._THUMB_LOCAL},
+				new int[]{R.id.title, R.id.media_thumbnail},
+				new int[]{R.id.media_thumbnail},
 				0);
 
-		imgCache = ((Application)getApplication()).getImageCache();
+		castMediaView.setAdapter(new ImageLoaderAdapter(this, mCastMedia, ImageCache.getInstance(this), new int[]{R.id.media_thumbnail}, 133, 100, ImageLoaderAdapter.UNIT_DIP));
 
-		castMediaView.setAdapter(new ThumbnailAdapter(this, mCastMedia, imgCache, new int[]{R.id.media_thumbnail}));
 		castMediaView.setOnItemClickListener(this);
 
 		castMediaView.setEnabled(true);
@@ -139,7 +132,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		case LOADER_CAST:
 			mCastsOverlay.swapCursor(c);
 			if (c.moveToFirst()){
-				MediaProvider.dumpCursorToLog(c, Cast.PROJECTION);
+				//MediaProvider.dumpCursorToLog(c, Cast.PROJECTION);
 				((TextView)findViewById(R.id.title)).setText(c.getString(c.getColumnIndex(Cast._TITLE)));
 				((TextView)findViewById(R.id.author)).setText(c.getString(c.getColumnIndex(Cast._AUTHOR)));
 				((TextView)findViewById(R.id.description)).setText(c.getString(c.getColumnIndex(Cast._DESCRIPTION)));
@@ -156,9 +149,9 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 
 		case LOADER_CAST_MEDIA:
 			mCastMedia.swapCursor(c);
-			for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
+			/*for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
 				MediaProvider.dumpCursorToLog(c, CastMedia.PROJECTION);
-			}
+			}*/
 			break;
 		}
 	}

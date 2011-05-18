@@ -43,10 +43,8 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
-import edu.mit.mobile.android.locast.Application;
 import edu.mit.mobile.android.locast.IncrementalLocator;
 import edu.mit.mobile.android.locast.R;
-import edu.mit.mobile.android.locast.WebImageLoader;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.CastVideo;
 import edu.mit.mobile.android.locast.data.Locatable;
@@ -84,9 +82,6 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		ACTIVITY_RECORD_SOUND = 1,
 		ACTIVITY_RECORD_VIDEO = 2;
 
-	private WebImageLoader imgLoader;
-
-
 	private static String
 		RUNTIME_STATE_CAST_MEDIA = "edu.mit.mobile.android.locast.RUNTIME_STATE_CAST_MEDIA_STATE",
 		RUNTIME_STATE_CONTENT_TYPE = "edu.mit.mobile.android.locast.RUNTIME_STATE_CONTENT_TYPE",
@@ -113,7 +108,6 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		setContentView(R.layout.cast_edit);
 
-		imgLoader = ((Application)getApplication()).getImageLoader();
 
 
 		if (savedInstanceState != null){
@@ -194,8 +188,9 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			final String thumbString = c.getString(c.getColumnIndex(Cast._THUMBNAIL_URI));
 			Uri.parse(thumbString);
 			try {
-				imgLoader.loadImage(((ImageView)findViewById(R.id.cast_thumb)), thumbString);
+				//imgLoader.loadImage(((ImageView)findViewById(R.id.cast_thumb)), thumbString);
 				//videoThumbView.setImageBitmap(imc.getImage(new URL(thumbString)));
+				// XXX
 
 			} catch (final Exception e) {
 				e.printStackTrace();

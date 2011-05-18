@@ -15,13 +15,8 @@ import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Gallery;
-
-import com.commonsware.cwac.cache.SimpleWebImageCache;
-import com.commonsware.cwac.thumbnail.ThumbnailAdapter;
-import com.commonsware.cwac.thumbnail.ThumbnailBus;
-import com.commonsware.cwac.thumbnail.ThumbnailMessage;
-
-import edu.mit.mobile.android.locast.Application;
+import edu.mit.mobile.android.imagecache.ImageCache;
+import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
@@ -34,7 +29,7 @@ import edu.mit.mobile.android.locast.net.NetworkClient;
 
 public class BrowserHome extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener{
 
-	protected SimpleWebImageCache<ThumbnailBus, ThumbnailMessage> imgCache;
+	private ImageCache mImageCache;
 
 	private CastCursorAdapter mAdapter;
 
@@ -44,7 +39,8 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		imgCache = ((Application)getApplication()).getImageCache();
+		mImageCache = ImageCache.getInstance(this);
+
 		setContentView(R.layout.browser_main);
 
 		final Gallery casts = (Gallery) findViewById(R.id.casts);
@@ -53,7 +49,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		final int[] to = {R.id.cast_title, R.id.author, R.id.media_thumbnail};
 
 		mAdapter = new CastCursorAdapter(this, null, R.layout.cast_large_thumbnail_item, from, to);
-		casts.setAdapter(new ThumbnailAdapter(this, mAdapter,imgCache, new int[]{R.id.media_thumbnail}));
+		casts.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 320, 200, ImageLoaderAdapter.UNIT_DIP));
 		casts.setOnItemClickListener(this);
 		casts.setEmptyView(findViewById(android.R.id.empty));
 		final LoaderManager lm = getSupportLoaderManager();

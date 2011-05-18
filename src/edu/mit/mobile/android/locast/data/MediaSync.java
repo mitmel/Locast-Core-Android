@@ -3,6 +3,9 @@ package edu.mit.mobile.android.locast.data;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -60,6 +63,19 @@ public class MediaSync extends Service implements MediaScannerConnectionClient{
 	public final static String DEVICE_EXTERNAL_MEDIA_PATH = "/locast/";
 
 	protected final ConcurrentLinkedQueue<SyncQueueItem> mSyncQueue = new ConcurrentLinkedQueue<SyncQueueItem>();
+
+	private MessageDigest mDigest;
+
+	public MediaSync() {
+		super();
+
+		try {
+			mDigest = MessageDigest.getInstance("SHA-1");
+		} catch (final NoSuchAlgorithmException e) {
+			e.printStackTrace();
+			mDigest = null;
+		}
+	}
 
 	@Override
 	public IBinder onBind(Intent arg0) {
@@ -189,7 +205,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient{
 
 			final Uri locMedia = castMedia.isNull(localUriCol) ? null : Uri.parse(castMedia.getString(localUriCol));
 			final String pubMedia = castMedia.getString(mediaUrlCol);
-			final boolean hasLocMedia = locMedia != null;
+			final boolean hasLocMedia = locMedia != null && new File(locMedia.getPath()).exists();
 			final boolean hasPubMedia = pubMedia != null && pubMedia.length() > 0;
 
 			if (hasLocMedia && !hasPubMedia){
@@ -380,6 +396,17 @@ public class MediaSync extends Service implements MediaScannerConnectionClient{
 		updateCastMediaLocalUri(item.castMediaUri, locMediaUri.toString(), item.contentType);
 	}
 
+
+
+	private String sha1Sum(String data){
+		if (mDigest == null){
+			throw new RuntimeException("no message digest available");
+		}
+		mDigest.reset();
+		mDigest.update(data.getBytes());
+		return new BigInteger(mDigest.digest()).toString(16);
+	}
+
 	// TODO this should probably look to see if the thumbnail file already exists for the given media, but should check for updates too.
 	private String generateThumbnail(Uri castMedia, String mimeType, String locMedia) throws IOException {
 		final long locId = ContentUris.parseId(Uri.parse(locMedia));
@@ -395,14 +422,22 @@ public class MediaSync extends Service implements MediaScannerConnectionClient{
 			throw new IllegalArgumentException("cannot generate thumbnail for item with MIME type: '"+mimeType+"'");
 		}
 
-		final File outFile = File.createTempFile("thumb", ".jpg", getCacheDir());
-		Log.d(TAG, "attempting to save thumb in "+outFile);
-		final FileOutputStream fos = new FileOutputStream(outFile);
-		thumb.compress(CompressFormat.JPEG, 75, fos);
-		thumb.recycle();
-		fos.close();
+		//Cursor getContentResolver().query(uri, projection, null, null, null);
 
-		Log.d(TAG, "generated thumbnail for "+locMedia + " and saved it in "+ outFile.getAbsolutePath());
+		final File outFile = new File(getCacheDir(), "thumb" + sha1Sum(locMedia) + ".jpg");
+		//final File outFile = File.createTempFile("thumb", ".jpg", getCacheDir());
+		if (!outFile.exists()){
+			if (!outFile.createNewFile()){
+				throw new IOException("cannot create new file");
+			}
+			Log.d(TAG, "attempting to save thumb in "+outFile);
+			final FileOutputStream fos = new FileOutputStream(outFile);
+			thumb.compress(CompressFormat.JPEG, 75, fos);
+			thumb.recycle();
+			fos.close();
+
+			Log.d(TAG, "generated thumbnail for "+locMedia + " and saved it in "+ outFile.getAbsolutePath());
+		}
 
 		return Uri.fromFile(outFile).toString();
 
@@ -416,7 +451,9 @@ public class MediaSync extends Service implements MediaScannerConnectionClient{
 
 		try {
 			final String locThumb = generateThumbnail(castMedia, mimeType, locMedia);
-			cvCastMedia.put(CastMedia._THUMB_LOCAL, locThumb);
+			if (locThumb != null){
+				cvCastMedia.put(CastMedia._THUMB_LOCAL, locThumb);
+			}
 
 		}catch (final IOException e) {
 			Log.e(TAG,"could not generate thumbnail for " + locMedia + ": "+ e.getLocalizedMessage());

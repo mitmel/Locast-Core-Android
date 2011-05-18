@@ -21,16 +21,13 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.commonsware.cwac.cache.SimpleWebImageCache;
-import com.commonsware.cwac.thumbnail.ThumbnailAdapter;
-import com.commonsware.cwac.thumbnail.ThumbnailBus;
-import com.commonsware.cwac.thumbnail.ThumbnailMessage;
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
 
-import edu.mit.mobile.android.locast.Application;
+import edu.mit.mobile.android.imagecache.ImageCache;
+import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
@@ -45,7 +42,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	private ListView mCastView;
 	private CastCursorAdapter mCastAdapter;
 
-	protected SimpleWebImageCache<ThumbnailBus, ThumbnailMessage> imgCache;
+	private ImageCache mImageCache;
 
 	private Uri mUri;
 	private Uri mCastsUri;
@@ -63,7 +60,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		super.onCreate(icicle);
 		setContentView(R.layout.itinerary_detail);
 
-		imgCache = ((Application)getApplication()).getImageCache();
+		mImageCache = ImageCache.getInstance(this);
 
 		mCastView = (ListView)findViewById(R.id.casts);
 		findViewById(R.id.refresh).setOnClickListener(this);
@@ -117,7 +114,9 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 	private void initCastList(){
 		mCastAdapter = new CastCursorAdapter(ItineraryDetail.this, null);
-		mCastView.setAdapter(new ThumbnailAdapter(ItineraryDetail.this, mCastAdapter, imgCache, new int[]{R.id.media_thumbnail}));
+
+		mCastView.setAdapter(new ImageLoaderAdapter(this, mCastAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP ));
+
 		mCastsOverlay = new CastsOverlay(ItineraryDetail.this);
 		final List<Overlay> overlays = mMapView.getOverlays();
 		mPathOverlay = new PathOverlay(this);

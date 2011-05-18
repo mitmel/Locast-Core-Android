@@ -1137,7 +1137,9 @@ public class MediaProvider extends ContentProvider {
 					throw new IllegalArgumentException("Unknown URI: "+uri);
 				}
 		}
-		db.execSQL("VACUUM");
+		if (!db.inTransaction()){
+			db.execSQL("VACUUM");
+		}
 		getContext().getContentResolver().notifyChange(uri, null);
 		return count;
 	}

@@ -26,9 +26,7 @@ import android.view.Window;
 import android.widget.ImageView;
 import android.widget.TabHost;
 import android.widget.TextView;
-import edu.mit.mobile.android.locast.Application;
 import edu.mit.mobile.android.locast.R;
-import edu.mit.mobile.android.locast.WebImageLoader;
 import edu.mit.mobile.android.locast.casts.BasicCursorContentObserver;
 import edu.mit.mobile.android.locast.casts.BasicCursorContentObserver.BasicCursorContentObserverWatcher;
 import edu.mit.mobile.android.locast.data.Comment;
@@ -36,7 +34,6 @@ import edu.mit.mobile.android.locast.data.Project;
 import edu.mit.mobile.android.locast.widget.FavoriteClickHandler;
 
 public class ViewProjectActivity extends TabActivity implements BasicCursorContentObserverWatcher {
-	private WebImageLoader imgLoader;
 
 	private Uri myUri;
 	private Cursor mCursor;
@@ -54,7 +51,6 @@ public class ViewProjectActivity extends TabActivity implements BasicCursorConte
 		final Intent intent = getIntent();
 		final String action = intent.getAction();
 
-		imgLoader = ((Application)getApplication()).getImageLoader();
 
 		if (Intent.ACTION_VIEW.equals(action)){
 			myUri = getIntent().getData();

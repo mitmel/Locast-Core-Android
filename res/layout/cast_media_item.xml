@@ -21,15 +21,14 @@
 <!--   	 	android:layout_height="100dp" -->
 <!--   	android:layout_width="133dp" -->
  
-  	<TextView android:id="@+id/author"
+  	<TextView android:id="@+id/title"
   		android:text="author"
   		
   		android:background="#aaaaaaa0"
   		android:textColor="#fff"
-  		android:paddingBottom="10dip"
-  		android:paddingLeft="10dip"
-  		android:paddingRight="10dip"
+  		android:padding="5dip"
   		android:singleLine="true"
+  		android:ellipsize="marquee"
   		
   		android:layout_alignBottom="@id/media_thumbnail"
  		android:layout_alignLeft="@id/media_thumbnail"
@@ -38,20 +37,4 @@
   		android:layout_height="wrap_content"
   	 />  	
   	 
-  	<TextView android:id="@+id/title"
-  		android:text="title"
-  		android:layout_above="@id/author"
-  		android:background="#aaaaaaa0"
-  		android:textColor="#fff"
-  		android:textAppearance="?android:attr/textAppearanceLarge"
-  		android:paddingTop="10dip"
-  		android:paddingLeft="10dip"
-  		android:paddingRight="10dip"
-		android:singleLine="true"
-  		android:layout_alignLeft="@id/media_thumbnail"
-  		android:layout_alignRight="@id/media_thumbnail"
-  		android:layout_width="wrap_content"
-  		android:layout_height="wrap_content"
-  		
-  	 />
 </RelativeLayout>

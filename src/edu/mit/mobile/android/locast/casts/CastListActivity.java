@@ -32,13 +32,8 @@ import android.view.ViewGroup.LayoutParams;
 import android.widget.AdapterView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
-
-import com.commonsware.cwac.cache.SimpleWebImageCache;
-import com.commonsware.cwac.thumbnail.ThumbnailAdapter;
-import com.commonsware.cwac.thumbnail.ThumbnailBus;
-import com.commonsware.cwac.thumbnail.ThumbnailMessage;
-
-import edu.mit.mobile.android.locast.Application;
+import edu.mit.mobile.android.imagecache.ImageCache;
+import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Cast;
 
@@ -57,13 +52,15 @@ public abstract class CastListActivity extends ListActivity {
 	private ListAdapter adapter;
 	private Uri data;
 
-	protected SimpleWebImageCache<ThumbnailBus, ThumbnailMessage> imgCache;
+	private ImageCache mImageCache;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		setContentView(R.layout.cast_list);
 		super.onCreate(savedInstanceState);
-		imgCache = ((Application)getApplication()).getImageCache();
+
+		mImageCache = ImageCache.getInstance(this);
+
 		data = getIntent().getData();
 		if (data == null){
 			data = Cast.CONTENT_URI;
@@ -104,7 +101,7 @@ public abstract class CastListActivity extends ListActivity {
         // this defines what images need to be loaded. URLs are placed in the ImageView tag
         final int[] IMAGE_IDS = {R.id.media_thumbnail};
         this.adapter = adapter;
-		super.setListAdapter(new ThumbnailAdapter(this, adapter, imgCache, IMAGE_IDS));
+		super.setListAdapter(new ImageLoaderAdapter(this, adapter, mImageCache, IMAGE_IDS, 100, 100, ImageLoaderAdapter.UNIT_DIP));
 	}
 
 	protected ListAdapter getAdapter(){

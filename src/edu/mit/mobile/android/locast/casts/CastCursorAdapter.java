@@ -19,12 +19,15 @@ package edu.mit.mobile.android.locast.casts;
 import android.content.Context;
 import android.database.Cursor;
 import android.view.View;
+import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Cast;
 
-public class CastCursorAdapter extends MediaThumbnailCursorAdapter {
+public class CastCursorAdapter extends SimpleThumbnailCursorAdapter {
 	private final static String[] DEFAULT_FROM = new String[] {	Cast._THUMBNAIL_URI, 	Cast._AUTHOR, 	Cast._TITLE};
 	private final static int[] DEFAULT_TO      = new int[] {	R.id.media_thumbnail, 	R.id.author, 	android.R.id.text1};
+	private final static int[] IMAGE_IDS = new int[] {R.id.media_thumbnail };
+
 	public final static String[] DEFAULT_PROJECTION = {
 			Cast._ID,
 			Cast._AUTHOR,
@@ -43,7 +46,7 @@ public class CastCursorAdapter extends MediaThumbnailCursorAdapter {
 	 * @param to resource IDs to map data to
 	 */
 	public CastCursorAdapter(Context context, Cursor c, int layout, String[]from, int[] to) {
-		super(context, layout, c, from, to, 0);
+		super(context, layout, c, from, to, IMAGE_IDS, 0);
 	}
 
 	/**

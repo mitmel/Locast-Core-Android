@@ -40,9 +40,7 @@ import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
-import edu.mit.mobile.android.locast.Application;
 import edu.mit.mobile.android.locast.R;
-import edu.mit.mobile.android.locast.WebImageLoader;
 import edu.mit.mobile.android.locast.data.Comment;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 
@@ -57,7 +55,7 @@ public class DiscussionBoard extends ListView implements OnClickListener, OnEdit
     private Uri thisThread;
     private Cursor c;
 
-    private WebImageLoader imageLoader;
+    //private WebImageLoader imageLoader;
 
 	public DiscussionBoard(Context context) {
 		this(context, null);
@@ -78,7 +76,7 @@ public class DiscussionBoard extends ListView implements OnClickListener, OnEdit
         addPostingButton.setOnClickListener(this);
 
         if (context instanceof Activity){
-        	imageLoader = ((Application)context.getApplicationContext()).getImageLoader();
+        	//imageLoader = ((Application)context.getApplicationContext()).getImageLoader();
         }
 	}
 
@@ -93,7 +91,7 @@ public class DiscussionBoard extends ListView implements OnClickListener, OnEdit
 		@Override
 		public void setViewImage(ImageView v, String value) {
 			if (value != null && value.length() > 0){
-				imageLoader.loadImage(v, value);
+				// XXX imageLoader.loadImage(v, value);
 			}
 		}
 
