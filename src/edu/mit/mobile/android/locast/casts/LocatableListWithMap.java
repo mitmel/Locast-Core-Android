@@ -30,6 +30,8 @@ import com.google.android.maps.MapView;
 import com.google.android.maps.MyLocationOverlay;
 import com.google.android.maps.Overlay;
 
+import edu.mit.mobile.android.imagecache.ImageCache;
+import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Locatable;
@@ -54,6 +56,8 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	private Location mLastLocation;
 	private LoaderManager mLoaderManager;
 	private long mLastUpdate;
+
+	private ImageCache mImageCache;
 
 	// constants related to auto-refreshing
 	private static long AUTO_UPDATE_FREQUENCY = 15 * 1000 * 1000; // nano-seconds
@@ -80,6 +84,8 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		final Intent intent = getIntent();
 		final String action = intent.getAction();
 
+		mImageCache = ImageCache.getInstance(this);
+
 
 		if (Intent.ACTION_VIEW.equals(action) || ACTION_SEARCH_NEARBY.equals(action)){
 			final Uri data = intent.getData();
@@ -88,7 +94,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 			if (MediaProvider.TYPE_CAST_DIR.equals(type)){
 				mAdapter = new CastCursorAdapter(this, null);
 
-				mListView.setAdapter(mAdapter);
+				mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP));
 				initMapOverlays();
 
 				setTitle("Nearby Casts");
