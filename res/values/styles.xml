@@ -46,7 +46,7 @@
  	</style>
 
  	<style name="WindowTitleThick.Background">
-        <item name="android:background">@drawable/window_title_background</item>
+        <!-- <item name="android:background">@drawable/window_title_background</item> -->
         <item name="android:padding">3dip</item>
 <!--         <item name="android:background">@android:drawable/title_bar</item> -->
  	</style>
