@@ -10,7 +10,6 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -18,6 +17,9 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
+import edu.mit.mobile.android.imagecache.ImageCache;
+import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
+import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.MediaProvider;
@@ -29,6 +31,8 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	private CursorAdapter mAdapter;
 	private ListView mListView;
 	private Uri mUri;
+
+	private ImageCache mImageCache;
 
 	private static String LOADER_DATA = "edu.mit.mobile.android.locast.LOADER_DATA";
 	@Override
@@ -45,19 +49,22 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		final Intent intent = getIntent();
 		final String action = intent.getAction();
 
+		mImageCache = ImageCache.getInstance(this);
 
 		if (Intent.ACTION_VIEW.equals(action)){
 			final Uri data = intent.getData();
 			final String type = intent.resolveType(this);
 
 			if (MediaProvider.TYPE_ITINERARY_DIR.equals(type)){
-				mAdapter = new SimpleCursorAdapter(this,
+				mAdapter = new SimpleThumbnailCursorAdapter(this,
 						R.layout.browse_content_item,
 						null,
-				new String[] {Itinerary._TITLE, Itinerary._AUTHOR},
-				new int[] {android.R.id.text1, android.R.id.text2}, 0
+				new String[] {Itinerary._TITLE, Itinerary._AUTHOR, Itinerary._THUMBNAIL},
+				new int[] {android.R.id.text1, android.R.id.text2, R.id.media_thumbnail},
+				new int[]{R.id.media_thumbnail},
+				0
 				);
-				mListView.setAdapter(mAdapter);
+				mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP));
 
 				final LoaderManager lm = getSupportLoaderManager();
 				final Bundle loaderArgs = new Bundle();

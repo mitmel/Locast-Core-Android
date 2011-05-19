@@ -60,8 +60,8 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		mCastMedia = new SimpleThumbnailCursorAdapter(this,
 				R.layout.cast_media_item,
 				null,
-				new String[]{CastMedia._TITLE, CastMedia._THUMB_LOCAL},
-				new int[]{R.id.title, R.id.media_thumbnail},
+				new String[]{CastMedia._TITLE, CastMedia._THUMBNAIL, CastMedia._THUMB_LOCAL},
+				new int[]{R.id.title, R.id.media_thumbnail, R.id.media_thumbnail},
 				new int[]{R.id.media_thumbnail},
 				0);
 

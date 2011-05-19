@@ -32,7 +32,8 @@ public class Itinerary extends TaggableItem {
 		_PATH = "path",
 		_TITLE = "title",
 		_DESCRIPTION = "description",
-		_CASTS_URI = "casts";
+		_CASTS_URI = "casts",
+		_THUMBNAIL = "thumbnail";
 
 	public static final String[] PROJECTION = {
 		_ID,
@@ -43,6 +44,7 @@ public class Itinerary extends TaggableItem {
 		_CREATED_DATE,
 		_MODIFIED_DATE,
 		_PATH,
+		_THUMBNAIL,
 		_DRAFT,
 	};
 
@@ -111,8 +113,9 @@ public class Itinerary extends TaggableItem {
 		public ItemSyncMap() {
 			super();
 
-			put(_DESCRIPTION, 		new SyncFieldMap("description", SyncFieldMap.STRING));
+			put(_DESCRIPTION, 		new SyncFieldMap("description", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL));
 			put(_TITLE, 			new SyncFieldMap("title", SyncFieldMap.STRING));
+			put(_THUMBNAIL, 		new SyncFieldMap("preview_image",   SyncFieldMap.STRING,		 SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
 			put(_CASTS_URI,			new SyncChildRelation("casts", new SyncChildRelation.SimpleRelationship("casts"), false, SyncFieldMap.SYNC_FROM | SyncFieldMap.FLAG_OPTIONAL));
 			put(_PATH,				new SyncCustom("path", SyncFieldMap.SYNC_FROM) {
 

@@ -149,6 +149,7 @@ public class CastMedia extends JsonSyncableItem {
 			put(_MIME_TYPE, 	new SyncFieldMap("mime_type",		SyncFieldMap.STRING,         SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
 			put(_DURATION,		new SyncFieldMap("duration", 		SyncFieldMap.DURATION, 		 SyncItem.FLAG_OPTIONAL));
 
+			put(_THUMBNAIL, 	new SyncFieldMap("preview_image",   SyncFieldMap.STRING,		 SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
 		}
 
 		@Override
