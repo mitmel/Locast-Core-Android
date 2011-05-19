@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.itineraries;
+package edu.mit.mobile.android.locast.ver2.itineraries;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -6,7 +6,7 @@ import android.graphics.drawable.Drawable;
 
 import com.google.android.maps.OverlayItem;
 
-import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.data.Cast;
 
 public class CastsOverlay extends LocatableItemOverlay {

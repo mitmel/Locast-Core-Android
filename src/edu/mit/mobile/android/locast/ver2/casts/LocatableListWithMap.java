@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.casts;
+package edu.mit.mobile.android.locast.ver2.casts;
 
 import java.util.List;
 
@@ -32,12 +32,13 @@ import com.google.android.maps.Overlay;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
-import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.ver2.itineraries.CastsOverlay;
+import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Sync;
-import edu.mit.mobile.android.locast.itineraries.CastsOverlay;
 import edu.mit.mobile.android.widget.RefreshButton;
 
 public class LocatableListWithMap extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnClickListener, OnItemClickListener {

@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.itineraries;
+package edu.mit.mobile.android.locast.ver2.itineraries;
 
 import android.content.ContentUris;
 import android.content.Intent;
@@ -20,7 +20,7 @@ import android.widget.TextView;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
-import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Sync;

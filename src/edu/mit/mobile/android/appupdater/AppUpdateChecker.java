@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast;
+package edu.mit.mobile.android.appupdater;
 /*
  * Copyright (C) 2010  MIT Mobile Experience Lab
  *
@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -33,8 +33,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Dialog;
 import android.app.AlertDialog.Builder;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -44,6 +44,8 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.utils.StreamUtils;
 
 /**
  * A fairly simple non-Market app update checker. Give it a URL pointing to a JSON file

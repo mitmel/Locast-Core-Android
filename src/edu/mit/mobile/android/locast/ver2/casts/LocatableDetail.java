@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.casts;
+package edu.mit.mobile.android.locast.ver2.casts;
 
 import java.util.List;
 
@@ -14,8 +14,8 @@ import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
 
-import edu.mit.mobile.android.locast.R;
-import edu.mit.mobile.android.locast.itineraries.LocatableItemOverlay;
+import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 
 abstract public class LocatableDetail extends MapFragmentActivity {
 

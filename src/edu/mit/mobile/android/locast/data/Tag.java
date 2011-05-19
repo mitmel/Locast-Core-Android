@@ -25,7 +25,7 @@ import java.util.Vector;
 
 import android.net.Uri;
 import android.provider.BaseColumns;
-import edu.mit.mobile.android.locast.ListUtils;
+import edu.mit.mobile.android.utils.ListUtils;
 
 public class Tag implements BaseColumns {
 	public final static String _REF_ID   = "ref_id",

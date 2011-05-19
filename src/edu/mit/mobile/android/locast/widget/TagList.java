@@ -35,7 +35,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import edu.mit.mobile.android.MelAndroid;
-import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.ver2.R;
 
 /**
  * A user-modifiable set of free tags. The user can add a new tag to a set of available tags

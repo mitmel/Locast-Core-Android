@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.itineraries;
+package edu.mit.mobile.android.locast.ver2.itineraries;
 
 import java.util.List;
 
@@ -28,7 +28,7 @@ import com.google.android.maps.Overlay;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
-import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;

@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast;
+package edu.mit.mobile.android.location;
 
 import android.content.Context;
 import android.location.Criteria;
@@ -8,6 +8,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
+import edu.mit.mobile.android.locast.ver2.R;
 
 /**
  * A wrapper for a LocationManager that incrementally gets location for you,

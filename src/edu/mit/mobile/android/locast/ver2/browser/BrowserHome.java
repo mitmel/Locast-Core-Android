@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.browser;
+package edu.mit.mobile.android.locast.ver2.browser;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,11 +17,11 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Gallery;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
-import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.ver2.casts.LocatableListWithMap;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
-import edu.mit.mobile.android.locast.casts.LocatableListWithMap;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.Sync;

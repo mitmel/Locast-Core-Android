@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast;
+package edu.mit.mobile.android.utils;
 /*
  * Copyright (C) 2010 MIT Mobile Experience Lab
  * 

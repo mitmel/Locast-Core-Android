@@ -19,7 +19,7 @@ package edu.mit.mobile.android.locast.widget;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.Button;
-import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.ver2.R;
 
 /**
  * @author steve

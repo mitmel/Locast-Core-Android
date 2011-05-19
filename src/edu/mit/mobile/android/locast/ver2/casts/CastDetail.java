@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.casts;
+package edu.mit.mobile.android.locast.ver2.casts;
 
 import android.content.Intent;
 import android.database.Cursor;
@@ -22,13 +22,13 @@ import com.google.android.maps.MapView;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
-import edu.mit.mobile.android.locast.R;
-import edu.mit.mobile.android.locast.browser.BrowserHome;
+import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
+import edu.mit.mobile.android.locast.ver2.itineraries.CastsOverlay;
+import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.data.Locatable;
-import edu.mit.mobile.android.locast.itineraries.CastsOverlay;
-import edu.mit.mobile.android.locast.itineraries.LocatableItemOverlay;
 
 public class CastDetail extends LocatableDetail implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
 	private LoaderManager mLoaderManager;

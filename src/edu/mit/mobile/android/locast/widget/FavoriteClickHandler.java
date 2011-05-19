@@ -13,13 +13,14 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.data.Favoritable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
-import edu.mit.mobile.android.locast.widget.ValidatingCheckBox.ValidatedClickHandler;
+import edu.mit.mobile.android.widget.ValidatingCheckBox;
+import edu.mit.mobile.android.widget.ValidatingCheckBox.ValidatedClickHandler;
 
 public class FavoriteClickHandler implements ValidatedClickHandler {
 	private final Uri data;

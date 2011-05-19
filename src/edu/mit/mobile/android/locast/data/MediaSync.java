@@ -42,12 +42,12 @@ import android.provider.BaseColumns;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.util.Log;
-import edu.mit.mobile.android.locast.R;
-import edu.mit.mobile.android.locast.StreamUtils;
+import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient.InputStreamWatcher;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
+import edu.mit.mobile.android.utils.StreamUtils;
 
 public class MediaSync extends Service implements MediaScannerConnectionClient{
 	private final static String TAG = MediaSync.class.getSimpleName();

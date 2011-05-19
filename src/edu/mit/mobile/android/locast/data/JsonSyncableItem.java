@@ -40,9 +40,9 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
-import edu.mit.mobile.android.locast.ListUtils;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
+import edu.mit.mobile.android.utils.ListUtils;
 
 /**
  * This type of object row can be serialized to/from JSON and synchronized to a server.

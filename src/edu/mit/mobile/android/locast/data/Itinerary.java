@@ -17,8 +17,8 @@ import android.net.Uri;
 
 import com.google.android.maps.GeoPoint;
 
-import edu.mit.mobile.android.locast.ListUtils;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
+import edu.mit.mobile.android.utils.ListUtils;
 
 public class Itinerary extends TaggableItem {
 	public final static String PATH = "itineraries";

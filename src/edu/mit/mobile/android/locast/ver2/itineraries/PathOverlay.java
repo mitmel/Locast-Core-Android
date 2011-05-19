@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.itineraries;
+package edu.mit.mobile.android.locast.ver2.itineraries;
 
 import java.util.LinkedList;
 import java.util.List;

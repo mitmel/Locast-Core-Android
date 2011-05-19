@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Default, English -->
 <resources>
-	<string name="app_name">Locast Connects</string>
+	<string name="app_name">Locast Abruzzo</string>
 
 	<string name="default_api_url" translatable="false">http://mel-pydev.mit.edu/travels/api/</string>
+	<!-- <string name="default_api_url" translatable="false">http://locast.mit.edu/abruzzo_dev/api/</string>-->
 	<string name="app_update_url" translatable="false">http://mel-pydev.mit.edu/travels/static/lcc.json</string>
 	
 	<!-- Main screen -->

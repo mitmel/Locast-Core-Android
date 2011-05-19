@@ -26,12 +26,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import edu.mit.mobile.android.locast.IncrementalLocator;
-import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.Sync;
 import edu.mit.mobile.android.locast.data.TaggableItem;
+import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.location.IncrementalLocator;
 
 /**
  * @author steve
@@ -113,9 +113,6 @@ public class BrowseCastsActivity extends CastListActivity implements LocationLis
 			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()).putExtra(Sync.EXTRA_EXPLICIT_SYNC, true));
 			return true;
 
-		case R.id.moment:
-			startActivity(new Intent(Intent.ACTION_INSERT, Cast.CONTENT_URI, this, Moment.class));
-			return true;
 		}
 
 		return super.onOptionsItemSelected(item);

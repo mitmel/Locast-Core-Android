@@ -2,7 +2,7 @@ package edu.mit.mobile.android.locast.accounts;
 
 import android.app.Activity;
 import android.os.Bundle;
-import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.ver2.R;
 
 public class Login extends Activity {
 

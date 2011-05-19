@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.itineraries;
+package edu.mit.mobile.android.locast.ver2.itineraries;
 
 import android.content.Context;
 import android.database.ContentObserver;
@@ -12,7 +12,7 @@ import com.google.android.maps.ItemizedOverlay;
 import com.google.android.maps.MapView;
 import com.google.android.maps.OverlayItem;
 
-import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.data.Locatable;
 
 abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> {

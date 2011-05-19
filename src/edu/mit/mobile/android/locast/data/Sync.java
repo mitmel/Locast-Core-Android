@@ -50,11 +50,11 @@ import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
-import edu.mit.mobile.android.locast.MainActivity;
-import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
+import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 
 /**
  * A Simple Sync engine. Can do naive bi-directional sync with a server that exposes
@@ -184,14 +184,8 @@ public class Sync extends Service {
 			syncItem = new Comment();
 
 		}else if (MediaProvider.TYPE_CAST_DIR.equals(contentType)
-				|| MediaProvider.TYPE_CAST_ITEM.equals(contentType)
-				|| MediaProvider.TYPE_PROJECT_CAST_DIR.equals(contentType)
-				|| MediaProvider.TYPE_PROJECT_CAST_ITEM.equals(contentType)){
+				|| MediaProvider.TYPE_CAST_ITEM.equals(contentType)){
 			syncItem = new Cast();
-
-		}else if (MediaProvider.TYPE_PROJECT_DIR.equals(contentType)
-				|| MediaProvider.TYPE_PROJECT_ITEM.equals(contentType)){
-			syncItem = new Project();
 
 		}else if (MediaProvider.TYPE_ITINERARY_DIR.equals(contentType)
 				|| MediaProvider.TYPE_ITINERARY_ITEM.equals(contentType)){
@@ -692,7 +686,7 @@ public class Sync extends Service {
 			notification = new ProgressNotification(getApplicationContext(), R.drawable.stat_notify_sync);
 
 			notification.contentIntent = PendingIntent.getActivity(context, 0,
-					new Intent(context, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+					new Intent(context, BrowserHome.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
 					PendingIntent.FLAG_UPDATE_CURRENT);
 			notification.setProgress(0, 0);
 			notification.setTitle(getText(R.string.sync_notification));

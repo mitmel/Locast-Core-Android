@@ -20,7 +20,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.view.View;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
-import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.data.Cast;
 
 public class CastCursorAdapter extends SimpleThumbnailCursorAdapter {

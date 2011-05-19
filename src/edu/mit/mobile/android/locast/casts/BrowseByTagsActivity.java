@@ -24,7 +24,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.widget.TagList;
 import edu.mit.mobile.android.locast.widget.TagList.OnTagListChangeListener;

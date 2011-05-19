@@ -22,10 +22,11 @@ import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.preference.Preference;
+import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
-import android.preference.Preference.OnPreferenceChangeListener;
 import edu.mit.mobile.android.locast.net.NetworkClient;
+import edu.mit.mobile.android.locast.ver2.R;
 
 public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceChangeListener {
 
@@ -55,7 +56,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 			final String newUrl = sharedPreferences.getString(NetworkClient.PREF_LOCAST_SITE, null);
 			// only do this if something's actually changed.
 			if (newUrl != null && !newUrl.equals(sharedPreferences.getString(NetworkClient.PREF_SERVER_URL, null))){
-				MainActivity.resetDB(this);
+				// XXX BrowserHome.resetDB(this);
 				final Editor editor = sharedPreferences.edit();
 				editor.putString(NetworkClient.PREF_SERVER_URL, newUrl);
 				editor.commit();

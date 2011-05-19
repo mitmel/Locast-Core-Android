@@ -17,7 +17,6 @@ package edu.mit.mobile.android.locast.casts;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import android.app.Activity;
@@ -43,16 +42,13 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
-import edu.mit.mobile.android.locast.IncrementalLocator;
-import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.CastVideo;
 import edu.mit.mobile.android.locast.data.Locatable;
-import edu.mit.mobile.android.locast.data.MediaProvider;
-import edu.mit.mobile.android.locast.data.Project;
 import edu.mit.mobile.android.locast.net.NetworkClient;
+import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.widget.LocationLink;
 import edu.mit.mobile.android.locast.widget.TagList;
+import edu.mit.mobile.android.location.IncrementalLocator;
 
 public class EditCastActivity extends Activity implements OnClickListener, LocationListener {
 	public static final String
@@ -201,21 +197,7 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 
 		if (! c.isNull(c.getColumnIndex(Cast._PRIVACY))){
 			final Spinner privacy = ((Spinner)findViewById(R.id.privacy));
-			privacy.setSelection(Arrays.asList(Project.PRIVACY_LIST).indexOf(c.getString(c.getColumnIndex(Cast._PRIVACY))));
 			privacy.setEnabled(Cast.canChangePrivacyLevel(this, c));
-		}
-
-		final Cursor castVideo = managedQuery(Uri.withAppendedPath(castUri, CastVideo.PATH), CastVideo.PROJECTION, null, null, null);
-
-		locCastVideo = new ArrayList<Uri>(castVideo.getCount());
-		final int locUriCol = castVideo.getColumnIndex(CastVideo._LOCAL_URI);
-		for (castVideo.moveToFirst(); ! castVideo.isAfterLast(); castVideo.moveToNext()){
-			MediaProvider.dumpCursorToLog(castVideo, CastVideo.PROJECTION);
-			if (! castVideo.isNull(locUriCol)){
-				locCastVideo.add(Uri.parse(castVideo.getString(locUriCol)));
-			}else{
-				locCastVideo.add(null);
-			}
 		}
 
 		isDraft = c.getInt(c.getColumnIndex(Cast._DRAFT)) != 0;
@@ -312,26 +294,10 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 		return cv;
 	}
 
-	protected ContentValues[] toCastVideoCV(){
-		final int size = locCastVideo.size();
-		final ContentValues[] cvAll = new ContentValues[size];
-		for (int i = 0; i < size; i++){
-			cvAll[i] = new ContentValues();
-			cvAll[i].put(CastVideo._LIST_IDX, i);
-			if (locCastVideo.get(i) != null){
-				cvAll[i].put(CastVideo._LOCAL_URI, locCastVideo.get(i).toString());
-			}
-			cvAll[i].put(CastVideo._DURATION, 0);
-			cvAll[i].put(CastVideo._MIME_TYPE, contentType);
-		}
-		return cvAll;
-	}
-
 	protected boolean saveCast(){
 
-		final ContentValues[] allMediaCv = toCastVideoCV();
 		final ContentResolver cr = getContentResolver();
-		Uri castVideoUri;
+		final Uri castVideoUri;
 
 		final String action = getIntent().getAction();
 		if (ACTION_CAST_FROM_MEDIA_URI.equals(action)
@@ -340,19 +306,14 @@ public class EditCastActivity extends Activity implements OnClickListener, Locat
 			setLocation(); // ensure that there's a location set for all new casts
 
 			castUri = cr.insert(Cast.CONTENT_URI, toContentValues());
-			if (castUri != null){
-				castVideoUri = Uri.withAppendedPath(castUri, CastVideo.PATH);
-			}else{
+			if (castUri == null){
 				Toast.makeText(this, R.string.error_cast_saving, Toast.LENGTH_LONG);
 				return false;
 			}
 		}else{
-			 castVideoUri = Uri.withAppendedPath(castUri, CastVideo.PATH);
 			cr.update(castUri, toContentValues(), null, null);
 		}
 
-		// cast media is special in that inserts into it overwrite any existing data.
-		cr.bulkInsert(castVideoUri, allMediaCv);
 		Cast.putTags(getContentResolver(), castUri, ((TagList)findViewById(R.id.new_cast_tags)).getTags());
 
 		final ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);

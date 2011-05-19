@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.widget;
+package edu.mit.mobile.android.widget;
 /*
  * Copyright (C) 2010  MIT Mobile Experience Lab
  *

@@ -31,18 +31,18 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.TextView.OnEditorActionListener;
+import android.widget.Toast;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Comment;
-import edu.mit.mobile.android.locast.data.Project;
 import edu.mit.mobile.android.locast.data.Tag;
 import edu.mit.mobile.android.locast.net.NetworkClient;
-import edu.mit.mobile.android.locast.net.NetworkClient;
+import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 
 public class PairingActivity extends Activity implements OnClickListener, OnEditorActionListener {
 
@@ -65,9 +65,9 @@ public class PairingActivity extends Activity implements OnClickListener, OnEdit
 	public boolean onCreateOptionsMenu(Menu menu) {
         final MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.homescreen_menu, menu);
-        if (MainActivity.DEBUG){
+        /*if (MainActivity.DEBUG){
         	menu.findItem(R.id.reset).setVisible(true);
-        }
+        }*/
         return true;
     }
 
@@ -95,7 +95,6 @@ public class PairingActivity extends Activity implements OnClickListener, OnEdit
 						// reset DBs
 						final ContentResolver cr = getApplication().getContentResolver();
 						cr.delete(Cast.CONTENT_URI, null, null);
-						cr.delete(Project.CONTENT_URI, null, null);
 						cr.delete(Comment.CONTENT_URI, null, null);
 						cr.delete(Tag.CONTENT_URI, null, null);
 						Toast.makeText(getApplicationContext(), R.string.notice_databases_reset, Toast.LENGTH_LONG).show();
@@ -135,7 +134,7 @@ public class PairingActivity extends Activity implements OnClickListener, OnEdit
 		try {
 			nc.pairDevice(code);
 			if (nc.isPaired()) {
-				startActivity(new Intent(this, MainActivity.class));
+				startActivity(new Intent(this, BrowserHome.class));
 				finish();
 			}
 		} catch (final Exception e) {

@@ -89,11 +89,11 @@ import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
-import edu.mit.mobile.android.locast.R;
-import edu.mit.mobile.android.locast.StreamUtils;
+import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
+import edu.mit.mobile.android.utils.StreamUtils;
 
 
 /**
