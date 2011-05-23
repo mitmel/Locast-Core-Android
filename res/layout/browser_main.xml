@@ -31,6 +31,13 @@
        		android:layout_weight="1"
        		android:layout_width="fill_parent" 
        		android:layout_height="wrap_content" android:drawableTop="@drawable/ic_nearby"/>
+
+       <Button android:id="@+id/favorites"
+       		android:text="Favorites"
+       		style="@style/BrowserMainIcon"
+       		android:layout_weight="1"
+       		android:layout_width="fill_parent" 
+       		android:layout_height="wrap_content"  android:drawableTop="@drawable/ic_favorites"/>
        		
        <Button android:id="@+id/events"
        		android:text="Events"
