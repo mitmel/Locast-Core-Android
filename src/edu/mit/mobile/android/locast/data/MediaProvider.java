@@ -17,12 +17,10 @@ package edu.mit.mobile.android.locast.data;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,41 +39,55 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
-import android.util.Log;
-import edu.mit.mobile.android.locast.data.ManyToMany.DBHelperMapper;
+import edu.mit.mobile.android.content.DBHelper;
+import edu.mit.mobile.android.content.DBHelperMapper;
+import edu.mit.mobile.android.content.GenericDBHelper;
+import edu.mit.mobile.android.content.ManyToMany;
+import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.utils.ListUtils;
 
 public class MediaProvider extends ContentProvider {
 	@SuppressWarnings("unused")
 	private final static String TAG = MediaProvider.class.getSimpleName();
-	public final static String AUTHORITY = "edu.mit.mobile.android.locast.ver2.provider";
+	public final static String NAMESPACE = "edu.mit.mobile.android.locast.ver2";
+	public final static String AUTHORITY = NAMESPACE + ".provider";
 
-	public final static String
-		TYPE_CAST_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.casts",
-		TYPE_CAST_DIR  = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.casts",
-
-		TYPE_CASTMEDIA_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.castmedia",
-		TYPE_CASTMEDIA_DIR  = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.castmedia",
-
-		TYPE_COMMENT_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.comments",
-		TYPE_COMMENT_DIR  = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.comments",
-
-		TYPE_TAG_DIR      = "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.tags",
-
-		TYPE_ITINERARY_DIR  =  "vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.itineraries",
-		TYPE_ITINERARY_ITEM = "vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.itineraries"
-		;
 
 	private static final String
 		CAST_TABLE_NAME       = "casts",
 		CASTMEDIA_TABLE_NAME = "castmedia", // casts with multiple media objects
 		COMMENT_TABLE_NAME    = "comments",
 		TAG_TABLE_NAME        = "tags",
-		ITINERARY_TABLE_NAME  = "itineraries";
+		ITINERARY_TABLE_NAME  = "itineraries",
+		EVENT_TABLE_NAME      = "events";
 
-	private static final ManyToMany.DBHelper
-		ITINERARY_CASTS_DBHELPER = new ManyToMany.DBHelper(ITINERARY_TABLE_NAME, CAST_TABLE_NAME, Cast.CONTENT_URI),
-		CASTS_CASTMEDIA_DBHELPER = new ManyToMany.DBHelper(CAST_TABLE_NAME, CASTMEDIA_TABLE_NAME);
+	public final static String
+		TYPE_CAST_ITEM = "vnd.android.cursor.item/vnd."+NAMESPACE+".casts",
+		TYPE_CAST_DIR  = "vnd.android.cursor.dir/vnd."+NAMESPACE+".casts",
+
+		TYPE_CASTMEDIA_ITEM = "vnd.android.cursor.item/vnd."+NAMESPACE+".castmedia",
+		TYPE_CASTMEDIA_DIR  = "vnd.android.cursor.dir/vnd."+NAMESPACE+".castmedia",
+
+		TYPE_COMMENT_ITEM = "vnd.android.cursor.item/vnd."+NAMESPACE+".comments",
+		TYPE_COMMENT_DIR  = "vnd.android.cursor.dir/vnd."+NAMESPACE+".comments",
+
+		TYPE_TAG_DIR      = "vnd.android.cursor.dir/vnd."+NAMESPACE+".tags",
+
+		TYPE_ITINERARY_DIR  =  "vnd.android.cursor.dir/vnd."+NAMESPACE+".itineraries",
+		TYPE_ITINERARY_ITEM = "vnd.android.cursor.item/vnd."+NAMESPACE+".itineraries",
+
+		TYPE_EVENT_DIR  =  "vnd.android.cursor.dir/vnd."+NAMESPACE+"."+EVENT_TABLE_NAME,
+		TYPE_EVENT_ITEM = "vnd.android.cursor.item/vnd."+NAMESPACE+"."+EVENT_TABLE_NAME
+		;
+
+
+	private static final JSONSyncableIdenticalChildFinder mChildFinder = new JSONSyncableIdenticalChildFinder();
+	private static final ManyToMany.M2MDBHelper
+		ITINERARY_CASTS_DBHELPER = new ManyToMany.M2MDBHelper(ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder, Cast.CONTENT_URI),
+		CASTS_CASTMEDIA_DBHELPER = new ManyToMany.M2MDBHelper(CAST_TABLE_NAME, CASTMEDIA_TABLE_NAME, mChildFinder);
+
+	private static final DBHelper
+		EVENT_DBHELPER = new GenericDBHelper(EVENT_TABLE_NAME, Event.CONTENT_URI);
 
 	private final static UriMatcher uriMatcher;
 
@@ -86,6 +98,8 @@ public class MediaProvider extends ContentProvider {
 		MATCHER_CAST_ITEM            = 2,
 		MATCHER_COMMENT_DIR          = 5,
 		MATCHER_COMMENT_ITEM         = 6,
+		MATCHER_EVENT_DIR 			 = 7,
+		MATCHER_EVENT_ITEM			 = 8,
 		MATCHER_CHILD_COMMENT_DIR    = 9,
 		MATCHER_CHILD_COMMENT_ITEM   = 10,
 		MATCHER_TAG_DIR              = 13,
@@ -101,7 +115,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 35;
+		private static final int DB_VER = 37;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -196,6 +210,21 @@ public class MediaProvider extends ContentProvider {
 					+ ");"
 			);
 
+			db.execSQL("CREATE TABLE "  + EVENT_TABLE_NAME + " ("
+					+ JSON_SYNCABLE_ITEM_FIELDS
+					+ LOCATABLE_FIELDS
+					+ Event._TITLE 		 + " TEXT,"
+					+ Event._AUTHOR 	 + " TEXT,"
+					+ Event._DESCRIPTION + " TEXT,"
+					+ Event._START_DATE  + " INTEGER,"
+					+ Event._END_DATE    + " INTEGER,"
+
+					+ Event._DRAFT       + " BOOLEAN,"
+
+					+ Event._THUMBNAIL_URI+ " TEXT"
+					+ ");"
+					);
+
 			ITINERARY_CASTS_DBHELPER.createJoinTable(db);
 			CASTS_CASTMEDIA_DBHELPER.createJoinTable(db);
 		}
@@ -213,6 +242,7 @@ public class MediaProvider extends ContentProvider {
 			db.execSQL("DROP TABLE IF EXISTS " + CASTMEDIA_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + CASTMEDIA_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + ITINERARY_TABLE_NAME);
+			db.execSQL("DROP TABLE IF EXISTS " + EVENT_TABLE_NAME);
 			ITINERARY_CASTS_DBHELPER.deleteJoinTable(db);
 			CASTS_CASTMEDIA_DBHELPER.deleteJoinTable(db);
 			onCreate(db);
@@ -257,6 +287,9 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CHILD_CAST_ITEM:
 		case MATCHER_ITINERARY_DIR:
 		case MATCHER_ITINERARY_ITEM:
+
+		case MATCHER_EVENT_DIR:
+		case MATCHER_EVENT_ITEM:
 			return true;
 
 		default:
@@ -304,6 +337,11 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_ITINERARY_ITEM:
 			return TYPE_ITINERARY_ITEM;
 
+		case MATCHER_EVENT_DIR:
+			return TYPE_EVENT_DIR;
+		case MATCHER_EVENT_ITEM:
+			return TYPE_EVENT_ITEM;
+
 		default:
 			throw new IllegalArgumentException("Cannot get type for URI "+uri);
 		}
@@ -328,7 +366,7 @@ public class MediaProvider extends ContentProvider {
 		//////////////////////////////////////////////////////////////////////////////////
 		case MATCHER_CAST_DIR:{
 			Assert.assertNotNull(values);
-			final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
+			final ContentValues cvTags = ProviderUtils.extractContentValueItem(values, Tag.PATH);
 
 			rowid = db.insert(CAST_TABLE_NAME, null, values);
 			if (rowid > 0){
@@ -444,7 +482,7 @@ public class MediaProvider extends ContentProvider {
 	 */
 	private Uri insertWithTags(ContentValues values, SQLiteDatabase db, String table, Uri contentUri){
 		Uri newItem = null;
-		final ContentValues cvTags = extractContentValueItem(values, Tag.PATH);
+		final ContentValues cvTags = ProviderUtils.extractContentValueItem(values, Tag.PATH);
 		db.beginTransaction();
 		try {
 			final long rowid = db.insert(table, null, values);
@@ -470,7 +508,7 @@ public class MediaProvider extends ContentProvider {
 		Cursor c;
 		final int code = uriMatcher.match(uri);
 		switch (code){
-		case MATCHER_CAST_DIR:
+		case MATCHER_CAST_DIR:{
 			qb.setTables(CAST_TABLE_NAME);
 
 			final String tags = uri.getQueryParameter(TaggableItem.SERVER_QUERY_PARAMETER);
@@ -483,7 +521,7 @@ public class MediaProvider extends ContentProvider {
 			}else{
 				c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
 			}
-			break;
+		}break;
 
 		case MATCHER_CAST_ITEM:
 			qb.setTables(CAST_TABLE_NAME);
@@ -491,6 +529,20 @@ public class MediaProvider extends ContentProvider {
 			qb.appendWhere(Cast._ID + "="+id);
 			c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
 			break;
+
+
+		case MATCHER_EVENT_DIR:{
+			final String tags = uri.getQueryParameter(TaggableItem.SERVER_QUERY_PARAMETER);
+			final String dist = uri.getQueryParameter(Locatable.SERVER_QUERY_PARAMETER);
+
+			if (tags != null){
+				c = queryByTags(qb, db, tags, EVENT_TABLE_NAME, projection, selection, selectionArgs, sortOrder);
+			}else if (dist != null){
+				c = queryByLocation(qb, db, dist, EVENT_TABLE_NAME, projection, selection, selectionArgs, sortOrder);
+			}else{
+				c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
+			}
+		}break;
 
 		case MATCHER_COMMENT_DIR:{
 			qb.setTables(COMMENT_TABLE_NAME);
@@ -509,8 +561,8 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CHILD_COMMENT_DIR:{
 			final List<String> pathSegs = uri.getPathSegments();
 			c = db.query(COMMENT_TABLE_NAME, projection,
-					addExtraWhere(selection, 			Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
-					addExtraWhereArgs(selectionArgs, 	pathSegs.get(pathSegs.size() - 2), 	pathSegs.get(pathSegs.size() - 3)), null, null, sortOrder);
+					ProviderUtils.addExtraWhere(selection, 			Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
+					ProviderUtils.addExtraWhereArgs(selectionArgs, 	pathSegs.get(pathSegs.size() - 2), 	pathSegs.get(pathSegs.size() - 3)), null, null, sortOrder);
 			break;
 		}
 
@@ -520,8 +572,8 @@ public class MediaProvider extends ContentProvider {
 			id = ContentUris.parseId(uri);
 
 			c = db.query(COMMENT_TABLE_NAME, projection,
-					addExtraWhere(selection, 			Comment._ID+"=?", 	Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
-					addExtraWhereArgs(selectionArgs, 	String.valueOf(id), pathSegs.get(pathSegs.size() - 3), 	pathSegs.get(pathSegs.size() - 4))
+					ProviderUtils.addExtraWhere(selection, 			Comment._ID+"=?", 	Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
+					ProviderUtils.addExtraWhereArgs(selectionArgs, 	String.valueOf(id), pathSegs.get(pathSegs.size() - 3), 	pathSegs.get(pathSegs.size() - 4))
 					, null, null, sortOrder);
 			break;
 		}
@@ -553,8 +605,8 @@ public class MediaProvider extends ContentProvider {
 			final String itemId = uri.getLastPathSegment();
 			c = db.query(ITINERARY_TABLE_NAME,
 					projection,
-					addExtraWhere(selection, Itinerary._ID+"=?"),
-					addExtraWhereArgs(selectionArgs, itemId),
+					ProviderUtils.addExtraWhere(selection, Itinerary._ID+"=?"),
+					ProviderUtils.addExtraWhereArgs(selectionArgs, itemId),
 					null, null, sortOrder);
 		}break;
 
@@ -588,7 +640,7 @@ public class MediaProvider extends ContentProvider {
 
 		// Modify the projection so that _ID explicitly refers to that of the objects being searched,
 		// not the tags. Without this, _ID is ambiguous and the query fails.
-		final String[] projection2 = addPrefixToProjection("c", projection);
+		final String[] projection2 = ProviderUtils.addPrefixToProjection("c", projection);
 
 		return qb.query(db, projection2, selection, selectionArgs,
 				"c."+TaggableItem._ID,
@@ -612,7 +664,7 @@ public class MediaProvider extends ContentProvider {
 		//GeocellUtils.compute(new Point(Double.valueOf(lat), Double.valueOf(lon)), resolution);
 		//String extraWhere = "(lat - 2) > ? AND (lon - 2) > ? AND (lat + 2) < ? AND (lat + 2) < ?";
 		final String[] extraArgs = {lat, lon};
-		return qb.query(db, projection, addExtraWhere(selection, Locatable.SELECTION_LAT_LON), addExtraWhereArgs(selectionArgs, extraArgs), null, null, sortOrder);
+		return qb.query(db, projection, ProviderUtils.addExtraWhere(selection, Locatable.SELECTION_LAT_LON), ProviderUtils.addExtraWhereArgs(selectionArgs, extraArgs), null, null, sortOrder);
 	}
 
 	/**
@@ -669,8 +721,8 @@ public class MediaProvider extends ContentProvider {
 			final List<String>pathSegs = uri.getPathSegments();
 
 			count = db.update(COMMENT_TABLE_NAME, values,
-					addExtraWhere(where, 			Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
-					addExtraWhereArgs(whereArgs, 	pathSegs.get(pathSegs.size() - 2), 	pathSegs.get(pathSegs.size() - 3))
+					ProviderUtils.addExtraWhere(where, 			Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
+					ProviderUtils.addExtraWhereArgs(whereArgs, 	pathSegs.get(pathSegs.size() - 2), 	pathSegs.get(pathSegs.size() - 3))
 					);
 			break;
 		}
@@ -680,8 +732,8 @@ public class MediaProvider extends ContentProvider {
 			final List<String>pathSegs = uri.getPathSegments();
 
 			count = db.update(COMMENT_TABLE_NAME, values,
-					addExtraWhere(where, 			Comment._ID+"=?", 	Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
-					addExtraWhereArgs(whereArgs, 	String.valueOf(id), pathSegs.get(pathSegs.size() - 3), 	pathSegs.get(pathSegs.size() - 4))
+					ProviderUtils.addExtraWhere(where, 			Comment._ID+"=?", 	Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
+					ProviderUtils.addExtraWhereArgs(whereArgs, 	String.valueOf(id), pathSegs.get(pathSegs.size() - 3), 	pathSegs.get(pathSegs.size() - 4))
 					);
 			break;
 		}
@@ -736,8 +788,8 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_ITINERARY_ITEM:{
 			final String itemId = uri.getLastPathSegment();
 			count = db.update(ITINERARY_TABLE_NAME, values,
-					addExtraWhere(where, Itinerary._ID+"=?"),
-					addExtraWhereArgs(whereArgs, itemId));
+					ProviderUtils.addExtraWhere(where, Itinerary._ID+"=?"),
+					ProviderUtils.addExtraWhereArgs(whereArgs, itemId));
 		}break;
 
 			default:
@@ -781,8 +833,8 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_COMMENT_ITEM:{
 			id = ContentUris.parseId(uri);
 			count = db.delete(COMMENT_TABLE_NAME,
-					addExtraWhere(where, Comment._ID + "=?"),
-					addExtraWhereArgs(whereArgs, String.valueOf(id)));
+					ProviderUtils.addExtraWhere(where, Comment._ID + "=?"),
+					ProviderUtils.addExtraWhereArgs(whereArgs, String.valueOf(id)));
 		}break;
 
 		case MATCHER_CHILD_COMMENT_ITEM:{
@@ -791,8 +843,8 @@ public class MediaProvider extends ContentProvider {
 			id = ContentUris.parseId(uri);
 
 			count = db.delete(COMMENT_TABLE_NAME,
-					addExtraWhere(where, Comment._ID+"=?", 				Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
-					addExtraWhereArgs(whereArgs, Long.toString(id),  	pathSegs.get(pathSegs.size() - 3), 	pathSegs.get(pathSegs.size() - 4)));
+					ProviderUtils.addExtraWhere(where, Comment._ID+"=?", 				Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
+					ProviderUtils.addExtraWhereArgs(whereArgs, Long.toString(id),  	pathSegs.get(pathSegs.size() - 3), 	pathSegs.get(pathSegs.size() - 4)));
 		}break;
 
 		case MATCHER_ITEM_TAGS:{
@@ -800,8 +852,8 @@ public class MediaProvider extends ContentProvider {
 			final List<String> pathSegments = uri.getPathSegments();
 
 			count = db.delete(TAG_TABLE_NAME,
-					addExtraWhere(where, 			Tag._REF_CLASS + "=?", 						Tag._REF_ID+"=?"),
-					addExtraWhereArgs(whereArgs, 	pathSegments.get(pathSegments.size() - 3), 	pathSegments.get(pathSegments.size() - 2)));
+					ProviderUtils.addExtraWhere(where, 			Tag._REF_CLASS + "=?", 						Tag._REF_ID+"=?"),
+					ProviderUtils.addExtraWhereArgs(whereArgs, 	pathSegments.get(pathSegments.size() - 3), 	pathSegments.get(pathSegments.size() - 2)));
 			break;
 		}
 
@@ -816,7 +868,7 @@ public class MediaProvider extends ContentProvider {
 
 		case MATCHER_ITINERARY_ITEM:{
 			final String itemId = uri.getLastPathSegment();
-			count = db.delete(ITINERARY_TABLE_NAME, addExtraWhere(where, Itinerary._ID+"=?"), addExtraWhereArgs(whereArgs, itemId));
+			count = db.delete(ITINERARY_TABLE_NAME, ProviderUtils.addExtraWhere(where, Itinerary._ID+"=?"), ProviderUtils.addExtraWhereArgs(whereArgs, itemId));
 		}break;
 
 			default:
@@ -892,24 +944,13 @@ public class MediaProvider extends ContentProvider {
 		switch (match){
 
 		// these should be the only hard-coded paths in the system.
+
+		case MATCHER_EVENT_DIR:
+			path = internalToPublicQueryMap(Event.SERVER_PATH, uri);
+			break;
+
 		case MATCHER_CAST_DIR:{
-			final String tags = uri.getQueryParameter(TaggableItem.SERVER_QUERY_PARAMETER);
-			final String dist = uri.getQueryParameter(Locatable.SERVER_QUERY_PARAMETER);
-			String query = null;
-
-			// TODO figure out a better way to do this without needing to hard-code this logic.
-			if (tags != null){
-				final Set<String> tagSet = TaggableItem.removePrefixesFromTags(Tag.toSet(tags));
-				query = TaggableItem.SERVER_QUERY_PARAMETER+"=" + ListUtils.join(tagSet, ",");
-			}
-
-			if (dist != null){
-				if (query != null){
-					query += "&";
-				}
-				query = Locatable.SERVER_QUERY_PARAMETER+"=" + dist;
-			}
-			path = Cast.SERVER_PATH + (query != null ? "?"+query : "");
+			path = internalToPublicQueryMap(Cast.SERVER_PATH, uri);
 
 		}break;
 
@@ -922,7 +963,7 @@ public class MediaProvider extends ContentProvider {
 			break;
 
 		case MATCHER_CHILD_COMMENT_DIR:
-			path = getPathFromField(cr, removeLastPathSegment(uri), Commentable.Columns._COMMENT_DIR_URI);
+			path = getPathFromField(cr, ProviderUtils.removeLastPathSegment(uri), Commentable.Columns._COMMENT_DIR_URI);
 			break;
 
 		case MATCHER_CAST_ITEM:
@@ -930,27 +971,21 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_COMMENT_ITEM:
 		{
 			if (parent || publicId != null){
-				path = getPublicPath(cr, removeLastPathSegment(uri));
+				path = getPublicPath(cr, ProviderUtils.removeLastPathSegment(uri));
 			}else{
 				path = getPathFromField(cr, uri, JsonSyncableItem._PUBLIC_URI);
 			}
 
 			}break;
 
-//		case MATCHER_CHILD_CAST_CASTVIDEO_DIR:
-//		case MATCHER_CAST_CASTVIDEO_DIR:
-//		case MATCHER_CASTVIDEO_DIR: {
-//			path = getPathFromField(cr, removeLastPathSegment(uri), Cast._CASTVIDEO_DIR_URI);
-//		}break;
-
 		case MATCHER_CHILD_CAST_DIR:
-			path = getPathFromField(cr, removeLastPathSegment(uri), Itinerary._CASTS_URI);
+			path = getPathFromField(cr, ProviderUtils.removeLastPathSegment(uri), Itinerary._CASTS_URI);
 			break;
 
 		case MATCHER_ITINERARY_BY_TAGS:{
 			final Set<String> tags = TaggableItem.removePrefixesFromTags(Tag.toSet(uri.getQuery()));
 
-			path = getPublicPath(cr, removeLastPathSegment(uri)) + "?tags=" + ListUtils.join(tags, ",");
+			path = getPublicPath(cr, ProviderUtils.removeLastPathSegment(uri)) + "?tags=" + ListUtils.join(tags, ",");
 		}break;
 
 		default:
@@ -969,119 +1004,29 @@ public class MediaProvider extends ContentProvider {
 		return path;
 	}
 
+	private static String internalToPublicQueryMap(String serverPath, Uri uri){
+		final String tags = uri.getQueryParameter(TaggableItem.SERVER_QUERY_PARAMETER);
+		final String dist = uri.getQueryParameter(Locatable.SERVER_QUERY_PARAMETER);
+		String query = null;
+
+		// TODO figure out a better way to do this without needing to hard-code this logic.
+		if (tags != null){
+			final Set<String> tagSet = TaggableItem.removePrefixesFromTags(Tag.toSet(tags));
+			query = TaggableItem.SERVER_QUERY_PARAMETER+"=" + ListUtils.join(tagSet, ",");
+		}
+
+		if (dist != null){
+			if (query != null){
+				query += "&";
+			}
+			query = Locatable.SERVER_QUERY_PARAMETER+"=" + dist;
+		}
+		return serverPath + (query != null ? "?"+query : "");
+	}
+
 
 	public static UriMatcher getUriMatcher(){
 		return uriMatcher;
-	}
-
-	/**
-	 * Remove the last path segment of a URI
-	 * @param uri
-	 * @return
-	 */
-	public static Uri removeLastPathSegment(Uri uri){
-		return removeLastPathSegments(uri, 1);
-	}
-
-	/**
-	 * Remove count path segments from the end of a URI
-	 * @param uri
-	 * @param count
-	 * @return
-	 */
-	public static Uri removeLastPathSegments(Uri uri, int count){
-		final List<String> pathWithoutLast = new Vector<String>(uri.getPathSegments());
-		for (int i = 0; i < count; i++){
-			pathWithoutLast.remove(pathWithoutLast.size() - 1);
-		}
-		final String parentPath = ListUtils.join(pathWithoutLast, "/");
-		return uri.buildUpon().path(parentPath).build();
-	}
-
-	/**
-	 * Removes key from the given ContentValues and returns it in a new container.
-	 *
-	 * @param cv
-	 * @param key
-	 * @return
-	 */
-	private static ContentValues extractContentValueItem(ContentValues cv, String key){
-		final String val = cv.getAsString(key);
-		cv.remove(key);
-		final ContentValues cvNew = new ContentValues();
-		cvNew.put(key, val);
-		return cvNew;
-	}
-
-	/**
-	 * Adds extra where clauses
-	 * @param where
-	 * @param extraWhere
-	 * @return
-	 */
-	public static String addExtraWhere(String where, String ... extraWhere){
-		final String extraWhereJoined = "(" + ListUtils.join(Arrays.asList(extraWhere), ") AND (") + ")";
-		return extraWhereJoined + (where != null && where.length() > 0 ? " AND ("+where+")":"");
-	}
-
-	/**
-	 * Adds in extra arguments to a where query. You'll have to put in the appropriate
-	 * @param whereArgs the original whereArgs passed in from the query. Can be null.
-	 * @param extraArgs Extra arguments needed for the query.
-	 * @return
-	 */
-	public static String[] addExtraWhereArgs(String[] whereArgs, String...extraArgs){
-		final List<String> whereArgs2 = new ArrayList<String>();
-		if (whereArgs != null){
-			whereArgs2.addAll(Arrays.asList(whereArgs));
-		}
-		whereArgs2.addAll(0, Arrays.asList(extraArgs));
-		return whereArgs2.toArray(new String[]{});
-	}
-	/**
-	 * Modify the projection so that all columns refers to that of the specified table,
-	 * not any others that may be joined. Without this, _ID and other columns would be ambiguous
-	 * and the query fails.
-	 *
-	 * All columns are aliased as the column name in the original projection so that most queries
-	 * should Just Work™.
-	 *
-	 * @param tableName the name of the table whose columns should be returned.
-	 * @param projection
-	 * @return a modified projection with a table prefix for all columns.
-	 */
-	public static String[] addPrefixToProjection(String tableName, String[] projection){
-		if (projection == null){
-			return null;
-		}
-		final String[] projection2 = new String[projection.length];
-		final int len = projection2.length;
-		for (int i = 0; i < len; i++){
-			projection2[i] = tableName + "."+projection[i] + " as " + projection[i];
-		}
-		return projection2;
-	}
-
-	/**
-	 * Handly helper
-	 * @param c
-	 * @param projection
-	 */
-	public static void dumpCursorToLog(Cursor c, String[] projection){
-		final StringBuilder testOut = new StringBuilder();
-		for (final String row: projection){
-			testOut.append(row);
-			testOut.append("=");
-
-			if (c.isNull(c.getColumnIndex(row))){
-				testOut.append("<<null>>");
-			}else{
-				testOut.append(c.getString(c.getColumnIndex(row)));
-
-			}
-			testOut.append("; ");
-		}
-		Log.d("CursorDump", testOut.toString());
 	}
 
 	static {
@@ -1106,9 +1051,13 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Comment.PATH, MATCHER_CHILD_COMMENT_DIR);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Comment.PATH + "/#", MATCHER_CHILD_COMMENT_ITEM);
 
+		// /event
+		uriMatcher.addURI(AUTHORITY, Event.PATH, MATCHER_EVENT_DIR);
+		uriMatcher.addURI(AUTHORITY, Event.PATH + "/#", MATCHER_EVENT_ITEM);
 
 		// /content/1/tags
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
+		uriMatcher.addURI(AUTHORITY, Event.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/"+Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 
@@ -1130,6 +1079,7 @@ public class MediaProvider extends ContentProvider {
 		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CASTMEDIA_DIR, CASTS_CASTMEDIA_DBHELPER, DBHelperMapper.TYPE_ALL);
 		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CASTMEDIA_ITEM, CASTS_CASTMEDIA_DBHELPER, DBHelperMapper.TYPE_ALL);
 
-
+		mDBHelperMapper.addDirMapping(MATCHER_EVENT_DIR, EVENT_DBHELPER, DBHelperMapper.TYPE_ALL);
+		mDBHelperMapper.addItemMapping(MATCHER_EVENT_ITEM, EVENT_DBHELPER, DBHelperMapper.TYPE_ALL);
 	}
 }

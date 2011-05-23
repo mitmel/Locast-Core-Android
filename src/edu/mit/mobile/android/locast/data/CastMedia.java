@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 
 public class CastMedia extends JsonSyncableItem {
@@ -72,7 +73,7 @@ public class CastMedia extends JsonSyncableItem {
 	}
 
 	public static Uri getCast(Uri castMediaUri){
-		return MediaProvider.removeLastPathSegments(castMediaUri, 2);
+		return ProviderUtils.removeLastPathSegments(castMediaUri, 2);
 	}
 
 	public final static ItemSyncMap SYNC_MAP = new ItemSyncMap();

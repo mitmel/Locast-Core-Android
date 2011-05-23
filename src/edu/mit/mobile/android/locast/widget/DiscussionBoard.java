@@ -40,9 +40,9 @@ import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
+import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.data.Comment;
-import edu.mit.mobile.android.locast.data.MediaProvider;
 
 public class DiscussionBoard extends ListView implements OnClickListener, OnEditorActionListener {
 	public static final String TAG = DiscussionBoard.class.getSimpleName();
@@ -140,7 +140,7 @@ public class DiscussionBoard extends ListView implements OnClickListener, OnEdit
 				Comment.PROJECTION, null, null, Comment.DEFAULT_SORT_BY);
 
        	for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
-       		MediaProvider.dumpCursorToLog(c, Comment.PROJECTION);
+       		ProviderUtils.dumpCursorToLog(c, Comment.PROJECTION);
        	}
 
     	getContext().startService(new Intent(Intent.ACTION_SYNC, thisThread));

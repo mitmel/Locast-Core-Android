@@ -47,6 +47,7 @@ import android.util.Log;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.utils.StreamUtils;
 
+// TODO figure out how to extract strings
 /**
  * A fairly simple non-Market app update checker. Give it a URL pointing to a JSON file
  * and it will compare its version (from the manifest file) to the versions listed in the JSON.

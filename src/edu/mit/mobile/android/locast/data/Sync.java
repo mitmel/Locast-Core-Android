@@ -95,8 +95,10 @@ public class Sync extends Service {
 	private ContentResolver cr;
 	private Set<Uri> syncdItems;
 	private boolean mNotifiedUserAboutNetworkStatus = true;
+	private boolean mShouldAlertUserOnSuccess = false;
 
 	protected final ConcurrentLinkedQueue<SyncQueueItem> syncQueue = new ConcurrentLinkedQueue<SyncQueueItem>();
+
 	private SyncTask currentSyncTask = null;
 
 	private static int NOTIFICATION_SYNC = 0;
@@ -147,6 +149,7 @@ public class Sync extends Service {
 			if (Intent.ACTION_SYNC.equals(intent.getAction())){
 				if (intent.getBooleanExtra(EXTRA_EXPLICIT_SYNC, false)){
 					mNotifiedUserAboutNetworkStatus = true;
+					mShouldAlertUserOnSuccess = true;
 				}
 				startSync(intent.getData(), intent.getExtras());
 			}else if (ACTION_CANCEL_SYNC.equals(intent.getAction())){
@@ -178,6 +181,7 @@ public class Sync extends Service {
 
     private JsonSyncableItem getSyncItem(Uri toSync){
     	JsonSyncableItem syncItem;
+    	// XXX the below system needs to be reworked.
     	final String contentType = getApplicationContext().getContentResolver().getType(toSync);
 		if (MediaProvider.TYPE_COMMENT_DIR.equals(contentType)
 				|| MediaProvider.TYPE_COMMENT_ITEM.equals(contentType)){
@@ -194,6 +198,10 @@ public class Sync extends Service {
 		}else if (MediaProvider.TYPE_CASTMEDIA_DIR.equals(contentType)
 				|| MediaProvider.TYPE_CASTMEDIA_ITEM.equals(contentType)){
 			syncItem = new CastMedia();
+
+		}else if (MediaProvider.TYPE_EVENT_DIR.equals(contentType)
+				|| MediaProvider.TYPE_EVENT_ITEM.equals(contentType)){
+			syncItem = new Event();
 
 		}else{
 			throw new RuntimeException("URI " + toSync + " is syncable, but there is no type mapping for it in getSyncItem().");
@@ -362,13 +370,6 @@ public class Sync extends Service {
 			}
 			try {
 				cvNet = JsonSyncableItem.fromJSON(context, null, jsonObject, syncMap);
-				// XXX remove this when the API updates
-				/*Uri itemToGetPubPathOf = toSync;
-				if (itemToGetPubPathOf == null){
-					itemToGetPubPathOf = sync.getContentUri();
-				}*/
-				//MediaProvider.translateIdToUri(context, cvNet, true, itemToGetPubPathOf);
-
 			}catch (final Exception e){
 				final SyncException se = new SyncException("Problem loading JSON object.");
 				se.initCause(e);
@@ -722,7 +723,7 @@ public class Sync extends Service {
 		protected void onPostExecute(Boolean result) {
 			if (result){
 				// only show a notification if the user has been waiting for a bit.
-				if ((new Date().getTime() - startTime.getTime()) > 10000){
+				if (mShouldAlertUserOnSuccess && (new Date().getTime() - startTime.getTime()) > 10000){
 					Toast.makeText(getApplicationContext(), R.string.sync_success, Toast.LENGTH_LONG).show();
 				}
 			}else{
@@ -733,6 +734,7 @@ public class Sync extends Service {
 					Toast.makeText(getApplicationContext(), R.string.error_sync, Toast.LENGTH_LONG).show();
 				}
 			}
+			mShouldAlertUserOnSuccess = false;
 
 			nm.cancel(NOTIFICATION_SYNC);
 		}

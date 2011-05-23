@@ -17,15 +17,16 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Gallery;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
-import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.locast.ver2.casts.LocatableListWithMap;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.data.Event;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.Sync;
 import edu.mit.mobile.android.locast.net.NetworkClient;
+import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.ver2.casts.LocatableListWithMap;
 
 public class BrowserHome extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener{
 
@@ -117,6 +118,10 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		switch (v.getId()){
 		case R.id.itineraries:
 			startActivity(new Intent(Intent.ACTION_VIEW, Itinerary.CONTENT_URI));
+			break;
+
+		case R.id.events:
+			startActivity(new Intent(LocatableListWithMap.ACTION_SEARCH_NEARBY, Event.CONTENT_URI));
 			break;
 
 		case R.id.nearby:

@@ -6,8 +6,8 @@ import android.graphics.drawable.Drawable;
 
 import com.google.android.maps.OverlayItem;
 
-import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.ver2.R;
 
 public class CastsOverlay extends LocatableItemOverlay {
 	private int mOfficialCol, mTitleCol, mDescriptionCol;
@@ -15,7 +15,7 @@ public class CastsOverlay extends LocatableItemOverlay {
 	private final Drawable mCommunityCastDrawable;
 
 	public CastsOverlay(Context context) {
-		super(context);
+		super(boundCenterBottom(context.getResources().getDrawable(R.drawable.ic_map_community)));
 		final Resources res = context.getResources();
 		mOfficialCastDrawable = boundCenterBottom(res.getDrawable(R.drawable.ic_map_official));
 		mCommunityCastDrawable = boundCenterBottom(res.getDrawable(R.drawable.ic_map_community));

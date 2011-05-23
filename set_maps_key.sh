@@ -6,5 +6,9 @@ dev="0mv3f-QVdQ_CF3MFrN2I0MO8Wgu_QPqzOKx2GHw"
 # 1E:4B:71:20:73:45:0F:D4:77:A6:B8:18:0C:42:D7:F3
 prod="0mv3f-QVdQ_DwBwdfkqD1df8s37Ezhu5qfmJR_A"
 
-key="$prod"
+if [ "$1" = 'prod' ]; then
+    key="$prod"
+else
+    key="$dev"
+fi
 sed -i -e "s!android:apiKey=\"[^\"]*\"!android:apiKey=\"$key\"!" res/**/*.xml

@@ -1,5 +1,21 @@
 package edu.mit.mobile.android.locast.ver2.casts;
-
+/*
+ * Copyright (C) 2011  MIT Mobile Experience Lab
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 import java.util.List;
 
 import android.content.ContentUris;
@@ -32,13 +48,17 @@ import com.google.android.maps.Overlay;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
-import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.locast.ver2.itineraries.CastsOverlay;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.data.Event;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Sync;
+import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.ver2.events.EventCursorAdapter;
+import edu.mit.mobile.android.locast.ver2.itineraries.BasicLocatableOverlay;
+import edu.mit.mobile.android.locast.ver2.itineraries.CastsOverlay;
+import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 import edu.mit.mobile.android.widget.RefreshButton;
 
 public class LocatableListWithMap extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnClickListener, OnItemClickListener {
@@ -50,7 +70,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	private Uri mContentNearLocation;
 	private Uri mContent;
 
-	private CastsOverlay mCastsOverlay;
+	private LocatableItemOverlay mLocatableItemsOverlay;
 	private MapView mMapView;
 	private MapController mMapController;
 	private MyMyLocationOverlay mMyLocationOverlay;
@@ -63,6 +83,8 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	// constants related to auto-refreshing
 	private static long AUTO_UPDATE_FREQUENCY = 15 * 1000 * 1000; // nano-seconds
 	private static float MIN_UPDATE_DISTANCE = 50; // meters
+
+	private int searchRadius = 500; // km
 
 	public static final String
 		ACTION_SEARCH_NEARBY = "edu.mit.mobile.android.locast.ACTION_SEARCH_NEARBY";
@@ -96,14 +118,32 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 				mAdapter = new CastCursorAdapter(this, null);
 
 				mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP));
-				initMapOverlays();
+				initMapOverlays(new CastsOverlay(this));
 
-				setTitle("Nearby Casts");
-				mContent = data;
+				setTitle(getString(R.string.title_nearby_casts));
 
-				updateLocation();
-				setRefreshing(true);
+				searchRadius = 1500;
+
+			}else if (MediaProvider.TYPE_EVENT_DIR.equals(type)){
+
+				setTitle(getString(R.string.title_nearby_events));
+				searchRadius = 10000;
+
+				mAdapter = new EventCursorAdapter(this,
+						R.layout.browse_content_item,
+						null,
+						new String[]{Event._TITLE, Event._START_DATE},
+						new int[]{android.R.id.text1, android.R.id.text2},
+						new int[]{}, 0);
+
+				mListView.setAdapter(mAdapter);
+				initMapOverlays(new BasicLocatableOverlay(LocatableItemOverlay.boundCenterBottom(getResources().getDrawable(R.drawable.ic_map_event))));
 			}
+
+			mContent = data;
+
+			updateLocation();
+			setRefreshing(true);
 		}
 	}
 
@@ -144,7 +184,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		if (loc == null){
 			throw new NullPointerException();
 		}
-		setDataUri(Locatable.toDistanceSearchUri(mContent, loc, 500));
+		setDataUri(Locatable.toDistanceSearchUri(mContent, loc, searchRadius));
 
 		mLastLocation = loc;
 	}
@@ -153,7 +193,14 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 
 		final Bundle args = new Bundle();
 		args.putParcelable(LOADER_ARG_DATA, data);
-		mLoaderManager.restartLoader(LOADER_ID_CAST, args, this);
+		final String type = getContentResolver().getType(data);
+		if (MediaProvider.TYPE_EVENT_DIR.equals(type)){
+			mLoaderManager.restartLoader(LOADER_ID_EVENT, args, this);
+
+		}else if (MediaProvider.TYPE_CAST_DIR.equals(type)){
+			mLoaderManager.restartLoader(LOADER_ID_CAST, args, this);
+		}
+
 		setRefreshing(true);
 
 		mContentNearLocation = data;
@@ -175,13 +222,13 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		refresh.setRefreshing(isRefreshing);
 	}
 
-	private void initMapOverlays(){
-		mCastsOverlay = new CastsOverlay(this);
+	private void initMapOverlays(LocatableItemOverlay overlay){
+		mLocatableItemsOverlay = overlay;
 		final List<Overlay> overlays = mMapView.getOverlays();
 		mMyLocationOverlay = new MyMyLocationOverlay(this, mMapView);
 
 		overlays.add(mMyLocationOverlay);
-		overlays.add(mCastsOverlay);
+		overlays.add(mLocatableItemsOverlay);
 	}
 
 	@Override
@@ -238,13 +285,19 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 
 	private static String LOADER_ARG_DATA = "edu.mit.mobile.android.locast.LOADER_ARG_DATA";
 	private final static int
-		LOADER_ID_CAST = 0;
+		LOADER_ID_CAST = 0,
+		LOADER_ID_EVENT = 1;
 
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		switch (id){
 		case LOADER_ID_CAST:
 			return new CursorLoader(this, (Uri) args.getParcelable(LOADER_ARG_DATA), Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
+		case LOADER_ID_EVENT:
+			// only show events that aren't already over
+			return new CursorLoader(this, (Uri) args.getParcelable(LOADER_ARG_DATA), Event.PROJECTION,
+					Event._END_DATE + " >= ?",
+					new String[]{String.valueOf(System.currentTimeMillis())}, Event.SORT_ORDER_DEFAULT);
 
 			default:
 				return null;
@@ -254,21 +307,28 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	@Override
 	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
 		mAdapter.swapCursor(c);
-		mCastsOverlay.swapCursor(c);
+		mLocatableItemsOverlay.swapCursor(c);
 
-		if(mLastLocation != null){
-			final GeoPoint myPosition = new GeoPoint((int)(mLastLocation.getLatitude() * 1E6), (int)(mLastLocation.getLongitude() * 1E6));
-			if (mMapView.getVisibility()==View.INVISIBLE){
-				mMapController.setCenter(myPosition);
-			}else{
-				mMapController.animateTo(myPosition);
-			}
-		}
+
 
 		if (c.moveToFirst()){
-			mMapController.zoomToSpan(mCastsOverlay.getLatSpanE6(), mCastsOverlay.getLonSpanE6());
+			mMapController.zoomToSpan(mLocatableItemsOverlay.getLatSpanE6(), mLocatableItemsOverlay.getLonSpanE6());
+			final GeoPoint center = mLocatableItemsOverlay.getCenter();
+			if (mMapView.getVisibility()==View.INVISIBLE){
+				mMapController.setCenter(center);
+			}else{
+				mMapController.animateTo(center);
+			}
 		}else{
 			mMapController.setZoom(15);
+			if(mLastLocation != null){
+				final GeoPoint myPosition = new GeoPoint((int)(mLastLocation.getLatitude() * 1E6), (int)(mLastLocation.getLongitude() * 1E6));
+				if (mMapView.getVisibility()==View.INVISIBLE){
+					mMapController.setCenter(myPosition);
+				}else{
+					mMapController.animateTo(myPosition);
+				}
+			}
 		}
 
 		mMapView.setVisibility(View.VISIBLE);
@@ -280,7 +340,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	@Override
 	public void onLoaderReset(Loader<Cursor> loader) {
 		mAdapter.swapCursor(null);
-		mCastsOverlay.swapCursor(null);
+		mLocatableItemsOverlay.swapCursor(null);
 
 	}
 }

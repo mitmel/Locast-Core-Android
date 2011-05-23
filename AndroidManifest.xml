@@ -43,6 +43,7 @@
 				<category android:name="android.intent.category.DEFAULT" />
 				<action android:name="edu.mit.mobile.android.locast.ACTION_SEARCH_NEARBY" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.casts" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.events" />
 			</intent-filter>
 		</activity>
 		
@@ -150,6 +151,8 @@
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.comments" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.itineraries" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.itineraries" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.events" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.events" />
 			</intent-filter>
 			<intent-filter>
 				<action android:name="android.intent.action.SYNC" />

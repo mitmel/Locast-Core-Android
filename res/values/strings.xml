@@ -190,4 +190,8 @@
 	<string name="auth_signin_register">Sign In / Register</string>
 	
 	<string name="auth_skip">Skip</string>
+	
+	<string name="title_nearby_events">Upcoming Events Nearby</string>
+	
+	<string name="title_nearby_casts">Nearby Casts</string>
 </resources>

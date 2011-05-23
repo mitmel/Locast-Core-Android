@@ -1,9 +1,9 @@
 package edu.mit.mobile.android.locast.ver2.itineraries;
 
-import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Handler;
 
@@ -12,7 +12,6 @@ import com.google.android.maps.ItemizedOverlay;
 import com.google.android.maps.MapView;
 import com.google.android.maps.OverlayItem;
 
-import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.data.Locatable;
 
 abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> {
@@ -27,14 +26,19 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 		}
 	};
 
-	public LocatableItemOverlay(Context context) {
-		this(context, null);
+	public LocatableItemOverlay(Drawable marker) {
+		this(marker, null);
 	}
 
-	public LocatableItemOverlay(Context context, Cursor casts) {
-		super(boundCenterBottom(context.getResources().getDrawable(R.drawable.ic_map_community)));
+	public LocatableItemOverlay(Drawable marker, Cursor items) {
+		super(marker);
 
-		mLocatableItems = casts;
+		mLocatableItems = items;
+	}
+
+	public static Drawable boundCenterBottom(Drawable drawable){
+		// why isn't this visible?
+		return ItemizedOverlay.boundCenterBottom(drawable);
 	}
 
 	public void swapCursor(Cursor locatableItems){
