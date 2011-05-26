@@ -513,6 +513,12 @@ public class MediaProvider extends ContentProvider {
 
 			final String tags = uri.getQueryParameter(TaggableItem.SERVER_QUERY_PARAMETER);
 			final String dist = uri.getQueryParameter(Locatable.SERVER_QUERY_PARAMETER);
+			final Boolean favorited = Favoritable.decodeFavoritedUri(uri);
+
+			if (favorited != null){
+				selection = ProviderUtils.addExtraWhere(selection, Favoritable.Columns._FAVORITED + "=?");
+				selectionArgs = ProviderUtils.addExtraWhereArgs(selectionArgs, favorited ? "1" : "0");
+			}
 
 			if (tags != null){
 				c = queryByTags(qb, db, tags, CAST_TABLE_NAME, projection, selection, selectionArgs, sortOrder);
@@ -532,6 +538,7 @@ public class MediaProvider extends ContentProvider {
 
 
 		case MATCHER_EVENT_DIR:{
+			qb.setTables(EVENT_TABLE_NAME);
 			final String tags = uri.getQueryParameter(TaggableItem.SERVER_QUERY_PARAMETER);
 			final String dist = uri.getQueryParameter(Locatable.SERVER_QUERY_PARAMETER);
 

@@ -22,6 +22,7 @@ import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Event;
+import edu.mit.mobile.android.locast.data.Favoritable;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.Sync;
 import edu.mit.mobile.android.locast.net.NetworkClient;
@@ -60,6 +61,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		findViewById(R.id.itineraries).setOnClickListener(this);
 		findViewById(R.id.events).setOnClickListener(this);
 		findViewById(R.id.nearby).setOnClickListener(this);
+		findViewById(R.id.favorites).setOnClickListener(this);
 
 		checkFirstTime();
 	}
@@ -127,6 +129,10 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		case R.id.nearby:
 
 			startActivity(new Intent(LocatableListWithMap.ACTION_SEARCH_NEARBY, Cast.CONTENT_URI));
+			break;
+		case R.id.favorites:
+
+			startActivity(new Intent(Intent.ACTION_VIEW, Favoritable.getFavoritedUri(Cast.CONTENT_URI, true)));
 			break;
 
 		case R.id.refresh:

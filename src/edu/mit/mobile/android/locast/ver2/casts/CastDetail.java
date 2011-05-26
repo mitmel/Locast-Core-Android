@@ -8,6 +8,8 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v4_map.app.LoaderManager;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -15,20 +17,18 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.GridView;
 import android.widget.TextView;
 
-import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
+import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 import edu.mit.mobile.android.locast.ver2.itineraries.CastsOverlay;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
-import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.CastMedia;
-import edu.mit.mobile.android.locast.data.Locatable;
 
 public class CastDetail extends LocatableDetail implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
 	private LoaderManager mLoaderManager;
@@ -136,13 +136,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 				((TextView)findViewById(R.id.title)).setText(c.getString(c.getColumnIndex(Cast._TITLE)));
 				((TextView)findViewById(R.id.author)).setText(c.getString(c.getColumnIndex(Cast._AUTHOR)));
 				((TextView)findViewById(R.id.description)).setText(c.getString(c.getColumnIndex(Cast._DESCRIPTION)));
-				final double[] result = new double[2];
-				Locatable.toLocationArray(c, c.getColumnIndex(Cast._LATITUDE), c.getColumnIndex(Cast._LONGITUDE), result);
-				final GeoPoint gp = new GeoPoint((int)(result[0]  * 1E6), (int)(result[1] * 1E6));
-				setPointer(gp);
-				mMapController.setCenter(gp);
-				mMapController.setZoom(12);
-
+				setPointerFromCursor(c, mMapController);
 			}
 
 		break;
@@ -175,4 +169,25 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		return mCastsOverlay;
 	}
 
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		super.onCreateOptionsMenu(menu);
+		menu.add(0, R.id.favorites, 0, "favorite");
+
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()){
+		case R.id.favorites:
+			// XXX do something
+			return true;
+
+			default:
+				return super.onOptionsItemSelected(item);
+		}
+
+	}
 }

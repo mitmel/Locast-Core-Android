@@ -183,7 +183,13 @@ public class ManyToMany {
 				}
 
 				long childId = -1;
-				if (newItem == null){
+
+				// existing item found, but no relation has been established yet.
+				if (newItem != null){
+					childId = ContentUris.parseId(newItem);
+
+				// no existing child or relation
+				}else{
 					if (mToContentUri != null){
 						newItem = provider.insert(mToContentUri, values);
 						childId = ContentUris.parseId(newItem);
@@ -194,6 +200,7 @@ public class ManyToMany {
 						}
 					}
 				}
+
 				if (newItem != null && childId != -1){
 					addRelation(db, parentId, childId);
 				}

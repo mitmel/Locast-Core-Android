@@ -32,6 +32,7 @@ import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v4_map.app.LoaderManager;
 import android.support.v4_map.app.MapFragmentActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -51,6 +52,7 @@ import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Event;
+import edu.mit.mobile.android.locast.data.Favoritable;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Sync;
@@ -68,7 +70,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	private CursorAdapter mAdapter;
 	private ListView mListView;
 	private Uri mContentNearLocation;
-	private Uri mContent;
+	private Uri mBaseContent;
 
 	private LocatableItemOverlay mLocatableItemsOverlay;
 	private MapView mMapView;
@@ -89,6 +91,8 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	public static final String
 		ACTION_SEARCH_NEARBY = "edu.mit.mobile.android.locast.ACTION_SEARCH_NEARBY";
 
+	private boolean actionSearchNearby = false;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -100,6 +104,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		mMapController = mMapView.getController();
 		mListView = (ListView) findViewById(android.R.id.list);
 		mListView.setOnItemClickListener(this);
+		mListView.addFooterView(getLayoutInflater().inflate(R.layout.list_footer, null), null, false);
 		mListView.setEmptyView(findViewById(android.R.id.empty));
 
 		mLoaderManager = getSupportLoaderManager();
@@ -109,42 +114,64 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 
 		mImageCache = ImageCache.getInstance(this);
 
+		actionSearchNearby = ACTION_SEARCH_NEARBY.equals(action);
+		final boolean actionView = Intent.ACTION_VIEW.equals(action);
 
-		if (Intent.ACTION_VIEW.equals(action) || ACTION_SEARCH_NEARBY.equals(action)){
-			final Uri data = intent.getData();
-			final String type = intent.resolveType(this);
-
-			if (MediaProvider.TYPE_CAST_DIR.equals(type)){
-				mAdapter = new CastCursorAdapter(this, null);
-
-				mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP));
-				initMapOverlays(new CastsOverlay(this));
-
-				setTitle(getString(R.string.title_nearby_casts));
-
-				searchRadius = 1500;
-
-			}else if (MediaProvider.TYPE_EVENT_DIR.equals(type)){
-
-				setTitle(getString(R.string.title_nearby_events));
-				searchRadius = 10000;
-
-				mAdapter = new EventCursorAdapter(this,
-						R.layout.browse_content_item,
-						null,
-						new String[]{Event._TITLE, Event._START_DATE},
-						new int[]{android.R.id.text1, android.R.id.text2},
-						new int[]{}, 0);
-
-				mListView.setAdapter(mAdapter);
-				initMapOverlays(new BasicLocatableOverlay(LocatableItemOverlay.boundCenterBottom(getResources().getDrawable(R.drawable.ic_map_event))));
-			}
-
-			mContent = data;
-
-			updateLocation();
-			setRefreshing(true);
+		if (!actionView && !actionSearchNearby){
+			Log.e(TAG, "unhandled action " + action);
+			finish();
+			return;
 		}
+
+		CharSequence title;
+
+		final Uri data = intent.getData();
+		final String type = intent.resolveType(this);
+
+		if (MediaProvider.TYPE_CAST_DIR.equals(type)){
+			mAdapter = new CastCursorAdapter(this, null);
+
+			mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP));
+			initMapOverlays(new CastsOverlay(this));
+
+			title = getString(R.string.title_casts);
+
+			searchRadius = 1500;
+
+		}else if (MediaProvider.TYPE_EVENT_DIR.equals(type)){
+
+			title = getString(R.string.title_upcoming_events);
+			searchRadius = 10000;
+
+			mAdapter = new EventCursorAdapter(this,
+					R.layout.browse_content_item,
+					null,
+					new String[]{Event._TITLE, Event._START_DATE},
+					new int[]{android.R.id.text1, android.R.id.text2},
+					new int[]{}, 0);
+
+			mListView.setAdapter(mAdapter);
+			initMapOverlays(new BasicLocatableOverlay(LocatableItemOverlay.boundCenterBottom(getResources().getDrawable(R.drawable.ic_map_event))));
+		}else{
+			throw new IllegalArgumentException("Unhandled content type " + type);
+		}
+
+		mBaseContent = data;
+		setDataUri(data);
+
+		if (actionSearchNearby){
+			title = getString(R.string.title_nearby, title);
+		}
+		// if it's showing only favorited items, adjust the title's language accordingly.
+		final Boolean favorited = Favoritable.decodeFavoritedUri(data);
+		if (favorited != null){
+			title = getString(favorited ? R.string.title_favorited : R.string.title_unfavorited, title);
+		}
+
+
+		setTitle(title);
+		updateLocation();
+		setRefreshing(true);
 	}
 
 	@Override
@@ -160,6 +187,9 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		mMyLocationOverlay.disableMyLocation();
 	}
 
+	/**
+	 * Gets the last-known location and updates with that.
+	 */
 	private void updateLocation(){
 		final LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
 		final String provider = lm.getBestProvider(new Criteria(), true);
@@ -180,11 +210,19 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		mLastLocation = loc;
 	}
 
+	/**
+	 * Called when the location updates.
+	 *
+	 * @param loc
+	 */
 	private void updateLocation(Location loc){
 		if (loc == null){
 			throw new NullPointerException();
 		}
-		setDataUri(Locatable.toDistanceSearchUri(mContent, loc, searchRadius));
+
+		if (actionSearchNearby){
+			setDataUri(Locatable.toDistanceSearchUri(mBaseContent, loc, searchRadius));
+		}
 
 		mLastLocation = loc;
 	}
@@ -248,7 +286,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 
 	@Override
 	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
-		startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mContent, id)));
+		startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mBaseContent, id)));
 	}
 
 	@Override
@@ -308,8 +346,6 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
 		mAdapter.swapCursor(c);
 		mLocatableItemsOverlay.swapCursor(c);
-
-
 
 		if (c.moveToFirst()){
 			mMapController.zoomToSpan(mLocatableItemsOverlay.getLatSpanE6(), mLocatableItemsOverlay.getLonSpanE6());

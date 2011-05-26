@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -42,11 +43,11 @@ import android.provider.BaseColumns;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.util.Log;
-import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient.InputStreamWatcher;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
+import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.utils.StreamUtils;
 
 public class MediaSync extends Service implements MediaScannerConnectionClient{
@@ -60,11 +61,15 @@ public class MediaSync extends Service implements MediaScannerConnectionClient{
 
 	private final IBinder mBinder = new LocalBinder();
 
+	public static final long TIMEOUT_LAST_SYNC = 10 * 1000 * 1000; // nanoseconds
+
 	public final static String DEVICE_EXTERNAL_MEDIA_PATH = "/locast/";
 
 	protected final ConcurrentLinkedQueue<SyncQueueItem> mSyncQueue = new ConcurrentLinkedQueue<SyncQueueItem>();
 
 	private MessageDigest mDigest;
+
+	private final HashMap<Uri, Long> mRecentlySyncd = new HashMap<Uri, Long>();
 
 	public MediaSync() {
 		super();
@@ -97,12 +102,17 @@ public class MediaSync extends Service implements MediaScannerConnectionClient{
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
-    	mSyncQueue.add(new SyncQueueItem(intent.getData(), intent.getExtras()));
+    	final Uri data = intent.getData();
+    	Log.d(TAG, "onStartCommand()");
+    	final SyncQueueItem syncQueueItem = new SyncQueueItem(data, intent.getExtras());
+    	if (!mSyncQueue.contains(syncQueueItem) && ! checkRecentlySyncd(data)){
+    		Log.d(TAG, "enqueueing " + syncQueueItem);
+    		mSyncQueue.add(syncQueueItem);
+    	}else{
+    		Log.d(TAG, syncQueueItem.toString() + " already in the queue. Skipping.");
+    	}
 
     	maybeStartTask();
-
-    	Log.d(TAG, "onStartCommand()");
 
     	return START_NOT_STICKY;
     }
@@ -131,6 +141,27 @@ public class MediaSync extends Service implements MediaScannerConnectionClient{
     }
 
     /**
+     * @param uri
+     * @return true if the item has been synchronized recently
+     */
+    private boolean checkRecentlySyncd(Uri uri){
+    	synchronized (mRecentlySyncd) {
+    		final Long lastSyncd = mRecentlySyncd.get(uri);
+			if (lastSyncd != null){
+				return (System.nanoTime() - lastSyncd) < TIMEOUT_LAST_SYNC;
+			}else{
+				return false;
+			}
+		}
+    }
+
+    private void addUriToRecentlySyncd(Uri uri){
+    	synchronized (mRecentlySyncd) {
+    		mRecentlySyncd.put(uri, System.nanoTime());
+		}
+    }
+
+    /**
      * Goes through the queue and syncs all the items in it.
      *
      * @author steve
@@ -145,6 +176,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient{
 					final SyncQueueItem qi = mSyncQueue.remove();
 
 					syncItemMedia(qi.uri);
+					addUriToRecentlySyncd(qi.uri);
 
 				}catch (final SyncException se){
 					se.printStackTrace();
@@ -171,6 +203,21 @@ public class MediaSync extends Service implements MediaScannerConnectionClient{
 
 		Uri uri;
 		Bundle extras;
+
+		@Override
+		public boolean equals(Object o) {
+
+			final SyncQueueItem o2 = (SyncQueueItem) o;
+			return o == null ? false :
+				(this.uri == null ? false : this.uri.equals(o2.uri)
+					&& (( this.extras == null && o2.extras == null )
+							|| this.extras == null ? false : this.extras.equals(o2.extras)));
+		}
+
+		@Override
+		public String toString(){
+			return SyncQueueItem.class.getSimpleName() + ": "+ uri.toString() + ((extras != null) ? " with extras " + extras : "");
+		}
 	}
 
 	/**

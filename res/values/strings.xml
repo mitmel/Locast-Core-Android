@@ -191,7 +191,14 @@
 	
 	<string name="auth_skip">Skip</string>
 	
-	<string name="title_nearby_events">Upcoming Events Nearby</string>
+	<string name="title_upcoming_events">Upcoming Events</string>
 	
-	<string name="title_nearby_casts">Nearby Casts</string>
+	<string name="title_casts">Casts</string>
+	
+	<string name="title_nearby">%1$s Nearby</string>
+	<string name="title_favorited">Favorite %1$s</string>
+	<string name="title_unfavorited">Non-favorite %1$s</string>
+	<string name="itinerary_no_casts">There are no casts in this itinerary.</string>
+	<string name="list_empty">No items in this list.</string>
+	<string name="error_loading_event">Error loading event.</string>
 </resources>

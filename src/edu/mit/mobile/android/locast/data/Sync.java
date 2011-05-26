@@ -18,9 +18,7 @@ package edu.mit.mobile.android.locast.data;
  */
 import java.io.IOException;
 import java.util.Date;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
@@ -55,13 +53,15 @@ import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
+import edu.mit.mobile.android.utils.LastUpdatedMap;
 
 /**
  * A Simple Sync engine. Can do naive bi-directional sync with a server that exposes
  * a last modified or created date and a unique ID via a JSON API.
  *
  * To use, simply extend JsonSyncableItem and create the sync map. This mapping tells
- * the engine what JSON object properties sync to what local columns, as well
+ * the engine what JSON object properties sync to what local columns, as well as how
+ * to recreate any objects for updating/creation.
  *
  *
  * @author stevep
@@ -90,14 +90,19 @@ public class Sync extends Service {
 
 	private static final String CONTENT_TYPE_PREFIX_DIR = "vnd.android.cursor.dir";
 
+	private static final long
+		TIMEOUT_MAX_ITEM_WAIT = (long) (30 * 1e9), // nanoseconds
+		TIMEOUT_AUTO_SYNC_MINIMUM = (long) (30 * 1e9); // nanoseconds
+
 	private final IBinder mBinder = new LocalBinder();
 	private NetworkClient nc;
 	private ContentResolver cr;
-	private Set<Uri> syncdItems;
+	//private Set<Uri> syncdItems;
+	private final LastUpdatedMap<Uri> mLastUpdated = new LastUpdatedMap<Uri>(TIMEOUT_AUTO_SYNC_MINIMUM);
 	private boolean mNotifiedUserAboutNetworkStatus = true;
 	private boolean mShouldAlertUserOnSuccess = false;
 
-	protected final ConcurrentLinkedQueue<SyncQueueItem> syncQueue = new ConcurrentLinkedQueue<SyncQueueItem>();
+	protected final PriorityBlockingQueue<SyncQueueItem> syncQueue = new PriorityBlockingQueue<SyncQueueItem>();
 
 	private SyncTask currentSyncTask = null;
 
@@ -240,7 +245,6 @@ public class Sync extends Service {
 	 * @throws IOException
 	 */
 	private void sync(Uri toSync, JsonSyncableItem sync, SyncProgressNotifier syncProgress, Bundle extras) throws SyncException, IOException{
-		syncdItems = new TreeSet<Uri>();
 
 		if ("http".equals(toSync.getScheme()) || "https".equals(toSync.getScheme())){
 			final String netPath = toSync.getPath();
@@ -390,7 +394,7 @@ public class Sync extends Service {
 			}
 
 			// skip any items already sync'd
-			if (syncdItems.contains(locUri)) {
+			if (mLastUpdated.isUpdatedRecently(locUri)) {
 				return false;
 			}
 
@@ -401,6 +405,9 @@ public class Sync extends Service {
 			}
 
 			syncMap.onPreSyncItem(cr, locUri, c);
+		}else if (contentType.startsWith(CONTENT_TYPE_PREFIX_DIR)){
+			// strip any query strings
+			toSync = toSync.buildUpon().query(null).build();
 		}
 //		if (c != null){
 //			MediaProvider.dumpCursorToLog(c, sync.getFullProjection());
@@ -423,7 +430,7 @@ public class Sync extends Service {
 				final ContentValues cvUpdate = JsonSyncableItem.fromJSON(context, locUri, jsonObject, syncMap);
 				if (cr.update(locUri, cvUpdate, null, null) == 1){
 					// at this point, server and client should be in sync.
-					syncdItems.add(locUri);
+					mLastUpdated.markUpdated(locUri);
 					Log.i(TAG, "Hooray! "+ locUri + " has been posted succesfully.");
 
 				}else{
@@ -471,7 +478,7 @@ public class Sync extends Service {
 							return false;
 
 						}else{
-							if (syncdItems.contains(nc.getFullUri(publicPath))){
+							if (mLastUpdated.isUpdatedRecently(nc.getFullUri(publicPath))){
 								Log.d(TAG, "already sync'd! "+publicPath);
 								return false;
 							}
@@ -512,7 +519,7 @@ public class Sync extends Service {
 					Log.d("LocastSync", cvNet + " is older than "+locUri);
 					modified = true;
 				}
-				syncdItems.add(nc.getFullUri(publicPath));
+				mLastUpdated.markUpdated(nc.getFullUri(publicPath));
 			} catch (final JSONException e) {
 				final SyncException se = new SyncException("Item sync error for path "+publicPath+": invalid JSON.");
 				se.initCause(e);
@@ -541,11 +548,11 @@ public class Sync extends Service {
 		syncMap.onPostSyncItem(context, locUri, jsonObject, modified);
 		sync.onPostSyncItem(context, locUri, jsonObject, modified);
 
-		syncdItems.add(locUri);
+		mLastUpdated.markUpdated(locUri);
 
 		// needed for things that may have requested a sync with a different URI than what was eventually produced.
 		if (origToSync != locUri){
-			syncdItems.add(origToSync);
+			mLastUpdated.markUpdated(origToSync);
 			cr.notifyChange(origToSync, null);
 		}
 
@@ -632,8 +639,13 @@ public class Sync extends Service {
     	}
 
     	if (! syncQueue.contains(uri)){
-    		syncQueue.add(new SyncQueueItem(uri, extras));
-    		Log.d(TAG, "enqueing " + uri + " to sync queue");
+    		if (!mLastUpdated.isUpdatedRecently(uri) || (extras != null && extras.containsKey(EXTRA_EXPLICIT_SYNC))){
+    			Log.d(TAG, "enqueing " + uri + " to sync queue");
+    			syncQueue.add(new SyncQueueItem(uri, extras));
+    		}else{
+    			Log.d(TAG, "NOT enqueing "+ uri + " to sync queue, as it's been updated recently");
+    		}
+
     	}else{
     		Log.d(TAG, "NOT enqueing " + uri + " to sync queue, as it's already present");
     	}
@@ -703,6 +715,10 @@ public class Sync extends Service {
 				while (!syncQueue.isEmpty()){
 					Log.d(TAG, syncQueue.size() + " items in the sync queue");
 					final SyncQueueItem toSync = syncQueue.remove();
+					if (toSync.isStale()){
+						Log.i(TAG, toSync + " is stale; skipping");
+						continue;
+					}
 					Sync.this.sync(toSync.uri, this, toSync.extras);
 
 				}
@@ -768,13 +784,30 @@ public class Sync extends Service {
 		public void addPendingTasks(int taskCount);
 	}
 
-	private class SyncQueueItem {
+	private class SyncQueueItem implements Comparable<SyncQueueItem>{
 		public SyncQueueItem(Uri uri, Bundle extras) {
 			this.uri = uri;
 			this.extras = extras;
+			this.when = System.nanoTime();
 		}
 
-		Uri uri;
-		Bundle extras;
+		public boolean isStale(){
+			return (System.nanoTime() - when) >= TIMEOUT_MAX_ITEM_WAIT;
+		}
+
+		final Uri uri;
+		final Bundle extras;
+		final long when;
+
+		/**
+		 * This compare function orders newest items first.
+		 *  (non-Javadoc)
+		 * @see java.lang.Comparable#compareTo(java.lang.Object)
+		 */
+		@Override
+		public int compareTo(SyncQueueItem another) {
+			return -Long.valueOf(when).compareTo(Long.valueOf(another.when));
+		}
+
 	}
 }

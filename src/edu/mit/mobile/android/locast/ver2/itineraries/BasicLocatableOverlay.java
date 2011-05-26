@@ -13,13 +13,11 @@ public class BasicLocatableOverlay extends LocatableItemOverlay {
 
 	public BasicLocatableOverlay(Drawable marker, Cursor c) {
 		super(marker, c);
-
 	}
 
 	@Override
 	protected OverlayItem createItem(int i) {
 		this.mLocatableItems.moveToPosition(i);
-		return new OverlayItem(getGeoPoint(mLocatableItems), "", "");
+		return new OverlayItem(getItemLocation(mLocatableItems), "", "");
 	}
-
 }

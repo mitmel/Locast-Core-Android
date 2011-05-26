@@ -2,17 +2,15 @@ package edu.mit.mobile.android.locast.ver2.itineraries;
 
 import android.database.ContentObserver;
 import android.database.Cursor;
-import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
-import android.location.Location;
 import android.os.Handler;
 
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.ItemizedOverlay;
-import com.google.android.maps.MapView;
 import com.google.android.maps.OverlayItem;
 
 import edu.mit.mobile.android.locast.data.Locatable;
+import edu.mit.mobile.android.locast.maps.MapsUtils;
 
 abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> {
 	protected Cursor mLocatableItems;
@@ -22,7 +20,7 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 		@Override
 		public void onChange(boolean selfChange) {
 			super.onChange(selfChange);
-			refresh();
+			populate();
 		}
 	};
 
@@ -34,6 +32,8 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 		super(marker);
 
 		mLocatableItems = items;
+
+		populate();
 	}
 
 	public static Drawable boundCenterBottom(Drawable drawable){
@@ -45,7 +45,7 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 		mLocatableItems = locatableItems;
 		updateCursorCols();
 
-		refresh();
+		populate();
 	}
 
 	public void onPause(){
@@ -64,7 +64,7 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 		final Cursor oldCursor = mLocatableItems;
 		mLocatableItems = locatableItems;
 		updateCursorCols();
-		refresh();
+		populate();
 
 		if (oldCursor != null && !oldCursor.isClosed()){
 			oldCursor.close();
@@ -78,16 +78,8 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 		}
 	}
 
-	protected void refresh(){
-		if (mLocatableItems != null){
-			populate();
-		}
-	}
-
-	protected GeoPoint getGeoPoint(Cursor item){
-		final Location castLoc =  Locatable.toLocation(mLocatableItems, mLatCol, mLonCol);
-		final GeoPoint castLocGP = new GeoPoint((int)(castLoc.getLatitude()*1E6), (int)(castLoc.getLongitude()*1E6));
-		return castLocGP;
+	protected GeoPoint getItemLocation(Cursor item){
+		return MapsUtils.getGeoPoint(item, mLatCol, mLonCol);
 	}
 
 	/**
@@ -124,13 +116,5 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 			return 0;
 		}
 		return mLocatableItems.getCount();
-	}
-
-	@Override
-	public void draw(Canvas canvas, MapView mapView, boolean shadow) {
-		if (shadow){
-			return;
-		}
-		super.draw(canvas, mapView, shadow);
 	}
 }

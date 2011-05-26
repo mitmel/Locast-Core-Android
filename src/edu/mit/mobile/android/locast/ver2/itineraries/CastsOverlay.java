@@ -35,7 +35,7 @@ public class CastsOverlay extends LocatableItemOverlay {
 	protected OverlayItem createItem(int i){
 		mLocatableItems.moveToPosition(i);
 
-		final OverlayItem item = new OverlayItem(getGeoPoint(mLocatableItems),
+		final OverlayItem item = new OverlayItem(getItemLocation(mLocatableItems),
 				mLocatableItems.getString(mTitleCol), mLocatableItems.getString(mDescriptionCol));
 
 		if (mLocatableItems.getInt(mOfficialCol) != 0){

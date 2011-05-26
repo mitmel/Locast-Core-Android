@@ -2,8 +2,9 @@
 	<TextView
 		android:id="@+id/empty_message"
 		xmlns:android="http://schemas.android.com/apk/res/android"
-		android:text="There are no casts in this itinerary."
-		android:textAppearance="?android:attr/textAppearanceLarge"
+		android:text="@string/itinerary_no_casts"
+		style="@style/EmptyList"
 		android:layout_height="fill_parent"
 		android:layout_width="fill_parent"
+		android:layout_weight="2"
 		android:layout_gravity="center" />

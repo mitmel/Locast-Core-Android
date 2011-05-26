@@ -19,13 +19,12 @@
 		*****************************************************************************************************
 	 -->
 		
-		<activity android:name=".casts.CastDetail">
+		<activity android:name=".casts.CastDetail" android:process="edu.mit.mobile.android.locast.Detail">
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
 				<action android:name="android.intent.action.DELETE" />
 				<category android:name="android.intent.category.DEFAULT" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.casts" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.projects.casts" />
 			</intent-filter>
 			
 			<intent-filter android:label="@string/cast_play">
@@ -34,13 +33,13 @@
 				<category android:name="android.intent.category.ALTERNATIVE" />
 				<category android:name="android.intent.category.SELECTED_ALTERNATIVE" />
 				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.casts" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.projects.casts" />
 			</intent-filter>
 		</activity>
 				
 		<activity android:name=".casts.LocatableListWithMap">
 			<intent-filter>
 				<category android:name="android.intent.category.DEFAULT" />
+				<action android:name="android.intent.action.VIEW" />
 				<action android:name="edu.mit.mobile.android.locast.ACTION_SEARCH_NEARBY" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.casts" />
 				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.events" />
@@ -68,6 +67,16 @@
 			</intent-filter>
 		</activity>		
  -->
+ 
+ 		<activity android:name=".events.EventDetail" android:process="edu.mit.mobile.android.locast.Detail">
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<!-- <action android:name="android.intent.action.DELETE" /> -->
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.events" />
+			</intent-filter>
+		</activity>
+ 
 	<!-- 
 		*****************************************************************************************************
 		*                                          Discussion                                               *
@@ -135,7 +144,7 @@
 		*                                              Sync                                                 *
 		*****************************************************************************************************
 	 -->
-		<service android:name="edu.mit.mobile.android.locast.data.Sync"  android:process="edu.mit.mobile.android.locast.Sync">
+		<service android:name="edu.mit.mobile.android.locast.data.Sync" android:process="edu.mit.mobile.android.locast.Sync">
 			<intent-filter>
 				<action android:name="edu.mit.mobile.android.locast.ACTION_CANCEL_SYNC" />
 				<data android:mimeType="*/*" />
@@ -181,7 +190,7 @@
 		<meta-data android:name="android.accounts.AccountAuthenticator"
 			android:resource="@xml/authenticator" />
 	</service>
-	<service android:name="sync.LocastSyncService"
+	<service android:name="edu.mit.mobile.android.locast.sync.LocastSyncService"
 		android:exported="true">
 		<intent-filter>
 			<action android:name="android.content.SyncAdapter" />

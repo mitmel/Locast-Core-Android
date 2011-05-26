@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+	android:orientation="vertical"
+	android:background="@android:color/white"
+>
+	<include
+		layout="@layout/action_bar" />
+
+	<ScrollView
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:layout_weight="2"
+	>
+		<LinearLayout
+			android:layout_width="fill_parent"
+			android:layout_height="fill_parent"
+			android:orientation="vertical"
+		>
+			<TextView
+				android:id="@+id/title"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:textStyle="bold"
+				android:layout_marginLeft="10dip"
+				android:layout_marginRight="10dip"
+				android:layout_marginTop="10dip" />
+			<TextView
+				android:id="@+id/author"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginLeft="10dip"
+				android:layout_marginRight="10dip" />
+			<TextView
+				android:id="@+id/when"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:layout_margin="10dip" />
+
+			<TextView
+				android:id="@+id/description"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:layout_margin="10dip" />
+		</LinearLayout>
+	</ScrollView>
+
+	<com.google.android.maps.MapView
+		android:id="@+id/map"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:layout_weight="3"
+
+		android:clickable="true"
+		android:visibility="invisible"
+		android:apiKey="0mv3f-QVdQ_CF3MFrN2I0MO8Wgu_QPqzOKx2GHw" />
+
+</LinearLayout>

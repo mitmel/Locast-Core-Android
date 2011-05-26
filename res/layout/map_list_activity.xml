@@ -43,9 +43,9 @@
 		android:layout_below="@id/map_frame" />
 	<TextView
 		android:id="@android:id/empty"
-		android:text="No items in this list"
-		android:textStyle="italic"
+		android:text="@string/list_empty"
+		style="@style/EmptyList"
 		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:gravity="center" android:visibility="gone"/>
+		android:layout_height="fill_parent"
+		android:visibility="gone"/>
 </LinearLayout>

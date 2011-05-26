@@ -7,4 +7,5 @@
 	android:src="@drawable/ic_list_footer"
 	android:layout_gravity="center"
 	android:scaleType="center"
+	
 />

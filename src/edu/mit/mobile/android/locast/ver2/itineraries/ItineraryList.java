@@ -11,6 +11,7 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -20,10 +21,10 @@ import android.widget.TextView;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
-import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Sync;
+import edu.mit.mobile.android.locast.ver2.R;
 
 public class ItineraryList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
 
@@ -44,6 +45,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 
 		mListView = (ListView) findViewById(android.R.id.list);
 		mListView.setOnItemClickListener(this);
+		mListView.addFooterView(LayoutInflater.from(this).inflate(R.layout.list_footer, null), null, false);
 		mListView.setEmptyView(findViewById(android.R.id.empty));
 
 		final Intent intent = getIntent();

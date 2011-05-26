@@ -2,7 +2,7 @@
 <sync-adapter
   xmlns:android="http://schemas.android.com/apk/res/android"
   
-    android:contentAuthority="edu.mit.mobile.android.locast.provider"
+    android:contentAuthority="edu.mit.mobile.android.locast.ver2.provider"
     android:accountType="edu.mit.mobile.android.locast"
     android:supportsUploading="true"
    />

@@ -28,11 +28,11 @@ import com.google.android.maps.Overlay;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
-import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.Sync;
+import edu.mit.mobile.android.locast.ver2.R;
 
 public class ItineraryDetail extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
 	private static final String TAG = ItineraryDetail.class.getSimpleName();
@@ -66,9 +66,12 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		findViewById(R.id.refresh).setOnClickListener(this);
 
 		final LayoutInflater layoutInflater = getLayoutInflater();
+
 		mCastView.addHeaderView(layoutInflater.inflate(R.layout.itinerary_detail_list_header, mCastView, false), null, false);
-		mCastView.addFooterView(layoutInflater.inflate(R.layout.itinerary_detail_list_footer, mCastView, false), null, false);
+		mCastView.addFooterView(layoutInflater.inflate(R.layout.list_footer, null), null, false);
 		mCastView.setEmptyView(layoutInflater.inflate(R.layout.itinerary_detail_list_empty, mCastView, false));
+		mCastView.setEmptyView(findViewById(R.id.empty_message));
+
 		mCastView.setOnItemClickListener(this);
 
 		mCastView.setAdapter(null);
@@ -103,7 +106,6 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	@Override
 	protected void onResume() {
 		super.onResume();
-
 		refresh(false);
 	}
 
