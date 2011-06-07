@@ -2,4 +2,5 @@
 <resources>
     <color name="charred_orange">#4a4740</color>
     <color name="charred_orange_inverse">#b5b8bf</color>
+    <color name="solid_version_of_stripes">#eaeae2</color>
 </resources>

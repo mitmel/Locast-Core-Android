@@ -57,6 +57,7 @@ import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
@@ -86,13 +87,15 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetFileDescriptor;
 import android.location.Location;
 import android.net.Uri;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
-import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
+import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.utils.StreamUtils;
 
 
@@ -108,7 +111,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	private final static String
 		PATH_PAIR = "pair/",
 		PATH_UNPAIR = "un-pair/",
-		PATH_USER   = "user/"
+		PATH_USER   = "user/me"
 		;
 
 	protected String baseurl;
@@ -275,16 +278,41 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		return getUsername() != null;
 	}
 
-	public static boolean authenticate(Context context, String username, String password) throws IOException, JSONException, NetworkProtocolException{
+	public static Bundle authenticate(Context context, String username, String password) throws IOException, JSONException, NetworkProtocolException{
 		final NetworkClient nc = getInstance(context);
 		nc.setCredentials(username, password);
 		final HttpResponse res = nc.get(PATH_USER);
 		final boolean authenticated = nc.checkStatusCode(res, false);
+
 		final HttpEntity ent = res.getEntity();
-		if (ent != null){
+		JSONObject jo = null;
+
+		if (authenticated){
+			jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
 			ent.consumeContent();
+		}else{
+			jo = null;
 		}
-		return authenticated;
+		// ensure that this instance is never reused, as it could have invalid authentication cached.
+		mInstance = null;
+
+		return jsonObjectToBundle(jo);
+	}
+
+	public static Bundle jsonObjectToBundle(JSONObject jsonObject){
+		final Bundle b = new Bundle();
+		for (final Iterator<String> i = jsonObject.keys(); i.hasNext(); ){
+			final String key = i.next();
+			final Object value = jsonObject.opt(key);
+			if (value == null){
+				b.putSerializable(key, null);
+			}else if (value instanceof String){
+				b.putString(key, (String) value);
+			}else if (value instanceof Integer){
+				b.putInt(key, (Integer) value);
+			}
+		}
+		return b;
 	}
 
 	/**
@@ -313,7 +341,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 		checkStatusCode(c, false);
 
-		final JSONObject creds = returnJsonObject(c);
+		final JSONObject creds = toJsonObject(c);
 		saveCredentials(creds.getString("username"), creds.getString("auth_secret"));
 
 		return true;
@@ -359,7 +387,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	 * @throws NetworkProtocolException
 	 * @throws JSONException
 	 */
-	private JSONObject returnJsonObject(HttpResponse res) throws IllegalStateException, IOException, NetworkProtocolException, JSONException {
+	public static JSONObject toJsonObject(HttpResponse res) throws IllegalStateException, IOException, NetworkProtocolException, JSONException {
 		checkContentType(res, JSON_MIME_TYPE, false);
 
 		final HttpEntity ent = res.getEntity();
@@ -378,7 +406,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	 * @throws NetworkProtocolException for all status codes errors.
 	 * @throws IOException
 	 */
-	private boolean checkStatusCode(HttpResponse res, boolean createdOk) throws HttpResponseException, NetworkProtocolException, IOException {
+	public boolean checkStatusCode(HttpResponse res, boolean createdOk) throws HttpResponseException, NetworkProtocolException, IOException {
 		final int statusCode = res.getStatusLine().getStatusCode();
 		if (statusCode == HttpStatus.SC_OK || (createdOk && statusCode == HttpStatus.SC_CREATED)){
 			return true;
@@ -405,7 +433,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	 * @throws NetworkProtocolException
 	 * @throws IOException
 	 */
-	private boolean checkContentType(HttpResponse res, String contentType, boolean exact) throws NetworkProtocolException, IOException {
+	private static boolean checkContentType(HttpResponse res, String contentType, boolean exact) throws NetworkProtocolException, IOException {
 		final String resContentType = res.getFirstHeader("Content-Type").getValue();
 		if (! (exact ? resContentType.equals(contentType) : resContentType.startsWith(contentType))) {
 			throw new NetworkProtocolException("Did not return content-type '"+contentType+"'. Got: '"+
@@ -493,7 +521,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	 */
 	public JSONObject putJson(String path, JSONObject jsonObject)  throws IOException,
 		NetworkProtocolException, IllegalStateException, JSONException {
-		return returnJsonObject(put(path, jsonObject.toString()));
+		return toJsonObject(put(path, jsonObject.toString()));
 	}
 
 	public HttpResponse putJson(String path, boolean jsonValue)  throws IOException,
@@ -603,7 +631,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 	public JSONObject postJson(String path, JSONObject object) throws IllegalStateException, IOException, NetworkProtocolException, JSONException{
 		final HttpResponse res = post(path, object.toString());
-		return returnJsonObject(res);
+		return toJsonObject(res);
 	}
 
 	/*********************************** User ******************************/
@@ -619,7 +647,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	public JSONObject getUser() throws NetworkProtocolException, IOException, JSONException{
 		if (user == null){
 
-			user = getUser(getUsername());
+			user = getUser("me");
 		}
 		return user;
 	}
@@ -839,7 +867,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		    schemeRegistry.register(new Scheme("http",
 		            PlainSocketFactory.getSocketFactory(), 80));
 		    schemeRegistry.register(new Scheme("https",
-		    		PlainSocketFactory.getSocketFactory(), 443));
+		    		SSLSocketFactory.getSocketFactory(), 443));
 
 		    final ClientConnectionManager manager =
 		            new ThreadSafeClientConnManager(params, schemeRegistry);
@@ -926,27 +954,6 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		return accounts.length >= 1;
 	}
 
-	/**
-	 * Perform an check to see if the network connection can contact
-	 * the server and return a valid object.
-	 *
-	 * @return true if the connection was deemed to be working correctly.
-	 *
-	 */
-	public boolean isConnectionWorking() {
-		if (isPaired()){
-			try {
-				final JSONObject u = getUser();
-				if(u != null) {
-					return true;
-				}
-			}catch(final Exception e){
-				return false;
-			}
-		}
-		return false;
-	}
-
 	protected void showError(Exception e) {
 		Toast.makeText(this.context, e.toString(), Toast.LENGTH_LONG).show();
 
@@ -1001,6 +1008,29 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 					tpl.done();
 				}
 			}
+
+	/**
+	 * @param favoritable
+	 * @param newState
+	 * @return the newly-set state
+	 * @throws NetworkProtocolException
+	 * @throws IOException
+	 */
+	public boolean setFavorite(Uri favoritable, boolean newState) throws NetworkProtocolException, IOException {
+		try {
+			final String newStateString = "favorite=" + (newState ? "true" : "false");
+
+			final HttpResponse hr = post(MediaProvider.getPublicPath(context, favoritable) + "favorite/", newStateString);
+			final JSONObject serverStateObj = toJsonObject(hr);
+			final boolean serverState = serverStateObj.getBoolean("is_favorite");
+			return serverState;
+
+		} catch (final IllegalStateException e) {
+			throw new NetworkProtocolException(e.getLocalizedMessage());
+		} catch (final JSONException e) {
+			throw new NetworkProtocolException(e);
+		}
+	}
 
 	/******************************** utils **************************/
 

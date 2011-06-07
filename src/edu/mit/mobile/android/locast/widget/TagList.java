@@ -21,20 +21,20 @@ import java.util.List;
 import java.util.Vector;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.View.OnFocusChangeListener;
+import android.view.ViewGroup;
 import android.widget.AutoCompleteTextView;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
-import edu.mit.mobile.android.MelAndroid;
 import edu.mit.mobile.android.locast.ver2.R;
 
 /**
@@ -52,9 +52,7 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 	private final List<String> recommendedTags = new Vector<String>();
 	private final List<String> shownRecs = new Vector<String>();
 
-	private static int STYLE_FULL = 1,
-					STYLE_SELECTOR = 2;
-	private int style = STYLE_FULL;
+	private int style;
 
 	//private static ArrayAdapter<String> acAdapter;
 	private static RemoteTagsAdapter acAdapter;
@@ -84,10 +82,10 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
     @Override
     protected void inflateLayout(Context context, AttributeSet attrs) {
     	LayoutInflater.from(context).inflate(R.layout.taglist, this);
-		if ("selector".equals(attrs.getAttributeValue(MelAndroid.NS, "taglist_style"))){
-			style = STYLE_SELECTOR;
-		}
-    	if (style == STYLE_SELECTOR){
+    	final TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.TagList);
+    	style = ta.getInt(R.styleable.TagList_taglist_type, R.id.full);
+
+    	if (style == R.id.selector){
     		findViewById(R.id.tag_manual_entry).setVisibility(View.GONE);
     		findViewById(R.id.tag_recommended_label).setVisibility(View.GONE);
 

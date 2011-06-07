@@ -32,16 +32,15 @@ import android.widget.CheckBox;
  */
 public class ValidatingCheckBox extends CheckBox {
 	private ValidatedClickHandler mValidatedClickHandler;
+
 	public ValidatingCheckBox(Context context) {
-		this(context, null);
+		super(context);
 	}
 	public ValidatingCheckBox(Context context, AttributeSet attrs) {
-		this(context, attrs, 0);
+		super(context, attrs);
 	}
 	public ValidatingCheckBox(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
-
-
 	}
 
 	@Override
@@ -57,6 +56,7 @@ public class ValidatingCheckBox extends CheckBox {
 	public void setValidatedClickHandler(
 			ValidatedClickHandler mValidatedClickHandler) {
 		this.mValidatedClickHandler = mValidatedClickHandler;
+
 	}
 
 	/**
@@ -75,6 +75,12 @@ public class ValidatingCheckBox extends CheckBox {
 		 * @return the new state of the checkbox or null if you wish to leave it unchanged.
 		 */
 		public Boolean performClick(ValidatingCheckBox checkBox);
+
+		/**
+		 * Called before {@link #performClick(ValidatingCheckBox)} on the UI thread.
+		 * @param checkBox
+		 */
+		public void prePerformClick(ValidatingCheckBox checkBox);
 	}
 
 	private class ValidatedClickTask extends AsyncTask<Void, Void, Boolean> {
@@ -82,6 +88,8 @@ public class ValidatingCheckBox extends CheckBox {
 		@Override
 		protected void onPreExecute() {
 			setEnabled(false);
+
+			mValidatedClickHandler.prePerformClick(ValidatingCheckBox.this);
 		}
 
 		@Override

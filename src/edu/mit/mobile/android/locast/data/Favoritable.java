@@ -1,5 +1,7 @@
 package edu.mit.mobile.android.locast.data;
 
+
+
 import android.net.Uri;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncFieldMap;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncItem;

@@ -148,10 +148,10 @@
 	
 	<style name="Notice">
 		<item name="android:textStyle">bold</item>
-		<item name="android:drawableLeft">@drawable/app_icon</item>
 		<item name="android:drawablePadding">10sp</item>
 		<item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
 		<item name="android:background">@drawable/bg_message</item>
+		<item name="android:textColor">@android:color/primary_text_light</item>
 		<item name="android:textSize">11sp</item>
 		<item name="android:gravity">center_vertical</item>
 	</style>

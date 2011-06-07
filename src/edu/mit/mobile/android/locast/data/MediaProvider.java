@@ -25,8 +25,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import junit.framework.Assert;
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.content.ContentProvider;
-import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
@@ -44,6 +45,7 @@ import edu.mit.mobile.android.content.DBHelperMapper;
 import edu.mit.mobile.android.content.GenericDBHelper;
 import edu.mit.mobile.android.content.ManyToMany;
 import edu.mit.mobile.android.content.ProviderUtils;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.utils.ListUtils;
 
 public class MediaProvider extends ContentProvider {
@@ -897,36 +899,36 @@ public class MediaProvider extends ContentProvider {
 	 * @param uri
 	 * @return The path that one should post to for the given content item. Should always point to an item, not a dir.
 	 */
-	public static String getPostPath(ContentResolver cr, Uri uri){
-		return getPublicPath(cr, uri, null, true);
+	public static String getPostPath(Context context, Uri uri){
+		return getPublicPath(context, uri, null, true);
 	}
 
-	public static String getPublicPath(ContentResolver cr, Uri uri){
-		return getPublicPath(cr, uri, null, false);
+	public static String getPublicPath(Context context, Uri uri){
+		return getPublicPath(context, uri, null, false);
 	}
 
 	/**
 	 * Returns a public ID to an item, given the parent URI and a public ID
 	 *
-	 * @param cr
+	 * @param context
 	 * @param uri URI of the parent item
 	 * @param publicId public ID of the child item
 	 * @return
 	 */
-	public static String getPublicPath(ContentResolver cr, Uri uri, Long publicId){
-		return getPublicPath(cr, uri, publicId, false);
+	public static String getPublicPath(Context context, Uri uri, Long publicId){
+		return getPublicPath(context, uri, publicId, false);
 	}
 
 	/**
-	 * @param cr
+	 * @param context
 	 * @param uri the URI of the item whose field should be queried
 	 * @param field the string name of the field
 	 * @return
 	 */
-	private static String getPathFromField(ContentResolver cr, Uri uri, String field){
+	private static String getPathFromField(Context context, Uri uri, String field){
 		String path = null;
 		final String[] generalProjection = {JsonSyncableItem._ID, field};
-		final Cursor c = cr.query(uri, generalProjection, null, null, null);
+		final Cursor c = context.getContentResolver().query(uri, generalProjection, null, null, null);
 		try{
 			if (c.getCount() == 1 && c.moveToFirst()){
 				final String storedPath = c.getString(c.getColumnIndex(field));
@@ -942,7 +944,7 @@ public class MediaProvider extends ContentProvider {
 		return path;
 	}
 
-	public static String getPublicPath(ContentResolver cr, Uri uri, Long publicId, boolean parent){
+	public static String getPublicPath(Context context, Uri uri, Long publicId, boolean parent){
 		String path;
 
 		final int match = uriMatcher.match(uri);
@@ -953,11 +955,11 @@ public class MediaProvider extends ContentProvider {
 		// these should be the only hard-coded paths in the system.
 
 		case MATCHER_EVENT_DIR:
-			path = internalToPublicQueryMap(Event.SERVER_PATH, uri);
+			path = internalToPublicQueryMap(context, Event.SERVER_PATH, uri);
 			break;
 
 		case MATCHER_CAST_DIR:{
-			path = internalToPublicQueryMap(Cast.SERVER_PATH, uri);
+			path = internalToPublicQueryMap(context, Cast.SERVER_PATH, uri);
 
 		}break;
 
@@ -970,29 +972,30 @@ public class MediaProvider extends ContentProvider {
 			break;
 
 		case MATCHER_CHILD_COMMENT_DIR:
-			path = getPathFromField(cr, ProviderUtils.removeLastPathSegment(uri), Commentable.Columns._COMMENT_DIR_URI);
+			path = getPathFromField(context, ProviderUtils.removeLastPathSegment(uri), Commentable.Columns._COMMENT_DIR_URI);
 			break;
 
 		case MATCHER_CAST_ITEM:
 		case MATCHER_CHILD_COMMENT_ITEM:
+		case MATCHER_CHILD_CAST_ITEM:
 		case MATCHER_COMMENT_ITEM:
 		{
 			if (parent || publicId != null){
-				path = getPublicPath(cr, ProviderUtils.removeLastPathSegment(uri));
+				path = getPublicPath(context, ProviderUtils.removeLastPathSegment(uri));
 			}else{
-				path = getPathFromField(cr, uri, JsonSyncableItem._PUBLIC_URI);
+				path = getPathFromField(context, uri, JsonSyncableItem._PUBLIC_URI);
 			}
 
 			}break;
 
 		case MATCHER_CHILD_CAST_DIR:
-			path = getPathFromField(cr, ProviderUtils.removeLastPathSegment(uri), Itinerary._CASTS_URI);
+			path = getPathFromField(context, ProviderUtils.removeLastPathSegment(uri), Itinerary._CASTS_URI);
 			break;
 
 		case MATCHER_ITINERARY_BY_TAGS:{
 			final Set<String> tags = TaggableItem.removePrefixesFromTags(Tag.toSet(uri.getQuery()));
 
-			path = getPublicPath(cr, ProviderUtils.removeLastPathSegment(uri)) + "?tags=" + ListUtils.join(tags, ",");
+			path = getPublicPath(context, ProviderUtils.removeLastPathSegment(uri)) + "?tags=" + ListUtils.join(tags, ",");
 		}break;
 
 		default:
@@ -1011,9 +1014,10 @@ public class MediaProvider extends ContentProvider {
 		return path;
 	}
 
-	private static String internalToPublicQueryMap(String serverPath, Uri uri){
+	private static String internalToPublicQueryMap(Context context, String serverPath, Uri uri){
 		final String tags = uri.getQueryParameter(TaggableItem.SERVER_QUERY_PARAMETER);
 		final String dist = uri.getQueryParameter(Locatable.SERVER_QUERY_PARAMETER);
+		final Boolean favorite = Favoritable.decodeFavoritedUri(uri);
 		String query = null;
 
 		// TODO figure out a better way to do this without needing to hard-code this logic.
@@ -1025,9 +1029,28 @@ public class MediaProvider extends ContentProvider {
 		if (dist != null){
 			if (query != null){
 				query += "&";
+			}else{
+				query = "";
 			}
-			query = Locatable.SERVER_QUERY_PARAMETER+"=" + dist;
+			query += Locatable.SERVER_QUERY_PARAMETER+"=" + dist;
 		}
+
+		if (favorite != null){
+			final Account[] accounts = Authenticator.getAccounts(context);
+			if (accounts.length > 0){
+				final String id = AccountManager.get(context).getUserData(accounts[0], "id");
+				final String username = accounts[0].name;
+				if(username != null){
+					if (query != null){
+						query += "&";
+					}else{
+						query = "";
+					}
+					query += "favorited_by=" + id;
+				}
+			}
+		}
+
 		return serverPath + (query != null ? "?"+query : "");
 	}
 

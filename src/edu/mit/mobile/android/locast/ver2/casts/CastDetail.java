@@ -1,5 +1,6 @@
 package edu.mit.mobile.android.locast.ver2.casts;
 
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -8,12 +9,11 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v4_map.app.LoaderManager;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.CheckBox;
 import android.widget.GridView;
 import android.widget.TextView;
 
@@ -23,12 +23,16 @@ import com.google.android.maps.MapView;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
+import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 import edu.mit.mobile.android.locast.ver2.itineraries.CastsOverlay;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
+import edu.mit.mobile.android.locast.widget.FavoriteClickHandler;
+import edu.mit.mobile.android.widget.ValidatingCheckBox;
 
 public class CastDetail extends LocatableDetail implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
 	private LoaderManager mLoaderManager;
@@ -36,9 +40,13 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 	private MapController mMapController;
 	private SimpleCursorAdapter mCastMedia;
 
+	private ValidatingCheckBox vcb;
+
 	private static final int
 		LOADER_CAST = 0,
 		LOADER_CAST_MEDIA = 1;
+
+	private static final int REQUEST_SIGNIN = 0;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +62,10 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		mLoaderManager.initLoader(LOADER_CAST_MEDIA, null, this);
 		findViewById(R.id.home).setOnClickListener(this);
 		findViewById(R.id.refresh).setOnClickListener(this);
+
+		vcb = (ValidatingCheckBox) findViewById(R.id.favorite);
+
+		vcb.setValidatedClickHandler(new MyFavoriteClickHandler(this, getIntent().getData()));
 
 		final GridView castMediaView = (GridView) findViewById(R.id.cast_media);
 
@@ -90,17 +102,22 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		}
 	}
 
+
 	@Override
 	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
 
 		final Cursor c = (Cursor) adapter.getItemAtPosition(position);
 		final String mediaString = c.getString(c.getColumnIndex(CastMedia._MEDIA_URL));
 		final String locMediaString = c.getString(c.getColumnIndex(CastMedia._LOCAL_URI));
-		final String mimeType = c.getString(c.getColumnIndex(CastMedia._MIME_TYPE));
+		String mimeType =null;
+
 		Uri media;
 
 		if (locMediaString != null){
 			media = Uri.parse(locMediaString);
+			if ("file".equals(media.getScheme())){
+				mimeType = c.getString(c.getColumnIndex(CastMedia._MIME_TYPE));
+			}
 
 		}else if (mediaString != null){
 			media = Uri.parse(mediaString);
@@ -108,7 +125,8 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		}else{
 			return;
 		}
-		final Intent i = new Intent(Intent.ACTION_VIEW, media);
+		final Intent i = new Intent(Intent.ACTION_VIEW);
+		i.setDataAndType(media, mimeType);
 		// setting the MIME type for URLs doesn't work.
 		startActivity(i);
 
@@ -136,6 +154,8 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 				((TextView)findViewById(R.id.title)).setText(c.getString(c.getColumnIndex(Cast._TITLE)));
 				((TextView)findViewById(R.id.author)).setText(c.getString(c.getColumnIndex(Cast._AUTHOR)));
 				((TextView)findViewById(R.id.description)).setText(c.getString(c.getColumnIndex(Cast._DESCRIPTION)));
+				((CheckBox)findViewById(R.id.favorite)).setChecked(c.getInt(c.getColumnIndex(Cast._FAVORITED)) != 0);
+
 				setPointerFromCursor(c, mMapController);
 			}
 
@@ -169,25 +189,48 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		return mCastsOverlay;
 	}
 
+	private class MyFavoriteClickHandler extends FavoriteClickHandler {
+		private boolean shouldActuallyDoIt = true;
 
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		super.onCreateOptionsMenu(menu);
-		menu.add(0, R.id.favorites, 0, "favorite");
-
-		return true;
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()){
-		case R.id.favorites:
-			// XXX do something
-			return true;
-
-			default:
-				return super.onOptionsItemSelected(item);
+		public MyFavoriteClickHandler(Context context, Uri favoritableItem) {
+			super(context, favoritableItem);
+		}
+		@Override
+		public Boolean performClick(ValidatingCheckBox checkBox) {
+			if (shouldActuallyDoIt){
+				return super.performClick(checkBox);
+			}else{
+				return null;
+			}
 		}
 
+		@Override
+		public void prePerformClick(final ValidatingCheckBox checkBox) {
+			if (!Authenticator.hasAccount(CastDetail.this)){
+				startActivityForResult(new Intent(CastDetail.this, AuthenticatorActivity.class), REQUEST_SIGNIN);
+				shouldActuallyDoIt = false;
+				mDoAfterAuthentication = new Runnable() {
+
+					@Override
+					public void run() {
+						shouldActuallyDoIt = true;
+						performClick(checkBox);
+					}
+				};
+			}
+		}
+	}
+	private Runnable mDoAfterAuthentication;
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		switch(requestCode){
+		case REQUEST_SIGNIN:
+			if (resultCode == RESULT_OK){
+				runOnUiThread(mDoAfterAuthentication);
+			}
+			mDoAfterAuthentication = null;
+			break;
+		}
 	}
 }

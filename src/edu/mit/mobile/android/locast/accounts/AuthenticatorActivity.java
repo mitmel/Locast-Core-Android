@@ -29,24 +29,28 @@ import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
-import android.view.Window;
 import android.view.View.OnClickListener;
+import android.view.Window;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import edu.mit.mobile.android.locast.ver2.R;
+import android.widget.TextView.OnEditorActionListener;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
+import edu.mit.mobile.android.locast.ver2.R;
 
 /**
  * Activity which displays login screen to the user.
  */
-public class AuthenticatorActivity extends AccountAuthenticatorActivity implements OnClickListener {
+public class AuthenticatorActivity extends AccountAuthenticatorActivity implements OnClickListener, OnEditorActionListener {
 	private static final String TAG = AuthenticatorActivity.class.getSimpleName();
 
     public static final String
@@ -110,14 +114,18 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 			e.printStackTrace();
 		}
 
+
+
         mMessage = (TextView) findViewById(R.id.message);
         mUsernameEdit = (EditText) findViewById(R.id.username);
         mPasswordEdit = (EditText) findViewById(R.id.password);
+        mPasswordEdit.setOnEditorActionListener(this);
         findViewById(R.id.login).setOnClickListener(this);
         findViewById(R.id.cancel).setOnClickListener(this);
+        ((Button)findViewById(R.id.register)).setOnClickListener(this);
 
         mUsernameEdit.setText(mUsername);
-        mMessage.setText(getMessage());
+        setLoginNoticeInfo(R.string.login_message_login_empty_username);
 
         mAuthenticationTask = (AuthenticationTask) getLastNonConfigurationInstance();
         if (mAuthenticationTask != null){
@@ -151,30 +159,29 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 	public void onClick(View v) {
 		switch(v.getId()){
 		case R.id.login:
-			handleLogin(v);
+			handleLogin();
 			break;
 
 		case R.id.cancel:
 			finish();
 			break;
 
+		case R.id.register:
+			startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.signup_url))));
+			break;
 		}
 	}
 
     /**
      * Handles onClick event on the Submit button. Sends username/password to
      * the server for authentication.
-     *
-     * @param view The Submit button for which this method is invoked
      */
-    private void handleLogin(View view) {
+    private void handleLogin() {
         if (mRequestNewAccount) {
             mUsername = mUsernameEdit.getText().toString();
         }
         mPassword = mPasswordEdit.getText().toString();
-        if (TextUtils.isEmpty(mUsername) || TextUtils.isEmpty(mPassword)) {
-            mMessage.setText(getMessage());
-        } else {
+        if (validateEntry()) {
         	mAuthenticationTask = new AuthenticationTask(this);
         	mAuthenticationTask.execute(mUsername, mPassword);
         }
@@ -204,16 +211,16 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
      * request. See onAuthenticationResult(). Sets the
      * AccountAuthenticatorResult which is sent back to the caller. Also sets
      * the authToken in AccountManager for this account.
-     *
+     * @param userData TODO
      * @param the confirmCredentials result.
      */
 
-    protected void finishLogin() {
+    protected void finishLogin(Bundle userData) {
         Log.i(TAG, "finishLogin()");
         final Account account = new Account(mUsername, AuthenticationService.ACCOUNT_TYPE);
 
         if (mRequestNewAccount) {
-            mAccountManager.addAccountExplicitly(account, mPassword, null);
+            mAccountManager.addAccountExplicitly(account, mPassword, userData);
             // Automatically enable sync for this account
             ContentResolver.setSyncAutomatically(account,
                 MediaProvider.AUTHORITY, true);
@@ -234,51 +241,59 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         finish();
     }
 
+    private void setLoginNoticeError(int textResID){
+    	mMessage.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_warning, 0, 0, 0);
+        mMessage.setText(getText(textResID));
+
+    }
+
+    private void setLoginNoticeInfo(int textResID){
+    	mMessage.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_info, 0, 0, 0);
+        mMessage.setText(getText(textResID));
+    }
+
     /**
      * Called when the authentication process completes (see attemptLogin()).
      */
-    public void onAuthenticationResult(boolean result) {
-        Log.i(TAG, "onAuthenticationResult(" + result + ")");
+    public void onAuthenticationResult(Bundle userData) {
+        Log.i(TAG, "onAuthenticationResult(" + userData + ")");
 
-        if (result) {
+        if (userData != null) {
             if (!mConfirmCredentials) {
-                finishLogin();
+                finishLogin(userData);
             } else {
                 finishConfirmCredentials(true);
             }
         } else {
             Log.e(TAG, "onAuthenticationResult: failed to authenticate");
-            if (mRequestNewAccount) {
-                // "Please enter a valid username/password.
-                mMessage
-                    .setText(getText(R.string.login_message_loginfail));
-            } else {
-                // "Please enter a valid password." (Used when the
-                // account is already in the database but the password
-                // doesn't work.)
-                mMessage
-                    .setText(getText(R.string.login_message_loginfail));
-            }
+            setLoginNoticeError(R.string.login_message_loginfail);
         }
     }
 
     /**
-     * Returns the message to be displayed at the top of the login dialog box.
+     * Validates the login form.
+     * @return true if the form is valid.
      */
-    private CharSequence getMessage() {
-        //getString(R.string.label);
+    private boolean validateEntry() {
         if (TextUtils.isEmpty(mUsername)) {
             // If no username, then we ask the user to log in using an
             // appropriate service.
-            final CharSequence msg =
-                getText(R.string.login_message_login_empty_username);
-            return msg;
+
+        	mUsernameEdit.setError(getText(R.string.login_message_login_empty_username));
+            mUsernameEdit.requestFocus();
+            return false;
+        }else{
+        	mUsernameEdit.setError(null);
         }
+
         if (TextUtils.isEmpty(mPassword)) {
-            // We have an account but no password
-            return getText(R.string.login_message_login_empty_password);
+        	mPasswordEdit.setError(getText(R.string.login_message_login_empty_password));
+        	mPasswordEdit.requestFocus();
+        	return false;
+        }else{
+        	mPasswordEdit.setError(null);
         }
-        return null;
+        return true;
     }
 
     private AuthenticationTask mAuthenticationTask = null;
@@ -291,7 +306,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     	return mAuthenticationTask;
     }
 
-    private class AuthenticationTask extends AsyncTask<String, Long, Boolean>{
+    private class AuthenticationTask extends AsyncTask<String, Long, Bundle>{
     	private AuthenticatorActivity mActivity;
 
     	public AuthenticationTask(AuthenticatorActivity activity) {
@@ -304,7 +319,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     	}
 
 		@Override
-		protected Boolean doInBackground(String... userPass) {
+		protected Bundle doInBackground(String... userPass) {
 			try {
 				return NetworkClient.authenticate(AuthenticatorActivity.this, userPass[0], userPass[1]);
 
@@ -315,12 +330,12 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 			} catch (final NetworkProtocolException e) {
 				e.printStackTrace();
 			}
-			return false;
+			return null;
 		}
     	@Override
-    	protected void onPostExecute(Boolean result) {
+    	protected void onPostExecute(Bundle userData) {
     		mActivity.dismissDialog(DIALOG_PROGRESS);
-    		mActivity.onAuthenticationResult(result);
+    		mActivity.onAuthenticationResult(userData);
     	}
 
     	public void detach(){
@@ -329,5 +344,15 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     	public void attach(AuthenticatorActivity activity){
     		mActivity = activity;
     	}
+    }
+
+    @Override
+    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+    	switch (v.getId()){
+    	case R.id.password:
+    		handleLogin();
+    		return true;
+    	}
+    	return false;
     }
 }

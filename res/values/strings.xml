@@ -4,8 +4,11 @@
 	<string name="app_name">Locast Abruzzo</string>
 
 	<string name="default_api_url" translatable="false">http://mel-pydev.mit.edu/travels/api/</string>
-	<!-- <string name="default_api_url" translatable="false">http://locast.mit.edu/abruzzo_dev/api/</string>-->
+	<!-- <string name="default_api_url" translatable="false">https://locast.mit.edu/abruzzo_dev/api/</string> -->
 	<string name="app_update_url" translatable="false">http://mel-pydev.mit.edu/travels/static/lcc.json</string>
+	
+	<string name="signup_url" translatable="false">http://mel-pydev.mit.edu/travels/register/</string>
+	<string name="signup_text">Register to join Locast</string>
 	
 	<!-- Main screen -->
     <string name="about">About</string>
@@ -201,4 +204,7 @@
 	<string name="itinerary_no_casts">There are no casts in this itinerary.</string>
 	<string name="list_empty">No items in this list.</string>
 	<string name="error_loading_event">Error loading event.</string>
+	<string name="auth_username_hint">alice@example.org</string>
+	<string name="auth_password_hint">password</string>
+	<string name="auth_login">Login</string>
 </resources>

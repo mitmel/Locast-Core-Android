@@ -1,48 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+	xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="fill_parent"
 	android:layout_height="fill_parent"
-	android:orientation="vertical">
-		
-	<TextView android:text="@string/username_label"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		/>
-		
-	<EditText  android:id="@+id/username"
-		android:hint="alice@example.org"
-		android:layout_height="wrap_content"
-		android:layout_width="fill_parent" android:inputType="textEmailAddress" />
-		
-	<TextView android:text="@string/password_label"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		 />
-	<EditText android:id="@+id/password"
-	 	android:hint="password"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:inputType="textPassword"
-		/>
-		
-	<TextView android:id="@+id/message"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:textStyle="bold"
-		/>
-		
+>
 	<LinearLayout
+		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
-		android:layout_width="fill_parent">
-		<Button android:id="@+id/login" 
-			android:text="Login"
-			android:layout_width="wrap_content"
+		android:orientation="vertical"
+	>
+
+		<TextView
+			android:id="@+id/message"
+			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
-			/>
-		<Button android:id="@+id/cancel" 
-			android:text="Cancel"
+			style="@style/Notice.Info" />
+
+		<TextView
+			android:text="@string/username_label"
 			android:layout_width="wrap_content"
+			android:layout_height="wrap_content" />
+
+		<EditText
+			android:id="@+id/username"
+			android:hint="@string/auth_username_hint"
 			android:layout_height="wrap_content"
-			/>
+			android:layout_width="fill_parent"
+			android:imeOptions="actionNext"
+			android:inputType="textEmailAddress" />
+
+		<TextView
+			android:text="@string/password_label"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content" />
+		<EditText
+			android:id="@+id/password"
+			android:hint="@string/auth_password_hint"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:imeOptions="actionGo"
+			android:imeActionLabel="@string/auth_login"
+			android:inputType="textPassword" />
+
+
+		<LinearLayout
+			android:layout_height="wrap_content"
+			android:layout_width="fill_parent"
+			android:orientation="horizontal"
+			style="@android:style/ButtonBar"
+		>
+			<Button
+				android:id="@+id/login"
+				android:text="@string/auth_login"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<Button
+				android:id="@+id/cancel"
+				android:text="@android:string/cancel"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content" />
+			<View
+				android:layout_width="wrap_content"
+				android:layout_height="20dip"
+				android:layout_weight="1" />
+			<Button
+				android:text="@string/signup_text"
+				android:layout_height="wrap_content"
+				android:layout_width="wrap_content"
+				android:id="@+id/register"
+			></Button>
+		</LinearLayout>
 	</LinearLayout>
-</LinearLayout>
+</ScrollView>

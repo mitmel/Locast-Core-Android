@@ -146,6 +146,7 @@ public class Sync extends Service {
 			currentSyncTask = null;
 		}
 		syncQueue.clear();
+		stopSelf();
 	}
 
 	@Override
@@ -266,7 +267,7 @@ public class Sync extends Service {
 				// Handle a list of items.
 				if (contentType.startsWith(CONTENT_TYPE_PREFIX_DIR)){
 					// load from the network first...
-					syncNetworkList(toSync, MediaProvider.getPublicPath(cr, toSync), sync, syncProgress);
+					syncNetworkList(toSync, MediaProvider.getPublicPath(this, toSync), sync, syncProgress);
 				}
 
 				// then load locally.
@@ -420,7 +421,7 @@ public class Sync extends Service {
 			try {
 				jsonObject = JsonSyncableItem.toJSON(context, locUri, c, syncMap);
 
-				final String publicPath = MediaProvider.getPostPath(cr, locUri);
+				final String publicPath = MediaProvider.getPostPath(this, locUri);
 				Log.d(TAG, "Posting "+locUri + " to " + publicPath);
 
 				// The response from a post to create a new item should be the newly created item,
@@ -753,6 +754,7 @@ public class Sync extends Service {
 			mShouldAlertUserOnSuccess = false;
 
 			nm.cancel(NOTIFICATION_SYNC);
+			scheduleSelfDestruct();
 		}
 
 		public void addPendingTasks(int taskCount) {
@@ -770,6 +772,30 @@ public class Sync extends Service {
 				nm.cancel(NOTIFICATION_SYNC);
 			}
 		}
+	}
+
+	private void stopIfQueuesEmpty(){
+		if (syncQueue.isEmpty()){
+			stopSelf();
+		}
+	}
+
+	private static final int MSG_DONE = 0;
+
+	private final Handler mDoneTimeout = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case MSG_DONE:
+				stopIfQueuesEmpty();
+				break;
+			}
+		}
+	};
+
+	private void scheduleSelfDestruct() {
+		mDoneTimeout.removeMessages(MSG_DONE);
+		mDoneTimeout.sendEmptyMessageDelayed(MSG_DONE, 5000);
 	}
 
 	public interface SyncProgressNotifier {

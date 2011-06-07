@@ -27,10 +27,9 @@ import android.accounts.AccountManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
+import edu.mit.mobile.android.locast.ver2.R;
 
 /**
  * This class is an implementation of AbstractAccountAuthenticator for
@@ -66,6 +65,14 @@ public class Authenticator extends AbstractAccountAuthenticator {
         return bundle;
     }
 
+    public static boolean hasAccount(Context context){
+    	return getAccounts(context).length != 0;
+    }
+
+    public static Account[] getAccounts(Context context){
+    	return AccountManager.get(context).getAccountsByType(AuthenticationService.ACCOUNT_TYPE);
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -75,10 +82,10 @@ public class Authenticator extends AbstractAccountAuthenticator {
         if (options != null && options.containsKey(AccountManager.KEY_PASSWORD)) {
             final String password =
                 options.getString(AccountManager.KEY_PASSWORD);
-            final boolean verified =
+            final Bundle verified =
                 onlineConfirmPassword(account.name, password);
             final Bundle result = new Bundle();
-            result.putBoolean(AccountManager.KEY_BOOLEAN_RESULT, verified);
+            result.putBoolean(AccountManager.KEY_BOOLEAN_RESULT, verified != null);
             return result;
         }
         // Launch AuthenticatorActivity to confirm credentials
@@ -116,10 +123,11 @@ public class Authenticator extends AbstractAccountAuthenticator {
         final AccountManager am = AccountManager.get(mContext);
         final String password = am.getPassword(account);
         if (password != null) {
-            final boolean verified =
+            final Bundle accountData =
                 onlineConfirmPassword(account.name, password);
-            if (verified) {
+            if (accountData != null) {
                 final Bundle result = new Bundle();
+
                 result.putString(AccountManager.KEY_ACCOUNT_NAME, account.name);
                 result.putString(AccountManager.KEY_ACCOUNT_TYPE,
                 		AuthenticationService.ACCOUNT_TYPE);
@@ -166,23 +174,19 @@ public class Authenticator extends AbstractAccountAuthenticator {
     /**
      * Validates user's password on the server
      */
-    private boolean onlineConfirmPassword(String username, String password) {
-    	boolean success = false;
+    private Bundle onlineConfirmPassword(String username, String password) {
+    	Bundle response = null;
     	try {
-			success = NetworkClient.authenticate(mContext, username, password);
+			response = NetworkClient.authenticate(mContext, username, password);
 
 		} catch (final IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (final JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (final NetworkProtocolException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-    	Log.d(TAG, "checking password...");
-        return success;
+        return response;
     }
 
     /**
@@ -200,5 +204,4 @@ public class Authenticator extends AbstractAccountAuthenticator {
         bundle.putParcelable(AccountManager.KEY_INTENT, intent);
         return bundle;
     }
-
 }

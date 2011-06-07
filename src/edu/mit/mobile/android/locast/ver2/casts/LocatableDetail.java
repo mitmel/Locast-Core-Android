@@ -13,6 +13,7 @@ import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
 
 import edu.mit.mobile.android.locast.maps.MapsUtils;
+import edu.mit.mobile.android.locast.maps.PointerShadow;
 import edu.mit.mobile.android.locast.maps.PointerShadowOverlay;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
@@ -34,6 +35,7 @@ import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 abstract public class LocatableDetail extends MapFragmentActivity {
 
 	private MapView mMapView;
+	private PointerShadow mPointerShadow;
 	private PointerShadowOverlay mShadowOverlay;
 	private LocatableItemOverlay mLocatableItemOverlay;
 
@@ -49,7 +51,9 @@ abstract public class LocatableDetail extends MapFragmentActivity {
 
 	protected void initOverlays() {
 		mMapView = (MapView) findViewById(R.id.map);
-		mShadowOverlay = new PointerShadowOverlay(this);
+
+		mPointerShadow = (PointerShadow) findViewById(R.id.pointer_shadow);
+		mShadowOverlay = new PointerShadowOverlay(this, mPointerShadow);
 		mLocatableItemOverlay = createItemOverlay();
 		final List<Overlay> overlays = mMapView.getOverlays();
 		overlays.add(mLocatableItemOverlay);
