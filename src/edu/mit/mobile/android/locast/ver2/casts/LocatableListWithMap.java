@@ -56,10 +56,10 @@ import edu.mit.mobile.android.locast.data.Favoritable;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Sync;
+import edu.mit.mobile.android.locast.maps.CastsOverlay;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.events.EventCursorAdapter;
 import edu.mit.mobile.android.locast.ver2.itineraries.BasicLocatableOverlay;
-import edu.mit.mobile.android.locast.ver2.itineraries.CastsOverlay;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 import edu.mit.mobile.android.widget.RefreshButton;
 

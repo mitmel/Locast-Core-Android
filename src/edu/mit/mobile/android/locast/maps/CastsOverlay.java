@@ -1,18 +1,23 @@
-package edu.mit.mobile.android.locast.ver2.itineraries;
+package edu.mit.mobile.android.locast.maps;
 
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 
 import com.google.android.maps.OverlayItem;
+import com.stackoverflow.ArrayUtils;
 
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 
 public class CastsOverlay extends LocatableItemOverlay {
 	private int mOfficialCol, mTitleCol, mDescriptionCol;
 	private final Drawable mOfficialCastDrawable;
 	private final Drawable mCommunityCastDrawable;
+
+	public static final String[] CASTS_OVERLAY_PROJECTION = ArrayUtils.concat(LOCATABLE_ITEM_PROJECTION,
+			new String[]{Cast._TITLE, Cast._DESCRIPTION, Cast._OFFICIAL});
 
 	public CastsOverlay(Context context) {
 		super(boundCenterBottom(context.getResources().getDrawable(R.drawable.ic_map_community)));

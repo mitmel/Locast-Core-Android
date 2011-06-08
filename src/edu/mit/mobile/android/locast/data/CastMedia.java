@@ -26,6 +26,7 @@ public class CastMedia extends JsonSyncableItem {
 		_MIME_TYPE    = "mimetype",		// type of the media
 		_DURATION	  = "duration",
 		_THUMBNAIL	  = "thumbnail",
+		_KEEP_OFFLINE = "offline",
 		_THUMB_LOCAL  = "local_thumb"   // filename of the local thumbnail
 		;
 	public final static String PATH = "media";
@@ -49,6 +50,7 @@ public class CastMedia extends JsonSyncableItem {
 		_DURATION,
 		_THUMBNAIL,
 		_THUMB_LOCAL,
+		_KEEP_OFFLINE
 	};
 
 	public static final String

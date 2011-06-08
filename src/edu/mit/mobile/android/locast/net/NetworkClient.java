@@ -75,6 +75,7 @@ import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.accounts.OnAccountsUpdateListener;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
@@ -104,7 +105,7 @@ import edu.mit.mobile.android.utils.StreamUtils;
  *
  * @author stevep
  */
-public class NetworkClient extends DefaultHttpClient implements OnSharedPreferenceChangeListener {
+public class NetworkClient extends DefaultHttpClient implements OnSharedPreferenceChangeListener, OnAccountsUpdateListener {
 	private static final String TAG = NetworkClient.class.getSimpleName();
 	public final static String JSON_MIME_TYPE = "application/json";
 
@@ -118,8 +119,6 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	protected URI baseuri;
 	// one of the formats from ISO 8601
 	public final static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-
-	private JSONObject user;
 
 	private AuthScope authScope;
 
@@ -192,6 +191,9 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 		initClient();
 
+		final AccountManager am = AccountManager.get(context);
+		am.addOnAccountsUpdatedListener(this, null, true);
+
 		/*addRequestInterceptor(new HttpRequestInterceptor() {
 
 			public void process(HttpRequest request, HttpContext context)
@@ -203,6 +205,13 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 				metrics.getSentBytesCount();
 			}
 		});*/
+	}
+
+	@Override
+	protected void finalize() throws Throwable {
+		final AccountManager am = AccountManager.get(context);
+		am.removeOnAccountsUpdatedListener(this);
+		super.finalize();
 	}
 
 	protected void initClient(){
@@ -239,9 +248,6 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	 * @throws IOException
 	 */
 	protected void setCredentials(String username, String auth_secret) throws IOException {
-		this.user = null;
-
-
 		this.setCredentials(new UsernamePasswordCredentials(username, auth_secret));
 	}
 
@@ -251,27 +257,11 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	 * @param credentials
 	 */
 	protected void setCredentials(Credentials credentials){
-		this.user = null;
-
 
 		this.getCredentialsProvider().clear();
-		this.getCredentialsProvider().setCredentials(authScope, credentials);
-	}
-
-	/**
-	 * Gets the authenticated user.
-	 *
-	 * @return
-	 * @throws IllegalStateException
-	 * @throws NetworkProtocolException
-	 * @throws IOException
-	 * @throws JSONException
-	 */
-	public JSONObject getAuthenticatedUser() throws IllegalStateException, NetworkProtocolException, IOException, JSONException{
-		if (user == null){
-			user = getUser(getUsername());
+		if (credentials != null){
+			this.getCredentialsProvider().setCredentials(authScope, credentials);
 		}
-		return user;
 	}
 
 	public boolean isAuthenticated(){
@@ -296,18 +286,23 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		// ensure that this instance is never reused, as it could have invalid authentication cached.
 		mInstance = null;
 
-		return jsonObjectToBundle(jo);
+		return jsonObjectToBundle(jo, true);
 	}
 
-	public static Bundle jsonObjectToBundle(JSONObject jsonObject){
+	public static Bundle jsonObjectToBundle(JSONObject jsonObject, boolean allStrings){
 		final Bundle b = new Bundle();
 		for (final Iterator<String> i = jsonObject.keys(); i.hasNext(); ){
 			final String key = i.next();
 			final Object value = jsonObject.opt(key);
 			if (value == null){
 				b.putSerializable(key, null);
+
+			}else if (allStrings){
+				b.putString(key, String.valueOf(value));
+
 			}else if (value instanceof String){
 				b.putString(key, (String) value);
+
 			}else if (value instanceof Integer){
 				b.putInt(key, (Integer) value);
 			}
@@ -645,10 +640,9 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	 * @throws JSONException
 	 */
 	public JSONObject getUser() throws NetworkProtocolException, IOException, JSONException{
-		if (user == null){
+		JSONObject user;
 
-			user = getUser("me");
-		}
+		user = getUser("me");
 		return user;
 	}
 
@@ -821,6 +815,11 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		}
 	}
 
+	@Override
+	public void onAccountsUpdated(Account[] arg0) {
+		loadFromPreferences();
+	}
+
 	public void loadFromPreferences() {
 		Log.i(TAG, "Preferences changed. Updating network settings.");
 		loadBaseUri();
@@ -894,9 +893,11 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	protected synchronized void loadCredentials() throws IOException {
 
 		final AccountManager am = AccountManager.get(context);
+
 		final Account[] accounts = am.getAccountsByType(AuthenticationService.ACCOUNT_TYPE);
 		if (accounts.length == 0){
 			Log.i(TAG, "There are no accounts currently set up");
+			setCredentials(null);
 			return;
 		}if (accounts.length > 1){
 			Log.w(TAG, "more than one Locast account is defined. Using the first one");
@@ -1087,4 +1088,5 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	static {
 		dateFormat.setCalendar(Calendar.getInstance(TimeZone.getTimeZone("GMT")));
 	}
+
 }

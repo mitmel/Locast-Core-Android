@@ -32,7 +32,10 @@ public class AuthenticationService extends Service {
 	public static final String
 		AUTHORITY = "edu.mit.mobile.android.locast",
 		ACCOUNT_TYPE = AUTHORITY,
-		AUTHTOKEN_TYPE = AUTHORITY;
+		AUTHTOKEN_TYPE = AUTHORITY,
+		USERDATA_USERID = "id",
+		USERDATA_DISPLAY_NAME = "display_name"
+		;
 
     @Override
     public void onCreate() {

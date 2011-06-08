@@ -19,6 +19,7 @@ import android.widget.TextView;
 
 import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
+import com.stackoverflow.ArrayUtils;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
@@ -27,9 +28,9 @@ import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.CastMedia;
+import edu.mit.mobile.android.locast.maps.CastsOverlay;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
-import edu.mit.mobile.android.locast.ver2.itineraries.CastsOverlay;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 import edu.mit.mobile.android.locast.widget.FavoriteClickHandler;
 import edu.mit.mobile.android.widget.ValidatingCheckBox;
@@ -47,6 +48,11 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		LOADER_CAST_MEDIA = 1;
 
 	private static final int REQUEST_SIGNIN = 0;
+
+	private static final String[] CAST_MEDIA_DISPLAY = new String[]{CastMedia._TITLE, CastMedia._THUMBNAIL, CastMedia._THUMB_LOCAL, CastMedia._MEDIA_URL, CastMedia._LOCAL_URI, CastMedia._MIME_TYPE};
+	private static final String[] CAST_MEDIA_PROJECTION = ArrayUtils.concat(new String[]{CastMedia._ID}, CAST_MEDIA_DISPLAY);
+
+	private static final String[] CAST_PROJECTION = ArrayUtils.concat(new String[]{Cast._ID, Cast._TITLE, Cast._AUTHOR, Cast._DESCRIPTION, Cast._FAVORITED}, CastsOverlay.CASTS_OVERLAY_PROJECTION);
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +78,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		mCastMedia = new SimpleThumbnailCursorAdapter(this,
 				R.layout.cast_media_item,
 				null,
-				new String[]{CastMedia._TITLE, CastMedia._THUMBNAIL, CastMedia._THUMB_LOCAL},
+				CAST_MEDIA_DISPLAY,
 				new int[]{R.id.title, R.id.media_thumbnail, R.id.media_thumbnail},
 				new int[]{R.id.media_thumbnail},
 				0);
@@ -137,9 +143,9 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		final Uri data = getIntent().getData();
 		switch (id){
 		case LOADER_CAST:
-			return new CursorLoader(this, data, Cast.PROJECTION, null, null, null);
+			return new CursorLoader(this, data, CAST_PROJECTION, null, null, null);
 		case LOADER_CAST_MEDIA:
-			return new CursorLoader(this, Cast.getCastMediaUri(data), CastMedia.PROJECTION, null, null, null);
+			return new CursorLoader(this, Cast.getCastMediaUri(data), CAST_MEDIA_PROJECTION, null, null, null);
 		}
 		return null;
 	}

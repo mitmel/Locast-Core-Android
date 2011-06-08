@@ -16,6 +16,8 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 	protected Cursor mLocatableItems;
 	private int mLatCol, mLonCol;
 
+	public static final String[] LOCATABLE_ITEM_PROJECTION = {Locatable.Columns._LATITUDE, Locatable.Columns._LONGITUDE};
+
 	private final ContentObserver mContentObserver = new ContentObserver(new Handler()) {
 		@Override
 		public void onChange(boolean selfChange) {

@@ -72,6 +72,8 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 	private final HashMap<Uri, Long> mRecentlySyncd = new HashMap<Uri, Long>();
 
+	private ContentResolver cr;
+
 	public MediaSync() {
 		super();
 
@@ -127,6 +129,13 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 			mSyncTask = new SyncTask();
 			mSyncTask.execute();
 		}
+	}
+
+	@Override
+	public void onCreate() {
+		super.onCreate();
+
+		cr = getContentResolver();
 	}
 
 	@Override
@@ -225,6 +234,11 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 		}
 	}
 
+	final static String[] PROJECTION = { CastMedia._ID, CastMedia._MIME_TYPE,
+			CastMedia._LOCAL_URI, CastMedia._MEDIA_URL, CastMedia._KEEP_OFFLINE,
+			CastMedia._THUMB_LOCAL};
+
+	final static String[] CAST_PROJECTION = {Cast._ID, Cast._FAVORITED };
 	/**
 	 * Synchronize the media of the given castMedia. It will download or upload
 	 * as needed.
@@ -233,11 +247,12 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	 * @throws SyncException
 	 */
 	public void syncItemMedia(Uri castMediaUri) throws SyncException {
-		final ContentResolver cr = getContentResolver();
 
-		final String[] PROJECTION = { CastMedia._ID, CastMedia._MIME_TYPE,
-				CastMedia._LOCAL_URI, CastMedia._MEDIA_URL };
 		final Cursor castMedia = cr.query(castMediaUri, PROJECTION, null, null,
+				null);
+
+		final Uri castUri = CastMedia.getCast(castMediaUri);
+		final Cursor cast = cr.query(castUri, CAST_PROJECTION, null, null,
 				null);
 
 		try {
@@ -246,14 +261,24 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 						+ " has no content");
 			}
 
+			if (!cast.moveToFirst()){
+				throw new IllegalArgumentException(castMediaUri + " cast " + castUri + " has no content");
+			}
+
 			// cache the column numbers
 			final int mediaUrlCol = castMedia
 					.getColumnIndex(CastMedia._MEDIA_URL);
 			final int localUriCol = castMedia
 					.getColumnIndex(CastMedia._LOCAL_URI);
 
+			final boolean isFavorite = cast.getInt(cast.getColumnIndex(Cast._FAVORITED)) != 0;
+			final boolean keepOffline = castMedia.getInt(castMedia.getColumnIndex(CastMedia._KEEP_OFFLINE)) != 0;
+
+
 			final String mimeType = castMedia.getString(castMedia
 					.getColumnIndex(CastMedia._MIME_TYPE));
+
+			final boolean isImage = (mimeType != null) && mimeType.startsWith("image/");
 
 			// we don't need to sync this
 			if ("text/html".equals(mimeType)) {
@@ -268,6 +293,8 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 			final boolean hasPubMedia = pubMedia != null
 					&& pubMedia.length() > 0;
 
+			final String localThumb  = castMedia.getString(castMedia.getColumnIndex(CastMedia._THUMB_LOCAL));
+
 			if (hasLocMedia && !hasPubMedia) {
 				uploadMedia(castMediaUri, mimeType, locMedia);
 
@@ -276,23 +303,39 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 				final Uri pubMediaUri = Uri.parse(pubMedia);
 				final File destfile = getFilePath(pubMediaUri);
 
-				final boolean anythingChanged = downloadMediaFile(pubMedia,
-						destfile, castMediaUri);
-				if (anythingChanged) {
-					updateLocalFile(castMediaUri, destfile);
-					// disabled to avoid spamming the user with downloaded
-					// items.
-					// checkForMediaEntry(castMediaUri, pubMediaUri, mimeType);
+				// the following conditions indicate that the cast media should be downloaded.
+				if (keepOffline || isFavorite || isImage){
+					final boolean anythingChanged = downloadMediaFile(pubMedia,
+							destfile, castMediaUri);
+
+					// the below is inverted from what seems logical, because downloadMediaFile()
+					// will actually update the castmedia if it downloads anything. We'll only be getting
+					// here if we don't have any local record of the file, so we should make the association
+					// by ourselves.
+					if (!anythingChanged) {
+						File thumb = null;
+						if (isImage && localThumb == null){
+							thumb = destfile;
+						}
+						updateLocalFile(castMediaUri, destfile, thumb);
+						// disabled to avoid spamming the user with downloaded
+						// items.
+						// checkForMediaEntry(castMediaUri, pubMediaUri, mimeType);
+					}
 				}
 			}
 		} finally {
+			cast.close();
 			castMedia.close();
 		}
 	}
 
-	private void updateLocalFile(Uri castMediaUri, File localFile) {
+	private void updateLocalFile(Uri castMediaUri, File localFile, File localThumbnail) {
 		final ContentValues cv = new ContentValues();
 		cv.put(CastMedia._LOCAL_URI, Uri.fromFile(localFile).toString());
+		if (localThumbnail != null){
+			cv.put(CastMedia._THUMB_LOCAL, Uri.fromFile(localFile).toString());
+		}
 		cv.put(MediaProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
 
 		getContentResolver().update(castMediaUri, cv, null, null);

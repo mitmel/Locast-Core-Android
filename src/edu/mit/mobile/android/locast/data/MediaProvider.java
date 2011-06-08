@@ -45,6 +45,7 @@ import edu.mit.mobile.android.content.DBHelperMapper;
 import edu.mit.mobile.android.content.GenericDBHelper;
 import edu.mit.mobile.android.content.ManyToMany;
 import edu.mit.mobile.android.content.ProviderUtils;
+import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.utils.ListUtils;
 
@@ -117,7 +118,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 37;
+		private static final int DB_VER = 38;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -191,6 +192,7 @@ public class MediaProvider extends ContentProvider {
 					+ CastMedia._MIME_TYPE     + " TEXT,"
 					+ CastMedia._THUMBNAIL     + " TEXT,"
 					+ CastMedia._THUMB_LOCAL   + " TEXT,"
+					+ CastMedia._KEEP_OFFLINE  + " BOOLEAN,"
 					+ CastMedia._DURATION      + " INTEGER"
 			+ ")"
 			);
@@ -1038,9 +1040,8 @@ public class MediaProvider extends ContentProvider {
 		if (favorite != null){
 			final Account[] accounts = Authenticator.getAccounts(context);
 			if (accounts.length > 0){
-				final String id = AccountManager.get(context).getUserData(accounts[0], "id");
-				final String username = accounts[0].name;
-				if(username != null){
+				final String id = AccountManager.get(context).getUserData(accounts[0], AuthenticationService.USERDATA_USERID);
+				if(id != null){
 					if (query != null){
 						query += "&";
 					}else{

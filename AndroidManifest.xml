@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="edu.mit.mobile.android.locast.ver2"
-	android:versionCode="19" android:versionName="2.0 alpha"
+	android:versionCode="20" android:versionName="2.0.1 beta"
+	
 	>
-<!--	android:installLocation="auto" version 2.2+ -->
+<!--	android:installLocation="auto"  version 2.2+ -->
 
-	<uses-sdk android:minSdkVersion="7" android:targetSdkVersion="8" />
+	<uses-sdk android:minSdkVersion="7" android:targetSdkVersion="11" />
 	<supports-screens android:largeScreens="true" android:anyDensity="true" />
 	
 	<application android:icon="@drawable/app_icon"
@@ -18,7 +19,6 @@
 		*                                              Casts                                                *
 		*****************************************************************************************************
 	 -->
-		
 		<activity android:name=".casts.CastDetail" android:process="edu.mit.mobile.android.locast.Detail">
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
@@ -144,7 +144,9 @@
 		*                                              Sync                                                 *
 		*****************************************************************************************************
 	 -->
-		<service android:name="edu.mit.mobile.android.locast.data.Sync" android:process="edu.mit.mobile.android.locast.Sync">
+		<service android:name="edu.mit.mobile.android.locast.data.Sync"
+		android:process="edu.mit.mobile.android.locast.Sync"
+		>
 			<intent-filter>
 				<action android:name="edu.mit.mobile.android.locast.ACTION_CANCEL_SYNC" />
 				<data android:mimeType="*/*" />

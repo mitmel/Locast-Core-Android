@@ -32,6 +32,7 @@ import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.Sync;
+import edu.mit.mobile.android.locast.maps.CastsOverlay;
 import edu.mit.mobile.android.locast.ver2.R;
 
 public class ItineraryDetail extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
