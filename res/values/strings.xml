@@ -207,4 +207,5 @@
 	<string name="auth_username_hint">alice@example.org</string>
 	<string name="auth_password_hint">password</string>
 	<string name="auth_login">Login</string>
+	<string name="empty_castmedia">There are no media in this cast.</string>
 </resources>

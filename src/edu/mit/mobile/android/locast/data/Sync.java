@@ -94,6 +94,9 @@ public class Sync extends Service {
 		TIMEOUT_MAX_ITEM_WAIT = (long) (30 * 1e9), // nanoseconds
 		TIMEOUT_AUTO_SYNC_MINIMUM = (long) (30 * 1e9); // nanoseconds
 
+	private static final int
+		TIMEOUT_SERVICE_AUTODESTRUCT = 60 * 1000; // milliseconds
+
 	private final IBinder mBinder = new LocalBinder();
 	private NetworkClient nc;
 	private ContentResolver cr;
@@ -146,7 +149,7 @@ public class Sync extends Service {
 			currentSyncTask = null;
 		}
 		syncQueue.clear();
-		stopSelf();
+		scheduleSelfDestruct();
 	}
 
 	@Override
@@ -795,7 +798,7 @@ public class Sync extends Service {
 
 	private void scheduleSelfDestruct() {
 		mDoneTimeout.removeMessages(MSG_DONE);
-		mDoneTimeout.sendEmptyMessageDelayed(MSG_DONE, 5000);
+		mDoneTimeout.sendEmptyMessageDelayed(MSG_DONE, TIMEOUT_SERVICE_AUTODESTRUCT);
 	}
 
 	public interface SyncProgressNotifier {

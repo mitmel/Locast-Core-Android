@@ -83,6 +83,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 				new int[]{R.id.media_thumbnail},
 				0);
 
+		castMediaView.setEmptyView(findViewById(android.R.id.empty));
 		castMediaView.setAdapter(new ImageLoaderAdapter(this, mCastMedia, ImageCache.getInstance(this), new int[]{R.id.media_thumbnail}, 133, 100, ImageLoaderAdapter.UNIT_DIP));
 
 		castMediaView.setOnItemClickListener(this);

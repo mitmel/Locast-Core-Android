@@ -268,11 +268,29 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		return getUsername() != null;
 	}
 
+	/**
+	 * @param context
+	 * @param username
+	 * @param password
+	 * @return a Bundle containing the user's profile or null if authentication failed.
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws NetworkProtocolException
+	 */
 	public static Bundle authenticate(Context context, String username, String password) throws IOException, JSONException, NetworkProtocolException{
 		final NetworkClient nc = getInstance(context);
 		nc.setCredentials(username, password);
 		final HttpResponse res = nc.get(PATH_USER);
-		final boolean authenticated = nc.checkStatusCode(res, false);
+		boolean authenticated = false;
+		try {
+			authenticated = nc.checkStatusCode(res, false);
+		}catch (final HttpResponseException e){
+			if (e.getStatusCode() == HttpStatus.SC_UNAUTHORIZED){
+				authenticated = false;
+			}else{
+				throw e;
+			}
+		}
 
 		final HttpEntity ent = res.getEntity();
 		JSONObject jo = null;
@@ -400,6 +418,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	 * @throws HttpResponseException if the status code is 400 series.
 	 * @throws NetworkProtocolException for all status codes errors.
 	 * @throws IOException
+	 * @return returns true upon success or throws an exception explaining what went wrong.
 	 */
 	public boolean checkStatusCode(HttpResponse res, boolean createdOk) throws HttpResponseException, NetworkProtocolException, IOException {
 		final int statusCode = res.getStatusLine().getStatusCode();

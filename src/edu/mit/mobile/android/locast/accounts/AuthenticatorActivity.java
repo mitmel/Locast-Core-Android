@@ -125,7 +125,6 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         ((Button)findViewById(R.id.register)).setOnClickListener(this);
 
         mUsernameEdit.setText(mUsername);
-        setLoginNoticeInfo(R.string.login_message_login_empty_username);
 
         mAuthenticationTask = (AuthenticationTask) getLastNonConfigurationInstance();
         if (mAuthenticationTask != null){
@@ -243,19 +242,28 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 
     private void setLoginNoticeError(int textResID){
     	mMessage.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_warning, 0, 0, 0);
-        mMessage.setText(getText(textResID));
+        mMessage.setText(textResID);
+        mMessage.setVisibility(View.VISIBLE);
+
+    }
+
+    private void setLoginNoticeError(String text){
+    	mMessage.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_warning, 0, 0, 0);
+        mMessage.setText(text);
+        mMessage.setVisibility(View.VISIBLE);
 
     }
 
     private void setLoginNoticeInfo(int textResID){
     	mMessage.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_info, 0, 0, 0);
-        mMessage.setText(getText(textResID));
+        mMessage.setText(textResID);
+        mMessage.setVisibility(View.VISIBLE);
     }
 
     /**
      * Called when the authentication process completes (see attemptLogin()).
      */
-    public void onAuthenticationResult(Bundle userData) {
+    public void onAuthenticationResult(Bundle userData, String reason) {
         Log.i(TAG, "onAuthenticationResult(" + userData + ")");
 
         if (userData != null) {
@@ -265,8 +273,12 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
                 finishConfirmCredentials(true);
             }
         } else {
-            Log.e(TAG, "onAuthenticationResult: failed to authenticate");
-            setLoginNoticeError(R.string.login_message_loginfail);
+        	if (reason == null){
+        		Log.e(TAG, "onAuthenticationResult: failed to authenticate");
+            	setLoginNoticeError(R.string.login_message_loginfail);
+        	}else{
+        		setLoginNoticeError(reason);
+        	}
         }
     }
 
@@ -309,6 +321,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     private class AuthenticationTask extends AsyncTask<String, Long, Bundle>{
     	private AuthenticatorActivity mActivity;
 
+    	private String reason;
     	public AuthenticationTask(AuthenticatorActivity activity) {
     		mActivity = activity;
 		}
@@ -323,11 +336,15 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 			try {
 				return NetworkClient.authenticate(AuthenticatorActivity.this, userPass[0], userPass[1]);
 
+				// XXX localize.
 			} catch (final IOException e) {
+				reason = "Could not contact server.";
 				e.printStackTrace();
 			} catch (final JSONException e) {
+				reason = "Server returned invalid data.";
 				e.printStackTrace();
 			} catch (final NetworkProtocolException e) {
+				reason = "Network protocol error: " + e.getHttpResponseMessage();
 				e.printStackTrace();
 			}
 			return null;
@@ -335,7 +352,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     	@Override
     	protected void onPostExecute(Bundle userData) {
     		mActivity.dismissDialog(DIALOG_PROGRESS);
-    		mActivity.onAuthenticationResult(userData);
+    		mActivity.onAuthenticationResult(userData, reason);
     	}
 
     	public void detach(){

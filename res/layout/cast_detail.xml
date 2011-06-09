@@ -59,7 +59,14 @@
 				android:layout_width="fill_parent"
 				android:layout_height="wrap_content" />
 		</ScrollView>
-	
+	<TextView
+		android:id="@android:id/empty"
+		android:text="@string/empty_castmedia"
+		style="@style/EmptyList"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:layout_weight="2" 
+		android:visibility="gone"/>
 	<GridView
 		android:id="@+id/cast_media"
 		android:numColumns="auto_fit"

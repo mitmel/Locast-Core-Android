@@ -14,10 +14,13 @@
 			android:id="@+id/message"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
+			android:visibility="gone"
 			style="@style/Notice.Info" />
 
 		<TextView
 			android:text="@string/username_label"
+			android:layout_marginLeft="5dip"
+			android:layout_marginRight="5dip"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content" />
 
@@ -26,11 +29,15 @@
 			android:hint="@string/auth_username_hint"
 			android:layout_height="wrap_content"
 			android:layout_width="fill_parent"
+			android:layout_marginLeft="5dip"
+			android:layout_marginRight="5dip"
 			android:imeOptions="actionNext"
 			android:inputType="textEmailAddress" />
 
 		<TextView
 			android:text="@string/password_label"
+			android:layout_marginLeft="5dip"
+			android:layout_marginRight="5dip"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content" />
 		<EditText
@@ -40,6 +47,8 @@
 			android:layout_height="wrap_content"
 			android:imeOptions="actionGo"
 			android:imeActionLabel="@string/auth_login"
+			android:layout_marginLeft="5dip"
+			android:layout_marginRight="5dip"
 			android:inputType="textPassword" />
 
 
@@ -47,6 +56,7 @@
 			android:layout_height="wrap_content"
 			android:layout_width="fill_parent"
 			android:orientation="horizontal"
+			android:layout_marginTop="5dip"
 			style="@android:style/ButtonBar"
 		>
 			<Button
@@ -62,6 +72,7 @@
 			<View
 				android:layout_width="wrap_content"
 				android:layout_height="20dip"
+				android:minWidth="5dip"
 				android:layout_weight="1" />
 			<Button
 				android:text="@string/signup_text"
