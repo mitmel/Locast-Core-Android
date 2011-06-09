@@ -105,7 +105,6 @@
 	 -->
 	 
 		<activity android:name="edu.mit.mobile.android.locast.SettingsActivity" />
-		<activity android:name="edu.mit.mobile.android.locast.PairingActivity" />
 		
 		
 		<!-- 

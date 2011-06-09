@@ -64,10 +64,10 @@ public class FavoriteClickHandler implements ValidatedClickHandler {
 		final int favIdx = c.getColumnIndex(Favoritable.Columns._FAVORITED);
 		final boolean favorited = !c.isNull(favIdx) && c.getInt(favIdx) >  0;
 
-		final ValidatingCheckBox cb = (ValidatingCheckBox)activity.findViewById(R.id.star);
+		final ValidatingCheckBox cb = (ValidatingCheckBox)activity.findViewById(R.id.favorite);
 		cb.setValidatedClickHandler(new FavoriteClickHandler(activity, item));
 
-		((ValidatingCheckBox)activity.findViewById(R.id.star)).setChecked(favorited);
+		((ValidatingCheckBox)activity.findViewById(R.id.favorite)).setChecked(favorited);
 	}
 
 	@Override

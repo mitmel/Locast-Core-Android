@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-	<!-- return to defaults for API levels 5 (2.0) and above. Except that, for some reason,
-	    this doesn't actually work on API level 5. It then falls back to the base version for that. -->
-	 <style name="LightTheme" parent="@android:style/Theme.Light">
-        <item name="android:tabWidgetStyle">@android:style/Widget.TabWidget</item>
-        
-	 </style>
-</resources>
