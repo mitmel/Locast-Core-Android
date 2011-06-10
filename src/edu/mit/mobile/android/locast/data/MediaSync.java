@@ -43,6 +43,7 @@ import android.provider.BaseColumns;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.util.Log;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient.InputStreamWatcher;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;
@@ -52,6 +53,8 @@ import edu.mit.mobile.android.utils.StreamUtils;
 
 public class MediaSync extends Service implements MediaScannerConnectionClient {
 	private final static String TAG = MediaSync.class.getSimpleName();
+
+	private final boolean DEBUG = Constants.DEBUG;
 
 	private final Map<String, ScanQueueItem> scanMap = new TreeMap<String, ScanQueueItem>();
 	private MediaScannerConnection msc;
@@ -106,15 +109,18 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		final Uri data = intent.getData();
-		Log.d(TAG, "onStartCommand()");
 		final SyncQueueItem syncQueueItem = new SyncQueueItem(data,
 				intent.getExtras());
 		if (!mSyncQueue.contains(syncQueueItem) && !checkRecentlySyncd(data)) {
-			Log.d(TAG, "enqueueing " + syncQueueItem);
+			if (DEBUG) {
+				Log.d(TAG, "enqueueing " + syncQueueItem);
+			}
 			mSyncQueue.add(syncQueueItem);
 		} else {
-			Log.d(TAG, syncQueueItem.toString()
-					+ " already in the queue. Skipping.");
+			if (DEBUG) {
+				Log.d(TAG, syncQueueItem.toString()
+						+ " already in the queue. Skipping.");
+			}
 		}
 
 		maybeStartTask();
@@ -140,7 +146,6 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 	@Override
 	public void onDestroy() {
-		Log.d(TAG, "onDestroy()");
 		super.onDestroy();
 
 		if (mSyncTask != null) {
@@ -357,8 +362,6 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 			se.initCause(e);
 			throw se;
 		}
-		// Log.d(TAG, "Cast Media " + castMediaUri + " is " +
-		// castMedia.getString(mediaUrlCol));
 	}
 
 	/**
@@ -437,7 +440,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 		final NetworkClient nc = NetworkClient.getInstance(this);
 		try {
 			boolean dirty = true;
-			String contentType = null;
+			//String contentType = null;
 
 			if (saveFile.exists()) {
 				final HttpResponse headRes = nc.head(pubUri);
@@ -460,10 +463,12 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 				}
 				if (saveFile.length() == serverLength
 						&& saveFile.lastModified() >= remoteLastModified) {
-					Log.i(TAG,
-							"Local copy of cast "
-									+ saveFile
-									+ " seems to be the same as the one on the server. Not re-downloading.");
+					if (DEBUG) {
+						Log.i(TAG,
+								"Local copy of cast "
+										+ saveFile
+										+ " seems to be the same as the one on the server. Not re-downloading.");
+					}
 
 					dirty = false;
 				}
@@ -494,8 +499,10 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 						ent.getContent(), npl);
 
 				try {
-					Log.d(TAG, "Downloading " + pubUri + " and saving it in "
-							+ saveFile.getAbsolutePath());
+					if (DEBUG) {
+						Log.d(TAG, "Downloading " + pubUri + " and saving it in "
+								+ saveFile.getAbsolutePath());
+					}
 					final FileOutputStream fos = new FileOutputStream(saveFile);
 					StreamUtils.inputStreamToOutputStream(is, fos);
 					fos.close();
@@ -510,7 +517,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 								lastModified.getValue()).getTime());
 					}
 
-					contentType = ent.getContentType().getValue();
+					//contentType = ent.getContentType().getValue();
 
 				} finally {
 					npl.done();
@@ -638,14 +645,18 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 				if (!outFile.createNewFile()) {
 					throw new IOException("cannot create new file");
 				}
-				Log.d(TAG, "attempting to save thumb in " + outFile);
+				if (DEBUG) {
+					Log.d(TAG, "attempting to save thumb in " + outFile);
+				}
 				final FileOutputStream fos = new FileOutputStream(outFile);
 				thumb.compress(CompressFormat.JPEG, 75, fos);
 				thumb.recycle();
 				fos.close();
 
-				Log.d(TAG, "generated thumbnail for " + locMedia
-						+ " and saved it in " + outFile.getAbsolutePath());
+				if (DEBUG) {
+					Log.d(TAG, "generated thumbnail for " + locMedia
+							+ " and saved it in " + outFile.getAbsolutePath());
+				}
 			}
 
 			return Uri.fromFile(outFile).toString();
@@ -676,7 +687,9 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 			e.printStackTrace();
 		}
 
-		Log.d(TAG, "new local uri " + locMedia + " for cast media " + castMedia);
+		if (DEBUG) {
+			Log.d(TAG, "new local uri " + locMedia + " for cast media " + castMedia);
+		}
 		getContentResolver().update(castMedia, cvCastMedia, null, null);
 	}
 

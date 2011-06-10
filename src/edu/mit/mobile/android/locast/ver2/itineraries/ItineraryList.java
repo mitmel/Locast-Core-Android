@@ -10,7 +10,6 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -28,9 +27,11 @@ import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Sync;
 import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 
 public class ItineraryList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
 
+	@SuppressWarnings("unused")
 	private static final String TAG = ItineraryList.class.getSimpleName();
 	private CursorAdapter mAdapter;
 	private ListView mListView;
@@ -48,6 +49,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		setContentView(R.layout.simple_list_activity);
 
 		findViewById(R.id.refresh).setOnClickListener(this);
+		findViewById(R.id.home).setOnClickListener(this);
 
 		mListView = (ListView) findViewById(android.R.id.list);
 		mListView.setOnItemClickListener(this);
@@ -110,17 +112,12 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 
 	@Override
 	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
-		Log.d(TAG, "onLoadFinished");
-		//mAdapter.swapCursor(c);
-		mAdapter.changeCursor(c);
-
+		mAdapter.swapCursor(c);
 	}
 
 	@Override
 	public void onLoaderReset(Loader<Cursor> arg0) {
-		Log.d(TAG, "onLoaderReset");
-		mAdapter.changeCursor(null);
-		//mAdapter.swapCursor(null);
+		mAdapter.swapCursor(null);
 
 	}
 
@@ -134,6 +131,10 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		switch (v.getId()){
 		case R.id.refresh:
 			refresh(true);
+			break;
+
+		case R.id.home:
+			startActivity(new Intent(this, BrowserHome.class));
 			break;
 		}
 	}

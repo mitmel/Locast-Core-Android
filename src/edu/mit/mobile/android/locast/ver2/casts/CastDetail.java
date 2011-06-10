@@ -1,5 +1,6 @@
 package edu.mit.mobile.android.locast.ver2.casts;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -16,6 +17,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.CheckBox;
 import android.widget.Gallery;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
@@ -129,14 +131,32 @@ public class CastDetail extends LocatableDetail implements
 
 		} else if (mediaString != null) {
 			media = Uri.parse(mediaString);
+			mimeType = c.getString(c.getColumnIndex(CastMedia._MIME_TYPE));
 
+			// we strip this because we don't really want to force them to go to the browser.
+			if ("text/html".equals(mimeType)){
+				mimeType = null;
+			}
 		} else {
 			return;
 		}
 		final Intent i = new Intent(Intent.ACTION_VIEW);
 		i.setDataAndType(media, mimeType);
+
 		// setting the MIME type for URLs doesn't work.
-		startActivity(i);
+		try {
+			startActivity(i);
+		}catch (final ActivityNotFoundException e){
+			// try it again, but without a mime type.
+			if (mimeType != null){
+				i.setDataAndType(media, null);
+			}
+			try {
+				startActivity(i);
+			}catch (final ActivityNotFoundException e2){
+				Toast.makeText(this, R.string.error_cast_media_no_activities, Toast.LENGTH_LONG).show();
+			}
+		}
 
 	}
 

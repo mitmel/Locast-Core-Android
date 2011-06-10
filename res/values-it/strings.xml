@@ -1,5 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
+  <string name="app_name">Locast Abruzzo</string>
+  <string name="signup_text">Registrati per utilizzare Locast</string>
   <string name="about">Informazioni</string>
   <string name="settings">Impostazioni</string>
   <string name="tab_cast">Cast</string>
@@ -59,6 +61,8 @@
   <string name="project_you_joined">Hai raggiunto %s</string>
   <string name="project_you_left">Ti rimangono %s</string>
   <string name="error_loading_project">Errore nel caricare del progetto</string>
+  <string name="video_recorder_error_could_not_make_directory">Impossibile creare la directory, \'%1$s\', per registrare i video.</string>
+  <string name="video_recorder_error_cannot_write_to_sd_card">Impossibile scrivere sulla carta di memoria SD</string>
   <string name="template_done">Finito!</string>
   <string name="template_rerecord_video_title">Ri-registra la ripresa</string>
   <string name="template_rerecord_video_body">Sei sicuro di voler riregistrare la ripresa?</string>
@@ -67,6 +71,11 @@
   <string name="template_no_video_for_this_segment">Nessun video per questo segmento</string>
   <string name="template_cast_saved_as_draft">Cast salvato come bozza</string>
   <string name="template_error_setup_fail">Errore: non posso inizializzare la macchina fotografica</string>
+  <string name="template_error_setup_fail_reason">"Errore: non posso inizializzare il modello di registrazione "</string>
+  <string name="template_select_template">"Selezione un modello "</string>
+  <string name="template_progress_hard_limit">%1$s</string>
+  <string name="template_progress_no_hard_limit">≤%1$s</string>
+  <string name="infinite">∞</string>
   <string name="dialog_button_delete">Cancella</string>
   <string name="dialog_button_rerecord">Registra</string>
   <string name="discussion_hint">Commento</string>
@@ -80,6 +89,7 @@
   <string name="wipe_database">Cancella Database</string>
   <string name="privacy_header">Privacy:</string>
   <string name="privacy_spinner">Livello di Privacy</string>
+  <string name="refresh">Aggiorna</string>
   <string name="sync_first">Nessun contenuto trovato in locale. Comincio la prima syncronizzazione…</string>
   <string name="sync_notification">Sto sincronizzondo Locast…</string>
   <string name="sync_success">Sincronizzazione completata.</string>
@@ -95,6 +105,13 @@
   <string name="error_sync_no_data_network">Non può sincronizzare Locast: no rete di dati. Per cortesia verifica la tua connessione e riprova.</string>
   <string name="sync_downloading_cast">Sto caricando \"%1$s\"...</string>
   <string name="sync_uploading_cast">Uploading \"%1$s\"…</string>
+  <string name="username_label">Locast nome utente</string>
+  <string name="password_label">Password</string>
+  <string name="login_message_authenticating">Autenticando...</string>
+  <string name="login_message_loginfail">Nome utente o password non valida.</string>
+  <string name="login_message_login_empty_password">Per cortesia inserisci la password</string>
+  <string name="login_message_login_empty_username">Per cortesia inserisci il tuo Username e la tua password per Locast</string>
+  <string name="login_title">%1$s Login</string>
   <string name="mobilevideo_video_edit_title">Locast Video Editor</string>
   <string name="annotate_cast">Annota Cast</string>
   <string name="moment_description_hint">Descrivi brevemente questo momento (opzionale)</string>
@@ -111,4 +128,20 @@
   <string name="pref_locast_site_dialog_title">Scegli un Locast sito</string>
   <string name="pref_locast_site_summary">Scegli un altro Locast sito</string>
   <string name="pref_locast_site_message">Attenzione: modificazione di questo cancellerà l\'attuale associazione (pairing) e anche il database locale. Tutti i casts non-pubblicati saranno cancellati.</string>
+  <string name="welcome_message">Benvenuti! Locast Abruzzo e\' una applicazione turistica geo-localizzata che ti aiuta a visitare l\'Abruzzo!</string>
+  <string name="auth_signin_or_skip_notice">Per caricare foto e video sulla piattaforma Locast Abruzzo devi registrare un account</string>
+  <string name="auth_signin_register">Entra / Registrati</string>
+  <string name="auth_skip">Salta</string>
+  <string name="title_upcoming_events">Prossimi eventi</string>
+  <string name="title_casts">Casts</string>
+  <string name="title_nearby">%1$s Vicini</string>
+  <string name="title_favorited">Preferiti %1$s</string>
+  <string name="title_unfavorited">Non preferiti %1$s</string>
+  <string name="itinerary_no_casts">Non ci sono casts in questo itinerario</string>
+  <string name="list_empty">Non ci sono oggetti in questa lista</string>
+  <string name="error_loading_event">Errore nel caricare l\'evento.</string>
+  <string name="auth_username_hint">alice\@example.org</string>
+  <string name="auth_password_hint">password</string>
+  <string name="auth_login">Login</string>
+  <string name="empty_castmedia">Non ci sono media in questo cast.</string>
 </resources>

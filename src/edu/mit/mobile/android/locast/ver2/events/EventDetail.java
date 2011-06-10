@@ -1,5 +1,6 @@
 package edu.mit.mobile.android.locast.ver2.events;
 
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,6 +19,7 @@ import com.google.android.maps.MapView;
 
 import edu.mit.mobile.android.locast.data.Event;
 import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 import edu.mit.mobile.android.locast.ver2.casts.LocatableDetail;
 import edu.mit.mobile.android.locast.ver2.itineraries.BasicLocatableOverlay;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
@@ -38,6 +40,7 @@ public class EventDetail extends LocatableDetail implements LoaderManager.Loader
 		setContentView(R.layout.event_detail);
 
 		findViewById(R.id.refresh).setOnClickListener(this);
+
 		initOverlays();
 
 		mEvent = getIntent().getData();
@@ -64,7 +67,11 @@ public class EventDetail extends LocatableDetail implements LoaderManager.Loader
 	public void onClick(View v) {
 		switch (v.getId()){
 		case R.id.refresh:
+			// TODO add handler
+			break;
 
+		case R.id.home:
+			startActivity(new Intent(this, BrowserHome.class));
 			break;
 		}
 	}

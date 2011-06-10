@@ -4,10 +4,10 @@
 	<string name="app_name">Locast Abruzzo</string>
 
 	<!-- <string name="default_api_url" translatable="false">http://mel-pydev.mit.edu/travels/api/</string>-->
-	<string name="default_api_url" translatable="false">https://locast.mit.edu/abruzzo_dev/api/</string>
-	<string name="app_update_url" translatable="false">http://mel-pydev.mit.edu/travels/static/lcc.json</string>
+	<string name="default_api_url" translatable="false">https://locast.mit.edu/abruzzo/api/</string>
+	<string name="app_update_url" translatable="false">http://locast.mit.edu/abruzzo/static/lca.json</string>
 	
-	<string name="signup_url" translatable="false">http://mel-pydev.mit.edu/travels/register/</string>
+	<string name="signup_url" translatable="false">https://locast.mit.edu/abruzzo/register/</string>
 	<string name="signup_text">Register to join Locast</string>
 	
 	<!-- Main screen -->
@@ -184,8 +184,6 @@
 	<string name="pref_locast_site_summary">Choose another Locast site.</string>
 	<string name="pref_locast_site_message">Warning: changing this will erase your current pairing as well as the local database. Any unpublished casts will be deleted.</string>
 	
-	<string name="itinerary_test_text">A sea generally refers to a large body of salt water, but the term is used in other contexts as well. Most commonly, the term refers to a large expanse of saline water connected with an ocean, and is commonly used as a synonym for ocean. It is also used sometimes to describe a large saline lake that lacks a natural outlet, such as the Caspian Sea.</string>
-	
 	<string name="welcome_message">Welcome! Locast Abruzzo is a location-based tourism application for visiting Abruzzo.</string>
 	
 	<string name="auth_signin_or_skip_notice">You\'ll need an account to upload photos and videos to Locast Abruzzo</string>
@@ -208,4 +206,5 @@
 	<string name="auth_password_hint">password</string>
 	<string name="auth_login">Login</string>
 	<string name="empty_castmedia">There are no media in this cast.</string>
+	<string name="error_cast_media_no_activities">We\'re sorry, but there doesn\'t seem to be a way to play this media on your device.</string>
 </resources>

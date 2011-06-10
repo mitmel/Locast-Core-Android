@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="edu.mit.mobile.android.locast.ver2"
 	android:versionCode="20" android:versionName="2.0.5 beta"
-	
+	android:installLocation="auto"
 	>
 <!--	android:installLocation="auto"  version 2.2+ -->
 
@@ -225,8 +225,8 @@
 	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-	<uses-permission android:name="android.permission.CAMERA" />
-	<uses-permission android:name="android.permission.RECORD_AUDIO"/> 
+	<!-- <uses-permission android:name="android.permission.CAMERA" />
+	<uses-permission android:name="android.permission.RECORD_AUDIO"/>  -->
 	
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
@@ -240,6 +240,6 @@
 	<uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
 	<uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
 	
-	<uses-feature android:name="android.hardware.camera" />
-	<uses-feature android:name="android.hardware.camera.autofocus" />
+	<!-- <uses-feature android:name="android.hardware.camera" />
+	<uses-feature android:name="android.hardware.camera.autofocus" /> -->
 </manifest> 

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+>
+	<edu.mit.mobile.android.widget.ValidatingCheckBox
+		android:id="@+id/favorite"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+
+		android:layout_alignParentTop="true"
+		android:layout_alignParentRight="true"
+		android:layout_margin="10dip"
+
+		android:button="@drawable/btn_favorite" />
+
+	<TextView
+		android:id="@+id/title"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:textStyle="bold"
+		android:textAppearance="?android:attr/textAppearanceMedium"
+		android:paddingBottom="0dip"
+		android:layout_marginLeft="10dip"
+		android:layout_marginRight="10dip"
+		android:layout_marginTop="10dip"
+		android:layout_toLeftOf="@id/favorite"
+		android:layout_alignParentLeft="true"
+		android:layout_alignParentTop="true" />
+	<TextView
+		android:id="@+id/author"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginLeft="10dip"
+		android:layout_marginRight="10dip"
+		android:layout_marginBottom="10dip"
+		android:layout_below="@id/title" />
+
+
+	<FrameLayout
+		android:id="@+id/cast_media_holder"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_below="@+id/author"
+	>
+
+		<TextView
+			android:id="@android:id/empty"
+			android:text="@string/empty_castmedia"
+			style="@style/EmptyList"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:visibility="gone" />
+
+		<Gallery
+			android:id="@+id/cast_media"
+			android:gravity="center"
+			android:spacing="0dip"
+
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content" />
+	</FrameLayout>
+
+	<TextView
+		android:id="@+id/description"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:padding="10dip"
+		android:autoLink="all"
+		android:layout_below="@id/cast_media_holder" />
+</RelativeLayout>

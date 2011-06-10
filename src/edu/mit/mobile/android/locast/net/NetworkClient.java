@@ -63,7 +63,7 @@ import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.SingleClientConnManager;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
@@ -269,8 +269,10 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
         registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
         // Register for port 443 our SSLSocketFactory with our keystore
         // to the ConnectionManager
-        registry.register(new Scheme("https", locastSslSocketFactory(), 443));
-        return new SingleClientConnManager(getParams(), registry);
+//        registry.register(new Scheme("https", locastSslSocketFactory(), 443));
+//        return new SingleClientConnManager(getParams(), registry);
+        registry.register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
+        return new ThreadSafeClientConnManager(getParams(), registry);
     }
 
     private SSLSocketFactory locastSslSocketFactory() {

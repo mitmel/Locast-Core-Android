@@ -35,11 +35,8 @@ import org.json.JSONObject;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
-import android.preference.PreferenceManager;
-import android.util.Log;
 
 import com.stackoverflow.CollectionUtils;
 import com.stackoverflow.Predicate;
@@ -53,6 +50,7 @@ import edu.mit.mobile.android.locast.net.NetworkClient;
  *
  */
 public abstract class TaggableItem extends JsonSyncableItem {
+	@SuppressWarnings("unused")
 	private static final String TAG = TaggableItem.class.getSimpleName();
 
 	public static final String _PRIVACY = "privacy",
@@ -153,7 +151,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 				for (int i = 0; i < ja.length(); i++){
 					tags.add(ja.optString(i));
 				}
-				Log.d(TAG, uri + " has the following "+remoteKey +": "+ tags);
+				//Log.d(TAG, uri + " has the following "+remoteKey +": "+ tags);
 				TaggableItem.putTags(context.getContentResolver(), uri, tags, prefix);
 			}
 		}
@@ -167,7 +165,6 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 */
 	public static boolean canEdit(Context context, Cursor c){
 		final String privacy = c.getString(c.getColumnIndex(_PRIVACY));
-		final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 		final String username = NetworkClient.getInstance(context).getUsername();
 		return privacy == null || username == null || username.length() == 0 ||
 			username.equals(c.getString(c.getColumnIndex(_AUTHOR)));
@@ -178,7 +175,6 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 * @return true if the authenticated user can change the item's privacy level.
 	 */
 	public static boolean canChangePrivacyLevel(Context context, Cursor c){
-		final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 		final String username = NetworkClient.getInstance(context).getUsername();
 		return username == null || username.equals(c.getString(c.getColumnIndex(_AUTHOR)));
 	}

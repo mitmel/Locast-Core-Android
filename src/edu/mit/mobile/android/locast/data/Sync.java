@@ -48,6 +48,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
@@ -69,6 +70,8 @@ import edu.mit.mobile.android.utils.LastUpdatedMap;
  */
 public class Sync extends Service {
 	public final static String TAG = "LocastSync";
+
+	private static final boolean DEBUG = Constants.DEBUG;
 
 	public final static String ACTION_CANCEL_SYNC = "edu.mit.mobile.android.locast.ACTION_CANCEL_SYNC";
 
@@ -142,7 +145,9 @@ public class Sync extends Service {
 	 * Stops the synchronization.
 	 */
 	private void stopSync(){
-		Log.d(TAG, "Stopping sync");
+		if (DEBUG) {
+			Log.d(TAG, "Stopping sync");
+		}
 		if(currentSyncTask != null){
 			currentSyncTask.cancel(true);
 			Toast.makeText(getApplicationContext(), R.string.error_sync_canceled, Toast.LENGTH_LONG).show();
@@ -275,14 +280,18 @@ public class Sync extends Service {
 
 				// then load locally.
 
-				Log.d(TAG, "have " + c.getCount() + " local items to sync");
+				if (DEBUG) {
+					Log.d(TAG, "have " + c.getCount() + " local items to sync");
+				}
 				for (c.moveToFirst(); (currentSyncTask != null && !currentSyncTask.isCancelled()) && ! c.isAfterLast(); c.moveToNext()){
 					try {
 						syncItem(toSync, c, null, sync, syncProgress);
 						syncProgress.completeTask();
 
 					}catch (final SyncItemDeletedException side){
-						Log.d(TAG, side.getLocalizedMessage() + " Deleting...");
+						if (DEBUG) {
+							Log.d(TAG, side.getLocalizedMessage() + " Deleting...");
+						}
 						cr.delete(side.getItem(), null, null);
 						//side.printStackTrace();
 						syncProgress.completeTask();
@@ -372,7 +381,9 @@ public class Sync extends Service {
 
 				toSync = sync.getContentUri();
 				if (toSync == null){
-					Log.w(TAG, "cannot get local URI for "+origToSync+". Skipping...");
+					if (DEBUG) {
+						Log.w(TAG, "cannot get local URI for "+origToSync+". Skipping...");
+					}
 					return false;
 				}
 			}
@@ -404,7 +415,9 @@ public class Sync extends Service {
 
 			final int draftCol = c.getColumnIndex(TaggableItem._DRAFT);
 			if (draftCol != -1 && c.getInt(draftCol) != 0){
-				Log.d(TAG, locUri + " is marked a draft. Not syncing.");
+				if (DEBUG) {
+					Log.d(TAG, locUri + " is marked a draft. Not syncing.");
+				}
 				return false;
 			}
 
@@ -425,7 +438,9 @@ public class Sync extends Service {
 				jsonObject = JsonSyncableItem.toJSON(context, locUri, c, syncMap);
 
 				final String publicPath = MediaProvider.getPostPath(this, locUri);
-				Log.d(TAG, "Posting "+locUri + " to " + publicPath);
+				if (DEBUG) {
+					Log.d(TAG, "Posting "+locUri + " to " + publicPath);
+				}
 
 				// The response from a post to create a new item should be the newly created item,
 				// which contains the public ID that we need.
@@ -435,7 +450,9 @@ public class Sync extends Service {
 				if (cr.update(locUri, cvUpdate, null, null) == 1){
 					// at this point, server and client should be in sync.
 					mLastUpdated.markUpdated(locUri);
-					Log.i(TAG, "Hooray! "+ locUri + " has been posted succesfully.");
+					if (DEBUG) {
+						Log.i(TAG, "Hooray! "+ locUri + " has been posted succesfully.");
+					}
 
 				}else{
 					Log.e(TAG, "update of "+locUri+" failed");
@@ -478,12 +495,16 @@ public class Sync extends Service {
 
 							// At this point, we've already checked the index and it doesn't contain the item (otherwise it would be in the syncdItems).
 							// If we can't sync individual items, it's possible that the index is paged or the item has been deleted.
-							Log.w(TAG, "Asked to sync "+locUri+" but item wasn't in server index and cannot sync individual entries. Skipping and hoping it is up to date.");
+							if (DEBUG) {
+								Log.w(TAG, "Asked to sync "+locUri+" but item wasn't in server index and cannot sync individual entries. Skipping and hoping it is up to date.");
+							}
 							return false;
 
 						}else{
 							if (mLastUpdated.isUpdatedRecently(nc.getFullUri(publicPath))){
-								Log.d(TAG, "already sync'd! "+publicPath);
+								if (DEBUG) {
+									Log.d(TAG, "already sync'd! "+publicPath);
+								}
 								return false;
 							}
 							if (jsonObject == null){
@@ -509,18 +530,24 @@ public class Sync extends Service {
 
 				if (netLastModified.equals(locLastModified)){
 					// same! yay! We don't need to do anything.
-					Log.d("LocastSync", locUri + " doesn't need to sync.");
+					if (DEBUG) {
+						Log.d("LocastSync", locUri + " doesn't need to sync.");
+					}
 				}else if (netLastModified.after(locLastModified)){
 					// remote is more up to date, update!
 					cr.update(locUri, cvNet, null, null);
-					Log.d("LocastSync", cvNet + " is newer than "+locUri);
+					if (DEBUG) {
+						Log.d("LocastSync", cvNet + " is newer than "+locUri);
+					}
 					modified = true;
 
 				}else if (netLastModified.before(locLastModified)){
 					// local is more up to date, propagate!
 					jsonObject = nc.putJson(publicPath, JsonSyncableItem.toJSON(context, locUri, c, syncMap));
 
-					Log.d("LocastSync", cvNet + " is older than "+locUri);
+					if (DEBUG) {
+						Log.d("LocastSync", cvNet + " is older than "+locUri);
+					}
 					modified = true;
 				}
 				mLastUpdated.markUpdated(nc.getFullUri(publicPath));
@@ -610,7 +637,9 @@ public class Sync extends Service {
     			Toast.makeText(this, R.string.error_sync_no_data_network, Toast.LENGTH_LONG).show();
     			mNotifiedUserAboutNetworkStatus = false;
     		}
-    		Log.d(TAG, "not synchronizing, as it appears that there's no network connection");
+    		if (DEBUG) {
+				Log.d(TAG, "not synchronizing, as it appears that there's no network connection");
+			}
     		return false;
     	}else{
     		return ni.isConnected();
@@ -644,14 +673,20 @@ public class Sync extends Service {
 
     	if (! syncQueue.contains(uri)){
     		if (!mLastUpdated.isUpdatedRecently(uri) || (extras != null && extras.containsKey(EXTRA_EXPLICIT_SYNC))){
-    			Log.d(TAG, "enqueing " + uri + " to sync queue");
+    			if (DEBUG) {
+					Log.d(TAG, "enqueing " + uri + " to sync queue");
+				}
     			syncQueue.add(new SyncQueueItem(uri, extras));
     		}else{
-    			Log.d(TAG, "NOT enqueing "+ uri + " to sync queue, as it's been updated recently");
+    			if (DEBUG) {
+					Log.d(TAG, "NOT enqueing "+ uri + " to sync queue, as it's been updated recently");
+				}
     		}
 
     	}else{
-    		Log.d(TAG, "NOT enqueing " + uri + " to sync queue, as it's already present");
+    		if (DEBUG) {
+				Log.d(TAG, "NOT enqueing " + uri + " to sync queue, as it's already present");
+			}
     	}
 
     	startSync();
@@ -717,10 +752,14 @@ public class Sync extends Service {
 
 			try {
 				while (!syncQueue.isEmpty()){
-					Log.d(TAG, syncQueue.size() + " items in the sync queue");
+					if (DEBUG) {
+						Log.d(TAG, syncQueue.size() + " items in the sync queue");
+					}
 					final SyncQueueItem toSync = syncQueue.remove();
 					if (toSync.isStale()){
-						Log.i(TAG, toSync + " is stale; skipping");
+						if (DEBUG) {
+							Log.i(TAG, toSync + " is stale; skipping");
+						}
 						continue;
 					}
 					Sync.this.sync(toSync.uri, this, toSync.extras);

@@ -17,6 +17,7 @@ import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Gallery;
+import edu.mit.mobile.android.appupdater.AppUpdateChecker;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
@@ -37,6 +38,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	private ImageCache mImageCache;
 
 	private CastCursorAdapter mAdapter;
+	private AppUpdateChecker mAppUpdateChecker;
 
 	private static final Uri FEATURED_CASTS = Cast.getTagUri(Cast.CONTENT_URI, Cast.addPrefixToTag(Cast.SYSTEM_PREFIX, "_featured"));
 
@@ -47,6 +49,9 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		mImageCache = ImageCache.getInstance(this);
 
 		setContentView(R.layout.browser_main);
+
+		mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url), new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
+		mAppUpdateChecker.checkForUpdates();
 
 		final Gallery casts = (Gallery) findViewById(R.id.casts);
 
@@ -163,13 +168,13 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 	@Override
 	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
-		mAdapter.changeCursor(c);
+		mAdapter.swapCursor(c);
 
 	}
 
 	@Override
 	public void onLoaderReset(Loader<Cursor> arg0) {
-		mAdapter.changeCursor(null);
+		mAdapter.swapCursor(null);
 
 	}
 
