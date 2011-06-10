@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
-import java.security.KeyStore;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -256,49 +255,12 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	    return params;
 	}
 
-	/*
-	 * http://blog.antoine.li/index.php/2010/10/android-trusting-ssl-certificates/
-	 *
-	 * (non-Javadoc)
-	 * @see org.apache.http.impl.client.DefaultHttpClient#createClientConnectionManager()
-	 */
-
     @Override
     protected ClientConnectionManager createClientConnectionManager() {
         final SchemeRegistry registry = new SchemeRegistry();
         registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-        // Register for port 443 our SSLSocketFactory with our keystore
-        // to the ConnectionManager
-//        registry.register(new Scheme("https", locastSslSocketFactory(), 443));
-//        return new SingleClientConnManager(getParams(), registry);
         registry.register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
         return new ThreadSafeClientConnManager(getParams(), registry);
-    }
-
-    private SSLSocketFactory locastSslSocketFactory() {
-        try {
-            // Get an instance of the Bouncy Castle KeyStore format
-            final KeyStore trusted = KeyStore.getInstance("BKS");
-            // Get the raw resource, which contains the keystore with
-            // your trusted certificates (root and any intermediate certs)
-            final InputStream in = context.getResources().openRawResource(R.raw.locast_keystore);
-            try {
-                // Initialize the keystore with the provided trusted certificates
-                // Also provide the password of the keystore
-                trusted.load(in, "locast".toCharArray());
-            } finally {
-                in.close();
-            }
-            // Pass the keystore to the SSLSocketFactory. The factory is responsible
-            // for the verification of the server certificate.
-            final SSLSocketFactory sf = new SSLSocketFactory(trusted);
-            // Hostname verification from certificate
-            // http://hc.apache.org/httpcomponents-client-ga/tutorial/html/connmgmt.html#d4e506
-            sf.setHostnameVerifier(SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
-            return sf;
-        } catch (final Exception e) {
-            throw new AssertionError(e);
-        }
     }
 
 	/************************* credentials and pairing **********************/
