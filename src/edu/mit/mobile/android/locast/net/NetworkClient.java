@@ -30,6 +30,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 import java.util.Vector;
 
@@ -161,6 +162,21 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	    }
 	};
 
+	/**
+	 * Adds an accept-language header based on the user's current locale.
+	 */
+	protected final static HttpRequestInterceptor ACCEPT_LANGUAGE = new HttpRequestInterceptor() {
+
+		@Override
+		public void process(HttpRequest request, HttpContext context)
+				throws HttpException, IOException {
+			final Locale locale = Locale.getDefault();
+
+			request.addHeader("Accept-Language", locale.getLanguage());
+
+		}
+	};
+
 	protected final static HttpRequestInterceptor REMOVE_EXPECTATIONS = new HttpRequestInterceptor() {
 
 		public void process(HttpRequest request, HttpContext context)
@@ -182,6 +198,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 
 		this.addRequestInterceptor(PREEMPTIVE_AUTH, 0);
+		this.addRequestInterceptor(ACCEPT_LANGUAGE, 1);
 
 		final HttpParams p = this.getParams();
 		p.setParameter("http.socket.timeout", new Integer(60000));
