@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
+import java.security.KeyStore;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -62,9 +63,9 @@ import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.impl.conn.SingleClientConnManager;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.ExecutionContext;
@@ -92,6 +93,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.MediaProvider;
@@ -108,6 +110,8 @@ import edu.mit.mobile.android.utils.StreamUtils;
 public class NetworkClient extends DefaultHttpClient implements OnSharedPreferenceChangeListener, OnAccountsUpdateListener {
 	private static final String TAG = NetworkClient.class.getSimpleName();
 	public final static String JSON_MIME_TYPE = "application/json";
+
+	private static final boolean DEBUG = Constants.DEBUG;
 
 	private final static String
 		PATH_PAIR = "pair/",
@@ -147,7 +151,9 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	            // If found, generate BasicScheme preemptively
 	            if (creds != null) {
 	            	if (creds.getUserPrincipal() != null){
-	            		Log.d("NetworkClient", "Pre-emptively authenticating as: " + creds.getUserPrincipal().getName());
+	            		if (DEBUG) {
+							Log.d("NetworkClient", "Pre-emptively authenticating as: " + creds.getUserPrincipal().getName());
+						}
 	            	}
 	                authState.setAuthScheme(new BasicScheme());
 	                authState.setCredentials(creds);
@@ -171,8 +177,8 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	public static final String PREF_LOCAST_SITE = "locast_site";
 
 
-	private NetworkClient(Context context, ClientConnectionManager manager, HttpParams params){
-		super(manager, params);
+	private NetworkClient(Context context){
+		super();
 		this.context = context;
 
 
@@ -184,7 +190,9 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 
 		prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		Log.i(TAG, prefs.getString(PREF_SERVER_URL, ""));
+		if (DEBUG) {
+			Log.i(TAG, prefs.getString(PREF_SERVER_URL, ""));
+		}
 		loadBaseUri();
 
 		prefs.registerOnSharedPreferenceChangeListener(this);
@@ -193,18 +201,6 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 		final AccountManager am = AccountManager.get(context);
 		am.addOnAccountsUpdatedListener(this, null, true);
-
-		/*addRequestInterceptor(new HttpRequestInterceptor() {
-
-			public void process(HttpRequest request, HttpContext context)
-					throws HttpException, IOException {
-
-				final AbstractClientConnAdapter connAdapter = (AbstractClientConnAdapter) context.getAttribute(ExecutionContext.HTTP_CONNECTION);
-
-				final HttpConnectionMetrics metrics = connAdapter.getMetrics();
-				metrics.getSentBytesCount();
-			}
-		});*/
 	}
 
 	@Override
@@ -215,6 +211,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	}
 
 	protected void initClient(){
+
 
 		try {
 			final URL baseUrl = new URL(this.baseurl);
@@ -229,6 +226,79 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 			e.printStackTrace();
 		}
 	}
+
+	@Override
+	protected HttpParams createHttpParams() {
+		final HttpParams params = super.createHttpParams();
+
+		// from AndroidHttpClient:
+	    // Turn off stale checking.  Our connections break all the time anyway,
+	    // and it's not worth it to pay the penalty of checking every time.
+	    HttpConnectionParams.setStaleCheckingEnabled(params, false);
+
+	    // Default connection and socket timeout of 20 seconds.  Tweak to taste.
+	    HttpConnectionParams.setConnectionTimeout(params, 20 * 1000);
+	    HttpConnectionParams.setSoTimeout(params, 20 * 1000);
+	    HttpConnectionParams.setSocketBufferSize(params, 8192);
+
+
+		String appVersion = "unknown";
+		try {
+			appVersion = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+		} catch (final NameNotFoundException e) {
+			e.printStackTrace();
+		}
+		final String userAgent = context.getString(R.string.app_name) + "/"+appVersion;
+
+	    // Set the specified user agent and register standard protocols.
+	    HttpProtocolParams.setUserAgent(params, userAgent);
+
+	    return params;
+	}
+
+	/*
+	 * http://blog.antoine.li/index.php/2010/10/android-trusting-ssl-certificates/
+	 *
+	 * (non-Javadoc)
+	 * @see org.apache.http.impl.client.DefaultHttpClient#createClientConnectionManager()
+	 */
+
+    @Override
+    protected ClientConnectionManager createClientConnectionManager() {
+        final SchemeRegistry registry = new SchemeRegistry();
+        registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+        // Register for port 443 our SSLSocketFactory with our keystore
+        // to the ConnectionManager
+        registry.register(new Scheme("https", locastSslSocketFactory(), 443));
+        return new SingleClientConnManager(getParams(), registry);
+    }
+
+    private SSLSocketFactory locastSslSocketFactory() {
+        try {
+            // Get an instance of the Bouncy Castle KeyStore format
+            final KeyStore trusted = KeyStore.getInstance("BKS");
+            // Get the raw resource, which contains the keystore with
+            // your trusted certificates (root and any intermediate certs)
+            final InputStream in = context.getResources().openRawResource(R.raw.locast_keystore);
+            try {
+                // Initialize the keystore with the provided trusted certificates
+                // Also provide the password of the keystore
+                trusted.load(in, "locast".toCharArray());
+            } finally {
+                in.close();
+            }
+            // Pass the keystore to the SSLSocketFactory. The factory is responsible
+            // for the verification of the server certificate.
+            final SSLSocketFactory sf = new SSLSocketFactory(trusted);
+            // Hostname verification from certificate
+            // http://hc.apache.org/httpcomponents-client-ga/tutorial/html/connmgmt.html#d4e506
+            sf.setHostnameVerifier(SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
+            return sf;
+        } catch (final Exception e) {
+            throw new AssertionError(e);
+        }
+    }
+
 	/************************* credentials and pairing **********************/
 
 	public String getUsername() {
@@ -302,14 +372,14 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 			jo = null;
 		}
 		// ensure that this instance is never reused, as it could have invalid authentication cached.
-		mInstance = null;
 
 		return jsonObjectToBundle(jo, true);
 	}
 
 	public static Bundle jsonObjectToBundle(JSONObject jsonObject, boolean allStrings){
 		final Bundle b = new Bundle();
-		for (final Iterator<String> i = jsonObject.keys(); i.hasNext(); ){
+		for (@SuppressWarnings("unchecked")
+		final Iterator<String> i = jsonObject.keys(); i.hasNext(); ){
 			final String key = i.next();
 			final Object value = jsonObject.opt(key);
 			if (value == null){
@@ -469,7 +539,9 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	public HttpResponse get(String path) throws IOException, JSONException, NetworkProtocolException, HttpResponseException {
 		final String fullUri = getFullUriAsString(path);
 		final HttpGet req = new HttpGet(fullUri);
-		Log.d("NetworkClient", "GET "+ fullUri);
+		if (DEBUG) {
+			Log.d("NetworkClient", "GET "+ fullUri);
+		}
 		final HttpResponse res = this.execute(req);
 
 		checkStatusCode(res, false);
@@ -554,13 +626,17 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		NetworkProtocolException{
 		final String fullUri = getFullUriAsString(path);
 		final HttpPut r = new HttpPut(fullUri);
-		Log.d("NetworkClient", "PUT "+ fullUri);
+		if (DEBUG) {
+			Log.d("NetworkClient", "PUT "+ fullUri);
+		}
 
 		r.setEntity(new StringEntity(jsonString, "utf-8"));
 
 		r.setHeader("Content-Type", JSON_MIME_TYPE);
 
-		Log.d("NetworkClient", "PUTting: "+jsonString);
+		if (DEBUG) {
+			Log.d("NetworkClient", "PUTting: "+jsonString);
+		}
 		final HttpResponse c = this.execute(r);
 
 		checkStatusCode(c, true);
@@ -572,7 +648,9 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		NetworkProtocolException {
 		final String fullUri = getFullUriAsString(path);
 		final HttpPut r = new HttpPut(fullUri);
-		Log.d("NetworkClient", "PUT "+ fullUri);
+		if (DEBUG) {
+			Log.d("NetworkClient", "PUT "+ fullUri);
+		}
 		r.setEntity(new InputStreamEntity(is, 0));
 
 		r.setHeader("Content-Type", contentType);
@@ -592,7 +670,9 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		}else {
 
 			fullUri = Uri.parse(baseuri.resolve(path).normalize().toASCIIString());
-			Log.d("NetworkClient", "path: " + path + ", baseUri: " + baseuri + ", fullUri: "+fullUri);
+			if (DEBUG) {
+				Log.d("NetworkClient", "path: " + path + ", baseUri: " + baseuri + ", fullUri: "+fullUri);
+			}
 		}
 
 		return fullUri;
@@ -606,7 +686,9 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		}else {
 
 			fullUri = baseuri.resolve(path).normalize().toASCIIString();
-			Log.d("NetworkClient", "path: " + path + ", baseUri: " + baseuri + ", fullUri: "+fullUri);
+			if (DEBUG) {
+				Log.d("NetworkClient", "path: " + path + ", baseUri: " + baseuri + ", fullUri: "+fullUri);
+			}
 		}
 
 		return fullUri;
@@ -626,7 +708,9 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 		final String fullUri = getFullUriAsString(path);
 		final HttpPost r = new HttpPost(fullUri);
-		Log.d("NetworkClient", "POST "+ fullUri);
+		if (DEBUG) {
+			Log.d("NetworkClient", "POST "+ fullUri);
+		}
 
 		r.setEntity(new StringEntity(jsonString, "utf-8"));
 
@@ -840,7 +924,9 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	}
 
 	public void loadFromPreferences() {
-		Log.i(TAG, "Preferences changed. Updating network settings.");
+		if (DEBUG) {
+			Log.i(TAG, "Preferences changed. Updating network settings.");
+		}
 		loadBaseUri();
 		try {
 			loadCredentials();
@@ -865,40 +951,16 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 				return context.getContentResolver().openInputStream(localFileUri);
 			}
 
-	private static NetworkClient mInstance;
-
 	public static NetworkClient getInstance(Context context) {
-		if (mInstance == null){
-			final HttpParams params = new BasicHttpParams();
-
-			String appVersion = "unknown";
-			try {
-				appVersion = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
-			} catch (final NameNotFoundException e) {
-				e.printStackTrace();
-			}
-			final String userAgent = context.getString(R.string.app_name) + "/"+appVersion;
-
-		    // Set the specified user agent and register standard protocols.
-		    HttpProtocolParams.setUserAgent(params, userAgent);
-		    final SchemeRegistry schemeRegistry = new SchemeRegistry();
-		    schemeRegistry.register(new Scheme("http",
-		            PlainSocketFactory.getSocketFactory(), 80));
-		    schemeRegistry.register(new Scheme("https",
-		    		SSLSocketFactory.getSocketFactory(), 443));
-
-		    final ClientConnectionManager manager =
-		            new ThreadSafeClientConnManager(params, schemeRegistry);
-
-		    mInstance = new NetworkClient(context, manager, params);
-		}
-	    return mInstance;
+	    return new NetworkClient(context);
 	}
 
 	protected synchronized void loadBaseUri() {
 		this.baseurl = prefs.getString(PREF_SERVER_URL, context.getString(R.string.default_api_url));
 		if (!baseurl.endsWith("/")){
-			Log.w(TAG, "Baseurl in preferences (" +baseurl+") didn't end in a slash, so we added one.");
+			if (DEBUG) {
+				Log.w(TAG, "Baseurl in preferences (" +baseurl+") didn't end in a slash, so we added one.");
+			}
 			baseurl = baseurl + "/";
 			prefs.edit().putString(PREF_SERVER_URL, baseurl).commit();
 		}
@@ -915,11 +977,15 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 		final Account[] accounts = am.getAccountsByType(AuthenticationService.ACCOUNT_TYPE);
 		if (accounts.length == 0){
-			Log.i(TAG, "There are no accounts currently set up");
+			if (DEBUG) {
+				Log.i(TAG, "There are no accounts currently set up");
+			}
 			setCredentials(null);
 			return;
 		}if (accounts.length > 1){
-			Log.w(TAG, "more than one Locast account is defined. Using the first one");
+			if (DEBUG) {
+				Log.w(TAG, "more than one Locast account is defined. Using the first one");
+			}
 		}
 		setCredentials(accounts[0].name, am.getPassword(accounts[0]));
 	}
@@ -980,7 +1046,9 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	}
 
 	protected void logDebug(String msg) {
-		Log.d(TAG, msg);
+		if (DEBUG) {
+			Log.d(TAG, msg);
+		}
 
 	}
 
