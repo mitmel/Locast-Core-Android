@@ -30,7 +30,7 @@
 	<string name="error_no_providers">Error: no location providers</string>
 	<string name="error_no_maps">Error: no map handler present.</string>
 	<string name="error_cannot_edit">Sorry, you don\'t have permission to edit this item.</string>
-	<string name="error_please_enter_a_title">Please enter a title</string>
+	<string name="error_please_enter_a_title">Please enter a title.</string>
 
     <!-- Generic user-facing notices -->
     <string name="notice_databases_reset">Local database reset.</string>
@@ -152,10 +152,11 @@
     <string name="username_label">Locast username</string>
     <string name="password_label">Password</string>
     <string name="login_message_authenticating">authenticating…</string>
-    <string name="login_message_loginfail">Invalid username or password</string>
-    <string name="login_message_login_empty_password">Please enter a password</string>
+    <string name="login_message_loginfail">Invalid username or password.</string>
+    <string name="login_message_login_empty_password">Please enter a password.</string>
     <string name="login_message_login_empty_username">Please enter your Locast username and password.</string>
-    <string name="login_title">%1$s Login</string> <!-- Placeholder here is for application name -->
+     <!-- Placeholder here is for application name -->
+    <string name="login_title">%1$s Login</string>
 
 	<!-- Mobile Video -->
 	<string name="mobilevideo_video_edit_title">Locast Video Editor</string>

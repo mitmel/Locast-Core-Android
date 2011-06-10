@@ -35,6 +35,7 @@ import org.json.JSONObject;
 
 import android.app.AlertDialog.Builder;
 import android.app.Dialog;
+import android.app.Service;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -42,6 +43,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 import edu.mit.mobile.android.locast.ver2.R;
@@ -78,7 +80,7 @@ import edu.mit.mobile.android.utils.StreamUtils;
  * @author Steve Pomeroy
  *
  */
-public class AppUpdateChecker {
+public class AppUpdateChecker extends Service {
 	private final static String TAG = AppUpdateChecker.class.getSimpleName();
 
 	private final String mVersionListUrl;
@@ -105,6 +107,13 @@ public class AppUpdateChecker {
 			return;
 		}
     }
+
+
+	@Override
+	public IBinder onBind(Intent intent) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 	public static interface OnAppUpdateListener {
 		public void appUpdateStatus(boolean isLatestVersion, String latestVersionName, List<String> changelog, Uri downloadUrl);
