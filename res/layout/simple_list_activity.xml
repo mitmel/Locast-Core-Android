@@ -19,11 +19,12 @@
 		android:layout_below="@android:id/title" />
 	<TextView
 		android:id="@android:id/empty"
-		android:text="No items in this list"
-		android:textStyle="italic"
+		android:text="@string/error_no_items_in_this_list"
+		style="@style/EmptyList"
+
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
 		android:layout_below="@android:id/title"
 		android:layout_alignParentBottom="true"
-		android:gravity="center" android:visibility="gone"/>
+		android:visibility="gone"/>
 </RelativeLayout>

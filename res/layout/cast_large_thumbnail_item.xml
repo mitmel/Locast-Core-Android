@@ -19,8 +19,6 @@
   	/>
 
   	<TextView android:id="@+id/author"
-  		android:text="author"
-  		
   		android:background="#aaaaaaa0"
   		android:textColor="#fff"
   		android:paddingBottom="10dip"
@@ -36,7 +34,6 @@
   	 />  	
   	
   	<TextView android:id="@+id/cast_title"
-  	android:text="title"
   		android:layout_above="@id/author"
   		android:background="#aaaaaaa0"
   		android:textColor="#fff"

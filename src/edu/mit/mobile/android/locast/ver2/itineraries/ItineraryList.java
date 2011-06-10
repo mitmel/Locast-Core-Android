@@ -80,7 +80,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 				final Bundle loaderArgs = new Bundle();
 				loaderArgs.putParcelable(LOADER_DATA, data);
 				lm.initLoader(0, loaderArgs, this);
-				setTitle("Itineraries");
+				setTitle(R.string.itineraries);
 				mUri = data;
 				startService(new Intent(Intent.ACTION_SYNC, data));
 			}
@@ -95,6 +95,12 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 
 	@Override
 	public void setTitle(CharSequence title){
+		super.setTitle(title);
+		((TextView)findViewById(android.R.id.title)).setText(title);
+	}
+
+	@Override
+	public void setTitle(int title){
 		super.setTitle(title);
 		((TextView)findViewById(android.R.id.title)).setText(title);
 	}

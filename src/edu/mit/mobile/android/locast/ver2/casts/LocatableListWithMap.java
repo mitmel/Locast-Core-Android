@@ -205,7 +205,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		if (loc != null){
 			updateLocation(loc);
 		}else{
-			Toast.makeText(this, "Finding your location...", Toast.LENGTH_LONG).show();
+			Toast.makeText(this, R.string.notice_finding_your_location, Toast.LENGTH_LONG).show();
 			setRefreshing(true);
 			mMapView.setVisibility(View.VISIBLE); // show the map, even without location being found
 		}

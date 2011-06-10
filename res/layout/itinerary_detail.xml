@@ -16,15 +16,15 @@
 	>
 		<ToggleButton
 			android:id="@+id/follow"
-			android:text="Follow"
+			android:text="@string/follow"
 			android:layout_width="80sp"
 			android:layout_height="wrap_content"
 
 			android:layout_alignParentLeft="true"
 			android:layout_centerVertical="true"
 			android:layout_marginRight="15dip"
-			android:textOn="Unfollow"
-			android:textOff="Follow" android:visibility="gone"/>
+			android:textOn="@string/unfollow"
+			android:textOff="@string/follow" android:visibility="gone"/>
 		<TextView
 			android:id="@+id/title"
 			style="@style/ItineraryTitle"

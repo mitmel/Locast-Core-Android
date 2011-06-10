@@ -207,4 +207,17 @@
 	<string name="auth_login">Login</string>
 	<string name="empty_castmedia">There are no media in this cast.</string>
 	<string name="error_cast_media_no_activities">We\'re sorry, but there doesn\'t seem to be a way to play this media on your device.</string>
+	<string name="itineraries">Itineraries</string>
+	<string name="nearby">Nearby</string>
+	<string name="favorites">Favorites</string>
+	<string name="events">Events</string>
+	<string name="error_no_featured_casts">There are no featured casts.</string>
+	<string name="error_no_items_in_this_list">No items in this list.</string>
+	<string name="featured_casts">Featured Casts</string>
+	<string name="follow">Follow</string>
+	<string name="unfollow">Unfollow</string>
+	<string name="notice_finding_your_location">Finding your location...</string>
+	<string name="auth_error_could_not_contact_server">Could not contact server.</string>
+	<string name="auth_error_server_returned_invalid_data">Server returned invalid data.</string>
+	<string name="auth_error_network_protocol_error">Network protocol error: %1$s</string>
 </resources>

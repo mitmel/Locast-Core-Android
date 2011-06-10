@@ -144,4 +144,14 @@
   <string name="auth_password_hint">password</string>
   <string name="auth_login">Login</string>
   <string name="empty_castmedia">Non ci sono media in questo cast.</string>
+  <string name="error_cast_media_no_activities">Ci dispiace, ma non e\' possibile visionare questo media sul tuo cellulare</string>
+  <string name="itineraries">Itinerari</string>
+  <string name="nearby">Vicino</string>
+  <string name="favorites">Preferiti</string>
+  <string name="events">Eventi</string>
+  <string name="error_no_featured_casts">Non ci sono cast suggeriti.</string>
+  <string name="error_no_items_in_this_list">"Non ci sono oggetti in questa lista "</string>
+  <string name="featured_casts">Cast consigliati</string>
+  <string name="follow">Segui</string>
+  <string name="unfollow">Smetti di seguire</string>
 </resources>

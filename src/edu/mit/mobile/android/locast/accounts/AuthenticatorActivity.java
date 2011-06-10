@@ -338,13 +338,15 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 
 				// XXX localize.
 			} catch (final IOException e) {
-				reason = "Could not contact server.";
+				reason = mActivity
+						.getString(R.string.auth_error_could_not_contact_server);
 				e.printStackTrace();
 			} catch (final JSONException e) {
-				reason = "Server returned invalid data.";
+				reason = mActivity
+						.getString(R.string.auth_error_server_returned_invalid_data);
 				e.printStackTrace();
 			} catch (final NetworkProtocolException e) {
-				reason = "Network protocol error: " + e.getHttpResponseMessage();
+				reason = mActivity.getString(R.string.auth_error_network_protocol_error, e.getHttpResponseMessage());
 				e.printStackTrace();
 			}
 			return null;
