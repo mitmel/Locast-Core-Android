@@ -6,17 +6,15 @@
 	    android:minHeight="?android:attr/listPreferredItemHeight">
 
 	  <ImageView android:id="@+id/media_thumbnail" 
+	  		style="@style/Thumbnail"
     		android:layout_width="48dip"
     		android:layout_height="48dip"
     		android:layout_centerVertical="true"
     		android:layout_alignParentLeft="true"
+			android:background="@drawable/picture_frame"
     		
     		android:layout_margin="10dip"
-    		
-    		android:adjustViewBounds="true"
-    		android:scaleType="centerCrop"
-			android:background="@drawable/picture_frame"
-			/>
+		/>
     
     <TwoLineListItem android:layout_width="fill_parent"
     	android:layout_toRightOf="@id/media_thumbnail"

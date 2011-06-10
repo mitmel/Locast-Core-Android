@@ -12,10 +12,10 @@
 		after extensive testing, there doesn't seem to be a scaleType that works 
 		to accomplish that. -->
   <ImageView android:id="@+id/media_thumbnail"
-  	android:scaleType="centerCrop"
+  	style="@style/Thumbnail"
   	android:adjustViewBounds="false"
  	android:layout_height="180dp"
-  	android:layout_width="240dp"
+  	android:layout_width="240dp" 
   	/>
 
   	<TextView android:id="@+id/author"

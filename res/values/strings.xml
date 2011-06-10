@@ -3,8 +3,8 @@
 <resources>
 	<string name="app_name">Locast Abruzzo</string>
 
-	<string name="default_api_url" translatable="false">http://mel-pydev.mit.edu/travels/api/</string>
-	<!-- <string name="default_api_url" translatable="false">https://locast.mit.edu/abruzzo_dev/api/</string> -->
+	<!-- <string name="default_api_url" translatable="false">http://mel-pydev.mit.edu/travels/api/</string>-->
+	<string name="default_api_url" translatable="false">https://locast.mit.edu/abruzzo_dev/api/</string>
 	<string name="app_update_url" translatable="false">http://mel-pydev.mit.edu/travels/static/lcc.json</string>
 	
 	<string name="signup_url" translatable="false">http://mel-pydev.mit.edu/travels/register/</string>

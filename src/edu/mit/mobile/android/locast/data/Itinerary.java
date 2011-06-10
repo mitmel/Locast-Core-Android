@@ -20,7 +20,7 @@ import com.google.android.maps.GeoPoint;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.utils.ListUtils;
 
-public class Itinerary extends TaggableItem {
+public class Itinerary extends TaggableItem implements Favoritable.Columns {
 	public final static String PATH = "itineraries";
 	public final static Uri CONTENT_URI = Uri
 			.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
@@ -33,6 +33,8 @@ public class Itinerary extends TaggableItem {
 		_TITLE = "title",
 		_DESCRIPTION = "description",
 		_CASTS_URI = "casts",
+		_CASTS_COUNT = "casts_count",
+		_FAVORITES_COUNT = "favorites_count",
 		_THUMBNAIL = "thumbnail";
 
 	public static final String[] PROJECTION = {
@@ -113,16 +115,19 @@ public class Itinerary extends TaggableItem {
 		public ItemSyncMap() {
 			super();
 
+			putAll(Favoritable.SYNC_MAP);
+
 			put(_DESCRIPTION, 		new SyncFieldMap("description", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL));
 			put(_TITLE, 			new SyncFieldMap("title", SyncFieldMap.STRING));
 			put(_THUMBNAIL, 		new SyncFieldMap("preview_image",   SyncFieldMap.STRING,		 SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
+			put(_CASTS_COUNT,      	new SyncFieldMap("casts_count", SyncFieldMap.INTEGER, SyncFieldMap.SYNC_FROM));
+			put(_FAVORITES_COUNT,   new SyncFieldMap("favorites", SyncFieldMap.INTEGER, SyncFieldMap.SYNC_FROM));
 			put(_CASTS_URI,			new SyncChildRelation("casts", new SyncChildRelation.SimpleRelationship("casts"), false, SyncFieldMap.SYNC_FROM | SyncFieldMap.FLAG_OPTIONAL));
 			put(_PATH,				new SyncCustom("path", SyncFieldMap.SYNC_FROM) {
 
 				@Override
 				public Object toJSON(Context context, Uri localItem, Cursor c, String lProp)
 						throws JSONException, NetworkProtocolException, IOException {
-					// TODO Auto-generated method stub
 					return null;
 				}
 

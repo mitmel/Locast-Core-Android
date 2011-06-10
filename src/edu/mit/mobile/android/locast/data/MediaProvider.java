@@ -118,7 +118,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 38;
+		private static final int DB_VER = 40;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -206,6 +206,9 @@ public class MediaProvider extends ContentProvider {
 					+ Itinerary._CASTS_URI	+ " TEXT,"
 
 					+ Itinerary._PATH 		+ " TEXT,"
+					+ Itinerary._CASTS_COUNT + " INTEGER,"
+					+ Itinerary._FAVORITES_COUNT + " INTEGER,"
+					+ Itinerary._FAVORITED   + " BOOLEAN,"
 
 					+ Itinerary._THUMBNAIL     + " TEXT,"
 

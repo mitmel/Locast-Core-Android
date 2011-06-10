@@ -56,12 +56,11 @@
 		<item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
 		
  	</style>
- 		
- 	<style name="CastIcon">
- 		<item name="android:background">@android:drawable/picture_frame</item>
+ 	
+ 	<style name="Thumbnail">
+ 		<item name="android:src">@drawable/ic_placeholder</item>
  		<item name="android:scaleType">centerCrop</item>
  		<item name="android:adjustViewBounds">true</item>
- 		
  	</style>
  	
  	<style name="CastListItem">
@@ -132,6 +131,27 @@
 		<item name="android:paddingBottom">5dip</item>
 		<item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
 		<item name="android:background">@drawable/bg_message</item>
+	</style>
+	
+	<style name="ItineraryTitle">
+		<item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
+		<item name="android:textStyle">bold</item>
+		<item name="android:maxLines">2</item>
+		<item name="android:ellipsize">end</item>
+	</style>
+	
+	<style name="CastMediaTitle">
+		<item name="android:background">#aaaaaaa0</item>
+		<item name="android:textColor">#fff</item>
+		<item name="android:paddingTop">5dip</item>
+		<item name="android:paddingBottom">5dip</item>
+		<item name="android:paddingLeft">10dip</item>
+		<item name="android:paddingRight">10dip</item>
+		<item name="android:singleLine">false</item>
+		<item name="android:maxLines">2</item>
+		<item name="android:ellipsize">marquee</item>
+		<item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
+		<item name="android:textStyle">bold</item>
 	</style>
 	
 	<style name="ActionBar">

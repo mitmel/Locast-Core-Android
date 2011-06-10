@@ -18,6 +18,9 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.stackoverflow.ArrayUtils;
+
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
@@ -34,6 +37,9 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	private Uri mUri;
 
 	private ImageCache mImageCache;
+
+	private final String[] ITINERARY_DISPLAY = new String[]{Itinerary._TITLE, Itinerary._THUMBNAIL, Itinerary._FAVORITES_COUNT, Itinerary._CASTS_COUNT};
+	private final String[] ITINERARY_PROJECTION = ArrayUtils.concat(new String[]{Itinerary._ID}, ITINERARY_DISPLAY);
 
 	private static String LOADER_DATA = "edu.mit.mobile.android.locast.LOADER_DATA";
 	@Override
@@ -59,10 +65,10 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 
 			if (MediaProvider.TYPE_ITINERARY_DIR.equals(type)){
 				mAdapter = new SimpleThumbnailCursorAdapter(this,
-						R.layout.browse_content_item,
+						R.layout.itinerary_item,
 						null,
-				new String[] {Itinerary._TITLE, Itinerary._AUTHOR, Itinerary._THUMBNAIL},
-				new int[] {android.R.id.text1, android.R.id.text2, R.id.media_thumbnail},
+				ITINERARY_DISPLAY,
+				new int[] {android.R.id.text1, R.id.media_thumbnail, R.id.favorites, R.id.casts},
 				new int[]{R.id.media_thumbnail},
 				0
 				);
@@ -99,7 +105,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		final Uri data = args.getParcelable(LOADER_DATA);
 
-		return new CursorLoader(this, data, Itinerary.PROJECTION, null, null, Itinerary.SORT_DEFAULT);
+		return new CursorLoader(this, data, ITINERARY_PROJECTION, null, null, Itinerary.SORT_DEFAULT);
 	}
 
 	@Override

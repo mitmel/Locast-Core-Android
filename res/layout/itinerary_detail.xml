@@ -24,17 +24,16 @@
 			android:layout_centerVertical="true"
 			android:layout_marginRight="15dip"
 			android:textOn="Unfollow"
-			android:textOff="Follow" />
+			android:textOff="Follow" android:visibility="gone"/>
 		<TextView
 			android:id="@+id/title"
-			android:textStyle="bold"
-			android:maxLines="2"
-			android:ellipsize="end"
+			style="@style/ItineraryTitle"
 
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
 
 			android:layout_toRightOf="@id/follow"
+			android:layout_alignWithParentIfMissing="true"
 			android:layout_alignParentTop="true"
 			android:layout_alignParentRight="true" />
 	</RelativeLayout>

@@ -16,96 +16,97 @@
 		android:layout_height="fill_parent"
 		android:orientation="horizontal"
 	>
-		<edu.mit.mobile.android.locast.maps.PointerShadow android:id="@+id/pointer_shadow"
+		<edu.mit.mobile.android.locast.maps.PointerShadow
+			android:id="@+id/pointer_shadow"
 			android:layout_width="fill_parent"
 			android:layout_height="fill_parent"
-			mel:orientation="right" 
-			android:layout_weight="3">
-		
-		<com.google.android.maps.MapView
-			android:id="@+id/map"
-			android:layout_width="fill_parent"
-			android:layout_height="fill_parent"
+			mel:orientation="right"
 			android:layout_weight="3"
-
-			android:clickable="true"
-			android:visibility="invisible"
-			android:apiKey="0mv3f-QVdQ_CF3MFrN2I0MO8Wgu_QPqzOKx2GHw" />
-			</edu.mit.mobile.android.locast.maps.PointerShadow>
-
-		<LinearLayout
-			android:layout_width="fill_parent"
-			android:layout_height="fill_parent"
-			android:orientation="vertical"
-			android:layout_weight="2"
 		>
-			<RelativeLayout
+
+			<com.google.android.maps.MapView
+				android:id="@+id/map"
+				android:layout_width="fill_parent"
+				android:layout_height="fill_parent"
+				android:layout_weight="3"
+
+				android:clickable="true"
+				android:visibility="invisible"
+				android:apiKey="0mv3f-QVdQ_CF3MFrN2I0MO8Wgu_QPqzOKx2GHw" />
+		</edu.mit.mobile.android.locast.maps.PointerShadow>
+
+	<ScrollView
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:layout_weight="2"
+	>
+		<RelativeLayout
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+
+		>
+			<TextView
+				android:id="@+id/title"
 				android:layout_width="fill_parent"
 				android:layout_height="wrap_content"
-
-			>
-				<TextView
-					android:id="@+id/title"
-					android:layout_width="fill_parent"
-					android:layout_height="wrap_content"
-					android:textStyle="bold"
-					android:layout_marginLeft="10dip"
-					android:layout_marginRight="10dip"
-					android:layout_marginTop="10dip"
-					android:layout_alignParentTop="true" />
-				<TextView
-					android:id="@+id/author"
-					android:layout_width="fill_parent"
-					android:layout_height="wrap_content"
-					android:layout_marginLeft="10dip"
-					android:layout_marginRight="10dip"
-					android:layout_below="@id/title" />
-
-				<edu.mit.mobile.android.widget.ValidatingCheckBox
-					android:id="@+id/favorite"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content"
-
-					android:layout_alignParentTop="true"
-					android:layout_alignParentRight="true"
-					android:layout_margin="10dip"
-
-					android:button="@drawable/btn_favorite" />
-				<!-- -->
-			</RelativeLayout>
-			<ScrollView
+				android:textStyle="bold"
+				android:textAppearance="?android:attr/textAppearanceMedium"
+				android:paddingBottom="0dip"
+				android:layout_marginLeft="10dip"
+				android:layout_marginRight="10dip"
+				android:layout_marginTop="10dip"
+				android:layout_alignParentTop="true" />
+			<TextView
+				android:id="@+id/author"
 				android:layout_width="fill_parent"
-				android:layout_height="fill_parent"
-				android:minHeight="20dip"
+				android:layout_height="wrap_content"
+				android:layout_marginLeft="10dip"
+				android:layout_marginRight="10dip"
+				android:layout_marginBottom="10dip"
+				android:layout_below="@id/title" />
 
+			<edu.mit.mobile.android.widget.ValidatingCheckBox
+				android:id="@+id/favorite"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+
+				android:layout_alignParentTop="true"
+				android:layout_alignParentRight="true"
 				android:layout_margin="10dip"
-				android:layout_below="@id/author"
-				android:layout_weight="3"
+
+				android:button="@drawable/btn_favorite" />
+
+			<FrameLayout
+				android:id="@+id/cast_media_holder"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:layout_below="@+id/author"
 			>
+
 				<TextView
-					android:id="@+id/description"
+					android:id="@android:id/empty"
+					android:text="@string/empty_castmedia"
+					style="@style/EmptyList"
+					android:layout_width="fill_parent"
+					android:layout_height="wrap_content"
+					android:visibility="gone" />
+
+				<Gallery
+					android:id="@+id/cast_media"
+					android:gravity="center"
+					android:spacing="0dip"
+
 					android:layout_width="fill_parent"
 					android:layout_height="wrap_content" />
-			</ScrollView>
+			</FrameLayout>
 
-		<TextView
-			android:id="@android:id/empty"
-			android:text="@string/empty_castmedia"
-			style="@style/EmptyList"
-			android:layout_width="fill_parent"
-			android:layout_height="fill_parent"
-			android:layout_weight="2"
-			android:visibility="gone" />
-			
-			<GridView
-				android:id="@+id/cast_media"
-				android:numColumns="auto_fit"
-				android:gravity="center"
-
+			<TextView
+				android:id="@+id/description"
 				android:layout_width="fill_parent"
-				android:layout_height="fill_parent"
-
-				android:layout_weight="2" />
-		</LinearLayout>
+				android:layout_height="wrap_content"
+				android:padding="10dip"
+				android:layout_below="@id/cast_media_holder" />
+		</RelativeLayout>
+	</ScrollView>
 	</LinearLayout>
 </LinearLayout>

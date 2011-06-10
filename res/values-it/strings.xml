@@ -1,6 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-  <string name="app_name">Locast Abruzzo</string>
   <string name="about">Informazioni</string>
   <string name="settings">Impostazioni</string>
   <string name="tab_cast">Cast</string>
@@ -15,6 +14,7 @@
   <string name="error_no_maps">Errore: non è presente il map handler present.</string>
   <string name="error_cannot_edit">Mi dispiace ma non hai il permesso per modificare questo oggetto.</string>
   <string name="error_please_enter_a_title">Per cortesia inserisci un titolo.</string>
+  <string name="notice_databases_reset">Risistemazione di database locale.</string>
   <string name="section_featured">Consigliato</string>
   <string name="section_drafts">Bozze</string>
   <string name="section_nearby">Vicino</string>
@@ -36,7 +36,15 @@
   <string name="add_cast">Aggiungi un Cast</string>
   <string name="description">Descrizione</string>
   <string name="cast_play">Play Cast</string>
+  <string name="notice_cast_saved_uploading">Cast salvato. Caricando al server...</string>
+  <string name="notice_cast_saved_no_network">Cast è stato salvato e sarà caricato quando ha una connessione di rete e sincronizzazione comincia.</string>
+  <string name="error_cast_saving">Errore nel salvare del cast</string>
+  <string name="cast_recording_canceled">Registrazione annullato</string>
+  <string name="cast_synchronizing">Sincronizzando il cast...</string>
+  <string name="notice_cast_video_has_not_been_uploaded_yet">Cast video non è stato caricato ancora.</string>
+  <string name="error_cast_could_not_play_video">Non poteva mostrare il video</string>
   <string name="error_cast_no_videos">Mi dispiace ma non ci sono ancora video per questo cast.</string>
+  <string name="cast_error_could_not_play_video_neither_net_nor_local">Non poteva mostrare il video perché la rete è scollegata e non c\'è altra copia (no cached copy)</string>
   <string name="cast_delete_title">Cancella Cast</string>
   <string name="cast_delete_message">Sei sicuro di voler cancellare questo cast? Tutte le riprese saranno perse.</string>
   <string name="project_title">Titolo del progetto</string>
@@ -77,14 +85,22 @@
   <string name="sync_success">Sincronizzazione completata.</string>
   <string name="sync_menu">Sincronizza</string>
   <string name="sync_upload_success">Upload del Cast effettuato.</string>
+  <string name="sync_upload_success_message">\"%1$s\" è stato caricato.</string>
   <string name="error_uploading_cast_video">Errore nell\'upload del cast video</string>
   <string name="sync_upload_fail">Errore nell\'upload del cast.</string>
+  <string name="sync_upload_fail_message">\"%1$s\" non è riuscito a caricare</string>
+  <string name="error_sync_canceled">Sincronizzazione annullato</string>
   <string name="error_sync">Non ho potuto sincronizzarmi con il server. Sei connesso?</string>
   <string name="error_sync_no_post">Mi dispiace, c\'è stato un problema nell\'upload del tuo media sul server. Per cortesia riprova a sincronizzare.</string>
+  <string name="error_sync_no_data_network">Non può sincronizzare Locast: no rete di dati. Per cortesia verifica la tua connessione e riprova.</string>
+  <string name="sync_downloading_cast">Sto caricando \"%1$s\"...</string>
+  <string name="sync_uploading_cast">Uploading \"%1$s\"…</string>
   <string name="mobilevideo_video_edit_title">Locast Video Editor</string>
   <string name="annotate_cast">Annota Cast</string>
   <string name="moment_description_hint">Descrivi brevemente questo momento (opzionale)</string>
   <string name="save_moment">Salva Momento</string>
+  <string name="error_moment_saving_moment">Errore nel salvare del momento :-(</string>
+  <string name="moment_saved">Momento salvato.</string>
   <string name="play_introduction">Mostra Introduzione</string>
   <string name="pref_cat_account">Account</string>
   <string name="pref_title_username">Username</string>
@@ -95,21 +111,4 @@
   <string name="pref_locast_site_dialog_title">Scegli un Locast sito</string>
   <string name="pref_locast_site_summary">Scegli un altro Locast sito</string>
   <string name="pref_locast_site_message">Attenzione: modificazione di questo cancellerà l\'attuale associazione (pairing) e anche il database locale. Tutti i casts non-pubblicati saranno cancellati.</string>
-  <string name="notice_databases_reset">Risistemazione di database locale.</string>
-  <string name="notice_cast_saved_uploading">Cast salvato. Caricando al server...</string>
-  <string name="notice_cast_saved_no_network">Cast è stato salvato e sarà caricato quando ha una connessione di rete e sincronizzazione comincia.</string>
-  <string name="error_cast_saving">Errore nel salvare del cast</string>
-  <string name="cast_recording_canceled">Registrazione annullato</string>
-  <string name="cast_synchronizing">Sincronizzando il cast...</string>
-  <string name="notice_cast_video_has_not_been_uploaded_yet">Cast video non è stato caricato ancora.</string>
-  <string name="error_cast_could_not_play_video">Non poteva mostrare il video</string>
-  <string name="cast_error_could_not_play_video_neither_net_nor_local">Non poteva mostrare il video perché la rete è scollegata e non c\'è altra copia (no cached copy)</string>
-  <string name="error_sync_canceled">Sincronizzazione annullato</string>
-  <string name="error_sync_no_data_network">Non può sincronizzare Locast: no rete di dati. Per cortesia verifica la tua connessione e riprova.</string>
-  <string name="error_moment_saving_moment">Errore nel salvare del momento :-(</string>
-  <string name="moment_saved">Momento salvato.</string>
-  <string name="sync_upload_success_message">\"%1$s\" è stato caricato.</string>
-  <string name="sync_upload_fail_message">\"%1$s\" non è riuscito a caricare</string>
-  <string name="sync_downloading_cast">Sto caricando \"%1$s\"...</string>
-  <string name="sync_uploading_cast">Uploading \"%1$s\"…</string>
 </resources>

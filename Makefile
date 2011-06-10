@@ -1,4 +1,4 @@
-lang=it pt
+lang=it en
 export_strings:
 	a2po export --no-template --ignore-fuzzy $(lang)
 

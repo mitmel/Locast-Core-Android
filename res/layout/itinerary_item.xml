@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:minHeight="?android:attr/listPreferredItemHeight"
+>
+
+	<ImageView
+		android:id="@+id/media_thumbnail"
+		style="@style/Thumbnail"
+		android:layout_width="48dip"
+		android:layout_height="48dip"
+		android:layout_centerVertical="true"
+		android:layout_alignParentLeft="true"
+		android:background="@drawable/picture_frame"
+
+		android:layout_margin="10dip" />
+	<TextView
+		android:id="@android:id/text1"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_toRightOf="@id/media_thumbnail"
+
+		android:paddingLeft="6dip"
+		android:paddingTop="6dip"
+		android:paddingBottom="1dip"
+		android:paddingRight="1dip"
+
+		style="@style/CastListItem.Title" />
+	<TextView
+		android:id="@+id/favorites"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignLeft="@android:id/text1"
+		android:layout_below="@android:id/text1"
+		android:paddingLeft="6dip"
+		android:paddingBottom="1dip"
+		android:paddingRight="1dip"
+		android:drawableLeft="@drawable/ic_favorites_count"
+		android:drawablePadding="2dip"
+
+		android:singleLine="true" />
+
+	<TextView
+		android:id="@+id/casts"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_toRightOf="@id/favorites"
+		android:layout_below="@android:id/text1"
+		android:paddingLeft="6dip"
+		android:paddingBottom="1dip"
+		android:paddingRight="1dip"
+		android:drawableLeft="@drawable/ic_casts_count"
+		android:drawablePadding="2dip"
+
+		android:singleLine="true" />
+</RelativeLayout>

@@ -13,23 +13,28 @@
 		after extensive testing, there doesn't seem to be a scaleType that works 
 		to accomplish that. -->
   <ImageView android:id="@+id/media_thumbnail"
-  	android:scaleType="centerCrop"
+  	style="@style/Thumbnail"
   	android:adjustViewBounds="false"
- 	android:layout_height="200dp"
-  	android:layout_width="266dp"
+ 	android:layout_height="360dp"
+  	android:layout_width="480dp"
   	/>
+  	<ImageView android:id="@+id/thumbnail_overlay"
+  		android:layout_width="wrap_content"
+  		android:layout_height="wrap_content"
+  		
+  		android:layout_alignLeft="@id/media_thumbnail"
+  		android:layout_alignRight="@id/media_thumbnail"
+  		android:layout_alignTop="@id/media_thumbnail"
+  		android:layout_alignBottom="@id/media_thumbnail"
+  		android:scaleType="center"
+  		android:src="@drawable/ic_overlay_play"
+  	 />
 <!--   	 	android:layout_height="100dp" -->
 <!--   	android:layout_width="133dp" -->
  
   	<TextView android:id="@+id/title"
-  		android:text="author"
-  		
-  		android:background="#aaaaaaa0"
-  		android:textColor="#fff"
-  		android:padding="5dip"
-  		android:singleLine="true"
-  		android:ellipsize="marquee"
-  		
+		style="@style/CastMediaTitle"
+
   		android:layout_alignBottom="@id/media_thumbnail"
  		android:layout_alignLeft="@id/media_thumbnail"
   		android:layout_alignRight="@id/media_thumbnail"
