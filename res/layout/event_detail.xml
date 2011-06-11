@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
 	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:mel="http://schemas.android.com/apk/res/edu.mit.mobile.android.locast.ver2"
 	android:layout_width="fill_parent"
 	android:layout_height="fill_parent"
 	android:orientation="vertical"
@@ -8,53 +9,34 @@
 >
 	<include
 		layout="@layout/action_bar" />
-
 	<ScrollView
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
 		android:layout_weight="2"
 	>
-		<LinearLayout
-			android:layout_width="fill_parent"
-			android:layout_height="fill_parent"
-			android:orientation="vertical"
-		>
-			<TextView
-				android:id="@+id/title"
-				android:layout_width="fill_parent"
-				android:layout_height="wrap_content"
-				android:textStyle="bold"
-				android:layout_marginLeft="10dip"
-				android:layout_marginRight="10dip"
-				android:layout_marginTop="10dip" />
-			<TextView
-				android:id="@+id/author"
-				android:layout_width="fill_parent"
-				android:layout_height="wrap_content"
-				android:layout_marginLeft="10dip"
-				android:layout_marginRight="10dip" />
-			<TextView
-				android:id="@+id/when"
-				android:layout_width="fill_parent"
-				android:layout_height="wrap_content"
-				android:layout_margin="10dip" />
-
-			<TextView
-				android:id="@+id/description"
-				android:layout_width="fill_parent"
-				android:layout_height="wrap_content"
-				android:layout_margin="10dip" />
-		</LinearLayout>
+	<include layout="@layout/event_detail_body" />
 	</ScrollView>
 
-	<com.google.android.maps.MapView
-		android:id="@+id/map"
+
+	<edu.mit.mobile.android.locast.maps.PointerShadow
+		android:id="@+id/pointer_shadow"
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
-		android:layout_weight="3"
+		mel:orientation="top"
 
-		android:clickable="true"
-		android:visibility="invisible"
-		android:apiKey="0mv3f-QVdQ_CF3MFrN2I0MO8Wgu_QPqzOKx2GHw" />
+		android:layout_weight="3"
+	>
+		<com.google.android.maps.MapView
+			android:id="@+id/map"
+			android:layout_width="fill_parent"
+			android:layout_height="fill_parent"
+			android:layout_weight="3"
+
+			android:layout_alignParentBottom="true"
+
+			android:clickable="true"
+			android:visibility="invisible"
+			android:apiKey="0mv3f-QVdQ_DwBwdfkqD1df8s37Ezhu5qfmJR_A" />
+	</edu.mit.mobile.android.locast.maps.PointerShadow>
 
 </LinearLayout>

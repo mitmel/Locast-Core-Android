@@ -87,7 +87,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	private static long AUTO_UPDATE_FREQUENCY = 15 * 1000 * 1000; // nano-seconds
 	private static float MIN_UPDATE_DISTANCE = 50; // meters
 
-	private int searchRadius = 500; // km
+	private int searchRadius = 500; // m
 
 	public static final String
 		ACTION_SEARCH_NEARBY = "edu.mit.mobile.android.locast.ACTION_SEARCH_NEARBY";

@@ -2,6 +2,10 @@
     "package": {
         "downloadUrl": "http://locast.mit.edu/abruzzo/static/lca.apk"
     },
+    "2.0.6 beta": {
+    	"versionCode": 21,
+    	"changelog": ["Fixes events and maps"]
+    },
     "2.0.5 beta": {
     	"versionCode": 20,
     	"changelog": ["Welcome to Locast Abruzzo!"]

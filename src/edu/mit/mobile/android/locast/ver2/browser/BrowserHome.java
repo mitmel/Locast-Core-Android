@@ -131,7 +131,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 			break;
 
 		case R.id.events:
-			startActivity(new Intent(LocatableListWithMap.ACTION_SEARCH_NEARBY, Event.CONTENT_URI));
+			startActivity(new Intent(Intent.ACTION_VIEW, Event.CONTENT_URI));
 			break;
 
 		case R.id.nearby:
