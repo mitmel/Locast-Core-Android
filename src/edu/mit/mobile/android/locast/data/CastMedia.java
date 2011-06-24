@@ -78,6 +78,30 @@ public class CastMedia extends JsonSyncableItem {
 		return ProviderUtils.removeLastPathSegments(castMediaUri, 2);
 	}
 
+	public static Uri getMedia(Cursor c, int mediaCol, int mediaLocalCol){
+		Uri media;
+		if (! c.isNull(mediaLocalCol)){
+			media = Uri.parse(c.getString(mediaLocalCol));
+		}else if (! c.isNull(mediaCol)){
+			media = Uri.parse(c.getString(mediaCol));
+		}else{
+			media = null;
+		}
+		return media;
+	}
+
+	public static Uri getThumbnail(Cursor c, int thumbCol, int thumbLocalCol){
+		Uri thumbnail;
+		if (! c.isNull(thumbLocalCol)){
+			thumbnail = Uri.parse(c.getString(thumbLocalCol));
+		}else if (! c.isNull(thumbCol)){
+			thumbnail = Uri.parse(c.getString(thumbCol));
+		}else{
+			thumbnail = null;
+		}
+		return thumbnail;
+	}
+
 	public final static ItemSyncMap SYNC_MAP = new ItemSyncMap();
 
 	public static class ItemSyncMap extends JsonSyncableItem.ItemSyncMap {

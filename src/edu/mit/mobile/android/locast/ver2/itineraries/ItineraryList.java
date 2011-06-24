@@ -23,6 +23,7 @@ import com.stackoverflow.ArrayUtils;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Sync;
@@ -113,7 +114,9 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		final Uri data = args.getParcelable(LOADER_DATA);
 
-		return new CursorLoader(this, data, ITINERARY_PROJECTION, null, null, Itinerary.SORT_DEFAULT);
+		final CursorLoader cl = new CursorLoader(this, data, ITINERARY_PROJECTION, null, null, Itinerary.SORT_DEFAULT);
+		cl.setUpdateThrottle(Constants.UPDATE_THROTTLE);
+		return cl;
 	}
 
 	@Override

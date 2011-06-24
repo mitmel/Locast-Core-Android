@@ -154,6 +154,12 @@
 		<item name="android:textStyle">bold</item>
 	</style>
 	
+	<style name="VideoOSD">
+		<item name="android:textAppearance">?android:attr/textAppearanceLarge</item>
+		<item name="android:textStyle">bold</item>
+		<item name="android:gravity">center</item>
+	</style>
+	
 	<style name="ActionBar">
 		<item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
 		<item name="android:textColor">@android:color/white</item>

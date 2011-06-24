@@ -221,4 +221,5 @@
 	<string name="auth_error_could_not_contact_server">Could not contact server.</string>
 	<string name="auth_error_server_returned_invalid_data">Server returned invalid data.</string>
 	<string name="auth_error_network_protocol_error">Network protocol error: %1$s</string>
+	<string name="itinerary_detail_itinerary_by">Itinerary by %1$s</string>
 </resources>

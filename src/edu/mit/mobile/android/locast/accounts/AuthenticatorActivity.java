@@ -336,7 +336,6 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 			try {
 				return NetworkClient.authenticate(AuthenticatorActivity.this, userPass[0], userPass[1]);
 
-				// XXX localize.
 			} catch (final IOException e) {
 				reason = mActivity
 						.getString(R.string.auth_error_could_not_contact_server);

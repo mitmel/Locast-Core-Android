@@ -328,33 +328,34 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	 * @throws JSONException
 	 * @throws NetworkProtocolException
 	 */
-	public static Bundle authenticate(Context context, String username, String password) throws IOException, JSONException, NetworkProtocolException{
+	public static Bundle authenticate(Context context, String username, String password) throws IOException, JSONException, NetworkProtocolException {
 		final NetworkClient nc = getInstance(context);
 		nc.setCredentials(username, password);
-		final HttpResponse res = nc.get(PATH_USER);
 		boolean authenticated = false;
 		try {
+			final HttpResponse res = nc.get(PATH_USER);
+
 			authenticated = nc.checkStatusCode(res, false);
+
+			final HttpEntity ent = res.getEntity();
+			JSONObject jo = null;
+
+			if (authenticated){
+				jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
+				ent.consumeContent();
+			}else{
+				jo = null;
+			}
+			// ensure that this instance is never reused, as it could have invalid authentication cached.
+
+			return jsonObjectToBundle(jo, true);
 		}catch (final HttpResponseException e){
 			if (e.getStatusCode() == HttpStatus.SC_UNAUTHORIZED){
-				authenticated = false;
+				return null;
 			}else{
 				throw e;
 			}
 		}
-
-		final HttpEntity ent = res.getEntity();
-		JSONObject jo = null;
-
-		if (authenticated){
-			jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
-			ent.consumeContent();
-		}else{
-			jo = null;
-		}
-		// ensure that this instance is never reused, as it could have invalid authentication cached.
-
-		return jsonObjectToBundle(jo, true);
 	}
 
 	public static Bundle jsonObjectToBundle(JSONObject jsonObject, boolean allStrings){

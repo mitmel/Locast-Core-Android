@@ -28,6 +28,7 @@ import com.google.android.maps.Overlay;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
@@ -164,16 +165,22 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		final Uri uri = args.getParcelable(LOADER_ARG_DATA);
 
+		CursorLoader cl = null;
+
 		switch (id){
 		case LOADER_ITINERARY:
-			return new CursorLoader(this, uri, Itinerary.PROJECTION, null, null, null);
+			cl = new CursorLoader(this, uri, Itinerary.PROJECTION, null, null, null);
+			break;
 
 		case LOADER_CASTS:
-			return new CursorLoader(this, uri, Cast.PROJECTION, null, null, null);
+			cl = new CursorLoader(this, uri, Cast.PROJECTION, null, null, null);
+			break;
 
 		}
 
-		return null;
+		cl.setUpdateThrottle(Constants.UPDATE_THROTTLE);
+
+		return cl;
 	}
 
 	@Override
@@ -183,7 +190,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 			if (c.moveToFirst()){
 				((TextView)findViewById(R.id.description)).setText(c.getString(c.getColumnIndex(Itinerary._DESCRIPTION)));
 				((TextView)findViewById(R.id.title)).setText(c.getString(c.getColumnIndex(Itinerary._TITLE)));
-				((TextView)findViewById(R.id.author)).setText("Itinerary by " + c.getString(c.getColumnIndex(Itinerary._AUTHOR)));
+				((TextView)findViewById(R.id.author)).setText(getString(R.string.itinerary_detail_itinerary_by, c.getString(c.getColumnIndex(Itinerary._AUTHOR))));
 				final List<GeoPoint> path = Itinerary.getPath(c);
 				mPathOverlay.setPath(path);
 
@@ -194,7 +201,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 				Log.e(TAG, "error loading itinerary");
 			}
 
-			}break;
+		}break;
 
 		case LOADER_CASTS:{
 			mCastAdapter.swapCursor(c);

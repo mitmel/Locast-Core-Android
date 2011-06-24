@@ -46,6 +46,15 @@
 			</intent-filter>
 		</activity>
 		
+		<activity android:name=".casts.VideoPlayer" android:configChanges="orientation" android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+			<intent-filter>
+				<category android:name="android.intent.category.DEFAULT" />
+				<action android:name="android.intent.action.VIEW" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.castmedia" />
+				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.castmedia" />
+			</intent-filter>
+		</activity>
+		
 <!-- 		
 		<activity android:name=".casts.EditCastActivity">
 			<intent-filter>

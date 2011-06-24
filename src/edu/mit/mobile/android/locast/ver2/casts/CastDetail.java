@@ -1,6 +1,7 @@
 package edu.mit.mobile.android.locast.ver2.casts;
 
 import android.content.ActivityNotFoundException;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -25,6 +26,7 @@ import com.stackoverflow.ArrayUtils;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity;
 import edu.mit.mobile.android.locast.data.Cast;
@@ -50,6 +52,8 @@ public class CastDetail extends LocatableDetail implements
 		LOADER_CAST = 0,
 		LOADER_CAST_MEDIA = 1;
 
+	private Uri mCastMediaUri;
+
 	private static final int REQUEST_SIGNIN = 0;
 
 	private static final String[] CAST_PROJECTION = ArrayUtils.concat(
@@ -65,6 +69,10 @@ public class CastDetail extends LocatableDetail implements
 
 		initOverlays();
 
+		final Uri data = getIntent().getData();
+
+		mCastMediaUri = Cast.getCastMediaUri(data);
+
 		mMapController = ((MapView) findViewById(R.id.map)).getController();
 		mLoaderManager = getSupportLoaderManager();
 		mLoaderManager.initLoader(LOADER_CAST, null, this);
@@ -75,7 +83,7 @@ public class CastDetail extends LocatableDetail implements
 		vcb = (ValidatingCheckBox) findViewById(R.id.favorite);
 
 		vcb.setValidatedClickHandler(new MyFavoriteClickHandler(this,
-				getIntent().getData()));
+				data));
 
 		final Gallery castMediaView = (Gallery) findViewById(R.id.cast_media);
 
@@ -140,21 +148,26 @@ public class CastDetail extends LocatableDetail implements
 		} else {
 			return;
 		}
+
 		final Intent i = new Intent(Intent.ACTION_VIEW);
 		i.setDataAndType(media, mimeType);
 
-		// setting the MIME type for URLs doesn't work.
-		try {
-			startActivity(i);
-		}catch (final ActivityNotFoundException e){
-			// try it again, but without a mime type.
-			if (mimeType != null){
-				i.setDataAndType(media, null);
-			}
+		if (mimeType != null && mimeType.startsWith("video/")){
+			startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mCastMediaUri, id)));
+		}else{
+			// setting the MIME type for URLs doesn't work.
 			try {
 				startActivity(i);
-			}catch (final ActivityNotFoundException e2){
-				Toast.makeText(this, R.string.error_cast_media_no_activities, Toast.LENGTH_LONG).show();
+			}catch (final ActivityNotFoundException e){
+				// try it again, but without a mime type.
+				if (mimeType != null){
+					i.setDataAndType(media, null);
+				}
+				try {
+					startActivity(i);
+				}catch (final ActivityNotFoundException e2){
+					Toast.makeText(this, R.string.error_cast_media_no_activities, Toast.LENGTH_LONG).show();
+				}
 			}
 		}
 
@@ -163,15 +176,20 @@ public class CastDetail extends LocatableDetail implements
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		final Uri data = getIntent().getData();
+		CursorLoader cl = null;
 		switch (id) {
 		case LOADER_CAST:
-			return new CursorLoader(this, data, CAST_PROJECTION, null, null,
+			cl = new CursorLoader(this, data, CAST_PROJECTION, null, null,
 					null);
+			break;
 		case LOADER_CAST_MEDIA:
-			return new CursorLoader(this, Cast.getCastMediaUri(data),
+
+			cl = new CursorLoader(this, mCastMediaUri,
 					CastMediaAdapter.CAST_MEDIA_PROJECTION, null, null, null);
+			break;
 		}
-		return null;
+		cl.setUpdateThrottle(Constants.UPDATE_THROTTLE);
+		return cl;
 	}
 
 	@Override
