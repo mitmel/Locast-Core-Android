@@ -230,10 +230,17 @@ public class AppUpdateChecker extends Service {
     		final int versionCode = versionInfo.getInt("versionCode");
     		versionMap.put(versionCode, versionInfo);
     	}
-    	final String latestVersionName = versionMap.get(versionMap.firstKey()).getString("versionName");
+    	final int latestVersionNumber = versionMap.firstKey();
+    	final String latestVersionName = versionMap.get(latestVersionNumber).getString("versionName");
     	final Uri downloadUri = Uri.parse(pkgInfo.getString("downloadUrl"));
 
-    	if (currentAppVersion == versionMap.firstKey()){
+    	if (currentAppVersion > latestVersionNumber){
+    		Log.d(TAG, "We're newer than the latest published version ("+latestVersionName+"). Living in the future...");
+    		mUpdateListener.appUpdateStatus(true, latestVersionName, null, downloadUri);
+    		return;
+    	}
+
+    	if (currentAppVersion == latestVersionNumber){
     		Log.d(TAG, "We're at the latest version ("+currentAppVersion+")");
     		mUpdateListener.appUpdateStatus(true, latestVersionName, null, downloadUri);
     		return;
