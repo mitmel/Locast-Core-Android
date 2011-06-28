@@ -157,4 +157,6 @@
   <string name="error_please_enter_a_title">Per cortesia inserisci un titolo.</string>
   <string name="login_message_loginfail">Nome utente o password non valida.</string>
   <string name="login_message_login_empty_password">Per cortesia inserisci la password.</string>
+  <string name="videoplayer_notice_loading_video">Caricamento video...</string>
+  <string name="itinerary_detail_itinerary_by">Itinerario da %1$s</string>
 </resources>

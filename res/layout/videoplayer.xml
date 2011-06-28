@@ -3,7 +3,6 @@
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
-	android:background="@android:color/black"
 >
 	<VideoView
 		android:layout_height="match_parent"
@@ -21,7 +20,7 @@
 	<TextView
 		android:layout_height="wrap_content"
 		android:textAppearance="?android:attr/textAppearanceMedium"
-		android:text="Loading video..."
+		android:text="@string/videoplayer_notice_loading_video"
 		android:id="@+id/progress_text"
 		android:layout_width="wrap_content"
 		android:layout_below="@id/progress"
