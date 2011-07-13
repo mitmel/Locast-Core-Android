@@ -20,7 +20,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -119,7 +121,6 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		PATH_USER   = "user/me"
 		;
 
-	protected String baseurl;
 	protected URI baseuri;
 	// one of the formats from ISO 8601
 	public final static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -227,13 +228,10 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	}
 
 	protected void initClient(){
-
-
 		try {
-			final URL baseUrl = new URL(this.baseurl);
-			baseuri = baseUrl.toURI();
 
-			this.authScope = new AuthScope(baseUrl.getHost(), baseUrl.getPort());
+
+			this.authScope = new AuthScope(baseuri.getHost(), baseuri.getPort());
 
 			loadCredentials();
 
@@ -407,7 +405,6 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		checkStatusCode(c, false);
 
 		final JSONObject creds = toJsonObject(c);
-		saveCredentials(creds.getString("username"), creds.getString("auth_secret"));
 
 		return true;
 	}
@@ -426,7 +423,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		checkStatusCode(c, false);
 
 		if (c.getStatusLine().getStatusCode() == HttpStatus.SC_OK){
-			clearCredentials();
+
 			return true;
 		} else {
 			return false;
@@ -938,13 +935,24 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	}
 
 	protected synchronized void loadBaseUri() {
-		this.baseurl = prefs.getString(PREF_SERVER_URL, context.getString(R.string.default_api_url));
+		String baseurl = prefs.getString(PREF_SERVER_URL, context.getString(R.string.default_api_url));
 		if (!baseurl.endsWith("/")){
 			if (DEBUG) {
 				Log.w(TAG, "Baseurl in preferences (" +baseurl+") didn't end in a slash, so we added one.");
 			}
 			baseurl = baseurl + "/";
 			prefs.edit().putString(PREF_SERVER_URL, baseurl).commit();
+		}
+
+		try {
+			final URL baseUrl = new URL(baseurl);
+			baseuri = baseUrl.toURI();
+		}catch (final MalformedURLException e){
+			showError(e);
+			e.printStackTrace();
+		}catch (final URISyntaxException e){
+			showError(e);
+			e.printStackTrace();
 		}
 	}
 
@@ -970,43 +978,6 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 			}
 		}
 		setCredentials(accounts[0].name, am.getPassword(accounts[0]));
-	}
-
-	/**
-	 * Save the user credentials in a record store for use later. This
-	 * will treat the client as being "paired" with the server.
-	 *
-	 *@deprecated
-	 * @param username
-	 * @param auth_secret
-	 * @throws IOException
-	 */
-	@Deprecated
-	public synchronized void saveCredentials(String username, String auth_secret)
-			throws IOException {
-		/* XXX delete this method
-				final Editor e = prefs.edit();
-				e.putString(PREF_USERNAME, username);
-				e.putString(PREF_PASSWORD, auth_secret);
-				e.commit();
-				loadCredentials();
-				*/
-			}
-
-	/**
-	 * Clears all the credentials. This will effectively unpair the client, but won't
-	 * issue an unpair request.
-	 *@deprecated
-	 */
-	@Deprecated
-	public void clearCredentials() {
-		// XXX delete this method
-		/*
-		final Editor e = prefs.edit();
-		e.putString(PREF_USERNAME, "");
-		e.putString(PREF_PASSWORD, "");
-		e.commit();
-		*/
 	}
 
 	/**

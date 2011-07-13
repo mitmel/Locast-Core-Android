@@ -42,6 +42,8 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 	private static final Uri FEATURED_CASTS = Cast.getTagUri(Cast.CONTENT_URI, Cast.addPrefixToTag(Cast.SYSTEM_PREFIX, "_featured"));
 
+	private boolean shouldRefresh;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -71,13 +73,15 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		findViewById(R.id.nearby).setOnClickListener(this);
 		findViewById(R.id.favorites).setOnClickListener(this);
 
-		checkFirstTime();
+		shouldRefresh = !checkFirstTime();
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		refresh(false);
+		if (shouldRefresh) {
+			refresh(false);
+		}
 	}
 
 	@Override

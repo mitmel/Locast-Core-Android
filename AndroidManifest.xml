@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="edu.mit.mobile.android.locast.ver2"
-	android:versionCode="22" android:versionName="2.0.7 beta"
+	android:versionCode="23" android:versionName="2.0.8 beta"
 	android:installLocation="auto"
 	>
 <!--	android:installLocation="auto"  version 2.2+ -->
@@ -220,9 +220,9 @@
 	</activity>
 	
 	<activity
-		android:name="edu.mit.mobile.android.locast.accounts.SigninOrSkip" android:excludeFromRecents="true">
+		android:name="edu.mit.mobile.android.locast.accounts.SigninOrSkip" android:excludeFromRecents="true" />
 		
-		</activity>
+		<activity android:name=".browser.ResetActivity"  android:excludeFromRecents="true" android:theme="@android:style/Theme.Dialog" />
 			
 	<uses-library android:name="com.google.android.maps" />
 

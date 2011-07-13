@@ -23,6 +23,7 @@ import org.json.JSONException;
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
@@ -35,6 +36,8 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
@@ -42,6 +45,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
+import edu.mit.mobile.android.locast.SettingsActivity;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
@@ -64,7 +68,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     private String mAuthtokenType;
 
     private static final int
-    	DIALOG_PROGRESS = 0;
+    	DIALOG_PROGRESS = 0,
+    	DIALOG_SET_BASE_URL = 1;
 
     /**
      * If set we are just checking that the user knows their credentials; this
@@ -137,6 +142,9 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
      */
     @Override
     protected Dialog onCreateDialog(int id) {
+    	switch (id){
+    	case DIALOG_PROGRESS:
+
         final ProgressDialog dialog = new ProgressDialog(this);
         dialog.setMessage(getText(R.string.login_message_authenticating));
         dialog.setIndeterminate(true);
@@ -152,6 +160,17 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
             }
         });
         return dialog;
+
+    	case DIALOG_SET_BASE_URL:
+
+    		final EditText baseUrl = new EditText(this);
+    		baseUrl.setText(getString(R.string.default_api_url));
+    		final AlertDialog.Builder db = new AlertDialog.Builder(this);
+    		return db.create();
+
+        default:
+        	return null;
+    	}
     }
 
 	@Override
@@ -361,6 +380,25 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     	}
     	public void attach(AuthenticatorActivity activity){
     		mActivity = activity;
+    	}
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+    	super.onCreateOptionsMenu(menu);
+    	getMenuInflater().inflate(R.menu.login_options, menu);
+    	return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	switch (item.getItemId()){
+    	case R.id.set_base_url:
+    		startActivity(new Intent(this, SettingsActivity.class));
+    		return true;
+
+    		default:
+    			return super.onOptionsItemSelected(item);
     	}
     }
 
