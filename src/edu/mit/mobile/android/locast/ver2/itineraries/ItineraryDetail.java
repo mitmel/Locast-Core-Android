@@ -30,6 +30,8 @@ import android.support.v4_map.app.LoaderManager;
 import android.support.v4_map.app.MapFragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
@@ -238,6 +240,25 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		case LOADER_ITINERARY:
 
 			break;
+		}
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		super.onCreateOptionsMenu(menu);
+		getMenuInflater().inflate(R.menu.itinerary_detail, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch(item.getItemId()){
+		case R.id.add_cast:
+			startActivity(new Intent(Intent.ACTION_INSERT, Itinerary.getCastsUri(getIntent().getData())));
+			return true;
+
+			default:
+				return super.onOptionsItemSelected(item);
 		}
 	}
 }

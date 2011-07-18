@@ -45,6 +45,7 @@
 	<!-- casts -->
     <string name="cast_title_hint">Cast Title</string>
 	<string name="add_to_project">Add to Project</string>
+	<string name="add_cast_to_x"><b>Add Cast to</b> %1$s</string>
 	<string name="edit_cast">Edit Cast</string>
 	<string name="view_cast">View Cast</string>
 	<string name="remove_cast">Remove Cast from Project</string>

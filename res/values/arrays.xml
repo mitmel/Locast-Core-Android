@@ -13,7 +13,7 @@
 	
 	<string-array name="locast_urls" translatable="false">
 		<item>https://locast.mit.edu/abruzzo/api/</item>
-		<item>http://mel-pydev.mit.edu/travels/api/</item>
+		<item>http://mel-pydev.mit.edu/abruzzo/api/</item>
 		<item>https://locast.mit.edu/luccarts/api/</item>
 	</string-array>
 </resources>

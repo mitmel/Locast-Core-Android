@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+>
+
+	<include
+		layout="@layout/action_bar" />
+
+	<TextView
+		android:id="@android:id/title"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_below="@id/action_bar"
+		android:textStyle="normal"
+
+		style="@style/Notice" />
+
+	<ScrollView
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:layout_below="@android:id/title"
+		android:layout_above="@+id/button_bar"
+	>
+		<LinearLayout
+			android:layout_height="wrap_content"
+			android:layout_width="fill_parent"
+			android:orientation="vertical"
+		>
+			<TextView
+				android:id="@+id/location"
+				android:layout_height="wrap_content"
+				android:layout_width="fill_parent" />
+
+			<LinearLayout
+				android:orientation="horizontal"
+				android:layout_height="wrap_content"
+				android:layout_width="fill_parent"
+			>
+				<ImageButton
+					android:id="@+id/new_photo"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:src="@drawable/ic_photo"
+					android:layout_margin="5dip"
+					android:layout_weight="1" />
+				<ImageButton
+					android:id="@+id/new_video"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:src="@drawable/ic_video"
+					android:layout_margin="5dip"
+					android:layout_weight="1" />
+
+				<ImageButton
+					android:id="@+id/pick_media"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:src="@drawable/ic_gallery"
+					android:layout_margin="5dip"
+					android:layout_weight="1" />
+			</LinearLayout>
+			<EditText
+				android:id="@+id/cast_title"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:hint="@string/cast_title_hint"
+
+				android:singleLine="true"
+				android:inputType="textEmailSubject|textAutoCorrect|textCapSentences|textImeMultiLine"
+				android:imeOptions="actionNext" />
+			<EditText
+				android:id="@+id/description"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:minLines="5"
+				android:hint="@string/description"
+				android:gravity="top|left"
+				android:inputType="textMultiLine|textAutoCorrect|textCapSentences"
+				android:imeOptions="actionDone|flagNoEnterAction" 
+				/>
+		</LinearLayout>
+	</ScrollView>
+	<LinearLayout
+		android:id="@+id/button_bar"
+		android:orientation="horizontal"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_alignParentBottom="true"
+		style="@android:style/ButtonBar"
+		android:layout_weight="1"
+	>
+		<Button
+			android:id="@+id/add"
+			android:text="@string/add_cast"
+			android:layout_height="wrap_content"
+			android:layout_width="wrap_content" />
+	</LinearLayout>
+</RelativeLayout>
