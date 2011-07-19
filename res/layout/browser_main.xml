@@ -1,74 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-  xmlns:android="http://schemas.android.com/apk/res/android"
-  android:layout_width="fill_parent"
-  android:layout_height="fill_parent" android:orientation="vertical">
-  <include layout="@layout/action_bar" />
-  
-  <TextView android:id="@+id/message" 
-  		android:text="@string/welcome_message"
-    	style="@style/Notice.Info"
-     	android:layout_width="fill_parent"
-      	android:layout_height="wrap_content"
-       />
-       
-       <LinearLayout 
-       		android:layout_width="fill_parent"
-       		android:layout_height="fill_parent"
-       		android:layout_weight="1" 
-       		android:orientation="horizontal" android:gravity="center_vertical">
-       		
-       <Button android:id="@+id/itineraries"
-       		android:text="@string/itineraries"
-       		style="@style/BrowserMainIcon" 
-       		android:layout_weight="1"
-       		android:layout_width="fill_parent"
-       		android:layout_height="wrap_content" android:drawableTop="@drawable/ic_itinerary"/>
-       		
-       <Button android:id="@+id/nearby"
-       		android:text="@string/nearby" 
-       		style="@style/BrowserMainIcon" 
-       		android:layout_weight="1"
-       		android:layout_width="fill_parent" 
-       		android:layout_height="wrap_content" android:drawableTop="@drawable/ic_nearby"/>
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+	android:orientation="vertical"
+>
+	<include
+		layout="@layout/action_bar" />
 
-       <Button android:id="@+id/favorites"
-       		android:text="@string/favorites"
-       		style="@style/BrowserMainIcon"
-       		android:layout_weight="1"
-       		android:layout_width="fill_parent" 
-       		android:layout_height="wrap_content"  android:drawableTop="@drawable/ic_favorites"/>
-       		
-       <Button android:id="@+id/events"
-       		android:text="@string/events"
-       		style="@style/BrowserMainIcon"
-       		android:layout_weight="1"
-       		android:layout_width="fill_parent" 
-       		android:layout_height="wrap_content"  android:drawableTop="@drawable/ic_event"/>
-       </LinearLayout>
-       
-       <TextView android:id="@android:id/empty"
-       		style="@style/EmptyList"
-       		android:text="@string/error_no_featured_casts"
-        	android:spacing="0dip"
-       		android:layout_width="fill_parent"
-       		android:layout_height="fill_parent"
-       		android:layout_weight="1"
-       		android:visibility="gone"
-       		 />
-       		       	
-       <Gallery android:id="@+id/casts"
-        	android:spacing="0dip"
-       		android:layout_width="fill_parent"
-       		android:layout_height="fill_parent"
-       		android:layout_weight="1"
-       		/>
-       		
-       <TextView android:text="@string/featured_casts"
-	       android:layout_width="fill_parent"
-	       android:layout_height="wrap_content"
-	       android:paddingBottom="80dip"
-	       android:paddingRight="15dip"
-	       android:gravity="right"
-	       /> 
+	<TextView
+		android:id="@+id/message"
+		android:text="@string/welcome_message"
+		style="@style/Notice.Info"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content" />
+
+	<LinearLayout
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:layout_weight="1"
+		android:orientation="horizontal"
+		android:gravity="center_vertical"
+	>
+
+		<Button
+			android:id="@+id/itineraries"
+			android:text="@string/itineraries"
+			style="@style/BrowserMainIcon"
+			android:layout_weight="1"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:drawableTop="@drawable/ic_itinerary" />
+
+		<Button
+			android:id="@+id/nearby"
+			android:text="@string/nearby"
+			style="@style/BrowserMainIcon"
+			android:layout_weight="1"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:drawableTop="@drawable/ic_nearby" />
+
+		<Button
+			android:id="@+id/favorites"
+			android:text="@string/favorites"
+			style="@style/BrowserMainIcon"
+			android:layout_weight="1"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:drawableTop="@drawable/ic_favorites" />
+
+		<Button
+			android:id="@+id/events"
+			android:text="@string/events"
+			style="@style/BrowserMainIcon"
+			android:layout_weight="1"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:drawableTop="@drawable/ic_event" />
+	</LinearLayout>
+
+	<TextView
+		android:id="@android:id/empty"
+		style="@style/EmptyList"
+		android:text="@string/error_no_featured_casts"
+		android:spacing="0dip"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:layout_weight="1"
+		android:visibility="gone" />
+
+	<Gallery
+		android:id="@+id/casts"
+		android:spacing="0dip"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:layout_weight="1" />
+
+	<TextView
+		android:text="@string/featured_casts"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:paddingBottom="70dip"
+		android:paddingRight="15dip"
+		android:gravity="right" />
+		
+	<ImageView
+		android:layout_height="wrap_content"
+		android:layout_width="wrap_content"
+		android:src="@drawable/powered_by_locast"
+		android:layout_gravity="right"
+		android:layout_marginRight="6dip" android:layout_marginBottom="6sp"/>
 </LinearLayout>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Default, English -->
 <resources>
-	<string name="app_name">Locast Abruzzo</string>
+	<string name="app_name">Rai Local Abruzzo</string>
 
 	<string name="default_api_url" translatable="false">http://mel-pydev.mit.edu/tourism/api/</string>
 	<string name="app_update_url" translatable="false">http://locast.mit.edu/m/locast.json</string>
@@ -150,9 +150,9 @@
 	<string name="pref_locast_site_summary">Choose another Locast site.</string>
 	<string name="pref_locast_site_message">Warning: changing this will erase your current pairing as well as the local database. Any unpublished casts will be deleted.</string>
 	
-	<string name="welcome_message">Welcome! Locast Abruzzo is a location-based tourism application for visiting Abruzzo.</string>
+	<string name="welcome_message">Welcome! Rai Local Abruzzo is a location-based tourism application for visiting Abruzzo.</string>
 	
-	<string name="auth_signin_or_skip_notice">You\'ll need an account to upload photos and videos to Locast Abruzzo</string>
+	<string name="auth_signin_or_skip_notice">You\'ll need an account to upload photos and videos to Rai Local Abruzzo</string>
 	
 	<string name="auth_signin_register">Sign In / Register</string>
 	
