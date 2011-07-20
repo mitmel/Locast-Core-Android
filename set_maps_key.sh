@@ -8,7 +8,10 @@ prod="0mv3f-QVdQ_DwBwdfkqD1df8s37Ezhu5qfmJR_A"
 
 if [ "$1" = 'prod' ]; then
     key="$prod"
-else
+elif [ "$1" = 'dev' ]; then
     key="$dev"
+else
+    key="$1"
 fi
+
 sed -i -e "s!android:apiKey=\"[^\"]*\"!android:apiKey=\"$key\"!" res/**/*.xml
