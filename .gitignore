@@ -1,3 +1,6 @@
-bin/
-gen/
-deploy/
+*~
+bin/*
+gen/*
+deploy/*
+errors/*
+*.swp
