@@ -4,3 +4,4 @@ gen/*
 deploy/*
 errors/*
 *.swp
+README.html

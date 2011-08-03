@@ -1,6 +1,13 @@
 lang=it en
 # the name of the directory that Locast has been extracted to
-srcdir=Locast
+srcdir = Locast
+version := $(shell sed '/versionName/ { s/.*versionName="\([^"]*\)".*/\1/; s/ /_/g; p }; d' AndroidManifest.xml)
+out_package := ../$(srcdir)_$(version).tar.gz
+
+all: README.html export_strings import_strings
+package: $(out_package)
+
+######################################################
 
 export_strings:
 	a2po export --no-template --ignore-fuzzy $(lang)
@@ -8,6 +15,8 @@ export_strings:
 import_strings:
 	a2po import --ignore-fuzzy
 
-package: ../locast_android.tar.gz
-../locast_android.tar.gz: 
-	tar -zcv --exclude .git --exclude bin/\* --exclude-vcs --exclude deploy/\* --exclude gen/\* --exclude \*\~ --exclude-backups --exclude \*.tar.gz -X .gitignore -f $@ -C ../ $(srcdir)
+%.html: %.md
+	markdown $< > $@
+
+$(out_package): .
+	tar -zcv --exclude .git --exclude-vcs --exclude-backups -X .gitignore -f $@ -C ../ $(srcdir)
