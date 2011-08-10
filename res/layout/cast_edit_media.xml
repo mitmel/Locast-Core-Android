@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:id="@+id/cast_edit_media"
+>
+
+	<RelativeLayout
+		android:id="@android:id/empty"
+		android:visibility="gone"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:layout_above="@+id/button_bar"
+	>
+
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="Tap Button to Add a Phot, Video
+	or Media from Phone Gallery"
+	android:layout_alignParentBottom="true"
+	android:layout_alignParentLeft="true"
+	android:layout_marginLeft="15dip"
+	android:layout_marginBottom="5dip"
+	
+	 />
+	</RelativeLayout>
+
+	<ListView
+		android:id="@android:id/list"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:fadingEdge="horizontal" />
+		
+	<LinearLayout android:id="@+id/button_bar"
+		android:orientation="horizontal"
+		android:layout_height="wrap_content"
+		android:layout_width="fill_parent"
+		android:layout_alignParentBottom="true"
+	>
+		<ImageButton
+			android:id="@+id/new_photo"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:src="@drawable/ic_photo"
+			android:layout_margin="5dip"
+			android:layout_weight="1" />
+		<ImageButton
+			android:id="@+id/new_video"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:src="@drawable/ic_video"
+			android:layout_margin="5dip"
+			android:layout_weight="1" />
+
+		<ImageButton
+			android:id="@+id/pick_media"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:src="@drawable/ic_gallery"
+			android:layout_margin="5dip"
+			android:layout_weight="1" />
+	</LinearLayout>
+</RelativeLayout>

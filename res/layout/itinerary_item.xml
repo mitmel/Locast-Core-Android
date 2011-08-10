@@ -29,31 +29,45 @@
 		android:paddingRight="1dip"
 
 		style="@style/CastListItem.Title" />
-	<TextView
-		android:id="@+id/favorites"
-		android:layout_width="wrap_content"
+		
+			<TextView
+		android:id="@android:id/text2"
+		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
-		android:layout_alignLeft="@android:id/text1"
+		android:layout_toRightOf="@id/media_thumbnail"
 		android:layout_below="@android:id/text1"
+
 		android:paddingLeft="6dip"
+		android:paddingTop="6dip"
 		android:paddingBottom="1dip"
 		android:paddingRight="1dip"
-		android:drawableLeft="@drawable/ic_favorites_count"
-		android:drawablePadding="2dip"
 
-		android:singleLine="true" />
+		style="@style/CastListItem.Description" />
+<!-- 	<TextView -->
+<!-- 		android:id="@+id/favorites" -->
+<!-- 		android:layout_width="wrap_content" -->
+<!-- 		android:layout_height="wrap_content" -->
+<!-- 		android:layout_alignLeft="@android:id/text1" -->
+<!-- 		android:layout_below="@android:id/text1" -->
+<!-- 		android:paddingLeft="6dip" -->
+<!-- 		android:paddingBottom="1dip" -->
+<!-- 		android:paddingRight="1dip" -->
+<!-- 		android:drawableLeft="@drawable/ic_favorites_count" -->
+<!-- 		android:drawablePadding="2dip" -->
 
-	<TextView
-		android:id="@+id/casts"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:layout_toRightOf="@id/favorites"
-		android:layout_below="@android:id/text1"
-		android:paddingLeft="6dip"
-		android:paddingBottom="1dip"
-		android:paddingRight="1dip"
-		android:drawableLeft="@drawable/ic_casts_count"
-		android:drawablePadding="2dip"
+<!-- 		android:singleLine="true" /> -->
 
-		android:singleLine="true" />
+<!-- 	<TextView -->
+<!-- 		android:id="@+id/casts" -->
+<!-- 		android:layout_width="wrap_content" -->
+<!-- 		android:layout_height="wrap_content" -->
+<!-- 		android:layout_toRightOf="@id/favorites" -->
+<!-- 		android:layout_below="@android:id/text1" -->
+<!-- 		android:paddingLeft="6dip" -->
+<!-- 		android:paddingBottom="1dip" -->
+<!-- 		android:paddingRight="1dip" -->
+<!-- 		android:drawableLeft="@drawable/ic_casts_count" -->
+<!-- 		android:drawablePadding="2dip" -->
+
+<!-- 		android:singleLine="true" /> -->
 </RelativeLayout>

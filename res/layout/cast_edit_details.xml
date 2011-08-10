@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:id="@+id/cast_edit_details"
+>
+	<TextView
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="@string/description"
+	></TextView>
+
+
+	<EditText
+		android:id="@+id/description"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:minLines="5"
+		android:hint="@string/description"
+		android:gravity="top|left"
+		android:inputType="textMultiLine|textAutoCorrect|textCapSentences"
+		android:imeOptions="actionDone|flagNoEnterAction" />
+
+<!-- 	<edu.mit.mobile.android.locast.widget.TagList -->
+<!-- 		android:id="@+id/tags" -->
+<!-- 		android:layout_width="fill_parent" -->
+<!-- 		android:layout_height="wrap_content" /> -->
+</LinearLayout>

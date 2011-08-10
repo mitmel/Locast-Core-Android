@@ -57,7 +57,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 
 	private ImageCache mImageCache;
 
-	private final String[] ITINERARY_DISPLAY = new String[]{Itinerary._TITLE, Itinerary._THUMBNAIL, Itinerary._FAVORITES_COUNT, Itinerary._CASTS_COUNT};
+	private final String[] ITINERARY_DISPLAY = new String[]{Itinerary._TITLE, Itinerary._THUMBNAIL, Itinerary._DESCRIPTION};
 	private final String[] ITINERARY_PROJECTION = ArrayUtils.concat(new String[]{Itinerary._ID}, ITINERARY_DISPLAY);
 
 	private static String LOADER_DATA = "edu.mit.mobile.android.locast.LOADER_DATA";
@@ -80,28 +80,10 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		mImageCache = ImageCache.getInstance(this);
 
 		if (Intent.ACTION_VIEW.equals(action)){
-			final Uri data = intent.getData();
-			final String type = intent.resolveType(this);
+			loadData(intent.getData());
 
-			if (MediaProvider.TYPE_ITINERARY_DIR.equals(type)){
-				mAdapter = new SimpleThumbnailCursorAdapter(this,
-						R.layout.itinerary_item,
-						null,
-				ITINERARY_DISPLAY,
-				new int[] {android.R.id.text1, R.id.media_thumbnail, R.id.favorites, R.id.casts},
-				new int[]{R.id.media_thumbnail},
-				0
-				);
-				mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP));
-
-				final LoaderManager lm = getSupportLoaderManager();
-				final Bundle loaderArgs = new Bundle();
-				loaderArgs.putParcelable(LOADER_DATA, data);
-				lm.initLoader(0, loaderArgs, this);
-				setTitle(R.string.itineraries);
-				mUri = data;
-				startService(new Intent(Intent.ACTION_SYNC, data));
-			}
+		}else if (Intent.ACTION_MAIN.equals(action)){
+			loadData(Itinerary.CONTENT_URI);
 		}
 	}
 
@@ -111,6 +93,31 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		refresh(false);
 	}
 
+	private void loadData(Uri data){
+		final String type = getContentResolver().getType(data);
+
+		if (! MediaProvider.TYPE_ITINERARY_DIR.equals(type)){
+			throw new IllegalArgumentException("cannot load type: " + type);
+		}
+		mAdapter = new SimpleThumbnailCursorAdapter(this,
+				R.layout.itinerary_item,
+				null,
+		ITINERARY_DISPLAY,
+		new int[] {android.R.id.text1, R.id.media_thumbnail, android.R.id.text2},
+		new int[]{R.id.media_thumbnail},
+		0
+		);
+		mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP));
+
+		final LoaderManager lm = getSupportLoaderManager();
+		final Bundle loaderArgs = new Bundle();
+		loaderArgs.putParcelable(LOADER_DATA, data);
+		lm.initLoader(0, loaderArgs, this);
+		setTitle(R.string.itineraries);
+		mUri = data;
+		startService(new Intent(Intent.ACTION_SYNC, data));
+
+	}
 	@Override
 	public void setTitle(CharSequence title){
 		super.setTitle(title);

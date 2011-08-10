@@ -15,7 +15,6 @@
 	 <style name="LocastTheme" parent="LightTheme">
 		
         <item name="android:listSeparatorTextViewStyle">@style/ListSeparatorLight</item>
-		
 	 </style>
 	 
 	 <style name="ListSeparatorLight" parent="@android:style/Widget.TextView.ListSeparator.White">
@@ -69,7 +68,8 @@
  	<style name="CastListItem.Title">
  		<item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
  		<item name="android:textStyle">bold</item>
- 		
+ 		<item name="android:maxLines">2</item>
+ 		<item name="android:ellipsize">marquee</item> 		
  	</style>
  	<style name="CastListItem.Author">
  		<item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
@@ -77,8 +77,8 @@
  	</style>
  	 	<style name="CastListItem.Description">
  		<item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
- 		
- 		
+ 		<item name="android:maxLines">2</item>
+ 		<item name="android:ellipsize">end</item>
  	</style>
  	
  	<style name="DiscussionUserIcon">
@@ -95,6 +95,7 @@
 		<item name="android:layout_weight">1</item>
 		<item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
 		<item name="android:background">@drawable/btn_main</item>
+		<item name="android:textColor">@android:color/primary_text_light</item>
 	</style>
 	
 	<style name="ListViewStyle" parent="@android:style/Widget.ListView.White">
@@ -132,7 +133,7 @@
 		<item name="android:paddingLeft">10dip</item>
 		<item name="android:paddingTop">5dip</item>
 		<item name="android:paddingBottom">5dip</item>
-		<item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
+		<item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
 		<item name="android:background">@drawable/bg_message</item>
 	</style>
 	
@@ -170,5 +171,10 @@
 	
 	<style name="ActionBar.Button">
 		<item name="android:background">@drawable/btn_bg_trans</item>
+	</style>
+	
+	<style name="CastEditTabIndicator">
+		<item name="android:textColor">@android:color/white</item>
+		<item name="android:gravity">center</item>
 	</style>
 </resources>
