@@ -177,4 +177,19 @@
 		<item name="android:textColor">@android:color/white</item>
 		<item name="android:gravity">center</item>
 	</style>
+	
+	<style name="BodyEntryTitle">
+		<item name="android:textAppearance">@android:style/TextAppearance.Medium</item>
+		<item name="android:textStyle">bold</item>
+		<item name="android:paddingTop">10dip</item>
+		<item name="android:paddingBottom">3dip</item>
+	</style>
+	
+	<style name="Widget.TabWidget" parent="@android:style/Widget.TabWidget">
+		<item name="android:paddingBottom">5dip</item>
+	</style>
+	
+	<style name="Widget.TabContent" parent="@android:style/Widget">
+		<item name="android:background">@drawable/shadow_top</item>
+	</style>
 </resources>

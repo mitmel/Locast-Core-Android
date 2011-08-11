@@ -225,4 +225,5 @@
 	<string name="itinerary_detail_itinerary_by">Itinerary by %1$s</string>
 	<string name="videoplayer_notice_loading_video">Loading video...</string>
 	<string name="reset_database">Reset Database</string>
+	<string name="cast_description_hint">Briefly describe the cast</string>
 </resources>

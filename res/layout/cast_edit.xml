@@ -4,7 +4,6 @@
 	android:layout_width="fill_parent"
 	android:layout_height="fill_parent"
 >
-
 	<include
 		layout="@layout/action_bar" />
 
@@ -47,10 +46,11 @@
 			android:orientation="vertical"
 			android:layout_width="fill_parent"
 			android:layout_height="fill_parent"
-			android:padding="5dp"
 		>
 			<edu.mit.mobile.android.widget.CheckableTabWidget
 				android:id="@android:id/tabs"
+				
+				style="@style/Widget.TabWidget"
 				android:tabStripEnabled="false"
 				android:gravity="center"
 				android:weightSum="3"
@@ -59,9 +59,10 @@
 				
 			<FrameLayout
 				android:id="@android:id/tabcontent"
+				style="@style/Widget.TabContent"
 				android:layout_width="fill_parent"
 				android:layout_height="fill_parent"
-				android:padding="5dp">
+				android:padding="0dip">
 					<include layout="@layout/cast_edit_location" />
 					<include layout="@layout/cast_edit_media" />
 					<include layout="@layout/cast_edit_details" />

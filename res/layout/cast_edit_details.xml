@@ -1,16 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:orientation="vertical"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
 	android:id="@+id/cast_edit_details"
+>
+<LinearLayout
+	android:orientation="vertical"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	
+	
+	android:paddingTop="5dip"
+	android:paddingBottom="5dip"
+	android:paddingLeft="30dip"
+	android:paddingRight="30dip"
 >
 	<TextView
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:text="@string/description"
-	></TextView>
+		style="@style/BodyEntryTitle"
+	/>
 
 
 	<EditText
@@ -18,13 +28,19 @@
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
 		android:minLines="5"
-		android:hint="@string/description"
 		android:gravity="top|left"
 		android:inputType="textMultiLine|textAutoCorrect|textCapSentences"
-		android:imeOptions="actionDone|flagNoEnterAction" />
+		android:imeOptions="actionDone|flagNoEnterAction" android:hint="@string/cast_description_hint"/>
 
-<!-- 	<edu.mit.mobile.android.locast.widget.TagList -->
-<!-- 		android:id="@+id/tags" -->
-<!-- 		android:layout_width="fill_parent" -->
-<!-- 		android:layout_height="wrap_content" /> -->
+	<TextView
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="Tags"
+		style="@style/BodyEntryTitle"
+	/>
+	<edu.mit.mobile.android.locast.widget.TagList 
+		android:id="@+id/tags"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content" /> 
 </LinearLayout>
+</ScrollView>
