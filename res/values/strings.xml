@@ -12,18 +12,6 @@
 	<!-- Main screen -->
     <string name="about">About</string>
     <string name="settings">Settings</string>
-    
-    <!-- Tabs -->
-    <string name="tab_cast">Cast</string>
-    <string name="tab_casts">Casts</string>
-    <string name="tab_project">Project</string>
-    <string name="tab_projects">Projects</string>
-    <string name="tab_discussion">Discussion</string>
-    
-    <!-- pairing -->
-	<string name="pair_or">or</string>
-	<string name="pairing_code_entry">Type pairing code</string>
-	<string name="pair_action">Pair</string>
 	
 	<!-- Generic user-facing error messages -->
 	<string name="error_no_providers">Error: no location providers</string>
@@ -90,22 +78,7 @@
 	<!-- Video recorder -->
     <string name="video_recorder_error_could_not_make_directory">Could not make directory, \'%1$s\', for recording videos.</string>
     <string name="video_recorder_error_cannot_write_to_sd_card">Cannot write to SD card.</string>
-    
-	<!-- template -->
-	<string name="template_done">Done!</string>
-	<string name="template_rerecord_video_title">Rerecord Shot</string>
-	<string name="template_rerecord_video_body">Are you sure you want to rerecord this shot?</string>
-	<string name="template_dialog_loading_camera">Setting up camera for recording…</string>
-	<string name="template_dialog_loading_preview">Loading preview…</string>
-    <string name="template_no_video_for_this_segment">No video for this segment</string>
-    <string name="template_cast_saved_as_draft">Cast saved as draft</string>
-	<string name="template_error_setup_fail">Error: could not setup camera.</string>
-	<string name="template_error_setup_fail_reason">Error: could not setup templated recording: %1$s</string>
-	<string name="template_select_template">Select a template</string>
-	<string name="template_progress_hard_limit">%1$s</string>
-	<string name="template_progress_no_hard_limit">≤%1$s</string>
-    <string name="infinite">∞</string>
-	
+    	
 	<string name="dialog_button_delete">Delete</string>
 	<string name="dialog_button_rerecord">Rerecord</string>
 	
@@ -156,19 +129,12 @@
     <string name="login_message_login_empty_username">Please enter your UNICEF GIS username and password.</string>
      <!-- Placeholder here is for application name -->
     <string name="login_title">%1$s Login</string>
-
-	<!-- Mobile Video -->
-	<string name="mobilevideo_video_edit_title">Locast Video Editor</string>
-	<string name="annotate_cast">Annotate Cast</string>
 	
 	<!-- Moments -->
    	<string name="moment_description_hint">Briefly describe this moment (optional)</string>
 	<string name="save_moment">Save Moment</string>
     <string name="error_moment_saving_moment">Error saving moment :-(</string>
     <string name="moment_saved">Moment saved.</string>
-	
-	<!-- Missions -->
-    <string name="play_introduction">Play Introduction</string>
 	
 	<!-- Preferences -->
 	<!-- account category -->
