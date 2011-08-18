@@ -30,6 +30,7 @@ import android.location.LocationListener;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.provider.MediaStore.Images.Media;
 import android.provider.MediaStore.MediaColumns;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager;
@@ -139,7 +140,9 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		RS_NS = "edu.mit.mobile.android.locast.",
 		RUNTIME_STATE_CAST_URI = RS_NS + "CAST_URI",
 		RUNTIME_STATE_FIRST_LOAD = RS_NS + "FIRST_LOAD",
-		RUNTIME_STATE_CURRENT_TAB = RS_NS + "CURRENT_TAB";
+		RUNTIME_STATE_CURRENT_TAB = RS_NS + "CURRENT_TAB",
+		RUNTIME_STATE_IS_DRAFT = RS_NS + "IS_DRAFT",
+		RUNTIME_STATE_LOCATION = RS_NS + "LOCATION";
 
 	private static final String[]
 	           CAST_MEDIA_FROM = new String[]{CastMedia._TITLE, CastMedia._THUMB_LOCAL, CastMedia._THUMBNAIL},
@@ -213,7 +216,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 			}
 		});
 
-		mCastMediaAdapter.addOnFocusChangeListener(R.id.cast_media_title, new OnFocusChangeListener() {
+		/*mCastMediaAdapter.addOnFocusChangeListener(R.id.cast_media_title, new OnFocusChangeListener() {
 
 			@Override
 			public void onFocusChange(View v, boolean hasFocus) {
@@ -227,7 +230,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 					getContentResolver().update(castMediaUri, cv, null, null);
 				}
 			}
-		});
+		});*/
 
 
 
@@ -311,6 +314,8 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 			mCast = savedInstanceState.getParcelable(RUNTIME_STATE_CAST_URI);
 			mFirstLoad = savedInstanceState.getBoolean(RUNTIME_STATE_FIRST_LOAD, true);
 			mTabHost.setCurrentTab(savedInstanceState.getInt(RUNTIME_STATE_CURRENT_TAB, 0));
+			setLocation((GeoPoint)savedInstanceState.getParcelable(RUNTIME_STATE_LOCATION));
+			mIsDraft = savedInstanceState.getBoolean(RUNTIME_STATE_IS_DRAFT, true);
 		}
 
 		if (Intent.ACTION_EDIT.equals(action)){
@@ -550,6 +555,10 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		outState.putParcelable(RUNTIME_STATE_CAST_URI, mCast);
 		outState.putBoolean(RUNTIME_STATE_FIRST_LOAD, mFirstLoad);
 		outState.putInt(RUNTIME_STATE_CURRENT_TAB, mTabHost.getCurrentTab());
+		if (mLocation instanceof GeoPoint){
+			outState.putParcelable(RUNTIME_STATE_LOCATION, (GeoPoint)mLocation);
+		}
+		outState.putBoolean(RUNTIME_STATE_IS_DRAFT, mIsDraft);
 	}
 
 	// //////////////////////////////////////////////////////////////////////////
@@ -674,11 +683,25 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		String mediaPath = null;
 
 		if ("content".equals(content.getScheme())){
-			final Cursor c = getContentResolver().query(content, new String[]{MediaColumns._ID, MediaColumns.DATA, MediaColumns.TITLE}, null, null, null);
+			final Cursor c = getContentResolver().query(content, new String[]{MediaColumns._ID, MediaColumns.DATA, MediaColumns.TITLE, Media.LATITUDE, Media.LONGITUDE}, null, null, null);
 			try {
 				if (c.moveToFirst()){
 					cv.put(CastMedia._TITLE, c.getString(c.getColumnIndexOrThrow(MediaColumns.TITLE)));
 					mediaPath = "file://" + c.getString(c.getColumnIndexOrThrow(MediaColumns.DATA));
+
+					// if the current location is null, infer it from the first media that's added.
+					if (mLocation == null){
+						final int latCol = c.getColumnIndex(Media.LATITUDE);
+						final int lonCol = c.getColumnIndex(Media.LONGITUDE);
+						final double lat = c.getDouble(latCol);
+						final double lon = c.getDouble(lonCol);
+
+						final boolean isInArmpit = lat == 0 && lon == 0; // Sorry, people in boats off the coast of Ghana, but you're an unfortunate edge case...
+						if (!c.isNull(latCol) && !c.isNull(lonCol) && ! isInArmpit){
+							setLocation(new GeoPoint(c.getDouble(latCol), c.getDouble(lonCol)));
+						}
+					}
+
 				}
 			}finally{
 				c.close();
@@ -734,17 +757,20 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	private void setLocation(IGeoPoint location) {
 		mLocation = location;
 
+		final boolean hasLocation = mLocation != null;
+
 		mRecenterMapOnCurrentLocation = false;
 
-
-		mTabWidget.setTabChecked(0, true);
+		mTabWidget.setTabChecked(0, hasLocation);
 		//mSetLocation.setImageState(STATE_ACTIVE_LOCATION_SET, false);
 		//mSetLocation.postInvalidate();
 
-		mMapCenterIsLocation = true;
+		mMapCenterIsLocation = hasLocation;
 
-		mCastLocationOverlay.setLocation(new GeoPoint(location.getLatitudeE6(), location.getLongitudeE6()));
-		mMapController.setCenter(location);
+		if (hasLocation){
+			mCastLocationOverlay.setLocation(new GeoPoint(location.getLatitudeE6(), location.getLongitudeE6()));
+			mMapController.setCenter(location);
+		}
 
 		mMapView.postInvalidate();
 
