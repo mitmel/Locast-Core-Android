@@ -118,7 +118,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 40;
+		private static final int DB_VER = 41;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -147,6 +147,7 @@ public class MediaProvider extends ContentProvider {
 					+ LOCATABLE_FIELDS
 					+ Cast._TITLE 		+ " TEXT,"
 					+ Cast._AUTHOR 		+ " TEXT,"
+					+ Cast._AUTHOR_URI	+ " TEXT,"
 					+ Cast._DESCRIPTION + " TEXT,"
 					+ Cast._MEDIA_PUBLIC_URI 	+ " TEXT,"
 
@@ -183,6 +184,7 @@ public class MediaProvider extends ContentProvider {
 			db.execSQL("CREATE TABLE "+ CASTMEDIA_TABLE_NAME + " ("
 					+ JSON_SYNCABLE_ITEM_FIELDS
 					+ CastMedia._AUTHOR        + " TEXT,"
+					+ CastMedia._AUTHOR_URI	   + " TEXT,"
 					+ CastMedia._TITLE		   + " TEXT,"
 					+ CastMedia._DESCRIPTION   + " TEXT,"
 					+ CastMedia._LANGUAGE      + " TEXT,"
@@ -201,6 +203,7 @@ public class MediaProvider extends ContentProvider {
 					+ JSON_SYNCABLE_ITEM_FIELDS
 					+ Itinerary._TITLE 		+ " TEXT,"
 					+ Itinerary._AUTHOR		+ " TEXT,"
+					+ Itinerary._AUTHOR_URI		+ " TEXT,"
 					+ Itinerary._DESCRIPTION 	+ " TEXT,"
 					+ Itinerary._PRIVACY 		+ " TEXT,"
 					+ Itinerary._CASTS_URI	+ " TEXT,"
@@ -222,6 +225,7 @@ public class MediaProvider extends ContentProvider {
 					+ LOCATABLE_FIELDS
 					+ Event._TITLE 		 + " TEXT,"
 					+ Event._AUTHOR 	 + " TEXT,"
+					+ Event._AUTHOR_URI	 + " TEXT,"
 					+ Event._DESCRIPTION + " TEXT,"
 					+ Event._START_DATE  + " INTEGER,"
 					+ Event._END_DATE    + " INTEGER,"
@@ -895,7 +899,7 @@ public class MediaProvider extends ContentProvider {
 		if (!db.inTransaction()){
 			db.execSQL("VACUUM");
 		}
-		getContext().getContentResolver().notifyChange(uri, null);
+		getContext().getContentResolver().notifyChange(uri, null, true);
 		return count;
 	}
 

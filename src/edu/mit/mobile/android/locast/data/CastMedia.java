@@ -22,17 +22,25 @@ import java.io.IOException;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.ActivityNotFoundException;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
+import android.widget.Toast;
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
+import edu.mit.mobile.android.locast.ver2.R;
 
 public class CastMedia extends JsonSyncableItem {
+	private static final String TAG = CastMedia.class.getSimpleName();
+
 	public final static String
 		_AUTHOR		  = "author",
+		_AUTHOR_URI	  = "author_uri",
 
 		_TITLE		  = "title",
 		_DESCRIPTION  = "description",
@@ -57,6 +65,7 @@ public class CastMedia extends JsonSyncableItem {
 		_CREATED_DATE,
 
 		_AUTHOR,
+		_AUTHOR_URI,
 		_TITLE,
 		_DESCRIPTION,
 		_LANGUAGE,
@@ -107,6 +116,57 @@ public class CastMedia extends JsonSyncableItem {
 		return media;
 	}
 
+	public static void showMedia(Context context, Cursor c, Uri castMediaUri){
+		final String mediaString = c.getString(c
+				.getColumnIndex(CastMedia._MEDIA_URL));
+		final String locMediaString = c.getString(c
+				.getColumnIndex(CastMedia._LOCAL_URI));
+		String mimeType = null;
+
+		Uri media;
+
+		if (locMediaString != null) {
+			media = Uri.parse(locMediaString);
+			if ("file".equals(media.getScheme())) {
+				mimeType = c.getString(c.getColumnIndex(CastMedia._MIME_TYPE));
+			}
+
+		} else if (mediaString != null) {
+			media = Uri.parse(mediaString);
+			mimeType = c.getString(c.getColumnIndex(CastMedia._MIME_TYPE));
+
+			// we strip this because we don't really want to force them to go to the browser.
+			if ("text/html".equals(mimeType)){
+				mimeType = null;
+			}
+		} else {
+			Log.e(TAG, "asked to show media for "+ castMediaUri + " but there was nothing to show");
+			return;
+		}
+
+		final Intent i = new Intent(Intent.ACTION_VIEW);
+		i.setDataAndType(media, mimeType);
+
+		if (mimeType != null && mimeType.startsWith("video/")){
+			context.startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(castMediaUri, c.getLong(c.getColumnIndex(CastMedia._ID)))));
+		}else{
+			// setting the MIME type for URLs doesn't work.
+			try {
+				context.startActivity(i);
+			}catch (final ActivityNotFoundException e){
+				// try it again, but without a mime type.
+				if (mimeType != null){
+					i.setDataAndType(media, null);
+				}
+				try {
+					context.startActivity(i);
+				}catch (final ActivityNotFoundException e2){
+					Toast.makeText(context, R.string.error_cast_media_no_activities, Toast.LENGTH_LONG).show();
+				}
+			}
+		}
+	}
+
 	public static Uri getThumbnail(Cursor c, int thumbCol, int thumbLocalCol){
 		Uri thumbnail;
 		if (! c.isNull(thumbLocalCol)){
@@ -133,7 +193,8 @@ public class CastMedia extends JsonSyncableItem {
 			put(_TITLE,			new SyncFieldMap("title", 			SyncFieldMap.STRING, SyncFieldMap.FLAG_OPTIONAL));
 			put(_DESCRIPTION,	new SyncFieldMap("description", 	SyncFieldMap.STRING, SyncFieldMap.FLAG_OPTIONAL));
 			put(_LANGUAGE,		new SyncFieldMap("language", 		SyncFieldMap.STRING));
-			put(_AUTHOR, 		new SyncChildField(_AUTHOR, "author", "display_name", SyncFieldMap.STRING));
+			put(_AUTHOR, 		new SyncChildField(_AUTHOR, "author", "display_name", SyncFieldMap.STRING, SyncFieldMap.FLAG_OPTIONAL));
+			put(_AUTHOR_URI,	new SyncChildField(_AUTHOR_URI, "author", "uri", SyncFieldMap.STRING, SyncFieldMap.FLAG_OPTIONAL));
 
 			put("_resources", new SyncCustom("resources", SyncCustom.SYNC_FROM|SyncCustom.FLAG_OPTIONAL) {
 

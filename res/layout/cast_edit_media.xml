@@ -18,7 +18,7 @@
 		<TextView
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:text="Tap Button to Add a Phot, Video
+			android:text="Tap Button to Add a Photo, Video
 	or Media from Phone Gallery"
 	android:layout_alignParentBottom="true"
 	android:layout_alignParentLeft="true"
@@ -32,10 +32,12 @@
 		android:id="@android:id/list"
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
-
-		 />
+		android:descendantFocusability="beforeDescendants"
+		
+		 android:layout_above="@+id/button_bar"/>
 		
 	<LinearLayout android:id="@+id/button_bar"
+		
 		android:orientation="horizontal"
 		android:layout_height="wrap_content"
 		android:layout_width="fill_parent"

@@ -204,4 +204,12 @@ public class Authenticator extends AbstractAccountAuthenticator {
         bundle.putParcelable(AccountManager.KEY_INTENT, intent);
         return bundle;
     }
+
+    public static String getUserUri(Context context){
+		final Account[] accounts = Authenticator.getAccounts(context);
+		if (accounts.length > 0){
+			return AccountManager.get(context).getUserData(accounts[0], AuthenticationService.USERDATA_USER_URI);
+		}
+		return null;
+    }
 }

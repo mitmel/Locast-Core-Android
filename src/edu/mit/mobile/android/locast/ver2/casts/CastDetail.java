@@ -20,9 +20,10 @@ package edu.mit.mobile.android.locast.ver2.casts;
 import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
 
-import android.content.ActivityNotFoundException;
-import android.content.ContentUris;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -38,7 +39,6 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.CheckBox;
 import android.widget.Gallery;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.stackoverflow.ArrayUtils;
 
@@ -116,6 +116,11 @@ public class CastDetail extends LocatableDetail implements
 		castMediaView.setOnItemClickListener(this);
 
 		castMediaView.setEnabled(true);
+
+		final String action = getIntent().getAction();
+		if (Intent.ACTION_DELETE.equals(action)){
+			showDialog(DIALOG_CONFIRM_DELETE);
+		}
 	}
 
 	@Override
@@ -136,53 +141,7 @@ public class CastDetail extends LocatableDetail implements
 			long id) {
 
 		final Cursor c = (Cursor) adapter.getItemAtPosition(position);
-		final String mediaString = c.getString(c
-				.getColumnIndex(CastMedia._MEDIA_URL));
-		final String locMediaString = c.getString(c
-				.getColumnIndex(CastMedia._LOCAL_URI));
-		String mimeType = null;
-
-		Uri media;
-
-		if (locMediaString != null) {
-			media = Uri.parse(locMediaString);
-			if ("file".equals(media.getScheme())) {
-				mimeType = c.getString(c.getColumnIndex(CastMedia._MIME_TYPE));
-			}
-
-		} else if (mediaString != null) {
-			media = Uri.parse(mediaString);
-			mimeType = c.getString(c.getColumnIndex(CastMedia._MIME_TYPE));
-
-			// we strip this because we don't really want to force them to go to the browser.
-			if ("text/html".equals(mimeType)){
-				mimeType = null;
-			}
-		} else {
-			return;
-		}
-
-		final Intent i = new Intent(Intent.ACTION_VIEW);
-		i.setDataAndType(media, mimeType);
-
-		if (mimeType != null && mimeType.startsWith("video/")){
-			startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mCastMediaUri, id)));
-		}else{
-			// setting the MIME type for URLs doesn't work.
-			try {
-				startActivity(i);
-			}catch (final ActivityNotFoundException e){
-				// try it again, but without a mime type.
-				if (mimeType != null){
-					i.setDataAndType(media, null);
-				}
-				try {
-					startActivity(i);
-				}catch (final ActivityNotFoundException e2){
-					Toast.makeText(this, R.string.error_cast_media_no_activities, Toast.LENGTH_LONG).show();
-				}
-			}
-		}
+		CastMedia.showMedia(this, c, mCastMediaUri);
 
 	}
 
@@ -221,7 +180,7 @@ public class CastDetail extends LocatableDetail implements
 				((CheckBox) findViewById(R.id.favorite)).setChecked(c.getInt(c
 						.getColumnIndex(Cast._FAVORITED)) != 0);
 
-				setPointerFromCursor(c, mMapController);
+				setPointerFromCursor(c);
 			}
 
 			break;
@@ -302,4 +261,41 @@ public class CastDetail extends LocatableDetail implements
 			break;
 		}
 	}
+
+	private static final int DIALOG_CONFIRM_DELETE = 100;
+
+	@Override
+	protected Dialog onCreateDialog(int id) {
+		switch(id){
+		case DIALOG_CONFIRM_DELETE:
+			return new AlertDialog.Builder(this)
+			.setPositiveButton(R.string.dialog_button_delete, new DialogInterface.OnClickListener() {
+
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					final int count = getContentResolver().delete(getIntent().getData(), null, null);
+					if (count != 0){
+						finish();
+					}
+
+				}
+			})
+			.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					dialog.cancel();
+				}
+			})
+			.setCancelable(true)
+			.setTitle(R.string.cast_delete_title)
+			.setMessage(R.string.cast_delete_message)
+
+			.create();
+
+			default:
+				return super.onCreateDialog(id);
+		}
+	}
+
 }

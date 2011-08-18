@@ -50,6 +50,7 @@ import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 abstract public class LocatableDetail extends FragmentActivity {
 
 	private MapView mMapView;
+	private MapController mMapController;
 	private PointerShadow mPointerShadow;
 	private PointerShadowOverlay mShadowOverlay;
 	private LocatableItemOverlay mLocatableItemOverlay;
@@ -67,6 +68,7 @@ abstract public class LocatableDetail extends FragmentActivity {
 	protected void initOverlays() {
 		mMapView = (MapView) findViewById(R.id.map);
 
+		mMapController = mMapView.getController();
 		mPointerShadow = (PointerShadow) findViewById(R.id.pointer_shadow);
 		mShadowOverlay = new PointerShadowOverlay(new DefaultResourceProxyImpl(this), mPointerShadow);
 		mLocatableItemOverlay = createItemOverlay();
@@ -84,18 +86,18 @@ abstract public class LocatableDetail extends FragmentActivity {
 		mShadowOverlay.setPointer(geoPoint);
 	}
 
-	protected void setPointerFromCursor(Cursor c, MapController mc){
-		setPointerFromCursor(c, mc, DEFAULT_ZOOM_LEVEL);
+	protected void setPointerFromCursor(Cursor c){
+		setPointerFromCursor(c, DEFAULT_ZOOM_LEVEL);
 	}
 
 	private GeoPoint mCurrentPointer;
 
-	protected void setPointerFromCursor(Cursor c, MapController mc, int zoomLevel){
+	protected void setPointerFromCursor(Cursor c, int zoomLevel){
 		final GeoPoint gp = MapsUtils.getGeoPoint(c);
 		if (mCurrentPointer == null || !mCurrentPointer.equals(gp)){
-			setPointer(gp);
-			mc.setCenter(gp);
-			mc.setZoom(zoomLevel);
+			setPointer(new GeoPoint(gp));
+			mMapController.setCenter(new GeoPoint(gp));
+			mMapController.setZoom(zoomLevel);
 			mCurrentPointer = gp;
 		}
 	}

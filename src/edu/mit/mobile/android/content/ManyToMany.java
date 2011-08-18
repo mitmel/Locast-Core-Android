@@ -267,6 +267,8 @@ public class ManyToMany {
 					throw new IllegalArgumentException("There is no relation between "+ parent + " and " + mToTable + ": ID "+ childId);
 				}
 
+				db.setTransactionSuccessful();
+
 			}finally{
 				db.endTransaction();
 			}

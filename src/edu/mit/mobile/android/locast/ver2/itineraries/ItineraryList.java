@@ -89,7 +89,9 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 
 		mImageCache = ImageCache.getInstance(this);
 
-		checkFirstTime();
+		if (checkFirstTime()){
+			return;
+		}
 
 		if (Intent.ACTION_VIEW.equals(action)){
 			loadData(intent.getData());

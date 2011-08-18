@@ -43,6 +43,7 @@ public class Event extends TaggableItem implements Locatable.Columns {
 		_TITLE,
 		_DESCRIPTION,
 		_AUTHOR,
+		_AUTHOR_URI,
 		_CREATED_DATE,
 		_MODIFIED_DATE,
 		_START_DATE,

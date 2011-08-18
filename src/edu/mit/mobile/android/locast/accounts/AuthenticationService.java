@@ -34,7 +34,8 @@ public class AuthenticationService extends Service {
 		ACCOUNT_TYPE = AUTHORITY,
 		AUTHTOKEN_TYPE = AUTHORITY,
 		USERDATA_USERID = "id",
-		USERDATA_DISPLAY_NAME = "display_name"
+		USERDATA_DISPLAY_NAME = "display_name",
+		USERDATA_USER_URI = "uri"
 		;
 
     @Override

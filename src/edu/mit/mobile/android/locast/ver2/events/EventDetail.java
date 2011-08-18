@@ -121,7 +121,7 @@ public class EventDetail extends LocatableDetail implements LoaderManager.Loader
 					DateUtils.formatDateRange(this, start, end,
 							DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_TIME | DateUtils.FORMAT_SHOW_YEAR | DateUtils.FORMAT_SHOW_WEEKDAY));
 
-			setPointerFromCursor(c, mMapController);
+			setPointerFromCursor(c);
 
 			mEventOverlay.swapCursor(c);
 		}else{

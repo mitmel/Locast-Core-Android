@@ -1,5 +1,7 @@
 package edu.mit.mobile.android.locast.ver2.casts;
 
+import java.util.HashMap;
+
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.events.MapListener;
@@ -17,7 +19,9 @@ import android.R.attr;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -26,17 +30,21 @@ import android.location.LocationListener;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.provider.MediaStore.MediaColumns;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnFocusChangeListener;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -49,6 +57,8 @@ import com.stackoverflow.ArrayUtils;
 import com.stackoverflow.MediaUtils;
 
 import edu.mit.mobile.android.content.ProviderUtils;
+import edu.mit.mobile.android.imagecache.ImageCache;
+import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.data.Locatable;
@@ -73,6 +83,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	private boolean mIsDraft = true;
 	private IGeoPoint mLocation;
 	private boolean mRecenterMapOnCurrentLocation = true;
+	private boolean mFirstLoad = true;
 
 	/////////////////////
 	// stateless
@@ -83,9 +94,10 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	private EditText mTitleView;
 	private CheckableTabWidget mTabWidget;
 
+
 	// media
 	private ListView mCastMediaView;
-	private CursorAdapter mCastMediaAdapter;
+	private EditableCastMediaAdapter mCastMediaAdapter;
 
 	// location
 	private ImageButton mSetLocation;
@@ -125,14 +137,16 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 
 	private static final String
 		RS_NS = "edu.mit.mobile.android.locast.",
-		RUNTIME_STATE_CAST_URI = RS_NS + "CAST_URI";
+		RUNTIME_STATE_CAST_URI = RS_NS + "CAST_URI",
+		RUNTIME_STATE_FIRST_LOAD = RS_NS + "FIRST_LOAD",
+		RUNTIME_STATE_CURRENT_TAB = RS_NS + "CURRENT_TAB";
 
 	private static final String[]
-	           CAST_MEDIA_FROM = new String[]{CastMedia._TITLE, CastMedia._THUMBNAIL},
+	           CAST_MEDIA_FROM = new String[]{CastMedia._TITLE, CastMedia._THUMB_LOCAL, CastMedia._THUMBNAIL},
 	           CAST_MEDIA_PROJECTION = ArrayUtils.concat(new String[]{CastMedia._ID}, CAST_MEDIA_FROM);
 
 	private static final int[]
-	           CAST_MEDIA_TO = new int[]{R.id.cast_title, R.id.media_thumbnail};
+	           CAST_MEDIA_TO = new int[]{R.id.cast_media_title, R.id.media_thumbnail, R.id.media_thumbnail};
 
 	private static final int[]
 	           STATE_ACTIVE_LOCATION_SET = new int[]{attr.state_active, attr.state_checked},
@@ -183,10 +197,45 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		// cast media
 		mCastMediaView = (ListView) findViewById(android.R.id.list);
 		mCastMediaView.setEmptyView(findViewById(android.R.id.empty));
-		mCastMediaAdapter = new SimpleCursorAdapter(this,
-				R.layout.cast_media_editable, null, CAST_MEDIA_FROM, CAST_MEDIA_TO,
-				SimpleCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
-		mCastMediaView.setAdapter(mCastMediaAdapter);
+		mCastMediaView.setItemsCanFocus(true);
+
+		mCastMediaAdapter = new EditableCastMediaAdapter(this, R.layout.cast_media_editable, null, CAST_MEDIA_FROM, CAST_MEDIA_TO, new int[]{R.id.media_thumbnail}, SimpleCursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
+
+		mCastMediaAdapter.addOnClickListener(R.id.remove, new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				final CastMediaAdapter adapter = (CastMediaAdapter) v.getTag(R.id.viewtag_item_adapter);
+				final int position = (Integer) v.getTag(R.id.viewtag_item_position);
+				final Uri castMediaUri = ContentUris.withAppendedId(Cast.getCastMediaUri(mCast), adapter.getItemId(position));
+
+				getContentResolver().delete(castMediaUri, null, null);
+			}
+		});
+
+		mCastMediaAdapter.addOnFocusChangeListener(R.id.cast_media_title, new OnFocusChangeListener() {
+
+			@Override
+			public void onFocusChange(View v, boolean hasFocus) {
+				if (!hasFocus){
+					final CastMediaAdapter adapter = (CastMediaAdapter) v.getTag(R.id.viewtag_item_adapter);
+					final int position = (Integer) v.getTag(R.id.viewtag_item_position);
+					final Uri castMediaUri = ContentUris.withAppendedId(Cast.getCastMediaUri(mCast), adapter.getItemId(position));
+
+					final ContentValues cv = new ContentValues();
+					cv.put(CastMedia._TITLE, ((EditText)v).getText().toString());
+					getContentResolver().update(castMediaUri, cv, null, null);
+				}
+			}
+		});
+
+
+
+		mCastMediaView.setOnItemClickListener(mCastMediaOnItemClickListener);
+		mCastMediaView.setAdapter(new ImageLoaderAdapter(this, mCastMediaAdapter,
+				ImageCache.getInstance(this),
+				new int[] { R.id.media_thumbnail }, 100, 100,
+				ImageLoaderAdapter.UNIT_DIP));
 
 		mDescriptionView = (EditText) findViewById(R.id.description);
 		mTags = (TagList) findViewById(R.id.tags);
@@ -227,7 +276,6 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 				return false;
 			}
 
-
 		}, new DefaultResourceProxyImpl(this));
 
 		mMyLocationOverlay = new MyLocationOverlay(this, mMapView);
@@ -261,6 +309,8 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 
 		if (savedInstanceState != null){
 			mCast = savedInstanceState.getParcelable(RUNTIME_STATE_CAST_URI);
+			mFirstLoad = savedInstanceState.getBoolean(RUNTIME_STATE_FIRST_LOAD, true);
+			mTabHost.setCurrentTab(savedInstanceState.getInt(RUNTIME_STATE_CURRENT_TAB, 0));
 		}
 
 		if (Intent.ACTION_EDIT.equals(action)){
@@ -291,7 +341,10 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	@Override
 	protected void onPause() {
 		super.onPause();
-		save();
+		if (mCast != null){
+			save();
+		}
+
 		stopUpdatingLocation();
 		mMyLocationOverlay.disableMyLocation();
 	}
@@ -306,6 +359,19 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 
 		mMyLocationOverlay.enableMyLocation();
 		//getSupportLoaderManager().restartLoader(arg0, arg1, arg2)
+	}
+
+	@Override
+	public void onBackPressed() {
+
+		if (mLocation == null && mTitleView.getText().length() == 0 && mCastMediaAdapter.getCount() == 0 && mDescriptionView.getText().length() == 0){
+			getContentResolver().delete(mCast, null, null);
+			mCast = null;
+		}
+
+
+		super.onBackPressed();
+
 	}
 
 	@Override
@@ -448,13 +514,15 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
 		switch (loader.getId()){
 		case LOADER_CAST:
-			if (c.moveToFirst()){
+			// XXX hack. This is done as the cast is notified that it should reload when cast media is added. Obviously, it shouldn't.
+			if (mFirstLoad && c.moveToFirst()){
 				loadFromCursor(c);
 			}
 			break;
 
 		case LOADER_CASTMEDIA:
 			mCastMediaAdapter.swapCursor(c);
+			mTabWidget.setTabChecked(1, c.getCount() != 0);
 			for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
 				ProviderUtils.dumpCursorToLog(c, CAST_MEDIA_PROJECTION);
 			}
@@ -480,6 +548,8 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		super.onSaveInstanceState(outState);
 
 		outState.putParcelable(RUNTIME_STATE_CAST_URI, mCast);
+		outState.putBoolean(RUNTIME_STATE_FIRST_LOAD, mFirstLoad);
+		outState.putInt(RUNTIME_STATE_CURRENT_TAB, mTabHost.getCurrentTab());
 	}
 
 	// //////////////////////////////////////////////////////////////////////////
@@ -496,7 +566,11 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		}
 		mTags.clearAllTags();
 		mTags.addTags(TaggableItem.getTags(getContentResolver(), mCast));
-		mTabHost.setCurrentTab(mTabWidget.getNextUncheckedTab());
+
+		if (mFirstLoad){
+			mTabHost.setCurrentTab(mTabWidget.getNextUncheckedTab());
+			mFirstLoad = false;
+		}
 	}
 
 	private void startUpdatingLocation() {
@@ -566,7 +640,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		((TextView) findViewById(android.R.id.title)).setText(title);
 		super.setTitle(title);
 	}
-	
+
 	private void setDescription(CharSequence description){
 		mDescriptionView.setText(description);
 		mTabWidget.setTabChecked(2, true);
@@ -594,9 +668,32 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	public void addMedia(Uri content){
 		final Uri castMedia = Cast.getCastMediaUri(mCast);
 		final ContentValues cv = new ContentValues();
-		cv.put(CastMedia._THUMB_LOCAL, content.toString());
-		cv.put(CastMedia._LOCAL_URI, content.toString());
+
 		cv.put(CastMedia._MIME_TYPE, getContentResolver().getType(content));
+
+		String mediaPath = null;
+
+		if ("content".equals(content.getScheme())){
+			final Cursor c = getContentResolver().query(content, new String[]{MediaColumns._ID, MediaColumns.DATA, MediaColumns.TITLE}, null, null, null);
+			try {
+				if (c.moveToFirst()){
+					cv.put(CastMedia._TITLE, c.getString(c.getColumnIndexOrThrow(MediaColumns.TITLE)));
+					mediaPath = "file://" + c.getString(c.getColumnIndexOrThrow(MediaColumns.DATA));
+				}
+			}finally{
+				c.close();
+			}
+		}else{
+			mediaPath = content.toString();
+		}
+
+		if (mediaPath == null){
+			Log.e(TAG, "couldn't add media from uri "+content);
+			return;
+		}
+
+		cv.put(CastMedia._THUMB_LOCAL, mediaPath);
+		cv.put(CastMedia._LOCAL_URI, mediaPath);
 
 		Log.d(TAG, "addMedia("+castMedia+", "+cv+")");
 		getContentResolver().insert(castMedia, cv);
@@ -683,18 +780,82 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		final ContentValues cv = toContentValues();
 
 		if (mCast == null){
+			Log.d(TAG, "inserting "+cv+" into "+ mCastBase);
 			newCast = cr.insert(mCastBase, cv);
 		}else{
+			Log.d(TAG, "updating "+mCast+" with "+ cv);
 			if (cr.update(mCast, cv, null, null) != 1){
 				throw new RuntimeException("error updating cast " + mCast);
 			}
 			newCast = mCast;
+
 		}
+		Log.d(TAG, "cast URI is" + newCast);
 		if (newCast != null){
 			TaggableItem.putTags(cr, newCast, mTags.getTags());
 		}
 
 		return newCast;
+	}
+
+	private final OnItemClickListener mCastMediaOnItemClickListener = new OnItemClickListener() {
+
+		@Override
+		public void onItemClick(AdapterView<?> adapter, View v, int position,
+				long id) {
+			final Uri castMedia = ContentUris.withAppendedId(Cast.getCastMediaUri(mCast), id);
+			final Cursor c = (Cursor) adapter.getItemAtPosition(position);
+			CastMedia.showMedia(CastEdit.this, c, castMedia);
+
+		}
+	};
+
+	private class EditableCastMediaAdapter extends CastMediaAdapter{
+		private final HashMap<Integer, OnClickListener> mClickListeners = new HashMap<Integer, AdapterView.OnClickListener>();
+		private final HashMap<Integer, OnFocusChangeListener> mFocusChangeListeners = new HashMap<Integer, OnFocusChangeListener>();
+
+		public EditableCastMediaAdapter(Context context, int layout, Cursor c,
+				String[] from, int[] to, int[] imageIDs, int flags) {
+			super(context, layout, c, from, to, imageIDs, flags);
+
+		}
+
+		public void addOnClickListener(int viewID, OnClickListener onClickListener){
+			mClickListeners.put(viewID, onClickListener);
+		}
+
+		public void addOnFocusChangeListener(int viewID, OnFocusChangeListener onFocusChangeListener){
+			mFocusChangeListeners.put(viewID, onFocusChangeListener);
+		}
+
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent) {
+			final View v = super.getView(position, convertView, parent);
+
+			for (final int viewID : mClickListeners.keySet()){
+				final View targetView = v.findViewById(viewID);
+				if (targetView == null){
+					continue;
+				}
+				targetView.setOnClickListener(mClickListeners.get(viewID));
+
+				targetView.setTag(R.id.viewtag_item_position, position);
+				targetView.setTag(R.id.viewtag_item_adapter, this);
+			}
+			// TODO inefficient, but works
+			for (final int viewID : mFocusChangeListeners.keySet()){
+				final View targetView = v.findViewById(viewID);
+				if (targetView == null){
+					continue;
+				}
+				targetView.setOnFocusChangeListener(mFocusChangeListeners.get(viewID));
+
+				targetView.setTag(R.id.viewtag_item_position, position);
+				targetView.setTag(R.id.viewtag_item_adapter, this);
+			}
+
+			return v;
+		}
 	}
 
 }

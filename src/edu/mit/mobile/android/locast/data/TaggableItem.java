@@ -41,7 +41,7 @@ import android.net.Uri;
 import com.stackoverflow.CollectionUtils;
 import com.stackoverflow.Predicate;
 
-import edu.mit.mobile.android.locast.net.NetworkClient;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 
 /**
  * DB entry for an item that can be tagged.
@@ -55,6 +55,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 
 	public static final String _PRIVACY = "privacy",
 								_AUTHOR = "author",
+								_AUTHOR_URI = "author_uri",
 								_DRAFT  = "draft";
 
 	public static final String  PRIVACY_PUBLIC    = "public",
@@ -90,8 +91,10 @@ public abstract class TaggableItem extends JsonSyncableItem {
 			});
 
 			final SyncMap authorSync = new SyncMap();
-			authorSync.put(_AUTHOR, new SyncFieldMap("display_name", SyncFieldMap.STRING));
+			authorSync.put(_AUTHOR, new SyncFieldMap("display_name", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL));
+			authorSync.put(_AUTHOR_URI,		new SyncFieldMap("uri", SyncFieldMap.STRING));
 			put("_author", 			new SyncMapChain("author", authorSync, SyncItem.SYNC_FROM));
+
 
 			put(_PRIVACY,          	new SyncFieldMap("privacy", SyncFieldMap.STRING));
 		}
@@ -165,9 +168,9 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 */
 	public static boolean canEdit(Context context, Cursor c){
 		final String privacy = c.getString(c.getColumnIndex(_PRIVACY));
-		final String username = NetworkClient.getInstance(context).getUsername();
-		return privacy == null || username == null || username.length() == 0 ||
-			username.equals(c.getString(c.getColumnIndex(_AUTHOR)));
+		final String useruri = Authenticator.getUserUri(context);
+		return privacy == null || useruri == null || useruri.length() == 0 ||
+			useruri.equals(c.getString(c.getColumnIndex(_AUTHOR_URI)));
 	}
 
 	/**
@@ -175,8 +178,8 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	 * @return true if the authenticated user can change the item's privacy level.
 	 */
 	public static boolean canChangePrivacyLevel(Context context, Cursor c){
-		final String username = NetworkClient.getInstance(context).getUsername();
-		return username == null || username.equals(c.getString(c.getColumnIndex(_AUTHOR)));
+		final String useruri = Authenticator.getUserUri(context);
+		return useruri == null || useruri.equals(c.getString(c.getColumnIndex(_AUTHOR_URI)));
 	}
 
 	/**

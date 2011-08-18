@@ -47,6 +47,7 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 		_DESCRIPTION,
 		_PRIVACY,
 		_AUTHOR,
+		_AUTHOR_URI,
 		_CREATED_DATE,
 		_MODIFIED_DATE,
 		_THUMBNAIL_URI,

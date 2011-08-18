@@ -25,15 +25,13 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.osmdroid.util.GeoPoint;
 
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-
-import org.osmdroid.util.GeoPoint;
-
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.utils.ListUtils;
 
@@ -57,6 +55,7 @@ public class Itinerary extends TaggableItem implements Favoritable.Columns {
 	public static final String[] PROJECTION = {
 		_ID,
 		_AUTHOR,
+		_AUTHOR_URI,
 		_TITLE,
 		_DESCRIPTION,
 		_PUBLIC_URI,
