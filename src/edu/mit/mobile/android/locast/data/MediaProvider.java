@@ -86,7 +86,8 @@ public class MediaProvider extends ContentProvider {
 
 	private static final JSONSyncableIdenticalChildFinder mChildFinder = new JSONSyncableIdenticalChildFinder();
 	private static final ManyToMany.M2MDBHelper
-		ITINERARY_CASTS_DBHELPER = new ManyToMany.M2MDBHelper(ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder, Cast.CONTENT_URI),
+		// ITINERARY_CASTS_DBHELPER = new ManyToMany.M2MDBHelper(ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder, Cast.CONTENT_URI),
+		ITINERARY_CASTS_DBHELPER = new ManyToMany.M2MDBHelper(ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder),
 		CASTS_CASTMEDIA_DBHELPER = new ManyToMany.M2MDBHelper(CAST_TABLE_NAME, CASTMEDIA_TABLE_NAME, mChildFinder);
 
 	private static final DBHelper
