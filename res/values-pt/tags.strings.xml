@@ -2,5 +2,5 @@
 <resources>
   <string name="tag_add_tag">Adicionar marcação</string>
   <string name="tag_no_tags">sem marcações</string>
-  <string name="tag_recommended">"Recomendado "</string>
+  <string name="tag_recommended">Recomendado:</string>
 </resources>

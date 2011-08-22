@@ -201,5 +201,5 @@
 	</string-array>
 		<string name="auth_set_site">Set Locast Site</string>
 		<string name="cast_edit_error_camera_did_not_return_image">Error: camera did not return an image. Please try again.</string>
-		<string name="cast_edit_media_empty">Tap Button to Add a Photo, Video or Media from Phone Gallery</string>
+		<string name="cast_edit_media_empty">Tap the buttons below to add photos and videos</string>
 </resources>
