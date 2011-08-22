@@ -908,12 +908,13 @@ public class MediaProvider extends ContentProvider {
 	 * @param cr
 	 * @param uri
 	 * @return The path that one should post to for the given content item. Should always point to an item, not a dir.
+	 * @throws NoPublicPath
 	 */
-	public static String getPostPath(Context context, Uri uri){
+	public static String getPostPath(Context context, Uri uri) throws NoPublicPath{
 		return getPublicPath(context, uri, null, true);
 	}
 
-	public static String getPublicPath(Context context, Uri uri){
+	public static String getPublicPath(Context context, Uri uri) throws NoPublicPath{
 		return getPublicPath(context, uri, null, false);
 	}
 
@@ -924,8 +925,9 @@ public class MediaProvider extends ContentProvider {
 	 * @param uri URI of the parent item
 	 * @param publicId public ID of the child item
 	 * @return
+	 * @throws NoPublicPath
 	 */
-	public static String getPublicPath(Context context, Uri uri, Long publicId){
+	public static String getPublicPath(Context context, Uri uri, Long publicId) throws NoPublicPath{
 		return getPublicPath(context, uri, publicId, false);
 	}
 
@@ -954,7 +956,7 @@ public class MediaProvider extends ContentProvider {
 		return path;
 	}
 
-	public static String getPublicPath(Context context, Uri uri, Long publicId, boolean parent){
+	public static String getPublicPath(Context context, Uri uri, Long publicId, boolean parent) throws NoPublicPath{
 		String path;
 
 		final int match = uriMatcher.match(uri);
@@ -1018,7 +1020,7 @@ public class MediaProvider extends ContentProvider {
 		}
 
 		if (path == null){
-			throw new RuntimeException("got null path for " + uri);
+			throw new NoPublicPath("got null path for " + uri);
 		}
 		if (publicId != null){
 			path += publicId + "/";

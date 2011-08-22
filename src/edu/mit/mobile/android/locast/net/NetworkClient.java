@@ -103,6 +103,7 @@ import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.MediaProvider;
+import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.utils.StreamUtils;
@@ -1147,6 +1148,10 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 			throw new NetworkProtocolException(e.getLocalizedMessage());
 		} catch (final JSONException e) {
 			throw new NetworkProtocolException(e);
+		} catch (final NoPublicPath e) {
+			final NetworkProtocolException npe = new NetworkProtocolException("no known path to mark favorite");
+			npe.initCause(e);
+			throw npe;
 		}
 	}
 

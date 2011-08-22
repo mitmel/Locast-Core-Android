@@ -301,6 +301,10 @@ public class Sync extends Service {
 					continue;
 				}
 			}
+		}catch(final NoPublicPath npp){
+			// XXX this should be a hard error
+			Log.e(TAG, "Sync Error: " + npp.getLocalizedMessage());
+			return;
 		}finally{
 			c.close();
 		}
