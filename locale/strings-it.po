@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2011-08-15 11:35-0400\n"
+"POT-Creation-Date: 2011-08-19 14:23-0400\n"
 "PO-Revision-Date: 2011-06-28 18:38+0200\n"
 "Last-Translator: Administrator <>\n"
 "Language-Team: it <LL@li.org>\n"
@@ -682,111 +682,12 @@ msgctxt "cast_edit_pick:1"
 msgid "Picture"
 msgstr ""
 
-#~ msgctxt "app_name"
-#~ msgid "Locast Abruzzo"
-#~ msgstr "Locast Abruzzo"
+#, fuzzy
+msgctxt "auth_set_site"
+msgid "Set Locast Site"
+msgstr "Posizione del cast:"
 
-#~ msgctxt "tab_cast"
-#~ msgid "Cast"
-#~ msgstr "Cast"
-
-#~ msgctxt "tab_casts"
-#~ msgid "Casts"
-#~ msgstr "Casts"
-
-#~ msgctxt "tab_project"
-#~ msgid "Project"
-#~ msgstr "Progetto"
-
-#~ msgctxt "tab_projects"
-#~ msgid "Projects"
-#~ msgstr "Progetti"
-
-#~ msgctxt "tab_discussion"
-#~ msgid "Discussion"
-#~ msgstr "Discussione"
-
-#~ msgctxt "pair_or"
-#~ msgid "or"
-#~ msgstr "oppure"
-
-#~ msgctxt "pairing_code_entry"
-#~ msgid "Type pairing code"
-#~ msgstr "Inserisci codice di accoppiamento"
-
-#~ msgctxt "pair_action"
-#~ msgid "Pair"
-#~ msgstr "Accoppia"
-
-#~ msgctxt "template_done"
-#~ msgid "Done!"
-#~ msgstr "Finito!"
-
-#~ msgctxt "template_rerecord_video_title"
-#~ msgid "Rerecord Shot"
-#~ msgstr "Ri-registra la ripresa"
-
-#~ msgctxt "template_rerecord_video_body"
-#~ msgid "Are you sure you want to rerecord this shot?"
-#~ msgstr "Sei sicuro di voler riregistrare la ripresa?"
-
-#~ msgctxt "template_dialog_loading_camera"
-#~ msgid "Setting up camera for recording…"
-#~ msgstr "Inizializzando la macchina fotografica per la registrazione…"
-
-#~ msgctxt "template_dialog_loading_preview"
-#~ msgid "Loading preview…"
-#~ msgstr "Caricando la anteprima…"
-
-#~ msgctxt "template_no_video_for_this_segment"
-#~ msgid "No video for this segment"
-#~ msgstr "Nessun video per questo segmento"
-
-#~ msgctxt "template_cast_saved_as_draft"
-#~ msgid "Cast saved as draft"
-#~ msgstr "Cast salvato come bozza"
-
-#~ msgctxt "template_error_setup_fail"
-#~ msgid "Error: could not setup camera."
-#~ msgstr "Errore: non posso inizializzare la macchina fotografica."
-
-#~ msgctxt "template_error_setup_fail_reason"
-#~ msgid "Error: could not setup templated recording: %1$s"
-#~ msgstr "Errore: non posso inizializzare il modello di registrazione: %1$s"
-
-#~ msgctxt "template_select_template"
-#~ msgid "Select a template"
-#~ msgstr "Selezione un modello"
-
-#~ msgctxt "template_progress_hard_limit"
-#~ msgid "%1$s"
-#~ msgstr "%1$s"
-
-#~ msgctxt "template_progress_no_hard_limit"
-#~ msgid "≤%1$s"
-#~ msgstr "≤%1$s"
-
-#~ msgctxt "infinite"
-#~ msgid "∞"
-#~ msgstr "∞"
-
-#~ msgctxt "mobilevideo_video_edit_title"
-#~ msgid "Locast Video Editor"
-#~ msgstr "Locast Video Editor"
-
-#~ msgctxt "annotate_cast"
-#~ msgid "Annotate Cast"
-#~ msgstr "Annota Cast"
-
-#~ msgctxt "play_introduction"
-#~ msgid "Play Introduction"
-#~ msgstr "Mostra Introduzione"
-
-#~ msgctxt "pref_locast_site"
-#~ msgid "Locast Site"
-#~ msgstr "Locast Sito"
-
-#~ msgctxt "itineraries"
-#~ msgid "Itineraries"
-#~ msgstr "Itinerari"
+msgctxt "cast_edit_error_camera_did_not_return_image"
+msgid "Error: camera did not return an image. Please try again."
+msgstr ""
 

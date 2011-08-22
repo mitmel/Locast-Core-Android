@@ -1,17 +1,17 @@
-# Translations template for PROJECT.
+# Portuguese translations for PROJECT.
 # Copyright (C) 2011 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2011.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2011-08-15 11:36-0400\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"POT-Creation-Date: 2011-08-19 14:23-0400\n"
+"PO-Revision-Date: 2011-08-19 19:29+0200\n"
+"Last-Translator: UNICEF <mel-devel@mit.edu>\n"
+"Language-Team: pt <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -19,633 +19,656 @@ msgstr ""
 
 msgctxt "app_name"
 msgid "UNICEF GIS"
-msgstr ""
+msgstr "UNICEF GIS"
 
 msgctxt "signup_text"
 msgid "Register to join UNICEF GIS"
-msgstr ""
+msgstr "Cadastrar-se para juntar a UNICEF GIS"
 
 #. Main screen
 msgctxt "about"
 msgid "About"
-msgstr ""
+msgstr "Detalhes"
 
 msgctxt "settings"
 msgid "Settings"
-msgstr ""
+msgstr "Configurações"
 
 #. Generic user-facing error messages
 msgctxt "error_no_providers"
 msgid "Error: no location providers"
-msgstr ""
+msgstr "Erro: sem detalhes de localizacão"
 
 msgctxt "error_no_maps"
 msgid "Error: no map handler present."
-msgstr ""
+msgstr "Erro: sem map handler"
 
 msgctxt "error_cannot_edit"
 msgid "Sorry, you don't have permission to edit this item."
-msgstr ""
+msgstr "Desculpe, você não tem permissão de editar este item."
 
 msgctxt "error_please_enter_a_title"
 msgid "Please enter a title."
-msgstr ""
+msgstr "Por favor, introduza um título "
 
 #. Generic user-facing notices
 msgctxt "notice_databases_reset"
 msgid "Local database reset."
-msgstr ""
+msgstr "O banco de dados local foi limpado "
 
 #. List sections
 msgctxt "section_featured"
 msgid "Featured"
-msgstr ""
+msgstr "Destacado"
 
 msgctxt "section_drafts"
 msgid "Drafts"
-msgstr ""
+msgstr "Rascunhos"
 
 msgctxt "section_nearby"
 msgid "Nearby"
-msgstr ""
+msgstr "Perto de aqui"
 
 msgctxt "section_starred"
 msgid "Starred"
-msgstr ""
+msgstr "Favoritos"
 
 msgctxt "section_all"
 msgid "All"
-msgstr ""
+msgstr "Todos"
 
 #. casts
 msgctxt "cast_title_hint"
 msgid "Cast Title"
-msgstr ""
+msgstr "Título do informe"
 
 msgctxt "add_to_project"
 msgid "Add to Project"
-msgstr ""
+msgstr "Adicionar ao projecto "
 
 #, c-format
 msgctxt "add_cast_to_x"
 msgid "<b>Add Cast to</b> %1$s"
-msgstr ""
+msgstr "Adicionar informe"
 
 msgctxt "edit_cast"
 msgid "Edit Cast"
-msgstr ""
+msgstr "Editar o informe"
 
 msgctxt "view_cast"
 msgid "View Cast"
-msgstr ""
+msgstr "Ver o informe"
 
 msgctxt "remove_cast"
 msgid "Remove Cast from Project"
-msgstr ""
+msgstr "Remover o informe do projecto "
 
 msgctxt "current_location"
 msgid "Current location:"
-msgstr ""
+msgstr "Localização actual"
 
 msgctxt "cast_location"
 msgid "Cast location:"
-msgstr ""
+msgstr "Localização do informe"
 
 msgctxt "set_location"
 msgid "Set Location"
-msgstr ""
+msgstr "Definir localização"
 
 msgctxt "my_casts"
 msgid "My Casts"
-msgstr ""
+msgstr "Meus informes"
 
 msgctxt "casts_tags"
 msgid "Tags"
-msgstr ""
+msgstr "Marcações"
 
 msgctxt "view_casts_in_map"
 msgid "View casts in map"
-msgstr ""
+msgstr "Ver informes no mapa "
 
 msgctxt "cast_publish_title"
 msgid "Publish Cast"
-msgstr ""
+msgstr "Publicar informe"
 
 msgctxt "action_record_cast"
 msgid "Record a cast"
-msgstr ""
+msgstr "Gravar um informe"
 
 msgctxt "add_cast"
 msgid "Add Cast"
-msgstr ""
+msgstr "Adicionar informe"
 
 msgctxt "description"
 msgid "Description"
-msgstr ""
+msgstr "Descrição "
 
 msgctxt "cast_play"
 msgid "Play Cast"
-msgstr ""
+msgstr "Apresentar informe"
 
 msgctxt "notice_cast_saved_uploading"
 msgid "Cast saved. Uploading to server..."
-msgstr ""
+msgstr "Informe gravado. Carregando ao servidor"
 
 msgctxt "notice_cast_saved_no_network"
 msgid ""
 "Cast has been saved and will be uploaded when a network connection is "
 "established and the synchronization is started."
 msgstr ""
+"O informe foi gravado e vai ser carregado quando uma conexão for "
+"establecida e a sincronização for começada."
 
 msgctxt "error_cast_saving"
 msgid "Error saving cast."
-msgstr ""
+msgstr "Erro no gravação do informe"
 
 msgctxt "cast_recording_canceled"
 msgid "Recording canceled"
-msgstr ""
+msgstr "Gravação cancelada"
 
 msgctxt "cast_synchronizing"
 msgid "Synchronizing cast..."
-msgstr ""
+msgstr "Sincronizando informe..."
 
 msgctxt "notice_cast_video_has_not_been_uploaded_yet"
 msgid "Cast video has not been uploaded yet."
-msgstr ""
+msgstr "O vídeo do informe ainda não foi carregado"
 
 msgctxt "error_cast_could_not_play_video"
 msgid "Could not play video."
-msgstr ""
+msgstr "Não foi possível apresentar o vídeo"
 
 msgctxt "error_cast_no_videos"
 msgid "Sorry, there aren't any videos for this cast yet."
-msgstr ""
+msgstr "Desculpe, este informe ainda não tem vídeo."
 
 msgctxt "cast_error_could_not_play_video_neither_net_nor_local"
 msgid ""
 "Could not play video as the network is disconnected and there is no "
 "cached copy."
 msgstr ""
+"Não foi possível apresentar o vídeo porque a rede está desligada e não "
+"tem cópia em cache."
 
 #. dialogs
 msgctxt "cast_delete_title"
 msgid "Delete Cast"
-msgstr ""
+msgstr "Apagar informe."
 
 msgctxt "cast_delete_message"
 msgid "Are you sure you want to delete this cast? All shots will be lost."
-msgstr ""
+msgstr "Você tem certeza que quer apagar o informe? Todas as fotos serão perdidas"
 
 #. projects
 msgctxt "project_title"
 msgid "Project Title"
-msgstr ""
+msgstr "Título do projecto"
 
 msgctxt "project_description"
 msgid "Project Description"
-msgstr ""
+msgstr "Descrição do projecto"
 
 msgctxt "project_no_casts"
 msgid ""
 "This project does not contain any casts. You can add a cast by pressing "
 "'menu'."
 msgstr ""
+"Este projecto ainda não tem informe nenhum. Aperte 'menu' para "
+"acrescentar um informe."
 
 msgctxt "project_new_cast"
 msgid "Record a cast"
-msgstr ""
+msgstr "Gravar um informe"
 
 msgctxt "project_pick_title"
 msgid "Pick a project"
-msgstr ""
+msgstr "Escolher um projecto"
 
 msgctxt "project_list_view_title"
 msgid "Projects"
-msgstr ""
+msgstr "Projectos"
 
 msgctxt "edit_project"
 msgid "Edit Project"
-msgstr ""
+msgstr "Editar o projecto"
 
 msgctxt "add_project"
 msgid "Add Project"
-msgstr ""
+msgstr "Adicionar projecto"
 
 #, c-format
 msgctxt "added_cast_to"
 msgid "Added cast to %s"
-msgstr ""
+msgstr "Informe adicionado a %s"
 
 #, c-format
 msgctxt "project_you_joined"
 msgid "You have joined %s"
-msgstr ""
+msgstr "Você se juntou a %s"
 
 #, c-format
 msgctxt "project_you_left"
 msgid "You have left %s"
-msgstr ""
+msgstr "Você saiu de %s"
 
 msgctxt "error_loading_project"
 msgid "Error loading project."
-msgstr ""
+msgstr "Erro no carregamento do projecto"
 
 #. Video recorder
 #, c-format
 msgctxt "video_recorder_error_could_not_make_directory"
 msgid "Could not make directory, '%1$s', for recording videos."
-msgstr ""
+msgstr "Não foi possível criar directório, '%1$s', para gravar vídeos."
 
 msgctxt "video_recorder_error_cannot_write_to_sd_card"
 msgid "Cannot write to SD card."
-msgstr ""
+msgstr "Não é possível gravar ao cartão SD"
 
 msgctxt "dialog_button_delete"
 msgid "Delete"
-msgstr ""
+msgstr "Apagar"
 
 msgctxt "dialog_button_rerecord"
 msgid "Rerecord"
-msgstr ""
+msgstr "Gravar de novo "
 
 #. discussion
 msgctxt "discussion_hint"
 msgid "Comment"
-msgstr ""
+msgstr "Commentar "
 
 #. LocationLink widget
 msgctxt "location_link_no_location"
 msgid "No Location"
-msgstr ""
+msgstr "Sem localização"
 
 #, c-format
 msgctxt "location_link_accuracy_meter"
 msgid "±%.0f meters"
-msgstr ""
+msgstr "±%.0f metros"
 
 #, c-format
 msgctxt "location_link_accuracy_kilometer"
 msgid "±%.01f kilometers"
-msgstr ""
+msgstr "±%.01f quilómetros"
 
 #. generic actions
 msgctxt "done"
 msgid "Done"
-msgstr ""
+msgstr "Completo"
 
 msgctxt "publish"
 msgid "Publish"
-msgstr ""
+msgstr "Publicar"
 
 msgctxt "send"
 msgid "Send"
-msgstr ""
+msgstr "Enviar"
 
 msgctxt "save"
 msgid "Save"
-msgstr ""
+msgstr "Gravar"
 
 msgctxt "wipe_database"
 msgid "Wipe Database"
-msgstr ""
+msgstr "Limpar banco de dados"
 
 #. privacy
 msgctxt "privacy_header"
 msgid "Privacy:"
-msgstr ""
+msgstr "Privacidade"
 
 msgctxt "privacy_spinner"
 msgid "Privacy level"
-msgstr ""
+msgstr "Nível de privacidade"
 
 msgctxt "refresh"
 msgid "Refresh"
-msgstr ""
+msgstr "Actualizar"
 
 #. Sync
 msgctxt "sync_first"
 msgid "No local content detected. Starting first sync…"
-msgstr ""
+msgstr "Nenhum conteúdo local encontrado. Começando primeira sincronização "
 
 msgctxt "sync_notification"
 msgid "Synchronizing UNICEF GIS…"
-msgstr ""
+msgstr "Sincronizando UNICEF GIS..."
 
 msgctxt "sync_success"
 msgid "Sync successful."
-msgstr ""
+msgstr "Sincronização completa"
 
 msgctxt "sync_menu"
 msgid "Synchronize"
-msgstr ""
+msgstr "Sincronizar"
 
 msgctxt "sync_upload_success"
 msgid "Cast uploaded successfully."
-msgstr ""
+msgstr "Informe carregado"
 
 #, c-format
 msgctxt "sync_upload_success_message"
 msgid "\"%1$s\" has been uploaded."
-msgstr ""
+msgstr "\"%1$s\" foi carregado"
 
 msgctxt "error_uploading_cast_video"
 msgid "Error uploading cast video."
-msgstr ""
+msgstr "Falho no carregamento do vídeo do informe"
 
 msgctxt "sync_upload_fail"
 msgid "Error uploading cast."
-msgstr ""
+msgstr "Falho no carregamento do informe"
 
 #, c-format
 msgctxt "sync_upload_fail_message"
 msgid "\"%1$s\" failed to upload."
-msgstr ""
+msgstr "Falho no carregamento de \"%1$s\" "
 
 msgctxt "error_sync_canceled"
 msgid "Sync canceled."
-msgstr ""
+msgstr "Sincronização cancelada"
 
 msgctxt "error_sync"
 msgid "Could not synchronize with server. Do you have a network connection?"
-msgstr ""
+msgstr "Não foi possível sincronizar com o servidor. Você tem conexão de rede?"
 
 msgctxt "error_sync_no_post"
 msgid ""
 "Sorry, there was a problem uploading your media to the server. Please try"
 " synchronizing again."
 msgstr ""
+"Desculpe, havia um problema no carregamento da sua mídia ao servidor. Por"
+" favor tente sincronizar de novo."
 
 msgctxt "error_sync_no_data_network"
 msgid ""
 "Cannot sync UNICEF GIS: no data network. Please check your connection and"
 " try again."
 msgstr ""
+"Não foi possível sincronizar UNICEF GIS: Sem rede de dados. Por favor, "
+"cheque a conexão e tente de novo."
 
 #, c-format
 msgctxt "sync_downloading_cast"
 msgid "Downloading \"%1$s\"…"
-msgstr ""
+msgstr "Descarregando \"%1$s\"..."
 
 #, c-format
 msgctxt "sync_uploading_cast"
 msgid "Uploading \"%1$s\"…"
-msgstr ""
+msgstr "Carregando \"%1$s\"..."
 
 #. Android Sync
 msgctxt "username_label"
 msgid "UNICEF GIS username"
-msgstr ""
+msgstr "nome de usuário UNICEF GIS"
 
 msgctxt "password_label"
 msgid "Password"
-msgstr ""
+msgstr "Senha"
 
 msgctxt "login_message_authenticating"
 msgid "authenticating…"
-msgstr ""
+msgstr "Verificando..."
 
 msgctxt "login_message_loginfail"
 msgid "Invalid username or password."
-msgstr ""
+msgstr "Nome usuário ou senha inválido."
 
 msgctxt "login_message_login_empty_password"
 msgid "Please enter a password."
-msgstr ""
+msgstr "Por favor, entre uma senha."
 
 msgctxt "login_message_login_empty_username"
 msgid "Please enter your UNICEF GIS username and password."
-msgstr ""
+msgstr "Por favor, entre o seu nome usuário e senha de UNICEF GIS"
 
 #. Placeholder here is for application name
 #, c-format
 msgctxt "login_title"
 msgid "%1$s Login"
-msgstr ""
+msgstr "\"%1$s\" Iniciar sessão"
 
 #. Moments
 msgctxt "moment_description_hint"
 msgid "Briefly describe this moment (optional)"
-msgstr ""
+msgstr "Dê uma breve descrição desse momento (opcional)"
 
 msgctxt "save_moment"
 msgid "Save Moment"
-msgstr ""
+msgstr "Gravar o momento"
 
 msgctxt "error_moment_saving_moment"
 msgid "Error saving moment :-("
-msgstr ""
+msgstr "Falho na gravação do momento :-("
 
 msgctxt "moment_saved"
 msgid "Moment saved."
-msgstr ""
+msgstr "Momento gravado"
 
 #. Preferences
 #. account category
 msgctxt "pref_cat_account"
 msgid "Account"
-msgstr ""
+msgstr "Conta"
 
 msgctxt "pref_title_username"
 msgid "Username"
-msgstr ""
+msgstr "Nome usuário"
 
 msgctxt "pref_title_password"
 msgid "Password"
-msgstr ""
+msgstr "Senha"
 
 #. advanced category
 msgctxt "pref_cat_advanced"
 msgid "Advanced"
-msgstr ""
+msgstr "Avançado"
 
 msgctxt "pref_title_server_url"
 msgid "Server URL"
-msgstr ""
+msgstr "URL de servidor"
 
 msgctxt "pref_locast_site"
 msgid "UNICEF GIS Site"
-msgstr ""
+msgstr "Site de UNICEF GIS"
 
 msgctxt "pref_locast_site_dialog_title"
 msgid "Choose a UNICEF GIS site"
-msgstr ""
+msgstr "Escolhe um site de UNICEF GIS"
 
 msgctxt "pref_locast_site_summary"
 msgid "Choose another UNICEF GIS site."
-msgstr ""
+msgstr "Escolhe outro site de UNICEF GIS"
 
 msgctxt "pref_locast_site_message"
 msgid ""
 "Warning: changing this will erase your current pairing as well as the "
 "local database. Any unpublished casts will be deleted."
 msgstr ""
+"Aviso: qualquer mudança apagará o seu emparelhamento actual e o banco de "
+"dados local. Todos os informes que não foram publicados serão apagados"
 
 msgctxt "welcome_message"
 msgid ""
 "Welcome! UNICEF GIS Abruzzo is a location-based tourism application for "
 "visiting Abruzzo."
 msgstr ""
+"Bem Vindo! UNICEF GIS Abruzzo é uma aplicação turística para visitar "
+"Abruzzo que é baseada em localizações."
 
 msgctxt "auth_signin_or_skip_notice"
 msgid "You'll need an account to upload photos and videos to UNICEF GIS Abruzzo"
-msgstr ""
+msgstr "É preciso ter uma conta para carregar fotos e vídeos a UNICEF GIS Abruzzo."
 
 msgctxt "auth_signin_register"
 msgid "Sign In / Register"
-msgstr ""
+msgstr "Entrar/Cadastrar-se"
 
 msgctxt "auth_skip"
 msgid "Skip"
-msgstr ""
+msgstr "Pular"
 
 msgctxt "title_upcoming_events"
 msgid "Upcoming Events"
-msgstr ""
+msgstr "Eventos"
 
 msgctxt "title_casts"
 msgid "Casts"
-msgstr ""
+msgstr "Informes"
 
 #, c-format
 msgctxt "title_nearby"
 msgid "%1$s Nearby"
-msgstr ""
+msgstr "%1$s Perto de aqui"
 
 #, c-format
 msgctxt "title_favorited"
 msgid "Favorite %1$s"
-msgstr ""
+msgstr "%1$s Favorito"
 
 #, c-format
 msgctxt "title_unfavorited"
 msgid "Non-favorite %1$s"
-msgstr ""
+msgstr "%1$s Não-favorito"
 
 msgctxt "itinerary_no_casts"
 msgid "There are no casts in this map."
-msgstr ""
+msgstr "Este mapa não tem nenhum informe."
 
 msgctxt "list_empty"
 msgid "No items in this list."
-msgstr ""
+msgstr "0 itens nesta lista"
 
 msgctxt "error_loading_event"
 msgid "Error loading event."
-msgstr ""
+msgstr "Erro no carregamento de evento"
 
 msgctxt "auth_username_hint"
 msgid "alice@example.org"
-msgstr ""
+msgstr "alice@exemplo.org"
 
 msgctxt "auth_password_hint"
 msgid "password"
-msgstr ""
+msgstr "Senha"
 
 msgctxt "auth_login"
 msgid "Login"
-msgstr ""
+msgstr "Iniciar sessão"
 
 msgctxt "empty_castmedia"
 msgid "There are no media in this cast."
-msgstr ""
+msgstr "Este informe não tem mídia"
 
 msgctxt "error_cast_media_no_activities"
 msgid ""
 "We're sorry, but there doesn't seem to be a way to play this media on "
 "your device."
-msgstr ""
+msgstr "Desculpe, o seu aparelho não pode ler esta mídia"
 
 msgctxt "itineraries"
 msgid "Maps"
-msgstr ""
+msgstr "Mapas"
 
 msgctxt "nearby"
 msgid "Nearby"
-msgstr ""
+msgstr "Perto de aqui"
 
 msgctxt "favorites"
 msgid "Favorites"
-msgstr ""
+msgstr "Favoritos"
 
 msgctxt "events"
 msgid "Events"
-msgstr ""
+msgstr "Eventos"
 
 msgctxt "error_no_featured_casts"
 msgid "There are no featured casts."
-msgstr ""
+msgstr "Não tem informes destacados"
 
 msgctxt "error_no_items_in_this_list"
 msgid "No items in this list."
-msgstr ""
+msgstr "Esta lista não tem itens."
 
 msgctxt "featured_casts"
 msgid "Featured Casts"
-msgstr ""
+msgstr "Informes destacados"
 
 msgctxt "follow"
 msgid "Follow"
-msgstr ""
+msgstr "Seguir"
 
 msgctxt "unfollow"
 msgid "Unfollow"
-msgstr ""
+msgstr "Para de seguir"
 
 msgctxt "notice_finding_your_location"
 msgid "Finding your location..."
-msgstr ""
+msgstr "Localizando..."
 
 msgctxt "auth_error_could_not_contact_server"
 msgid "Could not contact server."
-msgstr ""
+msgstr "Não foi possível conectar ao servidor."
 
 msgctxt "auth_error_server_returned_invalid_data"
 msgid "Server returned invalid data."
-msgstr ""
+msgstr "O servidor deu dados inválidos"
 
 #, c-format
 msgctxt "auth_error_network_protocol_error"
 msgid "Network protocol error: %1$s"
-msgstr ""
+msgstr "Erro no protocolo da rede: %1$s"
 
 #, c-format
 msgctxt "itinerary_detail_itinerary_by"
 msgid "Map by %1$s"
-msgstr ""
+msgstr "Mapa por %1$s"
 
 msgctxt "videoplayer_notice_loading_video"
 msgid "Loading video..."
-msgstr ""
+msgstr "Carregando vídeo..."
 
 msgctxt "reset_database"
 msgid "Reset Database"
-msgstr ""
+msgstr "Limpar banco de dados"
 
 msgctxt "cast_description_hint"
 msgid "Briefly describe the cast"
-msgstr ""
+msgstr "Dê uma breve descrição do informe"
 
 msgctxt "tab_location"
 msgid "Location"
-msgstr ""
+msgstr "Localização"
 
 msgctxt "tab_media"
 msgid "Media"
-msgstr ""
+msgstr "Mídia"
 
 msgctxt "tab_details"
 msgid "Details"
-msgstr ""
+msgstr "detalhes"
 
 msgctxt "cast_edit_select_media_type"
 msgid "Select media type"
-msgstr ""
+msgstr "Escolher tipo de mídia"
 
 msgctxt "cast_edit_pick:0"
 msgid "Video"
-msgstr ""
+msgstr "Vídeo"
 
 msgctxt "cast_edit_pick:1"
 msgid "Picture"
+msgstr "Foto"
+
+#, fuzzy
+msgctxt "auth_set_site"
+msgid "Set Locast Site"
+msgstr "Localização do informe"
+
+msgctxt "cast_edit_error_camera_did_not_return_image"
+msgid "Error: camera did not return an image. Please try again."
 msgstr ""
 

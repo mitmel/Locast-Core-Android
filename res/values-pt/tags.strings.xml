@@ -1,3 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
+  <string name="tag_add_tag">Adicionar marcação</string>
+  <string name="tag_no_tags">sem marcações</string>
+  <string name="tag_recommended">"Recomendado "</string>
 </resources>
