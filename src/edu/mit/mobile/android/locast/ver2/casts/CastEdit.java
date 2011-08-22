@@ -380,7 +380,9 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 
 		if (mLocation == null && mTitleView.getText().length() == 0 && mCastMediaAdapter.getCount() == 0 && mDescriptionView.getText().length() == 0){
 			Log.d(TAG, "cast "+mCast+" seems to be empty, so deleting it");
-			getContentResolver().delete(mCast, null, null);
+			final ContentResolver cr = getContentResolver();
+			cr.delete(Cast.getCastMediaUri(mCast), null, null);
+			cr.delete(mCast, null, null);
 			mCast = null;
 		}
 

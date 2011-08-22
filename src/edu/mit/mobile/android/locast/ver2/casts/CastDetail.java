@@ -22,6 +22,7 @@ import org.osmdroid.views.MapView;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -32,6 +33,7 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -59,6 +61,8 @@ import edu.mit.mobile.android.widget.ValidatingCheckBox;
 public class CastDetail extends LocatableDetail implements
 		LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener,
 		OnClickListener {
+	private static final String TAG = CastDetail.class.getSimpleName();
+
 	private LoaderManager mLoaderManager;
 	private CastsOverlay mCastsOverlay;
 	private MapController mMapController;
@@ -273,11 +277,16 @@ public class CastDetail extends LocatableDetail implements
 
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
-					final int count = getContentResolver().delete(getIntent().getData(), null, null);
-					if (count != 0){
-						finish();
+					final Uri cast = getIntent().getData();
+					final ContentResolver cr = getContentResolver();
+					cr.delete(Cast.getCastMediaUri(cast), null, null);
+					final int count = cr.delete(cast, null, null);
+					if (Constants.DEBUG){
+						if (count != 1){
+							Log.w(TAG, "got non-1 count from delete()");
+						}
 					}
-
+					finish();
 				}
 			})
 			.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
