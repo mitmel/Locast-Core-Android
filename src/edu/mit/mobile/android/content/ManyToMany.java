@@ -146,6 +146,19 @@ public class ManyToMany {
 			return db.insert(mJoinTable, null, relation);
 		}
 
+		/**
+		 * Removes all relations from a given item.
+		 *
+		 * @param db
+		 * @param from
+		 * @return the count of deleted relations
+		 */
+		public int removeRelation(SQLiteDatabase db, long from){
+			return db.delete(mJoinTable,
+					ManyToManyColumns.FROM_ID + "=?",
+					new String[]{Long.toString(from)});
+		}
+
 		public int removeRelation(SQLiteDatabase db, long from, long to){
 			return db.delete(mJoinTable,
 					ManyToManyColumns.TO_ID + "=? AND " + ManyToManyColumns.FROM_ID + "=?",
@@ -280,14 +293,30 @@ public class ManyToMany {
 			return count;
 		}
 
-		// TODO implement me!
 		/* (non-Javadoc)
 		 * @see edu.mit.mobile.android.content.DBHelper##deleteDir(android.database.sqlite.SQLiteDatabase, android.content.ContentProvider, android.net.Uri, java.lang.String, java.lang.String[])
 		 */
 		@Override
 		public int deleteDir(SQLiteDatabase db, ContentProvider provider, Uri uri,String where, String[] whereArgs){
-			throw new RuntimeException("not implemented yet");
-			//return db.delete(mToTable, where, whereArgs);
+			int count;
+			try {
+				db.beginTransaction();
+				final Uri parent = ProviderUtils.removeLastPathSegment(uri);
+
+				if (mToContentUri != null){
+					count = provider.delete(mToContentUri, where, whereArgs);
+				}else{
+					count = db.delete(mToTable, where, whereArgs);
+				}
+
+				removeRelation(db, ContentUris.parseId(parent));
+
+				db.setTransactionSuccessful();
+
+			}finally{
+				db.endTransaction();
+			}
+			return count;
 		}
 
 
