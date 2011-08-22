@@ -18,6 +18,7 @@ package edu.mit.mobile.android.locast.net;
  */
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -63,6 +64,9 @@ import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
@@ -172,8 +176,11 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		public void process(HttpRequest request, HttpContext context)
 				throws HttpException, IOException {
 			final Locale locale = Locale.getDefault();
-
-			request.addHeader("Accept-Language", locale.getLanguage());
+			final String language = locale.getLanguage();
+			if (DEBUG){
+				Log.d(TAG, "added header Accept-Language: " + language);
+			}
+			request.addHeader("Accept-Language", language);
 
 		}
 	};
@@ -474,6 +481,13 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		if (statusCode == HttpStatus.SC_OK || (createdOk && statusCode == HttpStatus.SC_CREATED)){
 			return true;
 		}else if (statusCode >= HttpStatus.SC_BAD_REQUEST && statusCode < HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+			final HttpEntity e = res.getEntity();
+			if (e.getContentType().getValue().equals("text/html") || e.getContentLength() > 40){
+				logDebug("Got long response body. Not showing.");
+			}else{
+				logDebug(StreamUtils.inputStreamToString(e.getContent()));
+			}
+			e.consumeContent();
 			throw new HttpResponseException(statusCode, res.getStatusLine().getReasonPhrase());
 		}else{
 			final HttpEntity e = res.getEntity();
@@ -696,13 +710,9 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		r.setHeader("Content-Type", JSON_MIME_TYPE);
 
 		final HttpResponse c = this.execute(r);
+		logDebug("just sent: " + jsonString);
+		checkStatusCode(c, true);
 
-		if (c.getStatusLine().getStatusCode() >= 300){
-			logDebug("just sent: " + jsonString);
-			c.getEntity().consumeContent();
-			// TODO should revise this to say that HTTP_CREATED is ok too.
-			throw new NetworkProtocolException(c, HttpStatus.SC_OK);
-		}
 		return c;
 	}
 
@@ -860,6 +870,60 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		c.getEntity().consumeContent();
 	}
 
+	public void uploadContentUsingForm(Context context, TransferProgressListener progressListener, String serverPath, Uri localFile, String contentType) throws NetworkProtocolException, IOException{
+
+		if (localFile == null) {
+			throw new IOException("Cannot send. Content item does not reference a local file.");
+		}
+
+		final InputStream is = getFileStream(context, localFile);
+
+
+		// next step is to send the file contents.
+		final HttpPost r = new HttpPost(getFullUriAsString(serverPath));
+
+		final InputStreamWatcher isw = new InputStreamWatcher(is, progressListener);
+
+		final MultipartEntity reqEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
+
+		final InputStreamBody fileBody = new AndroidFileInputStreamBody(context, localFile, isw, contentType);
+
+		Log.d(TAG, "content length: " + fileBody.getContentLength());
+
+		reqEntity.addPart("file", fileBody);
+
+		r.setEntity(reqEntity);
+
+		final HttpResponse c = this.execute(r);
+		checkStatusCode(c, true);
+		c.getEntity().consumeContent();
+	}
+
+	private static class AndroidFileInputStreamBody extends InputStreamBody {
+		private final Uri mLocalFile;
+		private final Context mContext;
+
+		public AndroidFileInputStreamBody(Context context, Uri localFile, InputStream in, String mimeType) {
+			super(in, mimeType, localFile.getLastPathSegment());
+			mLocalFile = localFile;
+			mContext = context;
+		}
+
+		private long length() throws FileNotFoundException {
+			final AssetFileDescriptor afd = mContext.getContentResolver().openAssetFileDescriptor(mLocalFile, "r");
+			return afd.getLength();
+		}
+
+		@Override
+		public long getContentLength() {
+
+			try {
+				return length();
+			} catch (final FileNotFoundException e) {
+				return -1;
+			}
+		}
+	}
 
 	/***************************categories   **************************/
 
@@ -1005,8 +1069,13 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 	}
 
+	public static enum UploadType {
+		RAW_PUT,
+		FORM_POST
+	}
+
 	public void uploadContentWithNotification(Context context, Uri cast,
-			String serverPath, Uri localFile, String contentType)
+			String serverPath, Uri localFile, String contentType, UploadType uploadType)
 			throws NetworkProtocolException, IOException {
 				String castTitle = Cast.getTitle(context, cast);
 				if (castTitle == null){
@@ -1035,7 +1104,15 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 					tpl.setSize(max);
 
-					uploadContent(context, tpl, serverPath, localFile, contentType);
+					switch (uploadType){
+					case RAW_PUT:
+						uploadContent(context, tpl, serverPath, localFile, contentType);
+						break;
+					case FORM_POST:
+						uploadContentUsingForm(context, tpl, serverPath, localFile, contentType);
+						break;
+					}
+
 					notification.doneTitle = context.getString(R.string.sync_upload_success);
 					notification.doneText = context.getString(R.string.sync_upload_success_message, castTitle);
 					notification.successful = true;

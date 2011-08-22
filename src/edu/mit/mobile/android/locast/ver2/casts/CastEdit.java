@@ -594,8 +594,8 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	}
 
 	private void loadFromCursor(Cursor c){
-		mTitleView.setText(c.getString(c.getColumnIndex(Cast._TITLE)));
-		mDescriptionView.setText(c.getString(c.getColumnIndex(Cast._DESCRIPTION)));
+		mTitleView.setText(c.getString(c.getColumnIndexOrThrow(Cast._TITLE)));
+		mDescriptionView.setText(c.getString(c.getColumnIndexOrThrow(Cast._DESCRIPTION)));
 
 		final Location l = Locatable.toLocation(c);
 		if (l != null){
@@ -609,6 +609,10 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 			mTabHost.setCurrentTab(mTabWidget.getNextUncheckedTab());
 			mFirstLoad = false;
 		}
+
+		final int draftCol = c.getColumnIndexOrThrow(Cast._DRAFT);
+
+		mIsDraft = !c.isNull(draftCol) && c.getInt(draftCol) != 0;
 	}
 
 	private void startUpdatingLocation() {
@@ -717,8 +721,13 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		final long now = System.currentTimeMillis();
 		cv.put(CastMedia._MODIFIED_DATE, now);
 		cv.put(CastMedia._CREATED_DATE, now);
+		cv.put(CastMedia._TITLE, content.getLastPathSegment());
 
-		cv.put(CastMedia._MIME_TYPE, getContentResolver().getType(content));
+		String mimeType = getContentResolver().getType(content);
+		if (mimeType == null){
+			mimeType = CastMedia.guessMimeTypeFromUrl(content.toString());
+		}
+		cv.put(CastMedia._MIME_TYPE, mimeType);
 
 		String mediaPath = null;
 
@@ -860,6 +869,12 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		Log.d(TAG, "cast URI is" + newCast);
 		if (newCast != null){
 			TaggableItem.putTags(cr, newCast, mTags.getTags());
+		}
+		if (mCast != null){
+			// XXX hack to fix possibly empty cast media. This is only called when there's existing data.
+			final ContentValues cvCastMediaDefaultTitle = new ContentValues();
+			cvCastMediaDefaultTitle.put(CastMedia._TITLE, "untitled");
+			cr.update(Cast.getCastMediaUri(mCast), cvCastMediaDefaultTitle, CastMedia._TITLE + " IS NULL", null);
 		}
 
 		return newCast;

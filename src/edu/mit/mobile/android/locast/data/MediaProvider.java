@@ -989,6 +989,7 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CHILD_COMMENT_ITEM:
 		case MATCHER_CHILD_CAST_ITEM:
 		case MATCHER_COMMENT_ITEM:
+		case MATCHER_CHILD_CASTMEDIA_ITEM:
 		{
 			if (parent || publicId != null){
 				path = getPublicPath(context, ProviderUtils.removeLastPathSegment(uri));
@@ -1000,6 +1001,10 @@ public class MediaProvider extends ContentProvider {
 
 		case MATCHER_CHILD_CAST_DIR:
 			path = getPathFromField(context, ProviderUtils.removeLastPathSegment(uri), Itinerary._CASTS_URI);
+			break;
+
+		case MATCHER_CHILD_CASTMEDIA_DIR:
+			path = getPathFromField(context, ProviderUtils.removeLastPathSegment(uri), Cast._MEDIA_PUBLIC_URI);
 			break;
 
 		case MATCHER_ITINERARY_BY_TAGS:{

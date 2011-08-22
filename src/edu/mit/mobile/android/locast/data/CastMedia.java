@@ -18,6 +18,7 @@ package edu.mit.mobile.android.locast.data;
  */
 
 import java.io.IOException;
+import java.net.URLConnection;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -179,6 +180,38 @@ public class CastMedia extends JsonSyncableItem {
 		return thumbnail;
 	}
 
+	/**
+	 * Guesses the mime type from the URL
+	 *
+	 * @param url
+	 * @return the inferred mime type based on the file extension or null if it can't determine one
+	 */
+	public static String guessMimeTypeFromUrl(String url){
+
+		// this was improved in Gingerbread
+		// http://code.google.com/p/android/issues/detail?id=10100
+		// so we have some pre-defined types here so we can make sure to return SOMETHING.
+		String mimeType = URLConnection.guessContentTypeFromName(url);
+		if (mimeType != null){
+			return mimeType;
+		}
+
+		if (url.endsWith(".jpg") || url.endsWith(".jpeg")){
+			mimeType = "image/jpeg";
+
+		}else if (url.endsWith(".3gp")){
+			mimeType = "video/3gpp";
+
+		}else if (url.endsWith(".mp4") || url.endsWith(".mpeg4")){
+			mimeType = "video/mp4";
+
+		}else if (url.endsWith(".png")){
+			mimeType = "image/png";
+		}
+
+		return mimeType;
+	}
+
 	public final static ItemSyncMap SYNC_MAP = new ItemSyncMap();
 
 	public static class ItemSyncMap extends JsonSyncableItem.ItemSyncMap {
@@ -226,12 +259,33 @@ public class CastMedia extends JsonSyncableItem {
 			});
 
 			// no MIME type is passed with a link media type, so we need to add one in.
-			put("_content_type", new SyncCustom("content_type", SyncItem.SYNC_FROM) {
+			put("_content_type", new SyncCustom("content_type", SyncItem.SYNC_BOTH) {
 
 				@Override
 				public Object toJSON(Context context, Uri localItem, Cursor c, String lProp)
 						throws JSONException, NetworkProtocolException, IOException {
-					return null;
+					String mimeType = c.getString(c.getColumnIndex(_MIME_TYPE));
+					final String localUri = c.getString(c.getColumnIndex(_LOCAL_URI));
+
+					if (mimeType == null && localUri != null){
+
+						mimeType = guessMimeTypeFromUrl(localUri);
+						if (mimeType != null){
+							Log.d(TAG, "guessed MIME type from uri: " + localUri + ": " + mimeType);
+						}
+					}
+
+					if (mimeType == null){
+						return null;
+					}
+
+					if (mimeType.startsWith("video/")){
+						return "videomedia";
+					}else if (mimeType.startsWith("image/")){
+						return "imagemedia";
+					}else{
+						return null;
+					}
 				}
 
 				@Override
@@ -251,7 +305,7 @@ public class CastMedia extends JsonSyncableItem {
 
 			// the media URL can come from either the flattened "url" attribute or the expanded "resources" structure above.
 			put(_MEDIA_URL, 	new SyncFieldMap("url", 			SyncFieldMap.STRING,         SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
-			put(_MIME_TYPE, 	new SyncFieldMap("mime_type",		SyncFieldMap.STRING,         SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
+			put(_MIME_TYPE, 	new SyncFieldMap("mime_type",		SyncFieldMap.STRING,         SyncItem.FLAG_OPTIONAL));
 			put(_DURATION,		new SyncFieldMap("duration", 		SyncFieldMap.DURATION, 		 SyncItem.FLAG_OPTIONAL));
 
 			put(_THUMBNAIL, 	new SyncFieldMap("preview_image",   SyncFieldMap.STRING,		 SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
@@ -262,6 +316,7 @@ public class CastMedia extends JsonSyncableItem {
 				boolean updated) throws SyncException, IOException {
 			super.onPostSyncItem(context, uri, item, updated);
 			if (uri != null){
+				Log.d(TAG, "Starting media sync for " + uri);
 				context.startService(new Intent(MediaSync.ACTION_SYNC_RESOURCES, uri));
 			}
 		}

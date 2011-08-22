@@ -627,6 +627,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		}
 
 		/**
+		 * By default, starts a child sync.
 		 *
 		 * @param remoteKey the key in the JSON
 		 * @param relationship how this field relates to the local database
@@ -640,7 +641,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		public Object toJSON(Context context, Uri localItem, Cursor c,
 				String lProp) throws JSONException, NetworkProtocolException,
 				IOException {
-			// This doesn't need to do anything, as the sync framework will automatically
+			// This doesn't need to do anything, as the sync framework will automatically handle JSON creation.
 			return null;
 		}
 

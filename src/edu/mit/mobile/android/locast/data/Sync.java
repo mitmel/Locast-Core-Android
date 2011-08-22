@@ -53,7 +53,7 @@ import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
 import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
+import edu.mit.mobile.android.locast.ver2.itineraries.ItineraryList;
 import edu.mit.mobile.android.utils.LastUpdatedMap;
 
 /**
@@ -254,53 +254,55 @@ public class Sync extends Service {
 	 * @throws IOException
 	 */
 	private void sync(Uri toSync, JsonSyncableItem sync, SyncProgressNotifier syncProgress, Bundle extras) throws SyncException, IOException{
+		String netPath;
+		boolean haveItemPubUri = false;
 
 		if ("http".equals(toSync.getScheme()) || "https".equals(toSync.getScheme())){
-			final String netPath = toSync.getPath();
+			netPath = toSync.getPath();
 			toSync = (Uri) extras.get(EXTRA_DESTINATION_URI);
-			final String contentType = getContentResolver().getType(toSync);
+			haveItemPubUri = true;
+		}else{
+			netPath = null;
+		}
+		final String contentType = getContentResolver().getType(toSync);
 
+		final Cursor c = cr.query(toSync, sync.getFullProjection(), null, null, null);
+		try {
+			syncProgress.addPendingTasks(c.getCount());
+
+			// Handle a list of items.
 			if (contentType.startsWith(CONTENT_TYPE_PREFIX_DIR)){
+				// load from the network first...
+				if (netPath == null){
+					netPath =  MediaProvider.getPublicPath(this, toSync);
+				}
 				syncNetworkList(toSync, netPath, sync, syncProgress);
-			}else{
+			}else if (haveItemPubUri){
 				syncNetworkItem(toSync, netPath, sync, syncProgress);
 			}
-		}else{
-			final String contentType = getApplicationContext().getContentResolver().getType(toSync);
 
-			final Cursor c = cr.query(toSync, sync.getFullProjection(), null, null, null);
-			try {
-				syncProgress.addPendingTasks(c.getCount());
+			// then load locally.
 
-				// Handle a list of items.
-				if (contentType.startsWith(CONTENT_TYPE_PREFIX_DIR)){
-					// load from the network first...
-					syncNetworkList(toSync, MediaProvider.getPublicPath(this, toSync), sync, syncProgress);
-				}
-
-				// then load locally.
-
-				if (DEBUG) {
-					Log.d(TAG, "have " + c.getCount() + " local items to sync");
-				}
-				for (c.moveToFirst(); (currentSyncTask != null && !currentSyncTask.isCancelled()) && ! c.isAfterLast(); c.moveToNext()){
-					try {
-						syncItem(toSync, c, null, sync, syncProgress);
-						syncProgress.completeTask();
-
-					}catch (final SyncItemDeletedException side){
-						if (DEBUG) {
-							Log.d(TAG, side.getLocalizedMessage() + " Deleting...");
-						}
-						cr.delete(side.getItem(), null, null);
-						//side.printStackTrace();
-						syncProgress.completeTask();
-						continue;
-					}
-				}
-			}finally{
-				c.close();
+			if (DEBUG) {
+				Log.d(TAG, "have " + c.getCount() + " local items to sync");
 			}
+			for (c.moveToFirst(); (currentSyncTask != null && !currentSyncTask.isCancelled()) && ! c.isAfterLast(); c.moveToNext()){
+				try {
+					syncItem(toSync, c, null, sync, syncProgress, netPath);
+					syncProgress.completeTask();
+
+				}catch (final SyncItemDeletedException side){
+					if (DEBUG) {
+						Log.d(TAG, side.getLocalizedMessage() + " Deleting...");
+					}
+					cr.delete(side.getItem(), null, null);
+					//side.printStackTrace();
+					syncProgress.completeTask();
+					continue;
+				}
+			}
+		}finally{
+			c.close();
 		}
 	}
 
@@ -314,7 +316,7 @@ public class Sync extends Service {
 
 			for (int i = 0; (currentSyncTask != null && !currentSyncTask.isCancelled()) && i < remObjs.length(); i++){
 				final JSONObject jo = remObjs.getJSONObject(i);
-				syncItem(toSync, null, jo, sync, syncProgress);
+				syncItem(toSync, null, jo, sync, syncProgress, null);
 				syncProgress.completeTask();
 			}
 		} catch (final SyncException se){
@@ -336,7 +338,7 @@ public class Sync extends Service {
 			remObj = nc.getObject(netPath);
 			syncProgress.addPendingTasks(1);
 
-			syncItem(toSync, null, remObj, sync, syncProgress);
+			syncItem(toSync, null, remObj, sync, syncProgress, null);
 			syncProgress.completeTask();
 
 		} catch (final SyncException se){
@@ -356,14 +358,15 @@ public class Sync extends Service {
 	 * Given a live cursor pointing to a data item and/or a set of contentValues loaded from the network,
 	 * attempt to sync.
 	 * Either c or cvNet can be null, but not both.
-	 *
 	 * @param c A cursor pointing to the data item. Null is OK here.
 	 * @param jsonObject JSON object for the item as loaded from the network. null is OK here.
 	 * @param sync An empty JsonSyncableItem object.
+	 * @param publicPath TODO
+	 *
 	 * @return True if the item has been modified on either end.
 	 * @throws IOException
 	 */
-	private boolean syncItem(Uri toSync, Cursor c, JSONObject jsonObject, JsonSyncableItem sync, SyncProgressNotifier syncProgress) throws SyncException, IOException {
+	private boolean syncItem(Uri toSync, Cursor c, JSONObject jsonObject, JsonSyncableItem sync, SyncProgressNotifier syncProgress, String publicPath) throws SyncException, IOException {
 		boolean modified = false;
 		boolean needToCloseCursor = false;
 		boolean toSyncIsIndex = false;
@@ -436,8 +439,9 @@ public class Sync extends Service {
 
 			try {
 				jsonObject = JsonSyncableItem.toJSON(context, locUri, c, syncMap);
-
-				final String publicPath = MediaProvider.getPostPath(this, locUri);
+				if (publicPath == null){
+					publicPath = MediaProvider.getPostPath(this, locUri);
+				}
 				if (DEBUG) {
 					Log.d(TAG, "Posting "+locUri + " to " + publicPath);
 				}
@@ -467,6 +471,9 @@ public class Sync extends Service {
 
 			// only on the remote side, so pull it in.
 		}else if (c == null && cvNet != null) {
+			if (DEBUG){
+				Log.i(TAG, "Only on the remote side, using network-provided values.");
+			}
 			final String[] params = {cvNet.getAsString(JsonSyncableItem._PUBLIC_URI)};
 			c = cr.query(toSync,
 					sync.getFullProjection(),
@@ -485,7 +492,9 @@ public class Sync extends Service {
 
 		// we've now found data on both sides, so sync them.
 		if (! modified && c != null){
-			final String publicPath = c.getString(c.getColumnIndex(JsonSyncableItem._PUBLIC_URI));
+
+			publicPath = c.getString(c.getColumnIndex(JsonSyncableItem._PUBLIC_URI));
+
 
 			try {
 
@@ -738,7 +747,7 @@ public class Sync extends Service {
 			notification = new ProgressNotification(getApplicationContext(), R.drawable.stat_notify_sync);
 
 			notification.contentIntent = PendingIntent.getActivity(context, 0,
-					new Intent(context, BrowserHome.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+					new Intent(context, ItineraryList.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
 					PendingIntent.FLAG_UPDATE_CURRENT);
 			notification.setProgress(0, 0);
 			notification.setTitle(getText(R.string.sync_notification));

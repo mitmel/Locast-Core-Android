@@ -16,14 +16,17 @@
 	>
 
 		<TextView
-			android:layout_width="wrap_content"
+			android:layout_width="160sp"
 			android:layout_height="wrap_content"
-			android:text="Tap Button to Add a Photo, Video
-	or Media from Phone Gallery"
+			android:text="@string/cast_edit_media_empty"
 	android:layout_alignParentBottom="true"
 	android:layout_alignParentLeft="true"
 	android:layout_marginLeft="15dip"
 	android:layout_marginBottom="5dip"
+	android:background="@android:color/black"
+	android:textColor="@android:color/white"
+	android:padding="10sp"
+	android:textStyle="bold"
 	
 	 />
 	</RelativeLayout>

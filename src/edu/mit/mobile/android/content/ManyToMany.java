@@ -240,8 +240,13 @@ public class ManyToMany {
 		// TODO does not yet verify a relationship.
 		@Override
 		public int updateDir(SQLiteDatabase db, ContentProvider provider, Uri uri, ContentValues values, String where, String[] whereArgs){
-			throw new RuntimeException("not implemented yet");
-			//return provider.update(mToContentUri, values, where, whereArgs);
+			int count;
+			if (mToContentUri != null){
+				count = provider.update(mToContentUri, values, where, whereArgs);
+			}else{
+				count = db.update(mToTable, values, where, whereArgs);
+			}
+			return count;
 		}
 
 		/* (non-Javadoc)

@@ -142,7 +142,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 		maybeStartTask();
 
-		return START_NOT_STICKY;
+		return START_REDELIVER_INTENT;
 	}
 
 	private SyncTask mSyncTask;
@@ -258,6 +258,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 	final static String[] PROJECTION = { CastMedia._ID, CastMedia._MIME_TYPE,
 			CastMedia._LOCAL_URI, CastMedia._MEDIA_URL, CastMedia._KEEP_OFFLINE,
+			CastMedia._PUBLIC_URI,
 			CastMedia._THUMB_LOCAL};
 
 	final static String[] CAST_PROJECTION = {Cast._ID, Cast._FAVORITED };
@@ -317,8 +318,11 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 			final String localThumb  = castMedia.getString(castMedia.getColumnIndex(CastMedia._THUMB_LOCAL));
 
+
+
 			if (hasLocMedia && !hasPubMedia) {
-				uploadMedia(castMediaUri, mimeType, locMedia);
+				final String uploadPath = castMedia.getString(castMedia.getColumnIndex(CastMedia._PUBLIC_URI));
+				uploadMedia(uploadPath, castMediaUri, mimeType, locMedia);
 
 			} else if (!hasLocMedia && hasPubMedia) {
 				// only have a public copy, so download it and store locally.
@@ -364,15 +368,14 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 	}
 
-	private void uploadMedia(Uri castMediaUri, String contentType,
-			final Uri locMedia) throws SyncException {
+	private void uploadMedia(String uploadPath, Uri castMediaUri,
+			String contentType, final Uri locMedia) throws SyncException {
 		// upload
 		try {
-			final String uploadPath = "XXX broken";
 			final NetworkClient nc = NetworkClient.getInstance(this);
 			nc.uploadContentWithNotification(this,
 					CastMedia.getCast(castMediaUri), uploadPath, locMedia,
-					contentType);
+					contentType, NetworkClient.UploadType.FORM_POST);
 		} catch (final Exception e) {
 			final SyncException se = new SyncException(
 					getString(R.string.error_uploading_cast_video));

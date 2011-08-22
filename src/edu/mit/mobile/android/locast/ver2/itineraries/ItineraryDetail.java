@@ -232,6 +232,9 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 
 	@Override
 	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
+		startActivity(new Intent(Intent.ACTION_EDIT, ContentUris.withAppendedId(mCastsUri, id)));
+		/* for later
+		 *
 		final Cursor cast = (Cursor) adapter.getItemAtPosition(position);
 		final int dratCol = cast.getColumnIndex(Cast._DRAFT);
 		final boolean isDraft = ! cast.isNull(dratCol) && cast.getInt(dratCol) == 1;
@@ -241,7 +244,7 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 		}else{
 			startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mCastsUri, id)));
 		}
-
+	*/
 	}
 
 	@Override
@@ -296,7 +299,7 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 			if (c.moveToFirst()){
 				((TextView)findViewById(R.id.description)).setText(c.getString(c.getColumnIndex(Itinerary._DESCRIPTION)));
 				((TextView)findViewById(R.id.title)).setText(c.getString(c.getColumnIndex(Itinerary._TITLE)));
-				((TextView)findViewById(R.id.author)).setText(getString(R.string.itinerary_detail_itinerary_by, c.getString(c.getColumnIndex(Itinerary._AUTHOR))));
+
 				if (USE_MAP){
 					final List<GeoPoint> path = Itinerary.getPath(c);
 					mPathOverlay.setPath(path);

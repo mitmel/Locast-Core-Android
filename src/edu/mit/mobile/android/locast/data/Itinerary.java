@@ -151,7 +151,10 @@ public class Itinerary extends TaggableItem implements Favoritable.Columns {
 				public ContentValues fromJSON(Context context, Uri localItem,
 						JSONObject item, String lProp) throws JSONException,
 						NetworkProtocolException, IOException {
-					final JSONArray jsonPath = item.getJSONArray(remoteKey);
+					final JSONArray jsonPath = item.optJSONArray(remoteKey);
+					if (jsonPath == null){
+						return null;
+					}
 					final String[] path = new String[jsonPath.length() * 2];
 
 					// TODO loads it all into memory. May make more sense to use a StringBuilder
