@@ -97,18 +97,22 @@ public class ManyToMany {
 			return mJoinTable;
 		}
 
+		/**
+		 * @return the name of the from table
+		 */
 		public String getFromTable(){
 			return mFromTable;
 		}
 
+		/**
+		 * @return the name of the to table
+		 */
 		public String getToTable() {
 			return mToTable;
 		}
 
 		/**
 		 * Generates a join table.
-		 *
-		 * @return
 		 */
 		public void createJoinTable(SQLiteDatabase db){
 			db.execSQL("CREATE TABLE "+mJoinTable + " ("
@@ -124,7 +128,6 @@ public class ManyToMany {
 		/**
 		 * Deletes the join table.
 		 *
-		 * @param db
 		 */
 		public void deleteJoinTable(SQLiteDatabase db){
 			db.execSQL("DROP TABLE IF EXISTS "+mJoinTable);
@@ -236,7 +239,7 @@ public class ManyToMany {
 		 * @param values
 		 * @param where
 		 * @param whereArgs
-		 * @return
+		 * @return the number of items that have been updated
 		 */
 		@Override
 		public int updateItem(SQLiteDatabase db, ContentProvider provider, Uri uri, ContentValues values, String where, String[] whereArgs){
@@ -343,7 +346,7 @@ public class ManyToMany {
 		 * @param selection any extra selection query or null
 		 * @param selectionArgs any extra selection arguments or null
 		 * @param sortOrder the desired sort order or null
-		 * @return
+		 * @return a cursor whose content represents the to table
 		 */
 		public Cursor queryTo(long fromId, SQLiteDatabase db, String[] toProjection, String selection, String[] selectionArgs, String sortOrder){
 			// XXX hack to get around ambiguous column names. Is there a better way to write this query?
