@@ -62,6 +62,14 @@
  		<item name="android:adjustViewBounds">true</item>
  	</style>
  	
+ 	<style name="Button" parent="@android:style/Widget.Button">
+ 	</style>
+ 	
+ 	<style name="Button.Negative">
+ 		<!-- <item name="android:background">@color/negative_action</item> -->
+ 		<item name="android:tint">@color/negative_action</item>
+ 	</style>
+ 	
  	<style name="CastListItem">
  	
  	</style>

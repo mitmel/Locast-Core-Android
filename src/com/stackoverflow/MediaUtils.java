@@ -17,6 +17,9 @@ public class MediaUtils {
 
 	private static final String TMP_SD_LOCATION = "/sdcard/tmp";
 
+	private static final String devstring = android.os.Build.BRAND + "/" + android.os.Build.PRODUCT + "/"
+	+ android.os.Build.DEVICE;
+
 	private static boolean hasImageCaptureBug(){
 		final ArrayList<String> devices = new ArrayList<String>();
 	    // list of known devices that have the bug
@@ -27,18 +30,20 @@ public class MediaUtils {
 	    devices.add("tmobile/kila/dream");
 	    devices.add("verizon/voles/sholes");
 	    devices.add("google_ion/google_ion/sapphire");
-	    return devices.contains(android.os.Build.BRAND + "/" + android.os.Build.PRODUCT + "/"
-	            + android.os.Build.DEVICE);
+	    final String devstring = android.os.Build.BRAND + "/" + android.os.Build.PRODUCT + "/"
+        	+ android.os.Build.DEVICE;
+	    Log.d(TAG, "device string: " + devstring);
+	    return devices.contains(devstring);
 	}
 
 	/**
 	 * The result of this should be handled by {@link #handleImageCaptureResult(Context, Intent)} to return a URI pointing to the image.
 	 * @return an intent that should be used with {@link Activity#startActivityForResult(Intent, int)}.
 	 */
-	public static Intent getImageCaptureIntent(){
+	public static Intent getImageCaptureIntent(String filename){
 		final Intent i = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-		if (hasImageCaptureBug()) {
-		    i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File(TMP_SD_LOCATION)));
+		if (HAS_IMAGE_CAPTURE_BUG) {
+		    i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File(TMP_SD_LOCATION, filename)));
 		} else {
 		    i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 		}

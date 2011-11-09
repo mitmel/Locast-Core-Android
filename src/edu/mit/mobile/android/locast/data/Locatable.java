@@ -19,6 +19,7 @@ package edu.mit.mobile.android.locast.data;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.osmdroid.api.IGeoPoint;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -121,6 +122,19 @@ public abstract class Locatable {
 		}
 		result[0] = c.getDouble(latColumn);
 		result[1] = c.getDouble(lonColumn);
+	}
+
+	/**
+	 * Adds the appropriate {@link Columns#_LATITUDE}, {@link Columns#_LONGITUDE} columns to the given {@link ContentValues} for the given location.
+	 * @param cv
+	 * @param location
+	 * @return the same {@link ContentValues} that was passed in.
+	 */
+	public static ContentValues toContentValues(ContentValues cv, IGeoPoint location){
+		cv.put(Columns._LATITUDE, location.getLatitudeE6() / 1E6d);
+		cv.put(Columns._LONGITUDE, location.getLongitudeE6() / 1E6d);
+
+		return cv;
 	}
 
 	public static final SyncMap SYNC_MAP = new SyncMap();

@@ -38,23 +38,6 @@
 			android:layout_alignParentRight="true" />
 	</RelativeLayout>
 
-	<FrameLayout
-        android:background="@drawable/shadow_top_bottom"
-			android:layout_width="fill_parent"
-			android:layout_marginTop="-10dip"
-			android:layout_marginBottom="-10dip"
-		android:layout_height="fill_parent"
-		android:layout_weight="3"
-		>
-	<org.osmdroid.views.MapView
-		android:id="@+id/map"	
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:clickable="true"
-		android:visibility="invisible"
-		android:apiKey="0mv3f-QVdQ_DwBwdfkqD1df8s37Ezhu5qfmJR_A" />
-	</FrameLayout>
-
 	<include layout="@layout/itinerary_detail_list_empty" />
 	<ListView
 		android:id="@+id/casts"

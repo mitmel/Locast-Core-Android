@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+>
+	<ImageView
+		android:id="@+id/media_thumbnail"
+		android:layout_height="100dip"
+		android:layout_width="100dip"
+		android:layout_centerVertical="true"
+		android:layout_alignParentLeft="true"
+		android:src="@drawable/ic_placeholder"
+		android:adjustViewBounds="true"
+
+		android:scaleType="centerCrop"
+		android:layout_margin="5dip" />
+	<ImageButton
+		android:id="@+id/remove"
+		style="@style/Button.Negative"
+		android:layout_width="wrap_content"
+		android:src="@drawable/ic_btn_remove"
+		android:layout_height="wrap_content"
+		android:layout_alignParentRight="true"
+
+		android:layout_alignTop="@+id/media_thumbnail"
+		android:layout_alignBottom="@+id/media_thumbnail" />
+	<EditText
+		android:id="@+id/cast_title"
+		android:layout_height="wrap_content"
+		android:layout_width="wrap_content"
+
+		android:layout_toLeftOf="@+id/remove"
+		android:layout_alignTop="@+id/remove"
+		android:layout_alignBottom="@+id/remove"
+		android:hint="Photo/video title"
+		android:layout_toRightOf="@+id/media_thumbnail" />
+
+</RelativeLayout>

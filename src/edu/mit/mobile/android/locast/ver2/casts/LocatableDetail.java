@@ -74,6 +74,8 @@ abstract public class LocatableDetail extends FragmentActivity {
 
 		om.add(mLocatableItemOverlay);
 		om.add(mShadowOverlay);
+		mMapView.setMultiTouchControls(true);
+		mMapView.setBuiltInZoomControls(true);
 
 		mMapView.setVisibility(View.VISIBLE);
 	}

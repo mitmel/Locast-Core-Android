@@ -198,5 +198,7 @@
 	<string-array name="cast_edit_pick">
 		<item >Video</item>
 		<item >Picture</item>
-	</string-array>	
+	</string-array>
+		<string name="auth_set_site">Set Locast Site</string>
+		<string name="cast_edit_error_camera_did_not_return_image">Error: camera did not return an image. Please try again.</string>	
 </resources>

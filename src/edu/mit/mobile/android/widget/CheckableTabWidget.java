@@ -34,4 +34,26 @@ public class CheckableTabWidget extends TabWidget {
 			throw new RuntimeException("tab indicator at index "+index+" is not an instance of CheckableTabIndicator");
 		}
 	}
+
+	public static final int ALL_TABS_CHECKED = -1;
+
+	/**
+	 * Gets the index of the next unchecked tab
+	 *
+	 * @return the index of the unchecked tab or {@link #ALL_TABS_CHECKED} if all tabs are checked.
+	 */
+	public int getNextUncheckedTab(){
+		int unchecked = ALL_TABS_CHECKED;
+		final int count = getChildCount();
+		for (int i = 0; unchecked == ALL_TABS_CHECKED && i < count; i++){
+			final View v = getChildTabViewAt(i);
+			if (v instanceof CheckableTabIndicator){
+				if (! ((CheckableTabIndicator) v).isChecked()){
+					unchecked = i;
+				}
+			}
+		}
+
+		return unchecked;
+	}
 }

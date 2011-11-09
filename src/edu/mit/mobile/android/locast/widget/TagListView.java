@@ -37,13 +37,12 @@ public class TagListView extends LinearLayout {
 	private final TextView noTagNotice;
 
 	public TagListView(Context context) {
-		this(context, null);
-	}
+		super(context);
 
-	public void clearAllTags(){
-		addedTags.clear();
-		addedTagView.removeAllViews();
-		noTagNotice.setVisibility(TextView.VISIBLE);
+		inflateLayout(context, null);
+
+		noTagNotice = (TextView)findViewById(R.id.tag_no_tags);
+		addedTagView = (ViewGroup)findViewById(R.id.tag_added_tags);
 	}
 
 	public TagListView(Context context, AttributeSet attrs) {
@@ -65,6 +64,13 @@ public class TagListView extends LinearLayout {
 	 */
 	public List<String> getTags() {
 		return addedTags;
+	}
+
+
+	public void clearAllTags(){
+		addedTags.clear();
+		addedTagView.removeAllViews();
+		noTagNotice.setVisibility(TextView.VISIBLE);
 	}
 
 	/**

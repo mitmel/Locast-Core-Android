@@ -45,9 +45,9 @@ import edu.mit.mobile.android.locast.ver2.R;
  *
  */
 public class TagList extends TagListView implements OnEditorActionListener, OnClickListener, OnFocusChangeListener {
-	private final ViewGroup recommendedTagView;
-	private final TextView recommendedTagLabel;
-	private final AutoCompleteTextView addTagEditText;
+	private ViewGroup recommendedTagView;
+	private TextView recommendedTagLabel;
+	private AutoCompleteTextView addTagEditText;
 
 	private final List<String> recommendedTags = new Vector<String>();
 	private final List<String> shownRecs = new Vector<String>();
@@ -58,11 +58,18 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 	private static RemoteTagsAdapter acAdapter;
 
 	public TagList(Context context) {
-		this(context, null);
+		super(context);
+
+		init(context);
 	}
 
     public TagList(Context context, AttributeSet attrs){
     	super(context, attrs);
+
+    	init(context);
+    }
+
+    private void init(Context context){
 
 		recommendedTagView = (ViewGroup)findViewById(R.id.tag_recommended_tags);
 		recommendedTagLabel = (TextView)findViewById(R.id.tag_recommended_label);
@@ -76,7 +83,6 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 		addTagEditText.setOnFocusChangeListener(this);
 		addTagEditText.setAdapter(acAdapter);
 		addTagEditText.setOnEditorActionListener(this);
-
     }
 
     @Override

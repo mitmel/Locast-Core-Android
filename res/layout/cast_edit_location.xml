@@ -33,12 +33,13 @@
 		android:layout_alignParentRight="true"
 		android:layout_margin="15dip" />
 
-	<Button
+	<ImageButton
 		android:id="@+id/set_current_location"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-
-		android:background="@drawable/ic_map_cast_location_pending"
+	
+		android:background="@null"
+		android:src="@drawable/ic_map_set_location"
 		android:layout_centerInParent="true" />
 
 </RelativeLayout>
