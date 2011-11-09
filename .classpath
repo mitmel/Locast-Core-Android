@@ -15,5 +15,5 @@
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="lib" path="lib/android-support-v4.jar"/>
 	<classpathentry kind="src" path="ImageCache_src"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
