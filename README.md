@@ -32,7 +32,7 @@ The URL of the JSON document is stored in the key `app_update_url` in
 
 Dependencies
 ------------
-*   MEL ImageCache
+*   [MEL ImageCache][]
 *   [CWAC Task][] (included)
 *   [CWAC Bus][] (included)
 *   [CWAC Adapter Wrapper][] (included)
@@ -60,3 +60,4 @@ to convert to/from standard gettext .po files in conjunction with [Pootle][].
 [android-support-v4]: http://android-developers.blogspot.com/2011/03/fragments-for-all.html
 [android2po]: https://github.com/miracle2k/android2po/
 [Pootle]: http://translate.sourceforge.net/wiki/pootle
+[MEL ImageCache]: https://github.com/mitmel/Android-Image-Cache
