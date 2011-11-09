@@ -232,9 +232,7 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 
 	@Override
 	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
-		startActivity(new Intent(Intent.ACTION_EDIT, ContentUris.withAppendedId(mCastsUri, id)));
-		/* for later
-		 *
+
 		final Cursor cast = (Cursor) adapter.getItemAtPosition(position);
 		final int dratCol = cast.getColumnIndex(Cast._DRAFT);
 		final boolean isDraft = ! cast.isNull(dratCol) && cast.getInt(dratCol) == 1;
@@ -244,7 +242,6 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 		}else{
 			startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mCastsUri, id)));
 		}
-	*/
 	}
 
 	@Override
