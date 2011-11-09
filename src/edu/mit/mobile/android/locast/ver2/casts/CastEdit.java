@@ -85,6 +85,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	private Uri mCast;
 
 	private boolean mIsDraft = true;
+	private boolean mIsEditable = false;
 	private IGeoPoint mLocation;
 	private boolean mRecenterMapOnCurrentLocation = true;
 	private boolean mFirstLoad = true;
@@ -100,7 +101,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	private TabHost mTabHost;
 	private EditText mTitleView;
 	private CheckableTabWidget mTabWidget;
-
+	private String mAuthorUri;
 
 	// media
 	private ListView mCastMediaView;
@@ -344,6 +345,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 
 		}else{
 			// XXX put on thread
+			setEditable(true);
 			mCast = save(); // create a new, blank cast
 
 		}
@@ -615,6 +617,30 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		final int draftCol = c.getColumnIndexOrThrow(Cast._DRAFT);
 
 		mIsDraft = !c.isNull(draftCol) && c.getInt(draftCol) != 0;
+		
+		mAuthorUri = c.getString(c.getColumnIndex(Cast._AUTHOR_URI));
+
+		setEditable(Cast.canEdit(this, c));
+	}
+	
+	private void setEditable(boolean isEditable){
+		mIsEditable = isEditable;
+		
+		findViewById(R.id.cast_title).setEnabled(isEditable);
+		findViewById(R.id.save).setEnabled(isEditable);
+		
+		// location
+		mSetLocation.setEnabled(isEditable);
+		
+		// media
+		findViewById(R.id.new_photo).setEnabled(isEditable);
+		findViewById(R.id.new_video).setEnabled(isEditable);
+		findViewById(R.id.pick_media).setEnabled(isEditable);
+		
+		
+		// details
+		mTags.setEnabled(isEditable);
+		mDescriptionView.setEnabled(isEditable);
 	}
 
 	private void startUpdatingLocation() {
@@ -698,11 +724,6 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	public ContentValues toContentValues() {
 		final ContentValues cv = new ContentValues();
 
-		final Account me = Authenticator.getFirstAccount(this);
-		final AccountManager am = AccountManager.get(this);
-
-		cv.put(Cast._AUTHOR, am.getUserData(me, AuthenticationService.USERDATA_DISPLAY_NAME));
-		cv.put(Cast._AUTHOR_URI, am.getUserData(me, AuthenticationService.USERDATA_USER_URI));
 
 		cv.put(Cast._TITLE, mTitleView.getText().toString());
 		cv.put(Cast._DRAFT, mIsDraft);
@@ -853,11 +874,22 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	 * @return the new URI of the cast
 	 */
 	private Uri save(){
+		if (!mIsEditable){
+			return mCast;
+		}
+		
 		Uri newCast;
 		final ContentResolver cr = getContentResolver();
 		final ContentValues cv = toContentValues();
 
 		if (mCast == null){
+			// only add in credentials on inserts
+			final Account me = Authenticator.getFirstAccount(this);
+			final AccountManager am = AccountManager.get(this);
+
+			cv.put(Cast._AUTHOR, am.getUserData(me, AuthenticationService.USERDATA_DISPLAY_NAME));
+			cv.put(Cast._AUTHOR_URI, am.getUserData(me, AuthenticationService.USERDATA_USER_URI));
+
 			Log.d(TAG, "inserting "+cv+" into "+ mCastBase);
 			newCast = cr.insert(mCastBase, cv);
 		}else{
