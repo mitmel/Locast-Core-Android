@@ -56,6 +56,8 @@ to convert to/from standard gettext .po files in conjunction with [Pootle][].
 
 License
 -------
+Locast Android client  
+Copyright 2010-2011 [MIT Mobile Experience Lab][mel]
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -78,3 +80,4 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 [android2po]: https://github.com/miracle2k/android2po/
 [Pootle]: http://translate.sourceforge.net/wiki/pootle
 [MEL ImageCache]: https://github.com/mitmel/Android-Image-Cache
+[mel]: http://mobile.mit.edu/
