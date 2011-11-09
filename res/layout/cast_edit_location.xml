@@ -7,24 +7,22 @@
 	android:id="@+id/cast_edit_location"
 >
 
-	<com.google.android.maps.MapView
+	<org.osmdroid.views.MapView
 		android:id="@+id/map"
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
 		android:clickable="true"
-		
+
 		android:apiKey="0mv3f-QVdQ_DwBwdfkqD1df8s37Ezhu5qfmJR_A" />
-		
-				
+
+
 	<View
 		android:background="@drawable/shadow_top"
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
 		android:clickable="false"
 		android:longClickable="false"
-		android:focusable="false"
-		
-		 />
+		android:focusable="false" />
 
 	<Button
 		android:id="@+id/center_on_current_location"
@@ -34,5 +32,13 @@
 		android:layout_alignParentBottom="true"
 		android:layout_alignParentRight="true"
 		android:layout_margin="15dip" />
-		
+
+	<Button
+		android:id="@+id/set_current_location"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+
+		android:background="@drawable/ic_map_cast_location_pending"
+		android:layout_centerInParent="true" />
+
 </RelativeLayout>

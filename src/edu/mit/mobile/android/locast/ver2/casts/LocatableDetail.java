@@ -17,18 +17,16 @@ package edu.mit.mobile.android.locast.ver2.casts;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import java.util.List;
+import org.osmdroid.DefaultResourceProxyImpl;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapController;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.OverlayManager;
 
 import android.database.Cursor;
 import android.os.Bundle;
-import android.support.v4_map.app.MapFragmentActivity;
+import android.support.v4.app.FragmentActivity;
 import android.view.View;
-
-import com.google.android.maps.GeoPoint;
-import com.google.android.maps.MapController;
-import com.google.android.maps.MapView;
-import com.google.android.maps.Overlay;
-
 import edu.mit.mobile.android.locast.maps.MapsUtils;
 import edu.mit.mobile.android.locast.maps.PointerShadow;
 import edu.mit.mobile.android.locast.maps.PointerShadowOverlay;
@@ -49,7 +47,7 @@ import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
  * @author steve
  *
  */
-abstract public class LocatableDetail extends MapFragmentActivity {
+abstract public class LocatableDetail extends FragmentActivity {
 
 	private MapView mMapView;
 	private PointerShadow mPointerShadow;
@@ -70,11 +68,12 @@ abstract public class LocatableDetail extends MapFragmentActivity {
 		mMapView = (MapView) findViewById(R.id.map);
 
 		mPointerShadow = (PointerShadow) findViewById(R.id.pointer_shadow);
-		mShadowOverlay = new PointerShadowOverlay(this, mPointerShadow);
+		mShadowOverlay = new PointerShadowOverlay(new DefaultResourceProxyImpl(this), mPointerShadow);
 		mLocatableItemOverlay = createItemOverlay();
-		final List<Overlay> overlays = mMapView.getOverlays();
-		overlays.add(mLocatableItemOverlay);
-		overlays.add(mShadowOverlay);
+		final OverlayManager om = mMapView.getOverlayManager();
+
+		om.add(mLocatableItemOverlay);
+		om.add(mShadowOverlay);
 
 		mMapView.setVisibility(View.VISIBLE);
 	}

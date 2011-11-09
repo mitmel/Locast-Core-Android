@@ -1,4 +1,5 @@
 package edu.mit.mobile.android.location;
+
 /*
  * Copyright (C) 2011  MIT Mobile Experience Lab
  *
@@ -56,82 +57,118 @@ public class IncrementalLocator implements LocationListener {
 	}
 
 	public IncrementalLocator(Context context) {
-		lm = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
+		lm = (LocationManager) context
+				.getSystemService(Context.LOCATION_SERVICE);
 		mContext = context;
 	}
 
-	public void requestLocationUpdates(LocationListener locationListener){
+	/**
+	 * Registers a locationListener, which will immediately get the last known
+	 * location (if there is one). When location updates are no longer needed or
+	 * when the activity is paused, please
+	 * {@link #removeLocationUpdates(LocationListener)}.
+	 *
+	 * This can safely be called multiple times for the same listener.
+	 *
+	 * @param locationListener
+	 */
+	public void requestLocationUpdates(LocationListener locationListener) {
+		// stop any existing location listeners or back out if we're already registered
+		if (mLocationListener != null){
+			if (mLocationListener != locationListener){
+				removeLocationUpdates(mLocationListener);
+			}else{
+				// we're already registered.
+				return;
+			}
+		}
+
 		mLocationListener = locationListener;
 		final String roughProvider = lm.getBestProvider(initialCriteria, true);
 
-        if (roughProvider == null){
-            Toast.makeText(mContext,
-                            mContext.getString(R.string.error_no_providers),
-                            Toast.LENGTH_LONG).show();
-            return;
-        }
+		if (roughProvider == null) {
+			Toast.makeText(mContext,
+					mContext.getString(R.string.error_no_providers),
+					Toast.LENGTH_LONG).show();
+			return;
+		}
 
 		final Location loc = lm.getLastKnownLocation(roughProvider);
-		if (loc != null){
+		if (loc != null) {
 			mLocationListener.onLocationChanged(loc);
 		}
 		requestLocationUpdates(roughProvider);
 
-
-		if (currentProvider != null){
+		if (currentProvider != null) {
 			requestLocationUpdates(currentProvider);
-		}else{
-			Toast.makeText(mContext, R.string.error_no_providers, Toast.LENGTH_LONG).show();
+		} else {
+			Toast.makeText(mContext, R.string.error_no_providers,
+					Toast.LENGTH_LONG).show();
 		}
 	}
 
-	private void requestLocationUpdates(String provider){
-		if (currentProvider != null){
+	private void requestLocationUpdates(String provider) {
+		if (currentProvider != null) {
 			lm.removeUpdates(this);
 		}
 		currentProvider = provider;
 		lm.requestLocationUpdates(provider, 5000, 100, this);
-		lm.requestLocationUpdates(lm.getBestProvider(sustainedCriteria, true), 1000, 100, this);
+		lm.requestLocationUpdates(lm.getBestProvider(sustainedCriteria, true),
+				1000, 100, this);
 	}
 
-	public void removeLocationUpdates(LocationListener locListener){
+	public boolean isListenerRegistered(LocationListener locListener){
+		return mLocationListener != null && mLocationListener == locListener;
+	}
+
+	/**
+	 * Unregisters the location listener and stops location updates from coming in.
+	 *
+	 * @param locListener
+	 */
+	public void removeLocationUpdates(LocationListener locListener) {
 		lm.removeUpdates(this);
 		mLocationListener = null;
 	}
 
 	public void onLocationChanged(Location location) {
-		if (mLocationListener != null){
-			if (mLocationListener == this){
-				Log.e(TAG, "passed IncremetalLocator itself for a location listener");
+		if (mLocationListener != null) {
+			if (mLocationListener == this) {
+				Log.e(TAG,
+						"passed IncremetalLocator itself for a location listener");
 				return;
 			}
 			mLocationListener.onLocationChanged(location);
 		}
-		if (!gotLocation){
-			final String accurateProvider = lm.getBestProvider(sustainedCriteria, true);
+		if (!gotLocation) {
+			final String accurateProvider = lm.getBestProvider(
+					sustainedCriteria, true);
 			requestLocationUpdates(accurateProvider);
 			gotLocation = true;
 		}
 	}
 
 	public void onProviderDisabled(String provider) {
-		if (mLocationListener != null){
+		if (mLocationListener != null) {
 			mLocationListener.onProviderDisabled(provider);
 		}
 	}
 
 	public void onProviderEnabled(String provider) {
-		if (mLocationListener != null){
+		if (mLocationListener != null) {
 			mLocationListener.onProviderEnabled(provider);
 		}
 	}
 
-	public Location getLastKnownLocation(){
+	public Location getLastKnownLocation() {
+		if (currentProvider == null){
+			return null;
+		}
 		return lm.getLastKnownLocation(currentProvider);
 	}
 
 	public void onStatusChanged(String provider, int status, Bundle extras) {
-		if (mLocationListener != null){
+		if (mLocationListener != null) {
 			mLocationListener.onStatusChanged(provider, status, extras);
 		}
 	}

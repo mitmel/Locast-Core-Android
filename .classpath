@@ -4,6 +4,12 @@
 	<classpathentry kind="lib" path="lib/CWAC-AdapterWrapper.jar"/>
 	<classpathentry kind="lib" path="lib/CWAC-Bus.jar"/>
 	<classpathentry kind="lib" path="lib/CWAC-Task.jar"/>
+	<classpathentry kind="lib" path="lib/osmdroid-android-3.0.5.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/home/steve/media/android/osmdroid/osmdroid-android-docs-3.0.5.zip!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/slf4j-android-1.5.8.jar"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="lib" path="lib/android-support-v4.jar"/>

@@ -17,6 +17,9 @@ package edu.mit.mobile.android.locast.ver2.casts;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import org.osmdroid.views.MapController;
+import org.osmdroid.views.MapView;
+
 import android.content.ActivityNotFoundException;
 import android.content.ContentUris;
 import android.content.Context;
@@ -24,10 +27,10 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
-import android.support.v4_map.app.LoaderManager;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -37,8 +40,6 @@ import android.widget.Gallery;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.maps.MapController;
-import com.google.android.maps.MapView;
 import com.stackoverflow.ArrayUtils;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
@@ -115,11 +116,6 @@ public class CastDetail extends LocatableDetail implements
 		castMediaView.setOnItemClickListener(this);
 
 		castMediaView.setEnabled(true);
-	}
-
-	@Override
-	protected boolean isRouteDisplayed() {
-		return false;
 	}
 
 	@Override

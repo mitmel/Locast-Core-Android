@@ -32,7 +32,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 
-import com.google.android.maps.GeoPoint;
+import org.osmdroid.util.GeoPoint;
 
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.utils.ListUtils;

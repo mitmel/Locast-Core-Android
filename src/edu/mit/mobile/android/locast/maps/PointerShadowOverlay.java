@@ -17,13 +17,13 @@ package edu.mit.mobile.android.locast.maps;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import android.content.Context;
+import org.osmdroid.ResourceProxy;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Overlay;
+
 import android.graphics.Canvas;
 import android.graphics.Point;
-
-import com.google.android.maps.GeoPoint;
-import com.google.android.maps.MapView;
-import com.google.android.maps.Overlay;
 
 /**
  * A map overlay that draws a pointer with a shadow on top of the map, pointing
@@ -37,7 +37,8 @@ public class PointerShadowOverlay extends Overlay {
 
 	private final PointerShadow mPointerShadow;
 
-	public PointerShadowOverlay(Context context, PointerShadow pointerShadow) {
+	public PointerShadowOverlay(ResourceProxy resourceProxy, PointerShadow pointerShadow) {
+		super(resourceProxy);
 		mPointerShadow = pointerShadow;
 	}
 
@@ -55,7 +56,8 @@ public class PointerShadowOverlay extends Overlay {
 		if (mGeoPoint == null){
 			return;
 		}
-		mapView.getProjection().toPixels(mGeoPoint, p);
+
+		mapView.getProjection().toPixels(mapView.getMapCenter(), p);
 		mPointerShadow.setOffset(p.x, p.y);
 	}
 }

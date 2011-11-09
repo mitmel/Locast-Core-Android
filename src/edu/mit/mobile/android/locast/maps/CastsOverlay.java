@@ -1,4 +1,5 @@
 package edu.mit.mobile.android.locast.maps;
+
 /*
  * Copyright (C) 2011  MIT Mobile Experience Lab
  *
@@ -17,11 +18,15 @@ package edu.mit.mobile.android.locast.maps;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import org.osmdroid.DefaultResourceProxyImpl;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.OverlayItem;
+
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 
-import com.google.android.maps.OverlayItem;
 import com.stackoverflow.ArrayUtils;
 
 import edu.mit.mobile.android.locast.data.Cast;
@@ -33,38 +38,50 @@ public class CastsOverlay extends LocatableItemOverlay {
 	private final Drawable mOfficialCastDrawable;
 	private final Drawable mCommunityCastDrawable;
 
-	public static final String[] CASTS_OVERLAY_PROJECTION = ArrayUtils.concat(LOCATABLE_ITEM_PROJECTION,
-			new String[]{Cast._TITLE, Cast._DESCRIPTION, Cast._OFFICIAL});
+	public static final String[] CASTS_OVERLAY_PROJECTION = ArrayUtils.concat(
+			LOCATABLE_ITEM_PROJECTION, new String[] { Cast._TITLE,
+					Cast._DESCRIPTION, Cast._OFFICIAL });
 
 	public CastsOverlay(Context context) {
-		super(boundCenterBottom(context.getResources().getDrawable(R.drawable.ic_map_community)));
+		super(context.getResources().getDrawable(R.drawable.ic_map_community),
+				new DefaultResourceProxyImpl(context));
 		final Resources res = context.getResources();
-		mOfficialCastDrawable = boundCenterBottom(res.getDrawable(R.drawable.ic_map_official));
-		mCommunityCastDrawable = boundCenterBottom(res.getDrawable(R.drawable.ic_map_community));
+		mOfficialCastDrawable = boundCenterBottom(res
+				.getDrawable(R.drawable.ic_map_official));
+		mCommunityCastDrawable = boundCenterBottom(res
+				.getDrawable(R.drawable.ic_map_community));
 	}
 
 	@Override
 	protected void updateCursorCols() {
 		super.updateCursorCols();
-		if (mLocatableItems != null){
+		if (mLocatableItems != null) {
 			mTitleCol = mLocatableItems.getColumnIndex(Cast._TITLE);
 			mDescriptionCol = mLocatableItems.getColumnIndex(Cast._DESCRIPTION);
-			mOfficialCol =  mLocatableItems.getColumnIndex(Cast._OFFICIAL);
+			mOfficialCol = mLocatableItems.getColumnIndex(Cast._OFFICIAL);
 		}
 	}
 
 	@Override
-	protected OverlayItem createItem(int i){
+	protected OverlayItem createItem(int i) {
 		mLocatableItems.moveToPosition(i);
 
-		final OverlayItem item = new OverlayItem(getItemLocation(mLocatableItems),
-				mLocatableItems.getString(mTitleCol), mLocatableItems.getString(mDescriptionCol));
+		final OverlayItem item = new OverlayItem(
+				mLocatableItems.getString(mTitleCol),
+				mLocatableItems.getString(mDescriptionCol),
+				getItemLocation(mLocatableItems));
 
-		if (mLocatableItems.getInt(mOfficialCol) != 0){
+		if (mLocatableItems.getInt(mOfficialCol) != 0) {
 			item.setMarker(mOfficialCastDrawable);
-		}else{
+		} else {
 			item.setMarker(mCommunityCastDrawable);
 		}
 		return item;
+	}
+
+	@Override
+	public boolean onSnapToItem(int x, int y, Point snapPoint, MapView mapView) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }
