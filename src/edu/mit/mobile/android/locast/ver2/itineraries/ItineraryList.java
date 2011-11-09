@@ -222,15 +222,13 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		case REQUEST_SIGNIN:
 			if (resultCode == RESULT_CANCELED){
 				finish();
+			}else if (resultCode == RESULT_OK){
+				refresh(false);
 			}
 			break;
 
 		default:
 			break;
 		}
-	}
-
-	private void syncAll(){
-		//startService(new Intent(Intent.ACTION_SYNC, MY_CASTS).putExtra(Sync.EXTRA_EXPLICIT_SYNC, true));
 	}
 }
