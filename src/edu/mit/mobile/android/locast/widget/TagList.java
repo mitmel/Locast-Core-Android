@@ -97,6 +97,16 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
 
     	}
     }
+    
+    @Override
+    public void setEnabled(boolean enabled) {
+    	super.setEnabled(enabled);
+    	addTagEditText.setEnabled(enabled);
+    	recommendedTagView.setEnabled(enabled);
+    	
+    	findViewById(R.id.tag_add_button).setEnabled(enabled);
+
+    }
 
     @Override
     public boolean addTag(String tag) {

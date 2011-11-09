@@ -57,6 +57,14 @@ public class TagListView extends LinearLayout {
 	protected void inflateLayout(Context context, AttributeSet attrs){
 		LayoutInflater.from(context).inflate(R.layout.taglist_view, this);
 	}
+	
+    
+    @Override
+    public void setEnabled(boolean enabled) {
+    	super.setEnabled(enabled);
+    	addedTagView.setEnabled(enabled);
+    }
+    
 	/**
 	 * Gets the set of tags associated with the view.
 	 *
