@@ -7,7 +7,7 @@
 
 	<item android:id="@+id/cast_play" 
 		android:title="@string/cast_play" 
-		android:icon="@drawable/ic_menu_play_clip" />
+		android:icon="@drawable/ic_menu_play_clip" android:visible="false"/>
 		
 	<item android:id="@+id/cast_edit" 
 		android:title="@string/edit_cast" 

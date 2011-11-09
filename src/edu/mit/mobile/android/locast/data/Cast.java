@@ -58,7 +58,7 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 		_DRAFT };
 
 	public static final String
-		SORT_ORDER_DEFAULT = Cast._FAVORITED + " DESC," + Cast._MODIFIED_DATE+" DESC";
+		SORT_ORDER_DEFAULT = Cast._DRAFT + " DESC," + Cast._FAVORITED + " DESC," + Cast._MODIFIED_DATE+" DESC";
 
 	private Context context;
 

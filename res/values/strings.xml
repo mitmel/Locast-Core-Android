@@ -4,7 +4,7 @@
 	<string name="app_name">Locast Abruzzo</string>
 
 	<string name="default_api_url" translatable="false">http://mel-pydev.mit.edu/unicef/api/</string>
-	<string name="app_update_url" translatable="false">http://mel-pydev.mit.edu/unicef/static/lca.json</string>
+	<string name="app_update_url" translatable="false">http://mel-pydev.mit.edu/unicef/static/m/locast.json</string>
 	
 	<string name="signup_url" translatable="false">http://mel-pydev.mit.edu/unicef/register/</string>
 	<string name="signup_text">Register to join UNICEF GIS</string>

@@ -1,6 +1,10 @@
 {
     "package": {
-        "downloadUrl": "http://mel-pydev.mit.edu/unicef/static/unicef_gis_2.0.9.apk"
+        "downloadUrl": "http://mel-pydev.mit.edu/unicef/static/m/unicef_gis_2.0.10.apk"
+    },
+    "2.0.10 unicef": {
+        "versionCode": 25,
+        "changelog": ["major bugfixes", "UI improvements"]
     },
     "2.0.9 unicef": {
         "versionCode": 24,

@@ -26,24 +26,33 @@
 			android:visibility="gone"
 			android:layout_marginRight="15dip"
 		></ToggleButton>
+		<Button
+			android:text="@string/add_cast"
+			android:drawableLeft="@drawable/ic_add"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:id="@+id/add_cast"
+			android:layout_alignParentTop="true"
+			android:layout_alignParentRight="true"
+		></Button>
 		<TextView
 			android:id="@+id/title"
 			style="@style/ItineraryTitle"
 
-			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
 
 			android:layout_toRightOf="@id/follow"
 			android:layout_alignWithParentIfMissing="true"
 			android:layout_alignParentTop="true"
-			android:layout_alignParentRight="true" />
+			android:layout_width="wrap_content" android:layout_toLeftOf="@+id/add_cast"/>
 	</RelativeLayout>
 	<LinearLayout
 		android:layout_height="fill_parent"
 		android:layout_width="fill_parent"
 		android:orientation="horizontal"
 	>
-        <include layout="@layout/itinerary_detail_list_empty" />
+		<include
+			layout="@layout/itinerary_detail_list_empty" />
 		<ListView
 			android:scrollbarAlwaysDrawVerticalTrack="true"
 			android:layout_weight="2"
@@ -55,6 +64,5 @@
 			android:footerDividersEnabled="true"
 		></ListView>
 	</LinearLayout>
-
 
 </LinearLayout>

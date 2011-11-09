@@ -1,5 +1,6 @@
 package edu.mit.mobile.android.locast.ver2.casts;
 
+import java.io.File;
 import java.util.HashMap;
 
 import org.osmdroid.DefaultResourceProxyImpl;
@@ -16,6 +17,8 @@ import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.OverlayManager;
 
 import android.R.attr;
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ContentResolver;
@@ -55,11 +58,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.stackoverflow.ArrayUtils;
-import com.stackoverflow.MediaUtils;
 
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
+import edu.mit.mobile.android.locast.accounts.AuthenticationService;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.data.Locatable;
@@ -68,7 +72,6 @@ import edu.mit.mobile.android.locast.data.TaggableItem;
 import edu.mit.mobile.android.locast.maps.CastLocationOverlay;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.widget.TagList;
-import edu.mit.mobile.android.location.IncrementalLocator;
 import edu.mit.mobile.android.utils.ResourceUtils;
 import edu.mit.mobile.android.widget.CheckableTabWidget;
 
@@ -85,6 +88,9 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	private IGeoPoint mLocation;
 	private boolean mRecenterMapOnCurrentLocation = true;
 	private boolean mFirstLoad = true;
+
+	// when creating media (on some devices), you need to first create the filename, save it, and then use it when the camera returns.
+	private Uri mCreateMediaUri;
 
 	/////////////////////
 	// stateless
@@ -105,8 +111,6 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	private MapView mMapView;
 	private MapController mMapController;
 	private MyLocationOverlay mMyLocationOverlay;
-
-	private IncrementalLocator mIncrementalLocator;
 
 	private CastLocationOverlay mCastLocationOverlay;
 
@@ -142,7 +146,8 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		RUNTIME_STATE_FIRST_LOAD = RS_NS + "FIRST_LOAD",
 		RUNTIME_STATE_CURRENT_TAB = RS_NS + "CURRENT_TAB",
 		RUNTIME_STATE_IS_DRAFT = RS_NS + "IS_DRAFT",
-		RUNTIME_STATE_LOCATION = RS_NS + "LOCATION";
+		RUNTIME_STATE_LOCATION = RS_NS + "LOCATION",
+		RUNTIME_STATE_CREATE_MEDIA_URI = RS_NS + "CREATE_MEDIA_URI";
 
 	private static final String[]
 	           CAST_MEDIA_FROM = new String[]{CastMedia._TITLE, CastMedia._THUMB_LOCAL, CastMedia._THUMBNAIL},
@@ -216,7 +221,10 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 			}
 		});
 
-		/*mCastMediaAdapter.addOnFocusChangeListener(R.id.cast_media_title, new OnFocusChangeListener() {
+		/*
+		 * XXX doesn't work.
+		 *
+		 * mCastMediaAdapter.addOnFocusChangeListener(R.id.cast_media_title, new OnFocusChangeListener() {
 
 			@Override
 			public void onFocusChange(View v, boolean hasFocus) {
@@ -296,7 +304,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		findViewById(R.id.new_video).setOnClickListener(this);
 		findViewById(R.id.pick_media).setOnClickListener(this);
 
-		mIncrementalLocator = new IncrementalLocator(this);
+		//mIncrementalLocator = new IncrementalLocator(this);
 
 
 		/////////////
@@ -316,6 +324,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 			mTabHost.setCurrentTab(savedInstanceState.getInt(RUNTIME_STATE_CURRENT_TAB, 0));
 			setLocation((GeoPoint)savedInstanceState.getParcelable(RUNTIME_STATE_LOCATION));
 			mIsDraft = savedInstanceState.getBoolean(RUNTIME_STATE_IS_DRAFT, true);
+			mCreateMediaUri = savedInstanceState.getParcelable(RUNTIME_STATE_CREATE_MEDIA_URI);
 		}
 
 		if (Intent.ACTION_EDIT.equals(action)){
@@ -370,6 +379,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	public void onBackPressed() {
 
 		if (mLocation == null && mTitleView.getText().length() == 0 && mCastMediaAdapter.getCount() == 0 && mDescriptionView.getText().length() == 0){
+			Log.d(TAG, "cast "+mCast+" seems to be empty, so deleting it");
 			getContentResolver().delete(mCast, null, null);
 			mCast = null;
 		}
@@ -398,13 +408,19 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 			setCurrentLocation();
 			break;
 
-		case R.id.new_photo:
-			startActivityForResult(MediaUtils.getImageCaptureIntent("test.jpg"), REQUEST_NEW_PHOTO);
-			break;
+		case R.id.new_photo:{
+			final Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+			mCreateMediaUri = createNewMedia("jpg");
+			i.putExtra(MediaStore.EXTRA_OUTPUT, mCreateMediaUri);
+			startActivityForResult(i, REQUEST_NEW_PHOTO);
+		}break;
 
-		case R.id.new_video:
-			startActivityForResult(new Intent(MediaStore.ACTION_VIDEO_CAPTURE), REQUEST_NEW_VIDEO);
-			break;
+		case R.id.new_video:{
+			final Intent i = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+			mCreateMediaUri = createNewMedia("mp4");
+			i.putExtra(MediaStore.EXTRA_OUTPUT, mCreateMediaUri);
+			startActivityForResult(i, REQUEST_NEW_VIDEO);
+		}break;
 
 		case R.id.pick_media:
 			showDialog(DIALOG_PICK_MEDIA);
@@ -416,29 +432,34 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (resultCode == RESULT_CANCELED){
 			Log.d(TAG, "media adding cancelled");
+			mCreateMediaUri = null;
 			return;
 		}
-
-		if (data == null || data.getData() == null){
-			Toast.makeText(this, R.string.cast_edit_error_camera_did_not_return_image, Toast.LENGTH_LONG).show();
-			return;
-		}
+//		Log.d(TAG, "onActivityResult: " + data);
+//		if (data == null || data.getData() == null){
+//			Toast.makeText(this, R.string.cast_edit_error_camera_did_not_return_image, Toast.LENGTH_LONG).show();
+//			return;
+//		}
 
 		switch(requestCode){
 			case REQUEST_NEW_PHOTO:{
-				final Uri photo = MediaUtils.handleImageCaptureResult(this, data);
-				if (photo != null){
-					addMedia(photo);
-				}
+
+				addMedia(mCreateMediaUri);
+				mCreateMediaUri = null;
 
 				}break;
-			case REQUEST_PICK_MEDIA:
 			case REQUEST_NEW_VIDEO:{
+
+				addMedia(mCreateMediaUri);
+				mCreateMediaUri = null;
+			}break;
+
+			case REQUEST_PICK_MEDIA:{
 				final Uri media = data.getData();
 				if (media != null){
 					addMedia(media);
 				}
-			}break;
+			}
 
 		}
 	}
@@ -559,10 +580,18 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 			outState.putParcelable(RUNTIME_STATE_LOCATION, (GeoPoint)mLocation);
 		}
 		outState.putBoolean(RUNTIME_STATE_IS_DRAFT, mIsDraft);
+		outState.putParcelable(RUNTIME_STATE_CREATE_MEDIA_URI, mCreateMediaUri);
 	}
 
 	// //////////////////////////////////////////////////////////////////////////
 	// non-handlers
+
+	private Uri createNewMedia(String extension){
+		final File outfile = new File("/sdcard/locast/", System.currentTimeMillis() + "." + extension);
+		outfile.getParentFile().mkdirs();
+
+		return Uri.fromFile(outfile);
+	}
 
 	private void loadFromCursor(Cursor c){
 		mTitleView.setText(c.getString(c.getColumnIndex(Cast._TITLE)));
@@ -583,11 +612,11 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	}
 
 	private void startUpdatingLocation() {
-		mIncrementalLocator.requestLocationUpdates(this);
+		mMyLocationOverlay.enableMyLocation();
 	}
 
 	private void stopUpdatingLocation() {
-		mIncrementalLocator.removeLocationUpdates(this);
+		mMyLocationOverlay.disableMyLocation();
 	}
 
 	private boolean mMapCenterIsLocation = false;
@@ -663,9 +692,16 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	public ContentValues toContentValues() {
 		final ContentValues cv = new ContentValues();
 
+		final Account me = Authenticator.getFirstAccount(this);
+		final AccountManager am = AccountManager.get(this);
+
+		cv.put(Cast._AUTHOR, am.getUserData(me, AuthenticationService.USERDATA_DISPLAY_NAME));
+		cv.put(Cast._AUTHOR_URI, am.getUserData(me, AuthenticationService.USERDATA_USER_URI));
+
 		cv.put(Cast._TITLE, mTitleView.getText().toString());
 		cv.put(Cast._DRAFT, mIsDraft);
 		cv.put(Cast._DESCRIPTION, mDescriptionView.getText().toString());
+		cv.put(Cast._MODIFIED_DATE, System.currentTimeMillis());
 
 		if(mLocation != null){
 			Locatable.toContentValues(cv, mLocation);
@@ -677,6 +713,10 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	public void addMedia(Uri content){
 		final Uri castMedia = Cast.getCastMediaUri(mCast);
 		final ContentValues cv = new ContentValues();
+
+		final long now = System.currentTimeMillis();
+		cv.put(CastMedia._MODIFIED_DATE, now);
+		cv.put(CastMedia._CREATED_DATE, now);
 
 		cv.put(CastMedia._MIME_TYPE, getContentResolver().getType(content));
 
@@ -741,7 +781,8 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	 * request that the map be centered on the user's current location
 	 */
 	private void centerOnCurrentLocation() {
-		final Location curLoc = mIncrementalLocator.getLastKnownLocation();
+		final Location curLoc = mMyLocationOverlay.getLastFix();
+		//final Location curLoc = mIncrementalLocator.getLastKnownLocation();
 		if (curLoc != null) {
 			if (mMapView.getZoomLevel() < 10) {
 				mMapController.setZoom(15);

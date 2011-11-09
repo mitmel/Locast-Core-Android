@@ -50,5 +50,11 @@
 		android:scrollbarDefaultDelayBeforeFade="1000"
 		
 		/>
+		
+		<Button android:id="@+id/add_cast"
+		android:layout_width="fill_parent" 
+		android:layout_height="wrap_content"
+		android:text="@string/add_cast" 
+		android:drawableLeft="@drawable/ic_add" />
 
 </LinearLayout>

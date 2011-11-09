@@ -212,4 +212,20 @@ public class Authenticator extends AbstractAccountAuthenticator {
 		}
 		return null;
     }
+
+    public static Account getFirstAccount(Context context){
+		final Account[] accounts = Authenticator.getAccounts(context);
+		if (accounts.length > 0){
+			return accounts[0];
+		}
+		return null;
+    }
+
+    public static String getUserData(Context context, String key){
+    	final Account account = getFirstAccount(context);
+    	if (account == null){
+    		throw new RuntimeException("no accounts registered");
+    	}
+		return AccountManager.get(context).getUserData(account, key);
+    }
 }

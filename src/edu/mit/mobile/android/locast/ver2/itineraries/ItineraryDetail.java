@@ -104,6 +104,8 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 		mCastView.setEmptyView(layoutInflater.inflate(R.layout.itinerary_detail_list_empty, mCastView, false));
 		mCastView.setEmptyView(findViewById(R.id.empty_message));
 
+
+		findViewById(R.id.add_cast).setOnClickListener(this);
 		mCastView.setOnItemClickListener(this);
 
 		mCastView.setAdapter(null);
@@ -230,7 +232,15 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 
 	@Override
 	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
-		startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mCastsUri, id)));
+		final Cursor cast = (Cursor) adapter.getItemAtPosition(position);
+		final int dratCol = cast.getColumnIndex(Cast._DRAFT);
+		final boolean isDraft = ! cast.isNull(dratCol) && cast.getInt(dratCol) == 1;
+
+		if (isDraft){
+			startActivity(new Intent(Intent.ACTION_EDIT, ContentUris.withAppendedId(mCastsUri, id)));
+		}else{
+			startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mCastsUri, id)));
+		}
 
 	}
 
@@ -243,6 +253,10 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 
 		case R.id.home:
 			startActivity(new Intent(this, BrowserHome.class));
+            break;
+
+		case R.id.add_cast:
+			startActivity(new Intent(Intent.ACTION_INSERT, Itinerary.getCastsUri(getIntent().getData())));
 			break;
 		}
 	}
@@ -334,6 +348,10 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 		switch(item.getItemId()){
 		case R.id.add_cast:
 			startActivity(new Intent(Intent.ACTION_INSERT, Itinerary.getCastsUri(getIntent().getData())));
+			return true;
+
+		case R.id.refresh:
+			refresh(true);
 			return true;
 
 			default:

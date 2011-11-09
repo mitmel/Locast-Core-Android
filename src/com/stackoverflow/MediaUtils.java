@@ -15,7 +15,7 @@ public class MediaUtils {
 
 	public static final boolean HAS_IMAGE_CAPTURE_BUG = hasImageCaptureBug();
 
-	private static final String TMP_SD_LOCATION = "/sdcard/tmp";
+	private static final String TMP_SD_LOCATION = "/sdcard/tmp/locast_new.jpg";
 
 	private static final String devstring = android.os.Build.BRAND + "/" + android.os.Build.PRODUCT + "/"
 	+ android.os.Build.DEVICE;
@@ -43,9 +43,12 @@ public class MediaUtils {
 	public static Intent getImageCaptureIntent(String filename){
 		final Intent i = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
 		if (HAS_IMAGE_CAPTURE_BUG) {
-		    i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File(TMP_SD_LOCATION, filename)));
+			final File tmpfile = new File(TMP_SD_LOCATION);
+			tmpfile.getParentFile().mkdirs();
+		    i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File(TMP_SD_LOCATION)));
 		} else {
-		    i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+		    //i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+			i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File("/sdcard/locast/" + System.currentTimeMillis() + ".jpg")));
 		}
 
 		return i;

@@ -20,12 +20,12 @@ import android.content.Context;
 import android.database.Cursor;
 import android.view.View;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
-import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.ver2.R;
 
 public class CastCursorAdapter extends SimpleThumbnailCursorAdapter {
-	private final static String[] DEFAULT_FROM = new String[] {	Cast._THUMBNAIL_URI, 	Cast._AUTHOR, 	Cast._TITLE};
-	private final static int[] DEFAULT_TO      = new int[] {	R.id.media_thumbnail, 	R.id.author, 	android.R.id.text1};
+	private final static String[] DEFAULT_FROM = new String[] {	Cast._THUMBNAIL_URI, 	Cast._AUTHOR, 	Cast._TITLE, Cast._DRAFT};
+	private final static int[] DEFAULT_TO      = new int[] {	R.id.media_thumbnail, 	R.id.author, 	android.R.id.text1, R.id.draft};
 	private final static int[] IMAGE_IDS = new int[] {R.id.media_thumbnail };
 
 	public final static String[] DEFAULT_PROJECTION = {
@@ -62,13 +62,28 @@ public class CastCursorAdapter extends SimpleThumbnailCursorAdapter {
 
 	@Override
 	public void setViewText(android.widget.TextView v, String text) {
-		super.setViewText(v, text);
-		if (v.getId() == android.R.id.text2){
+
+		switch (v.getId()){
+		case android.R.id.text2:
 			if (text == null || text.length() == 0){
 				v.setVisibility(View.INVISIBLE);
 			}else{
 				v.setVisibility(View.VISIBLE);
 			}
+			super.setViewText(v, text);
+			break;
+
+		case R.id.draft:
+			if (text != null && text.equals("1")){
+				v.setVisibility(View.VISIBLE);
+			}else{
+				v.setVisibility(View.INVISIBLE);
+			}
+			break;
+
+			default:
+				super.setViewText(v, text);
 		}
+
 	}
 }

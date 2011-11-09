@@ -12,8 +12,7 @@
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
 		android:clickable="true"
-
-		android:apiKey="0mv3f-QVdQ_DwBwdfkqD1df8s37Ezhu5qfmJR_A" />
+		 />
 
 
 	<View
@@ -24,11 +23,11 @@
 		android:longClickable="false"
 		android:focusable="false" />
 
-	<Button
+	<ImageButton
 		android:id="@+id/center_on_current_location"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:text="Center on my location"
+		android:src="@drawable/ic_my_location"
 		android:layout_alignParentTop="true"
 		android:layout_alignParentRight="true"
 		android:layout_margin="15dip" />
