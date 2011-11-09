@@ -41,6 +41,8 @@ import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -72,6 +74,7 @@ import edu.mit.mobile.android.locast.data.TaggableItem;
 import edu.mit.mobile.android.locast.maps.CastLocationOverlay;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.widget.TagList;
+import edu.mit.mobile.android.locast.widget.TagList.OnTagListChangeListener;
 import edu.mit.mobile.android.utils.ResourceUtils;
 import edu.mit.mobile.android.widget.CheckableTabWidget;
 
@@ -101,7 +104,6 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	private TabHost mTabHost;
 	private EditText mTitleView;
 	private CheckableTabWidget mTabWidget;
-	private String mAuthorUri;
 
 	// media
 	private ListView mCastMediaView;
@@ -137,9 +139,6 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	private static final int
 		LOADER_CAST = 300,
 		LOADER_CASTMEDIA = 301;
-
-	private static final String
-		LOADER_ARGS_URI = "uri";
 
 	private static final String
 		RS_NS = "edu.mit.mobile.android.locast.",
@@ -250,7 +249,30 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 				ImageLoaderAdapter.UNIT_DIP));
 
 		mDescriptionView = (EditText) findViewById(R.id.description);
+		mDescriptionView.addTextChangedListener(new TextWatcher() {
+			
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {}
+			
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count,
+					int after) {}
+			
+			@Override
+			public void afterTextChanged(Editable s) {
+				updateDetailsTab();
+				
+			}
+		});
+		
 		mTags = (TagList) findViewById(R.id.tags);
+		mTags.setOnTagListChangeListener(new OnTagListChangeListener() {
+			
+			@Override
+			public void onTagListChange(TagList v) {
+				updateDetailsTab();
+			}
+		});
 
 		////////////////
 		// initialize map
@@ -352,6 +374,12 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 
 		lm.initLoader(LOADER_CASTMEDIA, null, this);
 
+	}
+
+	protected void updateDetailsTab() {
+		boolean descriptionComplete = mDescriptionView.length() > 0;
+		boolean tagsComplete = mTags.getTags().size() > 0;
+		mTabWidget.setTabChecked(2, descriptionComplete || tagsComplete);
 	}
 
 	@Override
@@ -617,10 +645,9 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		final int draftCol = c.getColumnIndexOrThrow(Cast._DRAFT);
 
 		mIsDraft = !c.isNull(draftCol) && c.getInt(draftCol) != 0;
-		
-		mAuthorUri = c.getString(c.getColumnIndex(Cast._AUTHOR_URI));
 
 		setEditable(Cast.canEdit(this, c));
+		updateDetailsTab();
 	}
 	
 	private void setEditable(boolean isEditable){
@@ -709,11 +736,6 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	public void setTitle(CharSequence title) {
 		((TextView) findViewById(android.R.id.title)).setText(title);
 		super.setTitle(title);
-	}
-
-	private void setDescription(CharSequence description){
-		mDescriptionView.setText(description);
-		mTabWidget.setTabChecked(2, true);
 	}
 
 	/**
@@ -940,6 +962,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 			mClickListeners.put(viewID, onClickListener);
 		}
 
+		// TODO fix cast media title editing
 		public void addOnFocusChangeListener(int viewID, OnFocusChangeListener onFocusChangeListener){
 			mFocusChangeListeners.put(viewID, onFocusChangeListener);
 		}
