@@ -135,6 +135,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	protected final Context context;
 
 	protected final SharedPreferences prefs;
+	private boolean mOverrideCredentials;
 	protected final static HttpRequestInterceptor PREEMPTIVE_AUTH = new HttpRequestInterceptor() {
 	    public void process(
 	            final HttpRequest request,
@@ -162,7 +163,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 						}
 	            	}
 	                authState.setAuthScheme(new BasicScheme());
-	                authState.setCredentials(creds);
+					authState.setCredentials(creds);
 	            }
 	        }
 	    }
@@ -298,6 +299,28 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	}
 
 	/**
+	 * Forces the client to use these credentials instead of the ones loaded in the preferences.
+	 * Use {@link #clearCredentialsOverride()} to remove the override.
+	 * 
+	 * @param username
+	 * @param auth_secret
+	 * @throws IOException
+	 * @see {@link #clearCredentialsOverride()}
+	 */
+	public void overrideCredentials(String username, String auth_secret) throws IOException {
+		mOverrideCredentials = true;
+		setCredentials(username, auth_secret);
+	}
+
+	/**
+	 * Removes the credentials override.
+	 * @see #overrideCredentials(String, String)
+	 */
+	public void clearCredentialsOverride(){
+		mOverrideCredentials = false;
+	}
+
+	/**
 	 * Set the login credentials.
 	 *
 	 * @param credentials
@@ -336,7 +359,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	 */
 	public static Bundle authenticate(Context context, String username, String password) throws IOException, JSONException, NetworkProtocolException {
 		final NetworkClient nc = getInstance(context);
-		nc.setCredentials(username, password);
+		nc.overrideCredentials(username, password);
 		boolean authenticated = false;
 		try {
 			final HttpResponse res = nc.get(PATH_USER);
@@ -353,6 +376,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 				jo = null;
 			}
 			// ensure that this instance is never reused, as it could have invalid authentication cached.
+			nc.clearCredentialsOverride();
 
 			return jsonObjectToBundle(jo, true);
 		}catch (final HttpResponseException e){
@@ -412,7 +436,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 		checkStatusCode(c, false);
 
-		final JSONObject creds = toJsonObject(c);
+		//final JSONObject creds = toJsonObject(c);
 
 		return true;
 	}
@@ -958,18 +982,40 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 		if (PREF_SERVER_URL.equals(key)){
+			if (DEBUG) {
+				Log.i(TAG, "Preferences changed. Updating network settings.");
+			}
 			loadFromPreferences();
 		}
 	}
 
 	@Override
-	public void onAccountsUpdated(Account[] arg0) {
-		loadFromPreferences();
+	public void onAccountsUpdated(Account[] accounts) {
+
+		boolean isAuthenticated = isAuthenticated();
+
+		boolean hasLocastAccount = false;
+		for (Account account : accounts){
+			hasLocastAccount = hasLocastAccount | AuthenticationService.AUTHORITY.equals(account.type);
+			if (hasLocastAccount){
+				break;
+			}
+		}
+
+		// compare our authentication state with the account list and
+		// update it if we detect an inconsistency
+
+		if (isAuthenticated != hasLocastAccount){
+			if (DEBUG){
+				Log.d(TAG, "Locast account addition/removal detected");
+			}
+			loadFromPreferences();
+		}
 	}
 
 	public void loadFromPreferences() {
 		if (DEBUG) {
-			Log.i(TAG, "Preferences changed. Updating network settings.");
+			Log.d(TAG, "loadFromPreferences()");
 		}
 		loadBaseUri();
 		try {
@@ -977,7 +1023,6 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
-		//instances.clear();
 		initClient();
 	}
 
@@ -1027,7 +1072,12 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	 * @throws IOException
 	 */
 	protected synchronized void loadCredentials() throws IOException {
-
+		if (mOverrideCredentials){
+			if (DEBUG){
+				Log.i(TAG, "Credentials not loaded as they were overridden");
+			}
+			return;
+		}
 		final AccountManager am = AccountManager.get(context);
 
 		final Account[] accounts = am.getAccountsByType(AuthenticationService.ACCOUNT_TYPE);
