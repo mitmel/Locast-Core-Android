@@ -37,13 +37,16 @@ import android.widget.TextView;
 
 import com.stackoverflow.ArrayUtils;
 
+import edu.mit.mobile.android.appupdater.AppUpdateChecker;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
 import edu.mit.mobile.android.locast.Constants;
+import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.Sync;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 
@@ -60,6 +63,8 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	private final String[] ITINERARY_DISPLAY = new String[]{Itinerary._TITLE, Itinerary._THUMBNAIL, Itinerary._DESCRIPTION};
 	private final String[] ITINERARY_PROJECTION = ArrayUtils.concat(new String[]{Itinerary._ID}, ITINERARY_DISPLAY);
 
+	private AppUpdateChecker mAppUpdateChecker;
+
 	private static String LOADER_DATA = "edu.mit.mobile.android.locast.LOADER_DATA";
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -74,10 +79,15 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		mListView.addFooterView(LayoutInflater.from(this).inflate(R.layout.list_footer, null), null, false);
 		mListView.setEmptyView(findViewById(android.R.id.empty));
 
+		mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url), new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
+		mAppUpdateChecker.checkForUpdates();
+
 		final Intent intent = getIntent();
 		final String action = intent.getAction();
 
 		mImageCache = ImageCache.getInstance(this);
+
+		checkFirstTime();
 
 		if (Intent.ACTION_VIEW.equals(action)){
 			loadData(intent.getData());
@@ -85,6 +95,8 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		}else if (Intent.ACTION_MAIN.equals(action)){
 			loadData(Itinerary.CONTENT_URI);
 		}
+
+
 	}
 
 	@Override
@@ -170,5 +182,42 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 			startActivity(new Intent(this, BrowserHome.class));
 			break;
 		}
+	}
+
+	private final static int REQUEST_SIGNIN = 0;
+
+
+	/**
+	 * @return true if this seems to be the first time running the app
+	 */
+	private boolean checkFirstTime(){
+		//final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		//final boolean skip = prefs.getBoolean(Authenticator.PREF_SKIP_AUTH, false);
+
+		final NetworkClient nc = NetworkClient.getInstance(this);
+
+		if (nc.isAuthenticated()){
+			return false;
+		}
+		startActivityForResult(new Intent(this, AuthenticatorActivity.class), REQUEST_SIGNIN);
+		return true;
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		switch (requestCode) {
+		case REQUEST_SIGNIN:
+			if (resultCode == RESULT_CANCELED){
+				finish();
+			}
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	private void syncAll(){
+		//startService(new Intent(Intent.ACTION_SYNC, MY_CASTS).putExtra(Sync.EXTRA_EXPLICIT_SYNC, true));
 	}
 }

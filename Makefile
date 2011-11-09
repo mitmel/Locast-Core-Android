@@ -1,4 +1,4 @@
-lang=it en
+lang=it en pt
 # the name of the directory that Locast has been extracted to
 srcdir = Locast
 version := $(shell sed '/versionName/ { s/.*versionName="\([^"]*\)".*/\1/; s/ /_/g; p }; d' AndroidManifest.xml)

@@ -1,6 +1,10 @@
 {
     "package": {
-        "downloadUrl": "http://locast.mit.edu/abruzzo/static/lca.apk"
+        "downloadUrl": "http://mel-pydev.mit.edu/unicef/static/unicef_gis_2.0.9.apk"
+    },
+    "2.0.9 unicef": {
+        "versionCode": 24,
+        "changelog": ["UNICEF rebranding", "Adds cast adding"]
     },
     "2.0.8 beta": {
     	"versionCode": 23,

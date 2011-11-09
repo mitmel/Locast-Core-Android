@@ -1,7 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-  <string name="app_name">Locast Abruzzo</string>
-  <string name="signup_text">Registrati per utilizzare Locast</string>
   <string name="about">Informazioni</string>
   <string name="settings">Impostazioni</string>
   <string name="tab_cast">Cast</string>
@@ -15,6 +13,7 @@
   <string name="error_no_providers">Errore: non ci sono location providers</string>
   <string name="error_no_maps">Errore: non è presente il map handler present.</string>
   <string name="error_cannot_edit">Mi dispiace ma non hai il permesso per modificare questo oggetto.</string>
+  <string name="error_please_enter_a_title">Per cortesia inserisci un titolo.</string>
   <string name="notice_databases_reset">Risistemazione di database locale.</string>
   <string name="section_featured">Consigliato</string>
   <string name="section_drafts">Bozze</string>
@@ -90,7 +89,6 @@
   <string name="privacy_spinner">Livello di privacy</string>
   <string name="refresh">Aggiorna</string>
   <string name="sync_first">Nessun contenuto trovato in locale. Comincio la prima syncronizzazione…</string>
-  <string name="sync_notification">Sto sincronizzondo Locast…</string>
   <string name="sync_success">Sincronizzazione completata.</string>
   <string name="sync_menu">Sincronizza</string>
   <string name="sync_upload_success">Upload del cast effettuato.</string>
@@ -101,32 +99,23 @@
   <string name="error_sync_canceled">Sincronizzazione annullato.</string>
   <string name="error_sync">Non ho potuto sincronizzarmi con il server. Sei connesso?</string>
   <string name="error_sync_no_post">Mi dispiace, c\'è stato un problema nell\'upload del tuo media sul server. Per cortesia riprova a sincronizzare.</string>
-  <string name="error_sync_no_data_network">Non può sincronizzare Locast: no rete di dati. Per cortesia verifica la tua connessione e riprova.</string>
   <string name="sync_downloading_cast">Sto caricando \"%1$s\"…</string>
   <string name="sync_uploading_cast">Uploading \"%1$s\"…</string>
-  <string name="username_label">Locast nome utente</string>
   <string name="password_label">Password</string>
   <string name="login_message_authenticating">autenticando…</string>
-  <string name="login_message_login_empty_username">Per cortesia inserisci il tuo Username e la tua password per Locast.</string>
+  <string name="login_message_loginfail">Nome utente o password non valida.</string>
+  <string name="login_message_login_empty_password">Per cortesia inserisci la password.</string>
   <string name="login_title">%1$s Login</string>
-  <string name="mobilevideo_video_edit_title">Locast Video Editor</string>
-  <string name="annotate_cast">Annota Cast</string>
   <string name="moment_description_hint">Descrivi brevemente questo momento (opzionale)</string>
   <string name="save_moment">Salva Momento</string>
   <string name="error_moment_saving_moment">Errore nel salvare del momento :-(</string>
   <string name="moment_saved">Momento salvato.</string>
-  <string name="play_introduction">Mostra Introduzione</string>
   <string name="pref_cat_account">Account</string>
   <string name="pref_title_username">Username</string>
   <string name="pref_title_password">Password</string>
   <string name="pref_cat_advanced">Avanzato</string>
   <string name="pref_title_server_url">Server URL</string>
-  <string name="pref_locast_site">Locast Sito</string>
-  <string name="pref_locast_site_dialog_title">Scegli un Locast sito</string>
-  <string name="pref_locast_site_summary">Scegli un altro Locast sito.</string>
   <string name="pref_locast_site_message">Attenzione: modificazione di questo cancellerà l\'attuale associazione (pairing) e anche il database locale. Tutti i casts non-pubblicati saranno cancellati.</string>
-  <string name="welcome_message">Benvenuti! Locast Abruzzo è una applicazione turistica geo-localizzata che ti aiuta a visitare l\'Abruzzo.</string>
-  <string name="auth_signin_or_skip_notice">Per caricare foto e video sulla piattaforma Locast Abruzzo devi registrare un account</string>
   <string name="auth_signin_register">Entra / Registrati</string>
   <string name="auth_skip">Salta</string>
   <string name="title_upcoming_events">Prossimi eventi</string>
@@ -134,7 +123,6 @@
   <string name="title_nearby">%1$s Vicini</string>
   <string name="title_favorited">Preferiti %1$s</string>
   <string name="title_unfavorited">Non preferiti %1$s</string>
-  <string name="itinerary_no_casts">Non ci sono casts in questo itinerario.</string>
   <string name="list_empty">Non ci sono oggetti in questa lista.</string>
   <string name="error_loading_event">Errore nel caricare l\'evento.</string>
   <string name="auth_username_hint">alice\@example.org</string>
@@ -142,7 +130,6 @@
   <string name="auth_login">Login</string>
   <string name="empty_castmedia">Non ci sono media in questo cast.</string>
   <string name="error_cast_media_no_activities">Ci dispiace, ma non è possibile visionare questo media sul tuo cellulare.</string>
-  <string name="itineraries">Itinerari</string>
   <string name="nearby">Vicino</string>
   <string name="favorites">Preferiti</string>
   <string name="events">Eventi</string>
@@ -151,12 +138,8 @@
   <string name="featured_casts">Cast consigliati</string>
   <string name="follow">Segui</string>
   <string name="unfollow">Smetti di seguire</string>
-  <string name="auth_error_server_returned_invalid_data">Il server ha comunicato dati non corretti.</string>
   <string name="auth_error_could_not_contact_server">Impossibile contattare il server.</string>
+  <string name="auth_error_server_returned_invalid_data">Il server ha comunicato dati non corretti.</string>
   <string name="auth_error_network_protocol_error">Errore di protocollo Network: %1$s</string>
-  <string name="error_please_enter_a_title">Per cortesia inserisci un titolo.</string>
-  <string name="login_message_loginfail">Nome utente o password non valida.</string>
-  <string name="login_message_login_empty_password">Per cortesia inserisci la password.</string>
   <string name="videoplayer_notice_loading_video">Caricamento video...</string>
-  <string name="itinerary_detail_itinerary_by">Itinerario da %1$s</string>
 </resources>

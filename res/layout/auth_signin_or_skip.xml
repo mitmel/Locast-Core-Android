@@ -6,28 +6,22 @@
   android:background="@color/solid_version_of_stripes"
   android:orientation="vertical">
   <include layout="@layout/action_bar" />
-  
-  <TextView
-	android:id="@+id/message"
-	android:text="@string/welcome_message"
-	style="@style/Notice.Info"
-	android:layout_width="fill_parent"
-	android:layout_height="wrap_content"
-	android:layout_below="@id/action_bar" />
 	
 	<TextView android:id="@+id/sign_in_or_skip_notice"
 		android:text="@string/auth_signin_or_skip_notice"
-		android:layout_below="@id/message"
+		android:layout_below="@id/action_bar"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:layout_centerHorizontal="true"
-	android:gravity="center" android:layout_margin="40sp"/>
+		android:gravity="center" android:layout_margin="40sp" />
+		
 	<Button
 		android:id="@+id/sign_in"
 		android:text="@string/auth_signin_register"
 		android:layout_below="@id/sign_in_or_skip_notice"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content" android:layout_centerHorizontal="true"/>
+		
 	<Button
 		android:id="@+id/skip"
 		android:text="@string/auth_skip"
@@ -38,7 +32,7 @@
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		
-	android:layout_marginTop="20sp"/>
+		android:layout_marginTop="20sp" />
        
        
 </RelativeLayout>
