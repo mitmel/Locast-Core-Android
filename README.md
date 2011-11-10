@@ -33,6 +33,8 @@ The URL of the JSON document is stored in the key `app_update_url` in
 Dependencies
 ------------
 *   [MEL ImageCache][]
+*   [MelAUtils][]
+*   [AppUpdateChecker][]
 *   [CWAC Task][] (included)
 *   [CWAC Bus][] (included)
 *   [CWAC Adapter Wrapper][] (included)
@@ -81,3 +83,5 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 [Pootle]: http://translate.sourceforge.net/wiki/pootle
 [MEL ImageCache]: https://github.com/mitmel/Android-Image-Cache
 [mel]: http://mobile.mit.edu/
+[MelAUtils]: https://github.com/mitmel/MelAUtils
+[AppUpdateChecker]: https://github.com/mitmel/AppUpdateChecker
