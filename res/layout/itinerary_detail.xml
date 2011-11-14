@@ -1,60 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="fill_parent"
-	android:layout_height="fill_parent"
-	android:orientation="vertical"
->
-	<include
-		layout="@layout/action_bar" />
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
 
-	<RelativeLayout
-		android:padding="10dip"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:background="@android:color/white"
-	>
-		<ToggleButton
-			android:id="@+id/follow"
-			android:text="@string/follow"
-			android:layout_width="80sp"
-			android:layout_height="wrap_content"
+    <include layout="@layout/action_bar" />
 
-			android:layout_alignParentLeft="true"
-			android:layout_centerVertical="true"
-			android:layout_marginRight="15dip"
-			android:textOn="@string/unfollow"
-			android:textOff="@string/follow" android:visibility="gone"/>
-		<TextView
-			android:id="@+id/title"
-			style="@style/ItineraryTitle"
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:padding="10dip" >
 
-			android:layout_width="fill_parent"
-			android:layout_height="wrap_content"
+        <ToggleButton
+            android:id="@+id/follow"
+            android:layout_width="80sp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="15dip"
+            android:text="@string/follow"
+            android:textOff="@string/follow"
+            android:textOn="@string/unfollow"
+            android:visibility="gone" />
 
-			android:layout_toRightOf="@id/follow"
-			android:layout_alignWithParentIfMissing="true"
-			android:layout_alignParentTop="true"
-			android:layout_alignParentRight="true" />
-	</RelativeLayout>
+        <TextView
+            android:id="@+id/title"
+            style="@style/ItineraryTitle"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignWithParentIfMissing="true"
+            android:layout_toRightOf="@id/follow" />
+    </RelativeLayout>
 
-	<include layout="@layout/itinerary_detail_list_empty" />
-	<ListView
-		android:id="@+id/casts"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:layout_weight="2"
-		android:headerDividersEnabled="false"
-		android:footerDividersEnabled="true"
-		android:scrollbarAlwaysDrawVerticalTrack="true" 
-		android:scrollbarDefaultDelayBeforeFade="1000"
-		
-		/>
-		
-		<Button android:id="@+id/add_cast"
-		android:layout_width="fill_parent" 
-		android:layout_height="wrap_content"
-		android:text="@string/add_cast" 
-		android:drawableLeft="@drawable/ic_add" />
+    <FrameLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="3" >
+
+        <org.osmdroid.views.MapView
+            android:id="@+id/map"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_weight="3"
+            android:apiKey="0mv3f-QVdQ_DwBwdfkqD1df8s37Ezhu5qfmJR_A"
+            android:clickable="true"
+            android:visibility="invisible" />
+
+        <View
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:background="@drawable/shadow_top_bottom"
+            android:clickable="false" />
+    </FrameLayout>
+
+    <include layout="@layout/itinerary_detail_list_empty" />
+
+    <ListView
+        android:id="@+id/casts"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="2"
+        android:footerDividersEnabled="true"
+        android:headerDividersEnabled="false"
+        android:scrollbarAlwaysDrawVerticalTrack="true"
+        android:scrollbarDefaultDelayBeforeFade="1000" />
+
+    <Button
+        android:id="@+id/add_cast"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:drawableLeft="@drawable/ic_add"
+        android:text="@string/add_cast" />
 
 </LinearLayout>
