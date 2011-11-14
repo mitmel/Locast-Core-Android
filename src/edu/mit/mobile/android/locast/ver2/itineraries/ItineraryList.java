@@ -19,9 +19,11 @@ package edu.mit.mobile.android.locast.ver2.itineraries;
 
 import android.content.ContentUris;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -44,6 +46,7 @@ import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
 import edu.mit.mobile.android.locast.Constants;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.MediaProvider;
@@ -63,6 +66,8 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	private ImageCache mImageCache;
 
 	private boolean firstTime;
+
+	private static final boolean REQUIRE_LOGIN = false;
 
 	private final String[] ITINERARY_DISPLAY = new String[]{Itinerary._TITLE, Itinerary._THUMBNAIL, Itinerary._DESCRIPTION};
 	private final String[] ITINERARY_PROJECTION = ArrayUtils.concat(new String[]{Itinerary._ID}, ITINERARY_DISPLAY);
@@ -92,6 +97,15 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		mImageCache = ImageCache.getInstance(this);
 
 		firstTime = checkFirstTime();
+
+		if (REQUIRE_LOGIN){
+			final NetworkClient nc = NetworkClient.getInstance(this);
+
+			if (!nc.isAuthenticated()){
+				startActivityForResult(new Intent(this, AuthenticatorActivity.class), REQUEST_SIGNIN);
+				return;
+			}
+		}
 
 		if (Intent.ACTION_VIEW.equals(action)){
 			loadData(intent.getData());
@@ -140,7 +154,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		lm.initLoader(0, loaderArgs, this);
 		setTitle(R.string.itineraries);
 		mUri = data;
-		//startService(new Intent(Intent.ACTION_SYNC, data));
+		startService(new Intent(Intent.ACTION_SYNC, data));
 
 	}
 	@Override
@@ -204,16 +218,10 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	 * @return true if this seems to be the first time running the app
 	 */
 	private boolean checkFirstTime(){
-		//final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-		//final boolean skip = prefs.getBoolean(Authenticator.PREF_SKIP_AUTH, false);
+		final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		final boolean skip = prefs.getBoolean(Authenticator.PREF_SKIP_AUTH, false);
 
-		final NetworkClient nc = NetworkClient.getInstance(this);
-
-		if (nc.isAuthenticated()){
-			return false;
-		}
-		startActivityForResult(new Intent(this, AuthenticatorActivity.class), REQUEST_SIGNIN);
-		return true;
+		return skip;
 	}
 
 	@Override
