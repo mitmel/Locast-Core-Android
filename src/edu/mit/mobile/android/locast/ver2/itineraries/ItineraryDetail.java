@@ -300,8 +300,17 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 					final List<GeoPoint> path = Itinerary.getPath(c);
 					mPathOverlay.setPath(path);
 
-					mMapController.zoomToSpan(mPathOverlay.getLatSpanE6(), mPathOverlay.getLonSpanE6());
 					mMapController.setCenter(mPathOverlay.getCenter());
+					// this needs to be run after the MapView has been first sized due to a bug in zoomToSpan()
+					mMapView.post(new Runnable() {
+
+						@Override
+						public void run() {
+							mMapController.zoomToSpan(mPathOverlay.getLatSpanE6(), mPathOverlay.getLonSpanE6());
+						}
+					});
+
+
 					mMapView.setVisibility(View.VISIBLE);
 				}
 			}else{
