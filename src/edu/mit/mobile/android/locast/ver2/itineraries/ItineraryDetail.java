@@ -50,7 +50,6 @@ import android.widget.TextView;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
@@ -279,7 +278,7 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 			break;
 
 		case LOADER_CASTS:
-			cl = new CursorLoader(this, uri, Cast.PROJECTION, Cast._AUTHOR_URI + "=?", new String[]{Authenticator.getUserUri(this)}, Cast.SORT_ORDER_DEFAULT);
+			cl = new CursorLoader(this, uri, Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
 			break;
 
 		}
