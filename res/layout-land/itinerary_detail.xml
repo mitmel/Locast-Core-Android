@@ -74,7 +74,7 @@
                 android:clickable="false" />
         </FrameLayout>
 
-        <include layout="@layout/itinerary_detail_list_empty" />
+        <include layout="@layout/itinerary_detail_list_empty" android:id="@android:id/empty" />
 
         <ListView
             android:id="@+id/casts"

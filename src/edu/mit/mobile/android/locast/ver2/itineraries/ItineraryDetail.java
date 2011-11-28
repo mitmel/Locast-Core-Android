@@ -100,8 +100,7 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 
 		mCastView.addHeaderView(layoutInflater.inflate(R.layout.itinerary_detail_list_header, mCastView, false), null, false);
 		mCastView.addFooterView(layoutInflater.inflate(R.layout.list_footer, null), null, false);
-		mCastView.setEmptyView(layoutInflater.inflate(R.layout.itinerary_detail_list_empty, mCastView, false));
-		mCastView.setEmptyView(findViewById(R.id.empty_message));
+		mCastView.setEmptyView(findViewById(android.R.id.empty));
 
 
 		findViewById(R.id.add_cast).setOnClickListener(this);
@@ -293,7 +292,10 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 		switch (loader.getId()){
 		case LOADER_ITINERARY:{
 			if (c.moveToFirst()){
-				((TextView)findViewById(R.id.description)).setText(c.getString(c.getColumnIndex(Itinerary._DESCRIPTION)));
+				final String description = c.getString(c.getColumnIndex(Itinerary._DESCRIPTION));
+				((TextView)findViewById(R.id.description)).setText(description);
+				((TextView)findViewById(R.id.description_empty)).setText(description);
+
 				((TextView)findViewById(R.id.title)).setText(c.getString(c.getColumnIndex(Itinerary._TITLE)));
 
 				if (USE_MAP){

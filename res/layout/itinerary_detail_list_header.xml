@@ -1,26 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="fill_parent"
+<LinearLayout
+   	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical"
+	android:id="@+id/linearLayout1"
 	android:layout_height="wrap_content"
+	android:layout_width="fill_parent"
 	android:paddingLeft="10dip"
 	android:paddingRight="10dip"
 	android:paddingTop="10dip"
 >
-	<LinearLayout
-		android:orientation="vertical"
-		android:id="@+id/linearLayout1"
+	<TextView
+		android:id="@+id/description"
+		android:paddingBottom="10dip"
 		android:layout_height="wrap_content"
-		android:layout_width="fill_parent"
-	>
-		<TextView
-			android:id="@+id/description"
-			android:paddingBottom="10dip"
-			android:layout_height="wrap_content"
-			android:layout_width="fill_parent" />
-		<TextView
-			android:textStyle="bold"
-			android:layout_height="wrap_content"
-			android:layout_width="wrap_content" android:text="@string/my_casts"/>
-	</LinearLayout>
-</FrameLayout>
+		android:layout_width="fill_parent" />
+	<TextView
+		android:textStyle="bold"
+		android:layout_height="wrap_content"
+		android:layout_width="wrap_content" android:text="@string/my_casts"/>
+</LinearLayout>
