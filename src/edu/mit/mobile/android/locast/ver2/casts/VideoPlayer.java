@@ -20,7 +20,7 @@ package edu.mit.mobile.android.locast.ver2.casts;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
-import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
@@ -289,7 +289,7 @@ public class VideoPlayer extends FragmentActivity implements
 	}
 
 	@Override
-	public void onImageLoaded(long id, Uri imageUri, Bitmap image) {
-		((ImageView)findViewById((int) id)).setImageBitmap(image);
+	public void onImageLoaded(long id, Uri imageUri, Drawable image) {
+		((ImageView)findViewById((int) id)).setImageDrawable(image);
 	}
 }
