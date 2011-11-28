@@ -308,7 +308,11 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 
 						@Override
 						public void run() {
-							mMapController.zoomToSpan(mPathOverlay.getLatSpanE6(), mPathOverlay.getLonSpanE6());
+							if (mMapView.getHeight() > 0){
+								mMapController.zoomToSpan(mPathOverlay.getLatSpanE6(), mPathOverlay.getLonSpanE6());
+							}else{
+								mMapView.post(this);
+							}
 						}
 					});
 
