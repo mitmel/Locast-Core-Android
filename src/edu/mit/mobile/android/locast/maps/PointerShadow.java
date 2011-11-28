@@ -86,10 +86,8 @@ public class PointerShadow extends FrameLayout {
 
 		default:
 		case ORIENTATION_TOP:
-			mShadow = res.getDrawable(
-					R.drawable.map_overshadow_horizontal);
-			mPointer = res.getDrawable(
-					R.drawable.map_overshadow_pointer);
+			mShadow = res.getDrawable(R.drawable.map_overshadow_horizontal);
+			mPointer = res.getDrawable(R.drawable.map_overshadow_pointer);
 			break;
 		}
 
@@ -112,6 +110,7 @@ public class PointerShadow extends FrameLayout {
 
 		final int w = getWidth();
 		final int h = getHeight();
+		
 		// short-circuit and don't draw the pointer if the point is missing.
 		if (!mPosSet) {
 			switch(mOrientation){

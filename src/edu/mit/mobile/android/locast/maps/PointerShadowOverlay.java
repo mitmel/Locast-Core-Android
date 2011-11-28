@@ -39,7 +39,7 @@ public class PointerShadowOverlay extends Overlay {
 
 	public PointerShadowOverlay(ResourceProxy resourceProxy, PointerShadow pointerShadow) {
 		super(resourceProxy);
-		mPointerShadow = pointerShadow;
+		mPointerShadow = pointerShadow;		
 	}
 
 	public void setPointer(GeoPoint gp) {
@@ -56,8 +56,8 @@ public class PointerShadowOverlay extends Overlay {
 		if (mGeoPoint == null){
 			return;
 		}
-
+		
 		mapView.getProjection().toPixels(mapView.getMapCenter(), p);
-		mPointerShadow.setOffset(p.x, p.y);
+		mPointerShadow.setOffset(-p.x + (int)(mapView.getWidth() * 0.5), -p.y);
 	}
 }
