@@ -1,4 +1,5 @@
 package edu.mit.mobile.android.locast.sync;
+
 /*
  * Copyright (C) 2011  MIT Mobile Experience Lab
  *
@@ -22,21 +23,32 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.impl.cookie.DateParseException;
+import org.apache.http.impl.cookie.DateUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.content.ContentProviderClient;
 import android.content.ContentProviderOperation;
+import android.content.ContentProviderResult;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.OperationApplicationException;
 import android.content.SyncResult;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.util.Log;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.data.Comment;
@@ -49,11 +61,14 @@ import edu.mit.mobile.android.locast.data.SyncException;
 import edu.mit.mobile.android.locast.data.SyncMap;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
+import edu.mit.mobile.android.utils.StreamUtils;
 
 public class SyncEngine {
 	private static final String TAG = SyncEngine.class.getSimpleName();
 
 	private static final HashMap<String, Class<? extends JsonSyncableItem>> TYPE_MAP = new HashMap<String, Class<? extends JsonSyncableItem>>();
+
+	private static final boolean DEBUG = Constants.DEBUG;
 
 	static {
 		TYPE_MAP.put(MediaProvider.TYPE_CAST_DIR, Cast.class);
@@ -72,78 +87,312 @@ public class SyncEngine {
 		TYPE_MAP.put(MediaProvider.TYPE_EVENT_ITEM, Event.class);
 	}
 
-
 	private final Context mContext;
 	private final NetworkClient mNetworkClient;
+
+	private static final long AGE_EQUALITY_SLOP = 1000; // ms; the amount of
+														// time that an age can
+														// differ by and still
+														// be considered equal.
 
 	public SyncEngine(Context context, NetworkClient networkClient) {
 		mContext = context;
 		mNetworkClient = networkClient;
 	}
 
-	private static final String[] EXIST_QUERY_PROJECTION = new String[]{JsonSyncableItem._ID, JsonSyncableItem._PUBLIC_URI};
+	private static final String[] EXIST_QUERY_PROJECTION = new String[] { JsonSyncableItem._ID,
+			JsonSyncableItem._PUBLIC_URI, JsonSyncableItem._MODIFIED_DATE,
+			JsonSyncableItem._CREATED_DATE };
 
-	public boolean sync(Uri toSync, Account account, Bundle extras, ContentProviderClient provider, SyncResult syncResult) throws RemoteException, SyncException, JSONException, IOException, NetworkProtocolException {
+	private static int FORMAT_ARGS_DEBUG  = android.text.format.DateUtils.FORMAT_SHOW_TIME | android.text.format.DateUtils.FORMAT_SHOW_YEAR | android.text.format.DateUtils.FORMAT_SHOW_DATE;
+
+	public boolean sync(Uri toSync, Account account, Bundle extras, ContentProviderClient provider,
+			SyncResult syncResult) throws RemoteException, SyncException, JSONException,
+			IOException, NetworkProtocolException, NoPublicPath, OperationApplicationException {
+
+		final HashMap<String, SyncStatus> mSyncStatus = new HashMap<String, SyncEngine.SyncStatus>();
+
 		final ArrayList<ContentProviderOperation> cpo = new ArrayList<ContentProviderOperation>();
 
-		final ContentProviderOperation.Builder q = ContentProviderOperation.newAssertQuery(Cast.CONTENT_URI);
+		final ContentProviderOperation.Builder q = ContentProviderOperation
+				.newAssertQuery(Cast.CONTENT_URI);
 
-		//cpo.add(q.build());
+		// cpo.add(q.build());
 
-		//final Cursor c = provider.query(url, projection, selection, selectionArgs, sortOrder)
+		// final Cursor c = provider.query(url, projection, selection,
+		// selectionArgs, sortOrder)
+
+		final String pubPath = MediaProvider.getPublicPath(mContext, toSync);
+
+		final HttpResponse hr = mNetworkClient.get(pubPath);
+
+		// the time compensation below allows a time-based synchronization to
+		// function even if
+		// the local clock is entirely wrong. The server's time is extracted
+		// using the Date header
+		// and all are compared relative to the respective clock reference. Any
+		// data that's stored on
+		// the mobile should be stored relative to the local clock and the
+		// server will respect the same.
+		long serverTime;
+		final long localTime = System.currentTimeMillis();
 
 		try {
-			final String pubPath = MediaProvider.getPublicPath(mContext, toSync);
-			final NetworkClient nc = NetworkClient.getInstance(mContext);
-			final JSONArray ja = nc.getArray(pubPath);
-			final int len = ja.length();
-			final ContentValues[] cvs = new ContentValues[len];
-
-			final SyncMap sm = getSyncMap(provider, toSync);
-
-			for (int i = 0; i < len; i++){
-				cvs[i] = JsonSyncableItem.fromJSON(mContext, null, ja.getJSONObject(i), sm);
+			final Header hDate = hr.getFirstHeader("Date");
+			if (hDate == null) {
+				throw new DateParseException("No Date header in http response");
 			}
+			serverTime = DateUtils.parseDate(hDate.getValue()).getTime();
 
-			final StringBuilder sb = new StringBuilder();
-			sb.append(JsonSyncableItem._PUBLIC_URI);
-			sb.append(" in (");
-			for (final ContentValues cv: cvs){
-				final String uri = cv.getAsString(JsonSyncableItem._PUBLIC_URI);
-				sb.append("'");
-				sb.append(uri);
-				sb.append("'");
-			}
-			sb.append(")");
-
-			//Log.d(TAG, ListUtils.joinAsStrings(Arrays.asList(cvs), ","));
-
-			final Cursor c = provider.query(toSync, EXIST_QUERY_PROJECTION, sb.toString(), null, null);
-			for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
-				Log.d(TAG, "already have " + c.getString(c.getColumnIndex(JsonSyncableItem._PUBLIC_URI)));
-			}
-
-		} catch (final NoPublicPath e) {
-			Log.e(TAG, "no public path", e);
+		} catch (final DateParseException e) {
+			Log.w(TAG,
+					"could not retrieve date from server. Using local time, which may be incorrect.",
+					e);
+			serverTime = localTime;
 		}
 
+		final long localOffset = (localTime - serverTime); // add this to the
+															// server time to
+															// get the local
+															// time
+
+		if (Math.abs(localOffset) > 30 * 60 * 1000) {
+			Log.w(TAG, "local clock is off by " + localOffset + "ms");
+		}
+
+		final HttpEntity ent = hr.getEntity();
+		final JSONArray ja = new JSONArray(StreamUtils.inputStreamToString(ent.getContent()));
+		ent.consumeContent();
+
+		final int len = ja.length();
+		final String[] selectionArgs = new String[len];
+
+		// the sync map will convert the json data to ContentValues
+		final SyncMap syncMap = getSyncMap(provider, toSync);
+
+		// build the query to see which items are already in the database
+		final StringBuilder selection = new StringBuilder();
+		selection.append(JsonSyncableItem._PUBLIC_URI);
+		selection.append(" in (");
+
+		for (int i = 0; i < len; i++) {
+
+			final JSONObject jo = ja.getJSONObject(i);
+			final ContentValues cv = JsonSyncableItem.fromJSON(mContext, null, jo,
+					syncMap);
+
+			final String remoteUri = cv.getAsString(JsonSyncableItem._PUBLIC_URI);
+			final long remoteModified = cv.getAsLong(JsonSyncableItem._MODIFIED_DATE);
+			selectionArgs[i] = remoteUri;
+
+			// the status starts out based on this knowledge and gets filled in
+			// as the sync progresses
+			final SyncStatus syncStatus = new SyncStatus(null, remoteUri, SyncState.REMOTE_ONLY);
+			syncStatus.remoteAge = serverTime - remoteModified;
+			syncStatus.remoteCVs = cv;
+			syncStatus.remoteJson = jo;
+
+			mSyncStatus.put(remoteUri, syncStatus);
+
+			// add in a placeholder for the query
+			selection.append('?');
+			if (i != (len - 1)) {
+				selection.append(',');
+			}
+		}
+
+		selection.append(")");
+
+		// Log.d(TAG, ListUtils.joinAsStrings(Arrays.asList(cvs), ","));
+
+		final Cursor c = provider.query(toSync, EXIST_QUERY_PROJECTION, selection.toString(),
+				selectionArgs, null);
+
+		final int pubUriCol = c.getColumnIndex(JsonSyncableItem._PUBLIC_URI);
+		final int modifiedCol = c.getColumnIndex(JsonSyncableItem._MODIFIED_DATE);
+		final int idCol = c.getColumnIndex(JsonSyncableItem._ID);
+
+		for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
+			final String pubUri = c.getString(pubUriCol);
+			final long id = c.getLong(idCol);
+			final Uri localUri = ContentUris.withAppendedId(toSync, id);
+			final SyncStatus itemStatus = mSyncStatus.get(pubUri);
+
+			Log.d(TAG, "adding "+ localUri + " to sync map");
+			// make the status searchable by both remote and local uri
+			mSyncStatus.put(localUri.toString(), itemStatus);
+
+			final long itemModified = c.getLong(modifiedCol);
+			final long localAge = localTime - itemModified;
+
+			itemStatus.localAge = localAge;
+
+			final long ageDifference = Math.abs(localAge - itemStatus.remoteAge);
+
+			if (ageDifference <= AGE_EQUALITY_SLOP) {
+				itemStatus.state = SyncState.UP_TO_DATE;
+				Log.d(TAG, pubUri + " is up to date");
+
+			} else if (localAge > itemStatus.remoteAge) {
+				if (DEBUG) {
+					final long serverModified = itemStatus.remoteCVs
+							.getAsLong(JsonSyncableItem._MODIFIED_DATE);
+
+					Log.d(TAG,
+							pubUri
+									+ " : local is "
+									+ ageDifference
+									+ "ms older ("
+									+ android.text.format.DateUtils.formatDateTime(mContext,
+											itemModified, FORMAT_ARGS_DEBUG)
+									+ ") than remote ("
+									+ android.text.format.DateUtils.formatDateTime(mContext,
+											serverModified, FORMAT_ARGS_DEBUG) + "); updating local copy...");
+				}
+
+				itemStatus.state = SyncState.REMOTE_DIRTY;
+
+				final ContentProviderOperation.Builder b = ContentProviderOperation
+						.newUpdate(localUri);
+
+				// update this so it's in the local timescale
+				correctServerOffset(itemStatus.remoteCVs, JsonSyncableItem._CREATED_DATE,
+						localOffset);
+				correctServerOffset(itemStatus.remoteCVs, JsonSyncableItem._MODIFIED_DATE,
+						localOffset);
+
+				b.withValues(itemStatus.remoteCVs);
+				cpo.add(b.build());
+
+			} else if (localAge < itemStatus.remoteAge) {
+				if (DEBUG) {
+					final long serverModified = itemStatus.remoteCVs
+							.getAsLong(JsonSyncableItem._MODIFIED_DATE);
+
+					Log.d(TAG,
+							pubUri
+									+ " : local is "
+									+ ageDifference
+									+ "ms newer ("
+									+ android.text.format.DateUtils.formatDateTime(mContext,
+											itemModified, FORMAT_ARGS_DEBUG)
+									+ ") than remote ("
+									+ android.text.format.DateUtils.formatDateTime(mContext,
+											serverModified, FORMAT_ARGS_DEBUG) + "); publishing to server...");
+				}
+				itemStatus.state = SyncState.LOCAL_DIRTY;
+
+				// publish the local
+			}
+		}
+
+		c.close();
+
+		for (final Map.Entry<String, SyncStatus> entry : mSyncStatus.entrySet()) {
+			final String pubUri = entry.getKey();
+			final SyncStatus status = entry.getValue();
+			if (status.state == SyncState.REMOTE_ONLY) {
+				Log.d(TAG, pubUri + " is not yet stored locally, adding...");
+
+				// update this so it's in the local timescale
+				correctServerOffset(status.remoteCVs, JsonSyncableItem._CREATED_DATE,
+						localOffset);
+				correctServerOffset(status.remoteCVs, JsonSyncableItem._MODIFIED_DATE,
+						localOffset);
+
+				final ContentProviderOperation.Builder b = ContentProviderOperation
+						.newInsert(toSync);
+				b.withValues(status.remoteCVs);
+
+				cpo.add(b.build());
+			}
+		}
+
+		final String[] PUB_URI_PROJECTION = new String[]{JsonSyncableItem._ID, JsonSyncableItem._PUBLIC_URI};
+
+		if (cpo.size() > 0) {
+			final ContentProviderResult[] r = provider.applyBatch(cpo);
+			for (final ContentProviderResult res : r){
+				SyncStatus ss = mSyncStatus.get(res.uri.toString());
+
+				if (ss == null){
+					final Cursor c2 = provider.query(res.uri, PUB_URI_PROJECTION, null, null, null);
+					try {
+						if (c2.moveToFirst()){
+							final String pubUri = c2.getString(c2.getColumnIndex(JsonSyncableItem._PUBLIC_URI));
+							ss = mSyncStatus.get(pubUri);
+						}
+					}finally{
+						c2.close();
+					}
+				}
+
+				if (ss != null){
+					syncMap.onPostSyncItem(mContext, res.uri, ss.remoteJson, res.count != null ? res.count == 1: true);
+				}else{
+					Log.e(TAG, "can't get sync status for "+ res.uri);
+				}
+			}
+			Log.d(TAG, "batch updates successfully applied.");
+		} else {
+			Log.d(TAG, "no updates to perform.");
+		}
+
+		mSyncStatus.clear();
 
 		return true;
 	}
 
-	private SyncMap getSyncMap(ContentProviderClient provider, Uri toSync) throws RemoteException, SyncException {
-		final String type = provider.getType(toSync);
+	private void correctServerOffset(ContentValues cv, String key, long localOffset) {
+		final long serverModified = cv.getAsLong(key);
+		cv.put(key, serverModified + localOffset);
+	}
+
+	/**
+	 * Retrieves the class which maps to the given type of the specified uri.
+	 * The map is statically defined in this class.
+	 *
+	 * @param provider
+	 *            a provider which can retrieve the type for the given uri
+	 * @param data
+	 *            a uri to a dir or item which the engine knows how to handle
+	 * @return the class which contains the sync map (and other helpers) for the
+	 *         specified uri
+	 * @throws SyncException
+	 *             if the map cannot be found
+	 * @throws RemoteException
+	 *             if there is an error communicating with the provider
+	 */
+	public Class<? extends JsonSyncableItem> getSyncClass(ContentProviderClient provider, Uri data)
+			throws SyncException, RemoteException {
+		final String type = provider.getType(data);
 
 		final Class<? extends JsonSyncableItem> syncable = TYPE_MAP.get(type);
-		if (syncable == null){
-			throw new SyncException("cannot figure out how to synchronize "+toSync+" which has type " + type);
+		if (syncable == null) {
+			throw new SyncException("cannot find " + data + ", which has type " + type
+					+ ", in the SyncEngine's sync map");
 		}
+		return syncable;
+	}
+
+	/**
+	 * Retrieves the sync map from the class that maps to the given uri
+	 *
+	 * @param provider
+	 * @param toSync
+	 * @return
+	 * @throws RemoteException
+	 * @throws SyncException
+	 */
+	public SyncMap getSyncMap(ContentProviderClient provider, Uri toSync) throws RemoteException,
+			SyncException {
+		final Class<? extends JsonSyncableItem> syncable = getSyncClass(provider, toSync);
 
 		try {
 			final Field syncMap = syncable.getField("SYNC_MAP");
 			final int modifiers = syncMap.getModifiers();
-			if (!Modifier.isStatic(modifiers)){
-				throw new SyncException("sync map for "+syncable+" is not static");
+			if (!Modifier.isStatic(modifiers)) {
+				throw new SyncException("sync map for " + syncable + " is not static");
 			}
 			return (SyncMap) syncMap.get(null);
 
@@ -152,7 +401,8 @@ public class SyncEngine {
 			se.initCause(e);
 			throw se;
 		} catch (final NoSuchFieldException e) {
-			final SyncException se = new SyncException("SYNC_MAP static field missing from "+ syncable);
+			final SyncException se = new SyncException("SYNC_MAP static field missing from "
+					+ syncable);
 			se.initCause(e);
 			throw se;
 		} catch (final IllegalArgumentException e) {
@@ -166,4 +416,23 @@ public class SyncEngine {
 		}
 	}
 
+	private enum SyncState {
+		UP_TO_DATE, LOCAL_DIRTY, REMOTE_DIRTY, LOCAL_ONLY, REMOTE_ONLY, DELETED_LOCALLY, DELETED_REMOTELY
+	}
+
+	private static class SyncStatus {
+		public SyncStatus(String local, String remote, SyncState state) {
+			this.local = local;
+			this.remote = remote;
+			this.state = state;
+		}
+
+		String local;
+		String remote;
+		SyncState state;
+		long localAge;
+		long remoteAge;
+		JSONObject remoteJson;
+		ContentValues remoteCVs;
+	}
 }

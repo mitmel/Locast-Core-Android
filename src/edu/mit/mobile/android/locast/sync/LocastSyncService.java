@@ -1,4 +1,5 @@
 package edu.mit.mobile.android.locast.sync;
+
 /*
  * Copyright (C) 2011  MIT Mobile Experience Lab
  *
@@ -25,15 +26,20 @@ import android.accounts.Account;
 import android.app.Service;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.OperationApplicationException;
 import android.content.SyncResult;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.data.MediaProvider;
+import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.SyncException;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
@@ -45,11 +51,25 @@ public class LocastSyncService extends Service {
 
 	public static final String EXTRA_SYNC_URI = "edu.mit.mobile.android.locast.sync.EXTRA_SYNC_URI";
 
+	public static void startSync(Context context, Uri what){
+		startSync(Authenticator.getFirstAccount(context), what, false);
+	}
+
+	public static void startSync(Account account, Uri what, boolean explicitSync){
+		final Bundle b = new Bundle();
+
+		if (explicitSync){
+			b.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
+		}
+		b.putString(LocastSyncService.EXTRA_SYNC_URI, what.toString());
+
+		ContentResolver.requestSync(account, MediaProvider.AUTHORITY, b);
+	}
+
 	@Override
 	public IBinder onBind(Intent intent) {
 		return getSyncAdapter().getSyncAdapterBinder();
 	}
-
 
 	private static class LocastSyncAdapter extends AbstractThreadedSyncAdapter {
 		private final Context mContext;
@@ -74,16 +94,16 @@ public class LocastSyncService extends Service {
 
 			final String uriString = extras.getString(EXTRA_SYNC_URI);
 			Uri uri = null;
-			if (uriString != null){
+			if (uriString != null) {
 				uri = Uri.parse(uriString);
 			}
-			if (uri != null){
-				Log.d(TAG, "Synchronizing "+uri+"...");
-			}else{
+			if (uri != null) {
+				Log.d(TAG, "Synchronizing " + uri + "...");
+			} else {
 				Log.d(TAG, "Synchronizing...");
 			}
 
-			if (uri == null){
+			if (uri == null) {
 				uri = Cast.CONTENT_URI;
 			}
 
@@ -104,14 +124,19 @@ public class LocastSyncService extends Service {
 			} catch (final NetworkProtocolException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+			} catch (final NoPublicPath e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (final OperationApplicationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-
 
 		}
 	}
 
 	private LocastSyncAdapter getSyncAdapter() {
-		if (SYNC_ADAPTER == null){
+		if (SYNC_ADAPTER == null) {
 			SYNC_ADAPTER = new LocastSyncAdapter(this);
 		}
 		return SYNC_ADAPTER;

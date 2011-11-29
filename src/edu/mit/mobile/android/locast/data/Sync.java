@@ -590,7 +590,6 @@ public class Sync extends Service {
 
 		// two calls are made in two different contexts. Which context you use depends on the application.
 		syncMap.onPostSyncItem(context, locUri, jsonObject, modified);
-		sync.onPostSyncItem(context, locUri, jsonObject, modified);
 
 		mLastUpdated.markUpdated(locUri);
 
