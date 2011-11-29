@@ -600,7 +600,7 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_ITEM_TAGS:{
 			qb.setTables(TAG_TABLE_NAME);
 			final List<String> pathSegments = uri.getPathSegments();
-			qb.appendWhere(Tag._REF_CLASS+"=\""+pathSegments.get(pathSegments.size() - 3)+"\"");
+			qb.appendWhere(Tag._REF_CLASS+"=\'"+pathSegments.get(pathSegments.size() - 3)+"\'");
 			qb.appendWhere(" AND " + Tag._REF_ID+"="+pathSegments.get(pathSegments.size() - 2));
 			c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
 			break;
@@ -655,7 +655,7 @@ public class MediaProvider extends ContentProvider {
 		qb.appendWhere(" AND (t."+Tag._NAME+" IN ("+ListUtils.join(tagFilterList, ",")+"))");
 
 		// limit to only items of the given object class
-		qb.appendWhere(" AND t."+Tag._REF_CLASS + "=\""+taggableItemTable+"\"");
+		qb.appendWhere(" AND t."+Tag._REF_CLASS + "=\'"+taggableItemTable+"\'");
 
 		// Modify the projection so that _ID explicitly refers to that of the objects being searched,
 		// not the tags. Without this, _ID is ambiguous and the query fails.
@@ -784,7 +784,7 @@ public class MediaProvider extends ContentProvider {
 
 			final List<String> toDeleteWhere = new ArrayList<String>(toDelete);
 			for (int i = 0; i < toDeleteWhere.size(); i++ ){
-				toDeleteWhere.set(i, Tag._NAME + "=\"" + toDeleteWhere.get(i) + '"');
+				toDeleteWhere.set(i, Tag._NAME + "=\'" + toDeleteWhere.get(i) + "'");
 			}
 			if (toDeleteWhere.size() > 0){
 				final String delWhere = ListUtils.join(toDeleteWhere, " OR ");
