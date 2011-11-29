@@ -54,10 +54,7 @@ public class RefreshButton extends ImageButton {
 	@Override
 	protected void onAttachedToWindow() {
 		super.onAttachedToWindow();
-		final Drawable d = getDrawable();
-		if (d instanceof AnimationDrawable){
-			((AnimationDrawable) d).start();
-		}
+		startAnimating();
 	}
 
 	@Override
@@ -69,10 +66,18 @@ public class RefreshButton extends ImageButton {
 		}
 	}
 
+	private void startAnimating(){
+		final Drawable d = getDrawable();
+		if (d instanceof AnimationDrawable){
+			((AnimationDrawable) d).start();
+		}
+	}
+
 	public void setRefreshing(boolean isRefreshing){
 		if (isRefreshing){
 			setEnabled(false);
 			setImageDrawable(mRefreshingDrawable);
+			startAnimating();
 		}else{
 			setEnabled(true);
 			setImageDrawable(mDefaultDrawable);
