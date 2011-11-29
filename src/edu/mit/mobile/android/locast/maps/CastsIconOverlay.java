@@ -14,9 +14,9 @@ import com.stackoverflow.ArrayUtils;
 
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.locast.ver2.itineraries.LocatableIconOverlay;
+import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemIconOverlay;
 
-public class CastsIconOverlay extends LocatableIconOverlay {
+public class CastsIconOverlay extends LocatableItemIconOverlay {
 	
 	private int mOfficialCol, mTitleCol, mDescriptionCol, mIdCol;
 	private final Drawable mOfficialCastDrawable;

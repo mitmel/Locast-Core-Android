@@ -56,8 +56,6 @@ public class PointerShadowOverlay extends Overlay {
 		if (mGeoPoint == null){
 			return;
 		}
-		
-		mapView.getProjection().toPixels(mapView.getMapCenter(), p);
-		mPointerShadow.setOffset(-p.x + (int)(mapView.getWidth() * 0.5), -p.y);
+		mPointerShadow.setOffset(p.x, p.y);
 	}
 }

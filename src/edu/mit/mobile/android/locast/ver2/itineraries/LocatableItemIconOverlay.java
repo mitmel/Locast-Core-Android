@@ -15,7 +15,7 @@ import android.os.Handler;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.maps.MapsUtils;
 
-public class LocatableIconOverlay extends ItemizedIconOverlay<OverlayItem> {
+public class LocatableItemIconOverlay extends ItemizedIconOverlay<OverlayItem> {
 	
 	protected Cursor mLocatableItems;
 	private int mLatCol, mLonCol;
@@ -30,14 +30,14 @@ public class LocatableIconOverlay extends ItemizedIconOverlay<OverlayItem> {
 		}
 	};
 	
-	public LocatableIconOverlay(Drawable marker,
+	public LocatableItemIconOverlay(Drawable marker,
 			ItemizedIconOverlay.OnItemGestureListener<OverlayItem> onItemGestureListener,
 			ResourceProxy resourceProxy) {	
 		
 		this(new ArrayList<OverlayItem>() , null, marker, onItemGestureListener, resourceProxy);
 	}
 	
-	public LocatableIconOverlay(ArrayList<OverlayItem> list, Cursor items, Drawable marker,
+	public LocatableItemIconOverlay(ArrayList<OverlayItem> list, Cursor items, Drawable marker,
 			ItemizedIconOverlay.OnItemGestureListener<OverlayItem> onItemGestureListener,
 			ResourceProxy resourceProxy) {
 		super(list, marker, onItemGestureListener, resourceProxy);
