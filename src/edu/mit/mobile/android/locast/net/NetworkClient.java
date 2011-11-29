@@ -225,14 +225,14 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 
 		initClient();
 
-		final AccountManager am = AccountManager.get(context);
-		am.addOnAccountsUpdatedListener(this, null, true);
+		//final AccountManager am = AccountManager.get(context);
+		//am.addOnAccountsUpdatedListener(this, null, true);
 	}
 
 	@Override
 	protected void finalize() throws Throwable {
-		final AccountManager am = AccountManager.get(context);
-		am.removeOnAccountsUpdatedListener(this);
+		//final AccountManager am = AccountManager.get(context);
+		//am.removeOnAccountsUpdatedListener(this);
 		super.finalize();
 	}
 
@@ -301,7 +301,7 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	/**
 	 * Forces the client to use these credentials instead of the ones loaded in the preferences.
 	 * Use {@link #clearCredentialsOverride()} to remove the override.
-	 * 
+	 *
 	 * @param username
 	 * @param auth_secret
 	 * @throws IOException
@@ -992,10 +992,10 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 	@Override
 	public void onAccountsUpdated(Account[] accounts) {
 
-		boolean isAuthenticated = isAuthenticated();
+		final boolean isAuthenticated = isAuthenticated();
 
 		boolean hasLocastAccount = false;
-		for (Account account : accounts){
+		for (final Account account : accounts){
 			hasLocastAccount = hasLocastAccount | AuthenticationService.AUTHORITY.equals(account.type);
 			if (hasLocastAccount){
 				break;
