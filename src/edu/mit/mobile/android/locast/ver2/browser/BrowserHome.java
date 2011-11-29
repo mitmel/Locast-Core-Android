@@ -17,16 +17,22 @@ package edu.mit.mobile.android.locast.ver2.browser;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.SyncInfo;
+import android.content.SyncStatusObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -45,10 +51,12 @@ import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Event;
 import edu.mit.mobile.android.locast.data.Favoritable;
 import edu.mit.mobile.android.locast.data.Itinerary;
-import edu.mit.mobile.android.locast.data.Sync;
+import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.net.NetworkClient;
+import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.casts.LocatableListWithMap;
+import edu.mit.mobile.android.widget.RefreshButton;
 
 public class BrowserHome extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener{
 
@@ -60,6 +68,31 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	private static final Uri FEATURED_CASTS = Cast.getTagUri(Cast.CONTENT_URI, Cast.addPrefixToTag(Cast.SYSTEM_PREFIX, "_featured"));
 
 	private boolean shouldRefresh;
+
+	private static final int
+		MSG_SET_REFRESHING = 100,
+		MSG_SET_NOT_REFRESHING = 101;
+
+	private static final String TAG = BrowserHome.class.getSimpleName();
+
+	private final Handler mHandler = new Handler(){
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what){
+			case MSG_SET_REFRESHING:
+				Log.d(TAG, "refreshing...");
+				mRefresh.setRefreshing(true);
+				break;
+
+			case MSG_SET_NOT_REFRESHING:
+				Log.d(TAG, "done loading.");
+				mRefresh.setRefreshing(false);
+				break;
+			}
+		};
+	};
+
+	private RefreshButton mRefresh;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +117,8 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		final LoaderManager lm = getSupportLoaderManager();
 		lm.initLoader(LOADER_FEATURED_CASTS, null, this);
 
-		findViewById(R.id.refresh).setOnClickListener(this);
+		mRefresh = (RefreshButton) findViewById(R.id.refresh);
+		mRefresh.setOnClickListener(this);
 		findViewById(R.id.itineraries).setOnClickListener(this);
 		findViewById(R.id.events).setOnClickListener(this);
 		findViewById(R.id.nearby).setOnClickListener(this);
@@ -93,12 +127,39 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		shouldRefresh = !checkFirstTime();
 	}
 
+	private Object mSyncHandle;
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+
+		if (mSyncHandle != null){
+			ContentResolver.removeStatusChangeListener(mSyncHandle);
+		}
+	}
+
 	@Override
 	protected void onResume() {
 		super.onResume();
+		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new SyncStatusObserver() {
+
+			@Override
+			public void onStatusChanged(int which) {
+				final SyncInfo info = ContentResolver.getCurrentSync();
+				if (! MediaProvider.AUTHORITY.equals(info.authority)){
+					return;
+				}
+				Log.d(TAG, "onStatusChanged " + which);
+
+				mHandler.sendEmptyMessage(which == ContentResolver.SYNC_OBSERVER_TYPE_ACTIVE ? MSG_SET_REFRESHING : MSG_SET_NOT_REFRESHING);
+
+			}
+		});
+
 		if (shouldRefresh) {
 			refresh(false);
 		}
+
 	}
 
 	@Override
@@ -127,7 +188,22 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 
 	private void refresh(boolean explicitSync){
-		startService(new Intent(Intent.ACTION_SYNC, FEATURED_CASTS).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
+		Bundle b = new Bundle();
+		final ContentResolver cr = getContentResolver();
+
+		if (explicitSync){
+			b.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
+		}
+		b.putString(LocastSyncService.EXTRA_SYNC_URI, FEATURED_CASTS.toString());
+		getContentResolver();
+		//getContentResolver().startSync(FEATURED_CASTS, b);
+		ContentResolver.requestSync(Authenticator.getFirstAccount(this), MediaProvider.AUTHORITY, b);
+
+		b = new Bundle();
+		b.putString(LocastSyncService.EXTRA_SYNC_URI, Itinerary.CONTENT_URI.toString());
+		ContentResolver.requestSync(Authenticator.getFirstAccount(this), MediaProvider.AUTHORITY, b);
+		//startService(new Intent(Intent.ACTION_SYNC, FEATURED_CASTS).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
+
 	}
 
 	@Override
