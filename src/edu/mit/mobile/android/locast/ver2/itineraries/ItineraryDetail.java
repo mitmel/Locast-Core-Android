@@ -86,10 +86,10 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 
 	private CastsIconOverlay mCastsOverlay;
 	private PathOverlay mPathOverlay;
-	
+
 	private Timer clickTimer;
 	private boolean markerClicked = false;
-	private ArrayList<OverlayItem> clickedItems = new ArrayList<OverlayItem>();
+	private final ArrayList<OverlayItem> clickedItems = new ArrayList<OverlayItem>();
 
 	CursorLoader itinLoader;
 	CursorLoader castLoader;
@@ -123,7 +123,7 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 
 		if (USE_MAP){
 			mMapView = (MapView)findViewById(R.id.map);
-			mMapController = mMapView.getController();		
+			mMapController = mMapView.getController();
 		}
 
 		final Intent intent = getIntent();
@@ -221,15 +221,15 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 	}
 
 	private void initCastList(){
-		
+
 		mCastAdapter = new CastCursorAdapter(ItineraryDetail.this, null);
 		mCastView.setAdapter(new ImageLoaderAdapter(this, mCastAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP ));
 
 		if (USE_MAP){
-			
-			mCastsOverlay = new CastsIconOverlay(ItineraryDetail.this, this);			
+
+			mCastsOverlay = new CastsIconOverlay(ItineraryDetail.this, this);
 			mPathOverlay = new PathOverlay(this);
-			
+
 			final List<Overlay> overlays = mMapView.getOverlays();
 			overlays.add(mPathOverlay);
 			overlays.add(mCastsOverlay);
@@ -399,66 +399,54 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 			markerClicked = true;
 			clickTimer.schedule(new ClickTimer(), 100);
 		}
-		
-		clickedItems.add(item);		
+
+		clickedItems.add(item);
 		return false;
 	}
-	
-	@Override
-	protected Dialog onCreateDialog(int id) {		
-		switch (id) {
-		case DIALOG_CASTS:
-			
-			String[] items = new String[clickedItems.size()];
-			for (int i = 0; i < items.length; i++)
-			{
-				items[i] = clickedItems.get(i).mTitle;
-			}
-			
-			AlertDialog.Builder builder = new AlertDialog.Builder(this);
-			builder.setTitle("Casts");
-			builder.setItems(items, this);
-			Dialog dialog = builder.create();
-			dialog.show();
-			
-			return dialog;
 
-		default:
-			break;
+	protected void showCastChooserDialog() {
+		final String[] items = new String[clickedItems.size()];
+		for (int i = 0; i < items.length; i++)
+		{
+			items[i] = clickedItems.get(i).mTitle;
 		}
-		
-		return null;
+
+		final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle("Casts");
+		builder.setItems(items, this);
+		final Dialog dialog = builder.create();
+		dialog.show();
 	}
-	
+
 	@Override
-	public void onClick(DialogInterface dialog, int which) {			
+	public void onClick(DialogInterface dialog, int which) {
 		selectOverlay(clickedItems.get(which));
 	}
-	
+
 	private void selectOverlay(OverlayItem item) {
 		try {
-			long selectedId = Long.parseLong(item.mUid);		
+			final long selectedId = Long.parseLong(item.mUid);
 			startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mCastsUri, selectedId)));
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			Log.e(TAG, "Error trying to parse id", e);
 		}
 	}
-	
+
 	private class ClickTimer extends TimerTask {
 		@Override
 		public void run() {
 			if (clickedItems.size() > 1) {
-			    runOnUiThread(new Runnable() {				
+			    runOnUiThread(new Runnable() {
 					@Override
 					public void run() {
-						onCreateDialog(DIALOG_CASTS);					
+						showCastChooserDialog();
 					}
 				});
 		    } else {
 				selectOverlay(clickedItems.get(0));
 			}
-			
+
 			markerClicked = false;
-		}		
-	}	
+		}
+	}
 }
