@@ -38,6 +38,7 @@ import android.os.RemoteException;
 import android.util.Log;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.SyncException;
@@ -57,6 +58,10 @@ public class LocastSyncService extends Service {
 
 	public static void startSync(Context context, Uri what, boolean explicitSync){
 		startSync(Authenticator.getFirstAccount(context), what, explicitSync, new Bundle());
+	}
+
+	public static void startSync(Context context, Uri what, boolean explicitSync, Bundle extras){
+		startSync(Authenticator.getFirstAccount(context), what, explicitSync, extras);
 	}
 
 	/**
@@ -81,9 +86,9 @@ public class LocastSyncService extends Service {
 	}
 
 	public static void startSync(Account account, Uri what, boolean explicitSync, Bundle b){
-
 		if (explicitSync){
 			b.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
+			//b.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
 		}
 		b.putString(LocastSyncService.EXTRA_SYNC_URI, what.toString());
 
@@ -133,7 +138,12 @@ public class LocastSyncService extends Service {
 			}
 
 			try {
-				mSyncEngine.sync(uri, account, extras, provider, syncResult);
+				if (uri != null) {
+					mSyncEngine.sync(uri, account, extras, provider, syncResult);
+				}else{
+					mSyncEngine.sync(Cast.CONTENT_URI, account, extras, provider, syncResult);
+					mSyncEngine.sync(Itinerary.CONTENT_URI, account, extras, provider, syncResult);
+				}
 			} catch (final RemoteException e) {
 				e.printStackTrace();
 
