@@ -22,7 +22,6 @@ import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
@@ -41,8 +40,9 @@ import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import edu.mit.mobile.android.content.ProviderUtils;
-import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.data.Comment;
+import edu.mit.mobile.android.locast.sync.LocastSyncService;
+import edu.mit.mobile.android.locast.ver2.R;
 
 public class DiscussionBoard extends ListView implements OnClickListener, OnEditorActionListener {
 	public static final String TAG = DiscussionBoard.class.getSimpleName();
@@ -143,7 +143,7 @@ public class DiscussionBoard extends ListView implements OnClickListener, OnEdit
        		ProviderUtils.dumpCursorToLog(c, Comment.PROJECTION);
        	}
 
-    	getContext().startService(new Intent(Intent.ACTION_SYNC, thisThread));
+       	LocastSyncService.startSync(getContext(), thisThread, false);
 
     	c.registerContentObserver(new ContentObserver(new Handler()) {
     		@Override

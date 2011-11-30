@@ -61,8 +61,8 @@ import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
-import edu.mit.mobile.android.locast.data.Sync;
 import edu.mit.mobile.android.locast.maps.CastsIconOverlay;
+import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 
@@ -237,8 +237,8 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 	}
 
 	private void refresh(boolean explicitSync){
-		startService(new Intent(Intent.ACTION_SYNC, mUri).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
-		startService(new Intent(Intent.ACTION_SYNC, mCastsUri).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
+		LocastSyncService.startSync(this, mUri, explicitSync);
+		LocastSyncService.startSync(this, mCastsUri, explicitSync);
 	}
 
 

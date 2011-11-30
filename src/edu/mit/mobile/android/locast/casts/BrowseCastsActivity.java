@@ -28,8 +28,8 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Locatable;
-import edu.mit.mobile.android.locast.data.Sync;
 import edu.mit.mobile.android.locast.data.TaggableItem;
+import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.location.IncrementalLocator;
 
@@ -110,7 +110,7 @@ public class BrowseCastsActivity extends CastListActivity implements LocationLis
 		switch (item.getItemId()){
 		case R.id.refresh:
 
-			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()).putExtra(Sync.EXTRA_EXPLICIT_SYNC, true));
+			LocastSyncService.startSync(this, getIntent().getData(), true);
 			return true;
 
 		}

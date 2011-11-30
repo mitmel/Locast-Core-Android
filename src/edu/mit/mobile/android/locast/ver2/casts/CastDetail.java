@@ -52,6 +52,7 @@ import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.maps.CastsOverlay;
+import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
@@ -135,7 +136,7 @@ public class CastDetail extends LocatableDetail implements
 			break;
 
 		case R.id.refresh:
-			startService(new Intent(Intent.ACTION_SYNC, getIntent().getData()));
+			LocastSyncService.startSync(this, getIntent().getData(), true);
 			break;
 		}
 	}

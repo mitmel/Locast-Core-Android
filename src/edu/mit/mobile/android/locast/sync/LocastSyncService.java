@@ -52,11 +52,35 @@ public class LocastSyncService extends Service {
 	public static final String EXTRA_SYNC_URI = "edu.mit.mobile.android.locast.sync.EXTRA_SYNC_URI";
 
 	public static void startSync(Context context, Uri what){
-		startSync(Authenticator.getFirstAccount(context), what, false);
+		startSync(Authenticator.getFirstAccount(context), what, false, new Bundle());
+	}
+
+	public static void startSync(Context context, Uri what, boolean explicitSync){
+		startSync(Authenticator.getFirstAccount(context), what, explicitSync, new Bundle());
+	}
+
+	/**
+	 * Requests a sync of the item specified by a public URL.
+	 *
+	 * @param context
+	 * @param httpPubUrl a URL pointing to a json array of json objects
+	 * @param childDir the destination local uri for the result to be stored in if it's not present
+	 * @param explicitSync
+	 */
+	public static void startSync(Context context, Uri httpPubUrl, Uri childDir, boolean explicitSync){
+		final Bundle b = new Bundle();
+		b.putString(SyncEngine.EXTRA_DESTINATION_URI, childDir.toString());
+
+		startSync(Authenticator.getFirstAccount(context), httpPubUrl, explicitSync, b);
 	}
 
 	public static void startSync(Account account, Uri what, boolean explicitSync){
 		final Bundle b = new Bundle();
+
+		startSync(account, what, explicitSync, b);
+	}
+
+	public static void startSync(Account account, Uri what, boolean explicitSync, Bundle b){
 
 		if (explicitSync){
 			b.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
@@ -65,6 +89,7 @@ public class LocastSyncService extends Service {
 
 		ContentResolver.requestSync(account, MediaProvider.AUTHORITY, b);
 	}
+
 
 	@Override
 	public IBinder onBind(Intent intent) {

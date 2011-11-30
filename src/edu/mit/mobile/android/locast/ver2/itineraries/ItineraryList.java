@@ -50,8 +50,8 @@ import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.MediaProvider;
-import edu.mit.mobile.android.locast.data.Sync;
 import edu.mit.mobile.android.locast.net.NetworkClient;
+import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 
@@ -154,7 +154,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		lm.initLoader(0, loaderArgs, this);
 		setTitle(R.string.itineraries);
 		mUri = data;
-		startService(new Intent(Intent.ACTION_SYNC, data));
+		LocastSyncService.startSync(this, data, true);
 
 	}
 	@Override
@@ -170,7 +170,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	}
 
 	private void refresh(boolean explicitSync){
-		startService(new Intent(Intent.ACTION_SYNC, mUri).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
+		LocastSyncService.startSync(this, mUri, explicitSync);
 	}
 
 	@Override

@@ -66,6 +66,12 @@ import edu.mit.mobile.android.utils.StreamUtils;
 public class SyncEngine {
 	private static final String TAG = SyncEngine.class.getSimpleName();
 
+	/**
+	 * If syncing a server URI that is destined for a specific local URI space, add the destination URI here.
+	 */
+	public final static String
+		EXTRA_DESTINATION_URI = "edu.mit.mobile.android.locast.EXTRA_DESTINATION_URI";
+
 	private static final HashMap<String, Class<? extends JsonSyncableItem>> TYPE_MAP = new HashMap<String, Class<? extends JsonSyncableItem>>();
 
 	private static final boolean DEBUG = Constants.DEBUG;
@@ -122,9 +128,23 @@ public class SyncEngine {
 		// final Cursor c = provider.query(url, projection, selection,
 		// selectionArgs, sortOrder)
 
-		final String pubPath = MediaProvider.getPublicPath(mContext, toSync);
+		String pubPath;
+		if ("http".equals(toSync.getScheme()) || "https".equals(toSync.getScheme())){
+			pubPath = toSync.toString();
+
+			if (!extras.containsKey(EXTRA_DESTINATION_URI)){
+				throw new IllegalArgumentException("missing EXTRA_DESTINATION_URI when syncing HTTP URIs");
+			}
+			toSync = Uri.parse(extras.getString(EXTRA_DESTINATION_URI));
+		}else{
+			pubPath = MediaProvider.getPublicPath(mContext, toSync);
+		}
+
+		final long request_time = System.currentTimeMillis();
 
 		final HttpResponse hr = mNetworkClient.get(pubPath);
+
+		final long response_time = System.currentTimeMillis();
 
 		// the time compensation below allows a time-based synchronization to
 		// function even if
@@ -135,7 +155,6 @@ public class SyncEngine {
 		// the mobile should be stored relative to the local clock and the
 		// server will respect the same.
 		long serverTime;
-		final long localTime = System.currentTimeMillis();
 
 		try {
 			final Header hDate = hr.getFirstHeader("Date");
@@ -148,13 +167,19 @@ public class SyncEngine {
 			Log.w(TAG,
 					"could not retrieve date from server. Using local time, which may be incorrect.",
 					e);
-			serverTime = localTime;
+			serverTime = System.currentTimeMillis();
 		}
+
+		// TODO check out http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html
+		final long response_delay = response_time - request_time;
+		Log.d(TAG, "request took "+ response_delay + "ms");
+		final long localTime = request_time;
 
 		final long localOffset = (localTime - serverTime); // add this to the
 															// server time to
 															// get the local
 															// time
+
 
 		if (Math.abs(localOffset) > 30 * 60 * 1000) {
 			Log.w(TAG, "local clock is off by " + localOffset + "ms");
@@ -207,86 +232,87 @@ public class SyncEngine {
 
 		final Cursor c = provider.query(toSync, EXIST_QUERY_PROJECTION, selection.toString(),
 				selectionArgs, null);
+		try {
+			final int pubUriCol = c.getColumnIndex(JsonSyncableItem._PUBLIC_URI);
+			final int modifiedCol = c.getColumnIndex(JsonSyncableItem._MODIFIED_DATE);
+			final int idCol = c.getColumnIndex(JsonSyncableItem._ID);
 
-		final int pubUriCol = c.getColumnIndex(JsonSyncableItem._PUBLIC_URI);
-		final int modifiedCol = c.getColumnIndex(JsonSyncableItem._MODIFIED_DATE);
-		final int idCol = c.getColumnIndex(JsonSyncableItem._ID);
+			for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
+				final String pubUri = c.getString(pubUriCol);
+				final long id = c.getLong(idCol);
+				final Uri localUri = ContentUris.withAppendedId(toSync, id);
+				final SyncStatus itemStatus = mSyncStatus.get(pubUri);
 
-		for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
-			final String pubUri = c.getString(pubUriCol);
-			final long id = c.getLong(idCol);
-			final Uri localUri = ContentUris.withAppendedId(toSync, id);
-			final SyncStatus itemStatus = mSyncStatus.get(pubUri);
+				// make the status searchable by both remote and local uri
+				mSyncStatus.put(localUri.toString(), itemStatus);
 
-			Log.d(TAG, "adding "+ localUri + " to sync map");
-			// make the status searchable by both remote and local uri
-			mSyncStatus.put(localUri.toString(), itemStatus);
+				final long itemModified = c.getLong(modifiedCol);
+				final long localAge = localTime - itemModified;
 
-			final long itemModified = c.getLong(modifiedCol);
-			final long localAge = localTime - itemModified;
+				itemStatus.localAge = localAge;
 
-			itemStatus.localAge = localAge;
+				final long ageDifference = Math.abs(localAge - itemStatus.remoteAge);
 
-			final long ageDifference = Math.abs(localAge - itemStatus.remoteAge);
+				if (ageDifference <= AGE_EQUALITY_SLOP) {
+					itemStatus.state = SyncState.UP_TO_DATE;
+					Log.d(TAG, pubUri + " is up to date");
 
-			if (ageDifference <= AGE_EQUALITY_SLOP) {
-				itemStatus.state = SyncState.UP_TO_DATE;
-				Log.d(TAG, pubUri + " is up to date");
+				} else if (localAge > itemStatus.remoteAge) {
+					if (DEBUG) {
+						final long serverModified = itemStatus.remoteCVs
+								.getAsLong(JsonSyncableItem._MODIFIED_DATE);
 
-			} else if (localAge > itemStatus.remoteAge) {
-				if (DEBUG) {
-					final long serverModified = itemStatus.remoteCVs
-							.getAsLong(JsonSyncableItem._MODIFIED_DATE);
+						Log.d(TAG,
+								pubUri
+										+ " : local is "
+										+ ageDifference
+										+ "ms older ("
+										+ android.text.format.DateUtils.formatDateTime(mContext,
+												itemModified, FORMAT_ARGS_DEBUG)
+										+ ") than remote ("
+										+ android.text.format.DateUtils.formatDateTime(mContext,
+												serverModified, FORMAT_ARGS_DEBUG) + "); updating local copy...");
+					}
 
-					Log.d(TAG,
-							pubUri
-									+ " : local is "
-									+ ageDifference
-									+ "ms older ("
-									+ android.text.format.DateUtils.formatDateTime(mContext,
-											itemModified, FORMAT_ARGS_DEBUG)
-									+ ") than remote ("
-									+ android.text.format.DateUtils.formatDateTime(mContext,
-											serverModified, FORMAT_ARGS_DEBUG) + "); updating local copy...");
+					itemStatus.state = SyncState.REMOTE_DIRTY;
+
+					final ContentProviderOperation.Builder b = ContentProviderOperation
+							.newUpdate(localUri);
+
+					// update this so it's in the local timescale
+					correctServerOffset(itemStatus.remoteCVs, JsonSyncableItem._CREATED_DATE,
+							localOffset);
+					correctServerOffset(itemStatus.remoteCVs, JsonSyncableItem._MODIFIED_DATE,
+							localOffset);
+
+					b.withValues(itemStatus.remoteCVs);
+					cpo.add(b.build());
+
+				} else if (localAge < itemStatus.remoteAge) {
+					if (DEBUG) {
+						final long serverModified = itemStatus.remoteCVs
+								.getAsLong(JsonSyncableItem._MODIFIED_DATE);
+
+						Log.d(TAG,
+								pubUri
+										+ " : local is "
+										+ ageDifference
+										+ "ms newer ("
+										+ android.text.format.DateUtils.formatDateTime(mContext,
+												itemModified, FORMAT_ARGS_DEBUG)
+										+ ") than remote ("
+										+ android.text.format.DateUtils.formatDateTime(mContext,
+												serverModified, FORMAT_ARGS_DEBUG) + "); publishing to server...");
+					}
+					itemStatus.state = SyncState.LOCAL_DIRTY;
+
+					// publish the local
 				}
-
-				itemStatus.state = SyncState.REMOTE_DIRTY;
-
-				final ContentProviderOperation.Builder b = ContentProviderOperation
-						.newUpdate(localUri);
-
-				// update this so it's in the local timescale
-				correctServerOffset(itemStatus.remoteCVs, JsonSyncableItem._CREATED_DATE,
-						localOffset);
-				correctServerOffset(itemStatus.remoteCVs, JsonSyncableItem._MODIFIED_DATE,
-						localOffset);
-
-				b.withValues(itemStatus.remoteCVs);
-				cpo.add(b.build());
-
-			} else if (localAge < itemStatus.remoteAge) {
-				if (DEBUG) {
-					final long serverModified = itemStatus.remoteCVs
-							.getAsLong(JsonSyncableItem._MODIFIED_DATE);
-
-					Log.d(TAG,
-							pubUri
-									+ " : local is "
-									+ ageDifference
-									+ "ms newer ("
-									+ android.text.format.DateUtils.formatDateTime(mContext,
-											itemModified, FORMAT_ARGS_DEBUG)
-									+ ") than remote ("
-									+ android.text.format.DateUtils.formatDateTime(mContext,
-											serverModified, FORMAT_ARGS_DEBUG) + "); publishing to server...");
-				}
-				itemStatus.state = SyncState.LOCAL_DIRTY;
-
-				// publish the local
 			}
-		}
+		}finally{
 
-		c.close();
+			c.close();
+		}
 
 		for (final Map.Entry<String, SyncStatus> entry : mSyncStatus.entrySet()) {
 			final String pubUri = entry.getKey();

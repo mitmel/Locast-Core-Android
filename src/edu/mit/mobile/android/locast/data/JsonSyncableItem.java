@@ -652,9 +652,12 @@ public abstract class JsonSyncableItem implements BaseColumns {
 			final Uri childDir = mRelationship.getChildDirUri(uri);
 			try {
 				final String childPubUri = item.getString(remoteKey);
+				// TODO optimize so it doesn't need to create a whole new instance
 				final NetworkClient nc = NetworkClient.getInstance(context);
 				final Uri serverUri = nc.getFullUri(childPubUri);
-				context.startService(new Intent(Intent.ACTION_SYNC, serverUri).putExtra(Sync.EXTRA_DESTINATION_URI, childDir));
+
+				LocastSyncService.startSync(context, serverUri, childDir, false);
+
 			} catch (final JSONException e) {
 				final IOException ioe = new IOException("JSON encoding error");
 				ioe.initCause(e);

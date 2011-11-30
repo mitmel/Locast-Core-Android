@@ -31,7 +31,6 @@ import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
@@ -47,6 +46,7 @@ import edu.mit.mobile.android.content.ManyToMany;
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
+import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.utils.ListUtils;
 
 public class MediaProvider extends ContentProvider {
@@ -821,7 +821,8 @@ public class MediaProvider extends ContentProvider {
 
 		getContext().getContentResolver().notifyChange(uri, null);
 		if (needSync && canSync){
-			getContext().startService(new Intent(Intent.ACTION_SYNC, uri));
+
+			LocastSyncService.startSync(getContext(), uri, false);
 		}
 		return count;
 	}
@@ -991,6 +992,7 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CHILD_COMMENT_ITEM:
 		case MATCHER_CHILD_CAST_ITEM:
 		case MATCHER_COMMENT_ITEM:
+		case MATCHER_ITINERARY_ITEM:
 		case MATCHER_CHILD_CASTMEDIA_ITEM:
 		{
 			if (parent || publicId != null){
