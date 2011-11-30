@@ -17,14 +17,22 @@ package edu.mit.mobile.android.locast.ver2.itineraries;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.ItemizedIconOverlay;
 import org.osmdroid.views.overlay.Overlay;
+import org.osmdroid.views.overlay.OverlayItem;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.ContentUris;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -54,15 +62,16 @@ import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.Sync;
-import edu.mit.mobile.android.locast.maps.CastsOverlay;
+import edu.mit.mobile.android.locast.maps.CastsIconOverlay;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 
-public class ItineraryDetail extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
+public class ItineraryDetail extends FragmentActivity implements ItemizedIconOverlay.OnItemGestureListener<OverlayItem> , LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener, DialogInterface.OnClickListener {
 	private static final String TAG = ItineraryDetail.class.getSimpleName();
 
 	// if the layout for this doesn't need a map, set this to false.
 	private static final boolean USE_MAP = true;
+	private static final int DIALOG_CASTS = 0;
 
 	private MapView mMapView;
 	private MapController mMapController;
@@ -75,13 +84,15 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 	private Uri mUri;
 	private Uri mCastsUri;
 
-	private CastsOverlay mCastsOverlay;
+	private CastsIconOverlay mCastsOverlay;
 	private PathOverlay mPathOverlay;
+	
+	private Timer clickTimer;
+	private boolean markerClicked = false;
+	private ArrayList<OverlayItem> clickedItems = new ArrayList<OverlayItem>();
 
 	CursorLoader itinLoader;
 	CursorLoader castLoader;
-
-
 
 	@Override
 	protected void onCreate(Bundle icicle) {
@@ -91,6 +102,7 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 		setContentView(R.layout.itinerary_detail);
 
 		mImageCache = ImageCache.getInstance(this);
+		clickTimer = new Timer();
 
 		mCastView = (ListView)findViewById(R.id.casts);
 		findViewById(R.id.refresh).setOnClickListener(this);
@@ -111,7 +123,7 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 
 		if (USE_MAP){
 			mMapView = (MapView)findViewById(R.id.map);
-			mMapController = mMapView.getController();
+			mMapController = mMapView.getController();		
 		}
 
 		final Intent intent = getIntent();
@@ -209,14 +221,16 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 	}
 
 	private void initCastList(){
+		
 		mCastAdapter = new CastCursorAdapter(ItineraryDetail.this, null);
-
 		mCastView.setAdapter(new ImageLoaderAdapter(this, mCastAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP ));
 
 		if (USE_MAP){
-			mCastsOverlay = new CastsOverlay(ItineraryDetail.this);
-			final List<Overlay> overlays = mMapView.getOverlays();
+			
+			mCastsOverlay = new CastsIconOverlay(ItineraryDetail.this, this);			
 			mPathOverlay = new PathOverlay(this);
+			
+			final List<Overlay> overlays = mMapView.getOverlays();
 			overlays.add(mPathOverlay);
 			overlays.add(mCastsOverlay);
 		}
@@ -372,4 +386,79 @@ public class ItineraryDetail extends FragmentActivity implements LoaderManager.L
 				return super.onOptionsItemSelected(item);
 		}
 	}
+
+	@Override
+	public boolean onItemLongPress(int position, OverlayItem item) {
+		return false;
+	}
+
+	@Override
+	public boolean onItemSingleTapUp(int position, OverlayItem item) {
+		if (!markerClicked) {
+			clickedItems.clear();
+			markerClicked = true;
+			clickTimer.schedule(new ClickTimer(), 100);
+		}
+		
+		clickedItems.add(item);		
+		return false;
+	}
+	
+	@Override
+	protected Dialog onCreateDialog(int id) {		
+		switch (id) {
+		case DIALOG_CASTS:
+			
+			String[] items = new String[clickedItems.size()];
+			for (int i = 0; i < items.length; i++)
+			{
+				items[i] = clickedItems.get(i).mTitle;
+			}
+			
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setTitle("Casts");
+			builder.setItems(items, this);
+			Dialog dialog = builder.create();
+			dialog.show();
+			
+			return dialog;
+
+		default:
+			break;
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public void onClick(DialogInterface dialog, int which) {			
+		selectOverlay(clickedItems.get(which));
+	}
+	
+	private void selectOverlay(OverlayItem item) {
+		try {
+			long selectedId = Long.parseLong(item.mUid);		
+			startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mCastsUri, selectedId)));
+		} catch (Exception e) {
+			Log.e(TAG, "Error trying to parse id", e);
+		}
+	}
+	
+	private class ClickTimer extends TimerTask {
+		@Override
+		public void run() {
+			if (clickedItems.size() > 1) {
+			    runOnUiThread(new Runnable() {				
+					@Override
+					public void run() {
+						onCreateDialog(DIALOG_CASTS);					
+					}
+				});
+		    } else {
+				selectOverlay(clickedItems.get(0));
+			}
+			
+			markerClicked = false;
+		}		
+	}	
 }
