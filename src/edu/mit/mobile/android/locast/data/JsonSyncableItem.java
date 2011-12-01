@@ -36,12 +36,12 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
+import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.utils.ListUtils;
 
 /**
@@ -73,20 +73,6 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 * @return The URI for a given content directory.
 	 */
 	public abstract Uri getContentUri();
-
-	/**
-	 * Override this if you wish to handle any actions once the item has finished syncing.
-	 * Default implementation does nothing.
-	 *
-	 * @param context Android context
-	 * @param uri URI of the sync'd item. Will not to be null.
-	 * @param item the item that was retrieved from the network
-	 * @param updated true if the item has been updated on the server
-	 * @throws SyncException
-	 * @throws IOException
-	 */
-	public void onPostSyncItem(Context context, Uri uri, JSONObject item, boolean updated) throws SyncException, IOException {}
-
 
 	private static String[] PUB_URI_PROJECTION = {_ID, _PUBLIC_URI};
 	/**
@@ -666,9 +652,12 @@ public abstract class JsonSyncableItem implements BaseColumns {
 			final Uri childDir = mRelationship.getChildDirUri(uri);
 			try {
 				final String childPubUri = item.getString(remoteKey);
+				// TODO optimize so it doesn't need to create a whole new instance
 				final NetworkClient nc = NetworkClient.getInstance(context);
 				final Uri serverUri = nc.getFullUri(childPubUri);
-				context.startService(new Intent(Intent.ACTION_SYNC, serverUri).putExtra(Sync.EXTRA_DESTINATION_URI, childDir));
+
+				LocastSyncService.startSync(context, serverUri, childDir, false);
+
 			} catch (final JSONException e) {
 				final IOException ioe = new IOException("JSON encoding error");
 				ioe.initCause(e);

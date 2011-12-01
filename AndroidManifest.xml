@@ -150,6 +150,7 @@
 		*                                              Sync                                                 *
 		*****************************************************************************************************
 	 -->
+	 <!-- 
 		<service android:name="edu.mit.mobile.android.locast.data.Sync"
 		android:process="edu.mit.mobile.android.locast.Sync"
 		>
@@ -179,7 +180,8 @@
 				<data android:scheme="https" android:host="mel-pydev.mit.edu" />
 				</intent-filter>
 		</service>
-		
+		 -->
+		 
 		<!-- this has its own process so it can have more memory for thumbnail generation -->
 		<service android:name="edu.mit.mobile.android.locast.data.MediaSync" android:process="edu.mit.mobile.android.locast.SyncMedia">
 			<intent-filter>

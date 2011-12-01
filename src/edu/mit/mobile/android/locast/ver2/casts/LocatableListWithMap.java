@@ -55,8 +55,8 @@ import edu.mit.mobile.android.locast.data.Event;
 import edu.mit.mobile.android.locast.data.Favoritable;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
-import edu.mit.mobile.android.locast.data.Sync;
 import edu.mit.mobile.android.locast.maps.CastsOverlay;
+import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 import edu.mit.mobile.android.locast.ver2.events.EventCursorAdapter;
@@ -283,7 +283,7 @@ public class LocatableListWithMap extends FragmentActivity implements LoaderMana
 			return;
 		}
 		mLastUpdate = System.nanoTime();
-		startService(new Intent(Intent.ACTION_SYNC, mContentNearLocation).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
+		LocastSyncService.startSync(this, mContentNearLocation, explicitSync);
 	}
 
 	@Override
