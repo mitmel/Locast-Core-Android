@@ -3,10 +3,10 @@
 <resources>
 	<string name="app_name">Rai Local Abruzzo</string>
 
-	<string name="default_api_url" translatable="false">http://mel-pydev.mit.edu/tourism/api/</string>
-	<string name="app_update_url" translatable="false">http://locast.mit.edu/m/locast.json</string>
+	<string name="default_api_url" translatable="false">http://www.railocal.rai.it/api/</string>
+	<string name="app_update_url" translatable="false">http://locast.mit.edu/m/rai_local.json</string>
 	
-	<string name="signup_url" translatable="false">http://mel-pydev.mit.edu/tourism/register/</string>
+	<string name="signup_url" translatable="false">http://www.railocal.rai.it/register/</string>
 	<string name="signup_text">Register to join Locast</string>
 	
 	<!-- Main screen -->
