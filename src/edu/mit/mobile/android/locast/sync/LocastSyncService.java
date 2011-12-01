@@ -45,22 +45,59 @@ import edu.mit.mobile.android.locast.data.SyncException;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 
+/**
+ * A wrapper to {@link SyncEngine} which provides the interface to the
+ * {@link ContentResolver} sync framework.
+ *
+ * There are some helper static methods to simplify the creation of the
+ * {@link ContentResolver#requestSync(Account, String, Bundle)} calls. See
+ * {@link #startSync(Account, Uri, boolean, Bundle)} and friends.
+ *
+ * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
+ *
+ */
 public class LocastSyncService extends Service {
 	private static final String TAG = LocastSyncService.class.getSimpleName();
 
 	private static LocastSyncAdapter SYNC_ADAPTER = null;
 
+	/**
+	 * A string extra specifying the URI of the object to sync. Can be a
+	 * content:// or http:// uri.
+	 */
 	public static final String EXTRA_SYNC_URI = "edu.mit.mobile.android.locast.sync.EXTRA_SYNC_URI";
 
-	public static void startSync(Context context, Uri what){
+	/**
+	 * Convenience method to start a background sync of the first account found.
+	 *
+	 * @param context
+	 * @param what
+	 * @see #startSync(Account, Uri, boolean, Bundle)
+	 */
+	public static void startSync(Context context, Uri what) {
 		startSync(Authenticator.getFirstAccount(context), what, false, new Bundle());
 	}
 
-	public static void startSync(Context context, Uri what, boolean explicitSync){
+	/**
+	 * Convenience method to start a sync of the first account found.
+	 *
+	 * @param context
+	 * @param what
+	 * @param explicitSync
+	 * @see #startSync(Account, Uri, boolean, Bundle)
+	 */
+	public static void startSync(Context context, Uri what, boolean explicitSync) {
 		startSync(Authenticator.getFirstAccount(context), what, explicitSync, new Bundle());
 	}
 
-	public static void startSync(Context context, Uri what, boolean explicitSync, Bundle extras){
+	/**
+	 * @param context
+	 * @param what
+	 * @param explicitSync
+	 * @param extras
+	 * @see #startSync(Account, Uri, boolean, Bundle)
+	 */
+	public static void startSync(Context context, Uri what, boolean explicitSync, Bundle extras) {
 		startSync(Authenticator.getFirstAccount(context), what, explicitSync, extras);
 	}
 
@@ -68,33 +105,59 @@ public class LocastSyncService extends Service {
 	 * Requests a sync of the item specified by a public URL.
 	 *
 	 * @param context
-	 * @param httpPubUrl a URL pointing to a json array of json objects
-	 * @param childDir the destination local uri for the result to be stored in if it's not present
+	 * @param httpPubUrl
+	 *            an http or https URL pointing to a json array of json objects
+	 *            (if {@code destination} is a dir uri) or a single json object.
+	 * @param destination
+	 *            the destination local uri for the result to be stored in if
+	 *            it's not present
 	 * @param explicitSync
+	 * @see #startSync(Account, Uri, boolean, Bundle)
 	 */
-	public static void startSync(Context context, Uri httpPubUrl, Uri childDir, boolean explicitSync){
+	public static void startSync(Context context, Uri httpPubUrl, Uri destination,
+			boolean explicitSync) {
 		final Bundle b = new Bundle();
-		b.putString(SyncEngine.EXTRA_DESTINATION_URI, childDir.toString());
+		b.putString(SyncEngine.EXTRA_DESTINATION_URI, destination.toString());
 
 		startSync(Authenticator.getFirstAccount(context), httpPubUrl, explicitSync, b);
 	}
 
-	public static void startSync(Account account, Uri what, boolean explicitSync){
+	/**
+	 * Convenience method to request a sync.
+	 *
+	 * @param account
+	 * @param what
+	 * @param explicitSync
+	 * @see #startSync(Account, Uri, boolean, Bundle)
+	 */
+	public static void startSync(Account account, Uri what, boolean explicitSync) {
 		final Bundle b = new Bundle();
 
 		startSync(account, what, explicitSync, b);
 	}
 
-	public static void startSync(Account account, Uri what, boolean explicitSync, Bundle b){
-		if (explicitSync){
-			b.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
-			//b.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
+	/**
+	 * Convenience method to request a sync.
+	 *
+	 * This wraps {@link ContentResolver#requestSync(Account, String, Bundle)}
+	 * and fills in the necessary extras.
+	 *
+	 * @param account
+	 * @param what
+	 * @param explicitSync
+	 *            if true, adds {@link ContentResolver#SYNC_EXTRAS_MANUAL} to
+	 *            the extras
+	 * @param extras
+	 */
+	public static void startSync(Account account, Uri what, boolean explicitSync, Bundle extras) {
+		if (explicitSync) {
+			extras.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
+			// b.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
 		}
-		b.putString(LocastSyncService.EXTRA_SYNC_URI, what.toString());
+		extras.putString(LocastSyncService.EXTRA_SYNC_URI, what.toString());
 
-		ContentResolver.requestSync(account, MediaProvider.AUTHORITY, b);
+		ContentResolver.requestSync(account, MediaProvider.AUTHORITY, extras);
 	}
-
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -140,7 +203,7 @@ public class LocastSyncService extends Service {
 			try {
 				if (uri != null) {
 					mSyncEngine.sync(uri, account, extras, provider, syncResult);
-				}else{
+				} else {
 					mSyncEngine.sync(Cast.CONTENT_URI, account, extras, provider, syncResult);
 					mSyncEngine.sync(Itinerary.CONTENT_URI, account, extras, provider, syncResult);
 				}

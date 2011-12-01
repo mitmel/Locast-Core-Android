@@ -31,6 +31,7 @@ import org.osmdroid.views.overlay.OverlayItem;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -238,7 +239,11 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 
 	private void refresh(boolean explicitSync){
 		LocastSyncService.startSync(this, mUri, explicitSync);
-		LocastSyncService.startSync(this, mCastsUri, explicitSync);
+		final Bundle extras = new Bundle();
+		if (mCastAdapter.isEmpty()){
+			extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
+		}
+		LocastSyncService.startSync(this, mCastsUri, explicitSync, extras);
 	}
 
 
