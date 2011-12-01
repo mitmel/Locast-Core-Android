@@ -95,7 +95,7 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 	CursorLoader itinLoader;
 	CursorLoader castLoader;
 
-	private boolean mRequestSync = true;
+	private boolean mExpeditedSync = true;
 
 	@Override
 	protected void onCreate(Bundle icicle) {
@@ -156,7 +156,7 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 	@Override
 	protected void onResume() {
 		super.onResume();
-		mRequestSync = true;
+		mExpeditedSync = true;
 	}
 
 	@Override
@@ -351,10 +351,10 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 			if (USE_MAP){
 				mCastsOverlay.swapCursor(c);
 			}
-			// this is done after the casts are loaded so that an expediated sync can be requested if the list is empty.
-			if (mRequestSync){
+			// this is done after the casts are loaded so that an expedited sync can be requested if the list is empty.
+			if (mExpeditedSync){
 				refresh(false);
-				mRequestSync = false;
+				mExpeditedSync = false;
 			}
 		}break;
 		}

@@ -101,6 +101,13 @@ public class LocastSyncService extends Service {
 		startSync(Authenticator.getFirstAccount(context), what, explicitSync, extras);
 	}
 
+	public static void startExpeditedAutomaticSync(Context context, Uri what){
+		final Bundle extras = new Bundle();
+		extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
+
+		startSync(Authenticator.getFirstAccount(context), what, false, extras);
+	}
+
 	/**
 	 * Requests a sync of the item specified by a public URL.
 	 *
@@ -152,7 +159,7 @@ public class LocastSyncService extends Service {
 	public static void startSync(Account account, Uri what, boolean explicitSync, Bundle extras) {
 		if (explicitSync) {
 			extras.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
-			// b.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
+			extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
 		}
 		extras.putString(LocastSyncService.EXTRA_SYNC_URI, what.toString());
 
