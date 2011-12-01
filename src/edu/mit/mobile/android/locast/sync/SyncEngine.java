@@ -206,6 +206,8 @@ public class SyncEngine {
 
 		final HttpEntity ent = hr.getEntity();
 
+		final Uri existsToSync = toSync.buildUpon().query(null).build();
+
 		Cursor c;
 		if (isDir) {
 
@@ -213,6 +215,7 @@ public class SyncEngine {
 			ent.consumeContent();
 
 			final int len = ja.length();
+
 			final String[] selectionArgs = new String[len];
 
 			// build the query to see which items are already in the database
@@ -236,7 +239,7 @@ public class SyncEngine {
 			}
 			selection.append(")");
 
-			c = provider.query(toSync, EXIST_QUERY_PROJECTION, selection.toString(), selectionArgs,
+			c = provider.query(existsToSync, EXIST_QUERY_PROJECTION, selection.toString(), selectionArgs,
 					null);
 		} else {
 
@@ -246,7 +249,7 @@ public class SyncEngine {
 
 			mSyncStatus.put(syncStatus.remote, syncStatus);
 
-			c = provider.query(toSync, EXIST_QUERY_PROJECTION, JsonSyncableItem._PUBLIC_URI + "=?",
+			c = provider.query(existsToSync, EXIST_QUERY_PROJECTION, JsonSyncableItem._PUBLIC_URI + "=?",
 					new String[] { syncStatus.remote }, null);
 		}
 

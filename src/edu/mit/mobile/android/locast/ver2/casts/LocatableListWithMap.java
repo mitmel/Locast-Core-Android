@@ -93,6 +93,7 @@ public class LocatableListWithMap extends FragmentActivity implements LoaderMana
 		ACTION_SEARCH_NEARBY = "edu.mit.mobile.android.locast.ACTION_SEARCH_NEARBY";
 
 	private boolean actionSearchNearby = false;
+	private boolean mExpeditedSync;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -180,7 +181,8 @@ public class LocatableListWithMap extends FragmentActivity implements LoaderMana
 	protected void onResume() {
 		super.onResume();
 		mMyLocationOverlay.enableMyLocation();
-		refresh(false);
+		mExpeditedSync = true;
+
 	}
 
 	@Override
@@ -372,6 +374,12 @@ public class LocatableListWithMap extends FragmentActivity implements LoaderMana
 
 		setRefreshing(false);
 
+		if (mExpeditedSync){
+			mExpeditedSync = false;
+			if (mListView.getAdapter().isEmpty()){
+				LocastSyncService.startExpeditedAutomaticSync(this, mContentNearLocation);
+			}
+		}
 	}
 
 	@Override

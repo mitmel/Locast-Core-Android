@@ -75,6 +75,9 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	private AppUpdateChecker mAppUpdateChecker;
 
 	private static String LOADER_DATA = "edu.mit.mobile.android.locast.LOADER_DATA";
+
+	private boolean mExpeditedSync = true;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -121,7 +124,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	protected void onResume() {
 		super.onResume();
 		if(!firstTime){
-			refresh(false);
+			mExpeditedSync = true;
 		}
 	}
 
@@ -154,7 +157,6 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		lm.initLoader(0, loaderArgs, this);
 		setTitle(R.string.itineraries);
 		mUri = data;
-		LocastSyncService.startSync(this, data, true);
 
 	}
 	@Override
@@ -185,6 +187,14 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	@Override
 	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
 		mAdapter.swapCursor(c);
+		if (mExpeditedSync){
+			mExpeditedSync = false;
+			if (mListView.getAdapter().isEmpty()){
+				LocastSyncService.startExpeditedAutomaticSync(this, mUri);
+			}else{
+				refresh(false);
+			}
+		}
 	}
 
 	@Override

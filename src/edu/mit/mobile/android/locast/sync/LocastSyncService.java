@@ -31,11 +31,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.OperationApplicationException;
 import android.content.SyncResult;
+import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
@@ -58,6 +60,8 @@ import edu.mit.mobile.android.locast.net.NetworkProtocolException;
  */
 public class LocastSyncService extends Service {
 	private static final String TAG = LocastSyncService.class.getSimpleName();
+
+	private static final boolean DEBUG = Constants.DEBUG;
 
 	private static LocastSyncAdapter SYNC_ADAPTER = null;
 
@@ -99,6 +103,13 @@ public class LocastSyncService extends Service {
 	 */
 	public static void startSync(Context context, Uri what, boolean explicitSync, Bundle extras) {
 		startSync(Authenticator.getFirstAccount(context), what, explicitSync, extras);
+	}
+
+	public static void startExpeditedAutomaticSync(Context context, Uri what){
+		final Bundle extras = new Bundle();
+		extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
+
+		startSync(Authenticator.getFirstAccount(context), what, false, extras);
 	}
 
 	/**
@@ -152,10 +163,13 @@ public class LocastSyncService extends Service {
 	public static void startSync(Account account, Uri what, boolean explicitSync, Bundle extras) {
 		if (explicitSync) {
 			extras.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
-			// b.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
+			extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
 		}
 		extras.putString(LocastSyncService.EXTRA_SYNC_URI, what.toString());
 
+		if (DEBUG){
+			Log.d(TAG, "requesting sync for "+account + " with extras: "+extras);
+		}
 		ContentResolver.requestSync(account, MediaProvider.AUTHORITY, extras);
 	}
 
@@ -204,30 +218,46 @@ public class LocastSyncService extends Service {
 				if (uri != null) {
 					mSyncEngine.sync(uri, account, extras, provider, syncResult);
 				} else {
-					mSyncEngine.sync(Cast.CONTENT_URI, account, extras, provider, syncResult);
+					//TODO find a better solution for this. mSyncEngine.sync(Cast.CONTENT_URI, account, extras, provider, syncResult);
 					mSyncEngine.sync(Itinerary.CONTENT_URI, account, extras, provider, syncResult);
 				}
 			} catch (final RemoteException e) {
-				e.printStackTrace();
+				Log.e(TAG, e.toString(), e);
+				// TODO handle
 
 			} catch (final SyncException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Log.e(TAG, e.toString(), e);
+				// TODO handle
+
 			} catch (final JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				syncResult.stats.numParseExceptions++;
+				Log.e(TAG, e.toString(), e);
+
 			} catch (final IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				syncResult.stats.numIoExceptions++;
+				Log.e(TAG, e.toString(), e);
+
 			} catch (final NetworkProtocolException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				syncResult.stats.numParseExceptions++;
+				Log.e(TAG, e.toString(), e);
+
 			} catch (final NoPublicPath e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+
+				Log.e(TAG, e.toString(), e);
+
 			} catch (final OperationApplicationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Log.e(TAG, e.toString(), e);
+				// TODO handle
+
+			} catch ( final SQLiteException e){
+				syncResult.databaseError = true;
+				Log.e(TAG, e.toString(), e);
+				return;
+
+			} catch (final IllegalArgumentException e){
+				syncResult.databaseError = true;
+				Log.e(TAG, e.toString(), e);
+				return;
 			}
 
 		}

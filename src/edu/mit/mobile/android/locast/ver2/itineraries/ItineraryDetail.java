@@ -95,6 +95,8 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 	CursorLoader itinLoader;
 	CursorLoader castLoader;
 
+	private boolean mExpeditedSync = true;
+
 	@Override
 	protected void onCreate(Bundle icicle) {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -154,7 +156,7 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 	@Override
 	protected void onResume() {
 		super.onResume();
-		refresh(false);
+		mExpeditedSync = true;
 	}
 
 	@Override
@@ -348,6 +350,11 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 			mCastAdapter.swapCursor(c);
 			if (USE_MAP){
 				mCastsOverlay.swapCursor(c);
+			}
+			// this is done after the casts are loaded so that an expedited sync can be requested if the list is empty.
+			if (mExpeditedSync){
+				refresh(false);
+				mExpeditedSync = false;
 			}
 		}break;
 		}
