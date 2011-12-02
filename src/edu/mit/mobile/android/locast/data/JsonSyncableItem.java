@@ -54,14 +54,15 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	public static final String
 		_PUBLIC_URI      = "uri",
 		_MODIFIED_DATE  = "modified",
+		_SERVER_MODIFIED_DATE  = "server_modified",
 		_CREATED_DATE 	= "created";
 
 	public static final String[] SYNC_PROJECTION = {
 		_ID,
 		_PUBLIC_URI,
 		_MODIFIED_DATE,
+		_SERVER_MODIFIED_DATE,
 		_CREATED_DATE,
-
 	};
 
 	/**
@@ -114,7 +115,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 			super();
 
 			put(_PUBLIC_URI, 		new SyncFieldMap("uri", SyncFieldMap.STRING, SyncItem.SYNC_FROM));
-			put(_MODIFIED_DATE,		new SyncFieldMap("modified", SyncFieldMap.DATE, SyncItem.SYNC_FROM));
+			put(_SERVER_MODIFIED_DATE,	new SyncFieldMap("modified", SyncFieldMap.DATE, SyncItem.SYNC_FROM));
 			put(_CREATED_DATE,		new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 		}
 	}

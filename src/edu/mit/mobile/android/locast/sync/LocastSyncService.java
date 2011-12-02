@@ -165,7 +165,9 @@ public class LocastSyncService extends Service {
 			extras.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
 			extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
 		}
-		extras.putString(LocastSyncService.EXTRA_SYNC_URI, what.toString());
+		if (what != null){
+			extras.putString(LocastSyncService.EXTRA_SYNC_URI, what.toString());
+		}
 
 		if (DEBUG){
 			Log.d(TAG, "requesting sync for "+account + " with extras: "+extras);
@@ -191,7 +193,9 @@ public class LocastSyncService extends Service {
 
 		@Override
 		public void onSyncCanceled() {
-			Log.d(TAG, "onSyncCanceled()");
+			if (DEBUG){
+				Log.d(TAG, "onSyncCanceled()");
+			}
 			super.onSyncCanceled();
 		}
 
@@ -204,14 +208,12 @@ public class LocastSyncService extends Service {
 			if (uriString != null) {
 				uri = Uri.parse(uriString);
 			}
-			if (uri != null) {
-				Log.d(TAG, "Synchronizing " + uri + "...");
-			} else {
-				Log.d(TAG, "Synchronizing...");
-			}
-
-			if (uri == null) {
-				uri = Cast.CONTENT_URI;
+			if (DEBUG){
+				if (uri != null) {
+					Log.d(TAG, "onPerformSync() triggered with uri: " + uri);
+				} else {
+					Log.d(TAG, "onPerformSync() triggered without an uri.");
+				}
 			}
 
 			try {

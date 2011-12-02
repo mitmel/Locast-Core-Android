@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import org.apache.http.Header;
@@ -111,17 +112,26 @@ public class SyncEngine {
 														// differ by and still
 														// be considered equal.
 
+	private static final String[] SYNC_PROJECTION = new String[] {
 
+	JsonSyncableItem._ID,
 
-	private static final String[] EXIST_QUERY_PROJECTION = new String[] { JsonSyncableItem._ID,
-			JsonSyncableItem._PUBLIC_URI, JsonSyncableItem._MODIFIED_DATE,
-			JsonSyncableItem._CREATED_DATE };
+	JsonSyncableItem._PUBLIC_URI,
+
+	JsonSyncableItem._MODIFIED_DATE,
+
+	JsonSyncableItem._SERVER_MODIFIED_DATE,
+
+	JsonSyncableItem._CREATED_DATE
+
+	};
+
+	final String[] PUB_URI_PROJECTION = new String[] { JsonSyncableItem._ID,
+			JsonSyncableItem._PUBLIC_URI };
 
 	private static int FORMAT_ARGS_DEBUG = android.text.format.DateUtils.FORMAT_SHOW_TIME
 			| android.text.format.DateUtils.FORMAT_SHOW_YEAR
 			| android.text.format.DateUtils.FORMAT_SHOW_DATE;
-
-
 
 	public SyncEngine(Context context, NetworkClient networkClient) {
 		mContext = context;
@@ -149,10 +159,18 @@ public class SyncEngine {
 
 		// skip any items already sync'd
 		if (!manualSync && mLastUpdated.isUpdatedRecently(toSync)) {
+			if (DEBUG){
+				Log.d(TAG, "not syncing "+toSync+" as it's been updated recently");
+			}
 			return false;
 		}
 
-		final HashMap<String, SyncStatus> mSyncStatus = new HashMap<String, SyncEngine.SyncStatus>();
+		if (DEBUG){
+			Log.d(TAG, "sync(toSync="+toSync+", account="+account+", extras="+extras+", manualSync="+manualSync+",...)");
+			Log.d(TAG, "pubPath: "+pubPath);
+		}
+
+		final HashMap<String, SyncStatus> syncStatuses = new HashMap<String, SyncEngine.SyncStatus>();
 
 		final String type = provider.getType(toSync);
 		final boolean isDir = type.startsWith(CONTENT_TYPE_PREFIX_DIR);
@@ -187,7 +205,7 @@ public class SyncEngine {
 
 		// TODO check out http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html
 		final long response_delay = response_time - request_time;
-		if (DEBUG){
+		if (DEBUG) {
 			Log.d(TAG, "request took " + response_delay + "ms");
 		}
 		final long localTime = request_time;
@@ -224,7 +242,7 @@ public class SyncEngine {
 				final SyncStatus syncStatus = loadItemFromServer(ja.getJSONObject(i), syncMap,
 						serverTime);
 
-				mSyncStatus.put(syncStatus.remote, syncStatus);
+				syncStatuses.put(syncStatus.remote, syncStatus);
 
 				selectionArgs[i] = syncStatus.remote;
 
@@ -236,55 +254,66 @@ public class SyncEngine {
 			}
 			selection.append(")");
 
-			c = provider.query(toSync, EXIST_QUERY_PROJECTION, selection.toString(), selectionArgs,
-					null);
+			c = provider.query(toSync, SYNC_PROJECTION, selection.toString(), selectionArgs, null);
 		} else {
 
 			final JSONObject jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
 			ent.consumeContent();
 			final SyncStatus syncStatus = loadItemFromServer(jo, syncMap, serverTime);
 
-			mSyncStatus.put(syncStatus.remote, syncStatus);
+			syncStatuses.put(syncStatus.remote, syncStatus);
 
-			c = provider.query(toSync, EXIST_QUERY_PROJECTION, JsonSyncableItem._PUBLIC_URI + "=?",
+			c = provider.query(toSync, SYNC_PROJECTION, JsonSyncableItem._PUBLIC_URI + "=?",
 					new String[] { syncStatus.remote }, null);
 		}
 
 		// ///////////////////////////////////////////////////////////////
 
 		final ArrayList<ContentProviderOperation> cpo = new ArrayList<ContentProviderOperation>();
+		final LinkedList<String> cpoPubUris = new LinkedList<String>();
 
 		try {
 			final int pubUriCol = c.getColumnIndex(JsonSyncableItem._PUBLIC_URI);
-			final int modifiedCol = c.getColumnIndex(JsonSyncableItem._MODIFIED_DATE);
+			final int localModifiedCol = c.getColumnIndex(JsonSyncableItem._MODIFIED_DATE);
+			final int serverModifiedCol = c.getColumnIndex(JsonSyncableItem._SERVER_MODIFIED_DATE);
 			final int idCol = c.getColumnIndex(JsonSyncableItem._ID);
 
+			// All the items in this cursor should be found on both the client
+			// and the server.
 			for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
 				final String pubUri = c.getString(pubUriCol);
+				final SyncStatus itemStatus = syncStatuses.get(pubUri);
+
 				final long id = c.getLong(idCol);
 				final Uri localUri = ContentUris.withAppendedId(toSync, id);
-				final SyncStatus itemStatus = mSyncStatus.get(pubUri);
+
+				itemStatus.local = localUri;
 
 				// make the status searchable by both remote and local uri
-				mSyncStatus.put(localUri.toString(), itemStatus);
+				syncStatuses.put(localUri.toString(), itemStatus);
 
-				final long itemModified = c.getLong(modifiedCol);
-				final long localAge = localTime - itemModified;
+				// last modified as stored in the DB, in phone time
+				final long itemLocalModified = c.getLong(localModifiedCol);
 
-				itemStatus.localAge = localAge;
+				// last modified as stored in the DB, in server time
+				final long itemServerModified = c.getLong(serverModifiedCol);
+				final long localAge = localTime - itemLocalModified;
 
-				final long ageDifference = Math.abs(localAge - itemStatus.remoteAge);
+				final long remoteAge = serverTime - itemStatus.remoteModifiedTime;
 
-				if (ageDifference <= AGE_EQUALITY_SLOP) {
-					itemStatus.state = SyncState.UP_TO_DATE;
-					if (DEBUG){
+				final long ageDifference = Math.abs(localAge - remoteAge);
+
+				// up to date, as far remote -> local goes
+				if (itemServerModified == itemStatus.remoteModifiedTime) {
+					itemStatus.state = SyncState.ALREADY_UP_TO_DATE;
+					if (DEBUG) {
 						Log.d(TAG, pubUri + " is up to date");
 					}
 
-				} else if (localAge > itemStatus.remoteAge) {
+					// need to download
+				} else if (localAge > remoteAge) {
 					if (DEBUG) {
-						final long serverModified = itemStatus.remoteCVs
-								.getAsLong(JsonSyncableItem._MODIFIED_DATE);
+						final long serverModified = itemStatus.remoteModifiedTime;
 
 						Log.d(TAG,
 								pubUri
@@ -292,7 +321,7 @@ public class SyncEngine {
 										+ ageDifference
 										+ "ms older ("
 										+ android.text.format.DateUtils.formatDateTime(mContext,
-												itemModified, FORMAT_ARGS_DEBUG)
+												itemLocalModified, FORMAT_ARGS_DEBUG)
 										+ ") than remote ("
 										+ android.text.format.DateUtils.formatDateTime(mContext,
 												serverModified, FORMAT_ARGS_DEBUG)
@@ -306,17 +335,23 @@ public class SyncEngine {
 
 					// update this so it's in the local timescale
 					correctServerOffset(itemStatus.remoteCVs, JsonSyncableItem._CREATED_DATE,
-							localOffset);
-					correctServerOffset(itemStatus.remoteCVs, JsonSyncableItem._MODIFIED_DATE,
-							localOffset);
+							JsonSyncableItem._CREATED_DATE, localOffset);
+					correctServerOffset(itemStatus.remoteCVs,
+							JsonSyncableItem._SERVER_MODIFIED_DATE,
+							JsonSyncableItem._MODIFIED_DATE, localOffset);
 
 					b.withValues(itemStatus.remoteCVs);
-					cpo.add(b.build());
+					b.withExpectedCount(1);
 
-				} else if (localAge < itemStatus.remoteAge) {
+					cpo.add(b.build());
+					cpoPubUris.add(pubUri);
+
+					syncResult.stats.numUpdates++;
+
+					// need to upload
+				} else if (localAge < remoteAge) {
 					if (DEBUG) {
-						final long serverModified = itemStatus.remoteCVs
-								.getAsLong(JsonSyncableItem._MODIFIED_DATE);
+						final long serverModified = itemStatus.remoteModifiedTime;
 
 						Log.d(TAG,
 								pubUri
@@ -324,7 +359,7 @@ public class SyncEngine {
 										+ ageDifference
 										+ "ms newer ("
 										+ android.text.format.DateUtils.formatDateTime(mContext,
-												itemModified, FORMAT_ARGS_DEBUG)
+												itemLocalModified, FORMAT_ARGS_DEBUG)
 										+ ") than remote ("
 										+ android.text.format.DateUtils.formatDateTime(mContext,
 												serverModified, FORMAT_ARGS_DEBUG)
@@ -332,7 +367,7 @@ public class SyncEngine {
 					}
 					itemStatus.state = SyncState.LOCAL_DIRTY;
 
-					// publish the local
+					// TODO publish the local info
 				}
 
 				mLastUpdated.markUpdated(localUri);
@@ -342,81 +377,139 @@ public class SyncEngine {
 			c.close();
 		}
 
-		for (final Map.Entry<String, SyncStatus> entry : mSyncStatus.entrySet()) {
+		// apply bulk updates
+		if (cpo.size() > 0) {
+			if (DEBUG) {
+				Log.d(TAG, "applying " + cpo.size() + " bulk updates...");
+			}
+
+			final ContentProviderResult[] r = provider.applyBatch(cpo);
+			if (DEBUG) {
+				Log.d(TAG, "Done applying updates. Running postSync handler...");
+			}
+
+			for (int i = 0; i < r.length; i++) {
+				final ContentProviderResult res = r[i];
+				final SyncStatus ss = syncStatuses.get(cpoPubUris.get(i));
+				if (ss == null) {
+					Log.e(TAG, "can't get sync status for " + res.uri);
+					continue;
+				}
+				syncMap.onPostSyncItem(mContext, ss.local, ss.remoteJson,
+						res.count != null ? res.count == 1 : true);
+
+				ss.state = SyncState.NOW_UP_TO_DATE;
+			}
+
+			if (DEBUG) {
+				Log.d(TAG, "done running postSync handler.");
+			}
+
+			cpo.clear();
+			cpoPubUris.clear();
+		}
+
+		/*
+		 * Look through the SyncState.state values and find ones that need to be
+		 * stored.
+		 */
+
+		for (final Map.Entry<String, SyncStatus> entry : syncStatuses.entrySet()) {
 			final String pubUri = entry.getKey();
 			final SyncStatus status = entry.getValue();
 			if (status.state == SyncState.REMOTE_ONLY) {
-				if (DEBUG){
+				if (DEBUG) {
 					Log.d(TAG, pubUri + " is not yet stored locally, adding...");
 				}
 
 				// update this so it's in the local timescale
-				correctServerOffset(status.remoteCVs, JsonSyncableItem._CREATED_DATE, localOffset);
-				correctServerOffset(status.remoteCVs, JsonSyncableItem._MODIFIED_DATE, localOffset);
+				correctServerOffset(status.remoteCVs, JsonSyncableItem._CREATED_DATE,
+						JsonSyncableItem._CREATED_DATE, localOffset);
+				correctServerOffset(status.remoteCVs, JsonSyncableItem._SERVER_MODIFIED_DATE,
+						JsonSyncableItem._MODIFIED_DATE, localOffset);
 
 				final ContentProviderOperation.Builder b = ContentProviderOperation
 						.newInsert(toSync);
 				b.withValues(status.remoteCVs);
 
 				cpo.add(b.build());
+				cpoPubUris.add(pubUri);
+				syncResult.stats.numInserts++;
 			}
 		}
 
-		final String[] PUB_URI_PROJECTION = new String[] { JsonSyncableItem._ID,
-				JsonSyncableItem._PUBLIC_URI };
-
+		/*
+		 * Execute the content provider operations in bulk.
+		 */
 		if (cpo.size() > 0) {
+			if (DEBUG){
+				Log.d(TAG, "bulk inserting "+ cpo.size() + " items...");
+			}
 			final ContentProviderResult[] r = provider.applyBatch(cpo);
-			for (final ContentProviderResult res : r) {
-				SyncStatus ss = mSyncStatus.get(res.uri.toString());
+			if (DEBUG) {
+				Log.d(TAG, "applyBatch completed. Processing results...");
+			}
+
+			for (int i = 0; i < r.length; i++) {
+				final ContentProviderResult res = r[i];
+				if (res.uri == null) {
+					syncResult.stats.numSkippedEntries++;
+					Log.e(TAG, "result from content provider bulk operation returned null");
+					continue;
+				}
+				final SyncStatus ss = syncStatuses.get(cpoPubUris.get(i));
 
 				if (ss == null) {
-					final Cursor c2 = provider.query(res.uri, PUB_URI_PROJECTION, null, null, null);
-					try {
-						if (c2.moveToFirst()) {
-							final String pubUri = c2.getString(c2
-									.getColumnIndex(JsonSyncableItem._PUBLIC_URI));
-							ss = mSyncStatus.get(pubUri);
-						}
-					} finally {
-						c2.close();
-					}
+					syncResult.stats.numSkippedEntries++;
+					Log.e(TAG, "could not find sync status for " + cpoPubUris.get(i));
+					continue;
 				}
 
-				if (ss != null) {
-					syncMap.onPostSyncItem(mContext, res.uri, ss.remoteJson,
-							res.count != null ? res.count == 1 : true);
-				} else {
-					Log.e(TAG, "can't get sync status for " + res.uri);
-				}
+				ss.local = res.uri;
+
+				syncMap.onPostSyncItem(mContext, res.uri, ss.remoteJson,
+						res.count != null ? res.count == 1 : true);
+
+				ss.state = SyncState.NOW_UP_TO_DATE;
 			}
-			if (DEBUG){
+			if (DEBUG) {
 				Log.d(TAG, "batch updates successfully applied.");
 			}
 		} else {
-			if (DEBUG){
+			if (DEBUG) {
 				Log.d(TAG, "no updates to perform.");
 			}
 		}
 
-		mSyncStatus.clear();
+		syncStatuses.clear();
 
 		mLastUpdated.markUpdated(toSync);
 
 		return true;
 	}
 
+	/**
+	 * Loads the an item from a JSONObject into a SyncStatus object.
+	 *
+	 * @param jo
+	 * @param syncMap
+	 * @param serverTime
+	 * @return
+	 * @throws JSONException
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 */
 	private SyncStatus loadItemFromServer(JSONObject jo, SyncMap syncMap, long serverTime)
 			throws JSONException, IOException, NetworkProtocolException {
 		final ContentValues cv = JsonSyncableItem.fromJSON(mContext, null, jo, syncMap);
 
 		final String remoteUri = cv.getAsString(JsonSyncableItem._PUBLIC_URI);
-		final long remoteModified = cv.getAsLong(JsonSyncableItem._MODIFIED_DATE);
+		final long remoteModified = cv.getAsLong(JsonSyncableItem._SERVER_MODIFIED_DATE);
 
 		// the status starts out based on this knowledge and gets filled in
 		// as the sync progresses
-		final SyncStatus syncStatus = new SyncStatus(null, remoteUri, SyncState.REMOTE_ONLY);
-		syncStatus.remoteAge = serverTime - remoteModified;
+		final SyncStatus syncStatus = new SyncStatus(remoteUri, SyncState.REMOTE_ONLY);
+		syncStatus.remoteModifiedTime = remoteModified;
 		syncStatus.remoteCVs = cv;
 		syncStatus.remoteJson = jo;
 		syncStatus.remote = remoteUri;
@@ -424,9 +517,18 @@ public class SyncEngine {
 		return syncStatus;
 	}
 
-	private void correctServerOffset(ContentValues cv, String key, long localOffset) {
-		final long serverModified = cv.getAsLong(key);
-		cv.put(key, serverModified + localOffset);
+	/**
+	 * The mobile needs to store the modified date in its own timescale, so it
+	 * can tell if a local update is newer than that of the server.
+	 *
+	 * @param cv
+	 * @param fromKey
+	 * @param localOffset
+	 */
+	private void correctServerOffset(ContentValues cv, String fromKey, String destKey,
+			long localOffset) {
+		final long serverModified = cv.getAsLong(fromKey);
+		cv.put(destKey, serverModified + localOffset);
 	}
 
 	/**
@@ -498,21 +600,51 @@ public class SyncEngine {
 	}
 
 	private enum SyncState {
-		UP_TO_DATE, LOCAL_DIRTY, REMOTE_DIRTY, LOCAL_ONLY, REMOTE_ONLY, DELETED_LOCALLY, DELETED_REMOTELY
+		/**
+		 * The item was up to date before the sync began.
+		 */
+		ALREADY_UP_TO_DATE,
+
+		/**
+		 * The item is now up to date, as a result of the sync.
+		 */
+		NOW_UP_TO_DATE,
+
+		/**
+		 * The item exists both remotely and locally, but has been changed on
+		 * the local side.
+		 */
+		LOCAL_DIRTY,
+
+		/**
+		 * The item exists both remotely and locally, but has been changed on
+		 * the remote side.
+		 */
+		REMOTE_DIRTY,
+
+		/**
+		 * The item is only stored locally.
+		 */
+		LOCAL_ONLY,
+
+		/**
+		 * Item is only stored on the remote side.
+		 */
+		REMOTE_ONLY,
+
+		DELETED_LOCALLY, DELETED_REMOTELY
 	}
 
 	private static class SyncStatus {
-		public SyncStatus(String local, String remote, SyncState state) {
-			this.local = local;
+		public SyncStatus(String remote, SyncState state) {
 			this.remote = remote;
 			this.state = state;
 		}
 
-		String local;
+		Uri local;
 		String remote;
 		SyncState state;
-		long localAge;
-		long remoteAge;
+		long remoteModifiedTime;
 		JSONObject remoteJson;
 		ContentValues remoteCVs;
 	}

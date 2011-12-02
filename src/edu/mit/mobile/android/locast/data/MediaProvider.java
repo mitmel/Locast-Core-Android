@@ -119,7 +119,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 41;
+		private static final int DB_VER = 42;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -129,6 +129,7 @@ public class MediaProvider extends ContentProvider {
 			JsonSyncableItem._ID 			 + " INTEGER PRIMARY KEY,"
 			+ JsonSyncableItem._PUBLIC_URI 	 + " TEXT UNIQUE,"
 			+ JsonSyncableItem._MODIFIED_DATE+ " INTEGER,"
+			+ JsonSyncableItem._SERVER_MODIFIED_DATE+ " INTEGER,"
 			+ JsonSyncableItem._CREATED_DATE + " INTEGER,";
 
 		private static final String JSON_COMMENTABLE_FIELDS =
