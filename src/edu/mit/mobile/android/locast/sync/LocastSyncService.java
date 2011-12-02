@@ -154,7 +154,7 @@ public class LocastSyncService extends Service {
 	 * and fills in the necessary extras.
 	 *
 	 * @param account
-	 * @param what
+	 * @param what the uri of the item that needs to be sync'd. can be null
 	 * @param explicitSync
 	 *            if true, adds {@link ContentResolver#SYNC_EXTRAS_MANUAL} to
 	 *            the extras
@@ -220,8 +220,9 @@ public class LocastSyncService extends Service {
 				if (uri != null) {
 					mSyncEngine.sync(uri, account, extras, provider, syncResult);
 				} else {
-					//TODO find a better solution for this. mSyncEngine.sync(Cast.CONTENT_URI, account, extras, provider, syncResult);
+					mSyncEngine.sync(Cast.FEATURED, account, extras, provider, syncResult);
 					mSyncEngine.sync(Itinerary.CONTENT_URI, account, extras, provider, syncResult);
+					mSyncEngine.sync(Cast.FAVORITE, account, extras, provider, syncResult);
 				}
 			} catch (final RemoteException e) {
 				Log.e(TAG, e.toString(), e);

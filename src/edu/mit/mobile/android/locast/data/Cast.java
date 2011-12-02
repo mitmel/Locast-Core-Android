@@ -60,7 +60,8 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 	public static final String
 		SORT_ORDER_DEFAULT = Cast._DRAFT + " DESC," + Cast._FAVORITED + " DESC," + Cast._MODIFIED_DATE+" DESC";
 
-	private Context context;
+	public static final Uri FEATURED = getTagUri(CONTENT_URI, addPrefixToTag(Cast.SYSTEM_PREFIX, "_featured"));
+	public static final Uri FAVORITE = Favoritable.getFavoritedUri(Cast.CONTENT_URI, true);
 
 	@Override
 	public Uri getContentUri() {

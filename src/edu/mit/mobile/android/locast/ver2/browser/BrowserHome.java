@@ -23,7 +23,6 @@ import android.content.SharedPreferences;
 import android.content.SyncInfo;
 import android.content.SyncStatusObserver;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -65,8 +64,6 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 	private CastCursorAdapter mAdapter;
 	private AppUpdateChecker mAppUpdateChecker;
-
-	private static final Uri FEATURED_CASTS = Cast.getTagUri(Cast.CONTENT_URI, Cast.addPrefixToTag(Cast.SYSTEM_PREFIX, "_featured"));
 
 	private boolean shouldRefresh;
 
@@ -191,22 +188,9 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 
 	private void refresh(boolean explicitSync){
-		Bundle b = new Bundle();
-		final ContentResolver cr = getContentResolver();
 
-		if (explicitSync){
-			b.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
-		}
-		b.putString(LocastSyncService.EXTRA_SYNC_URI, FEATURED_CASTS.toString());
-		getContentResolver();
-		//getContentResolver().startSync(FEATURED_CASTS, b);
-		ContentResolver.requestSync(Authenticator.getFirstAccount(this), MediaProvider.AUTHORITY, b);
-
-		b = new Bundle();
-		b.putString(LocastSyncService.EXTRA_SYNC_URI, Itinerary.CONTENT_URI.toString());
-		ContentResolver.requestSync(Authenticator.getFirstAccount(this), MediaProvider.AUTHORITY, b);
-		//startService(new Intent(Intent.ACTION_SYNC, FEATURED_CASTS).putExtra(Sync.EXTRA_EXPLICIT_SYNC, explicitSync));
-
+		// the default sync should get all the things we care about for the home screen.
+		LocastSyncService.startSync(this, null, explicitSync);
 	}
 
 	@Override
@@ -258,7 +242,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		switch(id){
 		case LOADER_FEATURED_CASTS:
 			return new CursorLoader(this,
-					FEATURED_CASTS,
+					Cast.FEATURED,
 					Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
 
 			default:
