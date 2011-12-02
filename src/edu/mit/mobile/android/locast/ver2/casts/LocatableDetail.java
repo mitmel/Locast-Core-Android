@@ -17,16 +17,18 @@ package edu.mit.mobile.android.locast.ver2.casts;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import org.osmdroid.DefaultResourceProxyImpl;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.MapController;
-import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.OverlayManager;
+import java.util.List;
 
 import android.database.Cursor;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
+import android.support.v4_map.app.MapFragmentActivity;
 import android.view.View;
+
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.MapController;
+import com.google.android.maps.MapView;
+import com.google.android.maps.Overlay;
+
 import edu.mit.mobile.android.locast.maps.MapsUtils;
 import edu.mit.mobile.android.locast.maps.PointerShadow;
 import edu.mit.mobile.android.locast.maps.PointerShadowOverlay;
@@ -47,7 +49,7 @@ import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
  * @author steve
  *
  */
-abstract public class LocatableDetail extends FragmentActivity {
+abstract public class LocatableDetail extends MapFragmentActivity {
 
 	private MapView mMapView;
 	private MapController mMapController;
@@ -70,14 +72,12 @@ abstract public class LocatableDetail extends FragmentActivity {
 
 		mMapController = mMapView.getController();
 		mPointerShadow = (PointerShadow) findViewById(R.id.pointer_shadow);
-		mShadowOverlay = new PointerShadowOverlay(new DefaultResourceProxyImpl(this), mPointerShadow);
+		mShadowOverlay = new PointerShadowOverlay(this, mPointerShadow);
 		mLocatableItemOverlay = createItemOverlay();
-		final OverlayManager om = mMapView.getOverlayManager();
-
-		om.add(mLocatableItemOverlay);
-		om.add(mShadowOverlay);
-		mMapView.setMultiTouchControls(true);
 		mMapView.setBuiltInZoomControls(true);
+		final List<Overlay> overlays = mMapView.getOverlays();
+		overlays.add(mLocatableItemOverlay);
+		overlays.add(mShadowOverlay);
 
 		mMapView.setVisibility(View.VISIBLE);
 	}
@@ -95,8 +95,8 @@ abstract public class LocatableDetail extends FragmentActivity {
 	protected void setPointerFromCursor(Cursor c, int zoomLevel){
 		final GeoPoint gp = MapsUtils.getGeoPoint(c);
 		if (mCurrentPointer == null || !mCurrentPointer.equals(gp)){
-			setPointer(new GeoPoint(gp));
-			mMapController.setCenter(new GeoPoint(gp));
+			setPointer(gp);
+			mMapController.setCenter(gp);
 			mMapController.setZoom(zoomLevel);
 			mCurrentPointer = gp;
 		}

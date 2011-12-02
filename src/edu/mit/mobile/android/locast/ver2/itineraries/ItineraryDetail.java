@@ -20,17 +20,7 @@ package edu.mit.mobile.android.locast.ver2.itineraries;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
-import java.util.TimerTask;
 
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.MapController;
-import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.ItemizedIconOverlay;
-import org.osmdroid.views.overlay.Overlay;
-import org.osmdroid.views.overlay.OverlayItem;
-
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.DialogInterface;
@@ -38,10 +28,10 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v4_map.app.LoaderManager;
+import android.support.v4_map.app.MapFragmentActivity;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -56,6 +46,13 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.MapController;
+import com.google.android.maps.MapView;
+import com.google.android.maps.Overlay;
+import com.google.android.maps.OverlayItem;
+
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.Constants;
@@ -67,7 +64,7 @@ import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 
-public class ItineraryDetail extends FragmentActivity implements ItemizedIconOverlay.OnItemGestureListener<OverlayItem> , LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener, DialogInterface.OnClickListener {
+public class ItineraryDetail extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener, DialogInterface.OnClickListener {
 	private static final String TAG = ItineraryDetail.class.getSimpleName();
 
 	// if the layout for this doesn't need a map, set this to false.
@@ -89,7 +86,7 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 	private PathOverlay mPathOverlay;
 
 	private Timer clickTimer;
-	private boolean markerClicked = false;
+	private final boolean markerClicked = false;
 	private final ArrayList<OverlayItem> clickedItems = new ArrayList<OverlayItem>();
 
 	CursorLoader itinLoader;
@@ -230,7 +227,7 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 
 		if (USE_MAP){
 
-			mCastsOverlay = new CastsIconOverlay(ItineraryDetail.this, this);
+			mCastsOverlay = new CastsIconOverlay(ItineraryDetail.this);
 			mPathOverlay = new PathOverlay(this);
 
 			final List<Overlay> overlays = mMapView.getOverlays();
@@ -398,7 +395,7 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 				return super.onOptionsItemSelected(item);
 		}
 	}
-
+/*
 	@Override
 	public boolean onItemLongPress(int position, OverlayItem item) {
 		return false;
@@ -414,9 +411,21 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 
 		clickedItems.add(item);
 		return false;
+	}*/
+
+	@Override
+	public void onClick(DialogInterface arg0, int arg1) {
+		// TODO Auto-generated method stub
+
 	}
 
-	protected void showCastChooserDialog() {
+	@Override
+	protected boolean isRouteDisplayed() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+/*	protected void showCastChooserDialog() {
 		final String[] items = new String[clickedItems.size()];
 		for (int i = 0; i < items.length; i++)
 		{
@@ -437,7 +446,7 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 
 	private void selectOverlay(OverlayItem item) {
 		try {
-			final long selectedId = Long.parseLong(item.mUid);
+			final long selectedId = Long.parseLong(item);
 			startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mCastsUri, selectedId)));
 		} catch (final Exception e) {
 			Log.e(TAG, "Error trying to parse id", e);
@@ -460,5 +469,5 @@ public class ItineraryDetail extends FragmentActivity implements ItemizedIconOve
 
 			markerClicked = false;
 		}
-	}
+	}*/
 }

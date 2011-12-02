@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# for FC:84:2A:A7:F4:7E:5C:49:CD:6A:C7:0C:3B:A6:BE:E1
 dev="0mv3f-QVdQ_CF3MFrN2I0MO8Wgu_QPqzOKx2GHw"
 
 # for fingerint

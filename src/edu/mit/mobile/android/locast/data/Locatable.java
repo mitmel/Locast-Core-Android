@@ -19,7 +19,6 @@ package edu.mit.mobile.android.locast.data;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.osmdroid.api.IGeoPoint;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -29,6 +28,7 @@ import android.net.Uri;
 
 import com.beoui.geocell.GeocellUtils;
 import com.beoui.geocell.model.Point;
+import com.google.android.maps.GeoPoint;
 
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncCustom;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncItem;
@@ -130,7 +130,7 @@ public abstract class Locatable {
 	 * @param location
 	 * @return the same {@link ContentValues} that was passed in.
 	 */
-	public static ContentValues toContentValues(ContentValues cv, IGeoPoint location){
+	public static ContentValues toContentValues(ContentValues cv, GeoPoint location){
 		cv.put(Columns._LATITUDE, location.getLatitudeE6() / 1E6d);
 		cv.put(Columns._LONGITUDE, location.getLongitudeE6() / 1E6d);
 

@@ -35,7 +35,6 @@ import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.widget.Button;
 import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.utils.AddressUtils;
 
 /**
  * A clickable link that shows a reverse-geocoded location.
@@ -220,8 +219,9 @@ public class LocationLink extends Button {
 				final List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
 				if (addresses.size() > 0){
 					final Address thisLocation = addresses.get(0);
-
-					return AddressUtils.addressToName(thisLocation);
+					// TODO fixme
+					return thisLocation.toString();
+					//return AddressUtils.addressToName(thisLocation);
 				}
 			} catch (final IOException e) {
 				e.printStackTrace();

@@ -18,13 +18,6 @@ package edu.mit.mobile.android.locast.ver2.casts;
  */
 import java.util.List;
 
-import org.osmdroid.DefaultResourceProxyImpl;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.MapController;
-import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.MyLocationOverlay;
-import org.osmdroid.views.overlay.Overlay;
-
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -34,11 +27,11 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
+import android.support.v4_map.app.LoaderManager;
+import android.support.v4_map.app.MapFragmentActivity;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -47,6 +40,13 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.MapController;
+import com.google.android.maps.MapView;
+import com.google.android.maps.MyLocationOverlay;
+import com.google.android.maps.Overlay;
+
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
@@ -64,7 +64,7 @@ import edu.mit.mobile.android.locast.ver2.itineraries.BasicLocatableOverlay;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 import edu.mit.mobile.android.widget.RefreshButton;
 
-public class LocatableListWithMap extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnClickListener, OnItemClickListener {
+public class LocatableListWithMap extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnClickListener, OnItemClickListener {
 
 	@SuppressWarnings("unused")
 	private static final String TAG = LocatableListWithMap.class.getSimpleName();
@@ -154,7 +154,7 @@ public class LocatableListWithMap extends FragmentActivity implements LoaderMana
 					new int[]{}, 0);
 
 			mListView.setAdapter(mAdapter);
-			initMapOverlays(new BasicLocatableOverlay(LocatableItemOverlay.boundCenterBottom(getResources().getDrawable(R.drawable.ic_map_event)), new DefaultResourceProxyImpl(this)));
+			initMapOverlays(new BasicLocatableOverlay(LocatableItemOverlay.boundCenterBottom(getResources().getDrawable(R.drawable.ic_map_event))));
 		}else{
 			throw new IllegalArgumentException("Unhandled content type " + type);
 		}
@@ -305,6 +305,11 @@ public class LocatableListWithMap extends FragmentActivity implements LoaderMana
 		}
 	}
 
+	@Override
+	protected boolean isRouteDisplayed() {
+		return false;
+	}
+
 	private class MyMyLocationOverlay extends MyLocationOverlay {
 
 		private Location mPrevLocation = null;
@@ -350,8 +355,7 @@ public class LocatableListWithMap extends FragmentActivity implements LoaderMana
 		mLocatableItemsOverlay.swapCursor(c);
 
 		if (c.moveToFirst()){
-			// XXX figure out bounds mMapController.zoomToSpan(BoundingBoxE6.fromGeoPoints(mLocatableItemsOverlay.getItems));
-			//mMapController.zoomToSpan(mLocatableItemsOverlay.getLatSpanE6(), mLocatableItemsOverlay.getLonSpanE6());
+			mMapController.zoomToSpan(mLocatableItemsOverlay.getLatSpanE6(), mLocatableItemsOverlay.getLonSpanE6());
 			final GeoPoint center = mLocatableItemsOverlay.getCenter();
 			if (mMapView.getVisibility()==View.INVISIBLE){
 				mMapController.setCenter(center);

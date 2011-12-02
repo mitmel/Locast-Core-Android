@@ -2,19 +2,7 @@ package edu.mit.mobile.android.locast.ver2.casts;
 
 import java.io.File;
 import java.util.HashMap;
-
-import org.osmdroid.DefaultResourceProxyImpl;
-import org.osmdroid.api.IGeoPoint;
-import org.osmdroid.events.MapListener;
-import org.osmdroid.events.ScrollEvent;
-import org.osmdroid.events.ZoomEvent;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.MapController;
-import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.ItemizedIconOverlay.OnItemGestureListener;
-import org.osmdroid.views.overlay.MyLocationOverlay;
-import org.osmdroid.views.overlay.OverlayItem;
-import org.osmdroid.views.overlay.OverlayManager;
+import java.util.List;
 
 import android.R.attr;
 import android.accounts.Account;
@@ -35,12 +23,12 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images.Media;
 import android.provider.MediaStore.MediaColumns;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.support.v4_map.app.LoaderManager;
+import android.support.v4_map.app.LoaderManager.LoaderCallbacks;
+import android.support.v4_map.app.MapFragmentActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -59,6 +47,11 @@ import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.MapController;
+import com.google.android.maps.MapView;
+import com.google.android.maps.MyLocationOverlay;
+import com.google.android.maps.Overlay;
 import com.stackoverflow.ArrayUtils;
 
 import edu.mit.mobile.android.content.ProviderUtils;
@@ -78,7 +71,7 @@ import edu.mit.mobile.android.locast.widget.TagList.OnTagListChangeListener;
 import edu.mit.mobile.android.utils.ResourceUtils;
 import edu.mit.mobile.android.widget.CheckableTabWidget;
 
-public class CastEdit extends FragmentActivity implements OnClickListener,
+public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		OnTabChangeListener, LocationListener, LoaderCallbacks<Cursor> {
 
 	private static final String TAG = CastEdit.class.getSimpleName();
@@ -89,7 +82,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 
 	private boolean mIsDraft = true;
 	private boolean mIsEditable = false;
-	private IGeoPoint mLocation;
+	private GeoPoint mLocation;
 	private boolean mRecenterMapOnCurrentLocation = true;
 	private boolean mFirstLoad = true;
 
@@ -250,24 +243,24 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 
 		mDescriptionView = (EditText) findViewById(R.id.description);
 		mDescriptionView.addTextChangedListener(new TextWatcher() {
-			
+
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {}
-			
+
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count,
 					int after) {}
-			
+
 			@Override
 			public void afterTextChanged(Editable s) {
 				updateDetailsTab();
-				
+
 			}
 		});
-		
+
 		mTags = (TagList) findViewById(R.id.tags);
 		mTags.setOnTagListChangeListener(new OnTagListChangeListener() {
-			
+
 			@Override
 			public void onTagListChange(TagList v) {
 				updateDetailsTab();
@@ -278,46 +271,20 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		// initialize map
 		mSetLocation = (ImageButton) findViewById(R.id.set_current_location);
 		mMapView = (MapView) findViewById(R.id.map);
-		mMapView.setMapListener(new MapListener() {
 
-			@Override
-			public boolean onZoom(ZoomEvent event) {
-				mapHasMoved();
-				return false;
-			}
-
-			@Override
-			public boolean onScroll(ScrollEvent event) {
-				mapHasMoved();
-				return false;
-			}
-		});
 
 		mMapController = mMapView.getController();
 		mMapController.setZoom(7);
 		mMapView.setBuiltInZoomControls(true);
-		mMapView.setMultiTouchControls(true);
 
-		mCastLocationOverlay = new CastLocationOverlay(this, new OnItemGestureListener<OverlayItem>() {
-
-			@Override
-			public boolean onItemLongPress(int index, OverlayItem item) {
-				return false;
-			}
-
-			@Override
-			public boolean onItemSingleTapUp(int index, OverlayItem item) {
-				return false;
-			}
-
-		}, new DefaultResourceProxyImpl(this));
+		mCastLocationOverlay = new CastLocationOverlay(this);
 
 		mMyLocationOverlay = new MyLocationOverlay(this, mMapView);
-		mMyLocationOverlay.setDrawAccuracyEnabled(true);
+		//mMyLocationOverlay.setDrawAccuracyEnabled(true);
 
-		final OverlayManager overlayManager = mMapView.getOverlayManager();
-		overlayManager.add(mMyLocationOverlay);
-		overlayManager.add(mCastLocationOverlay);
+		final List<Overlay> overlays = mMapView.getOverlays();
+		overlays.add(mMyLocationOverlay);
+		overlays.add(mCastLocationOverlay);
 
 		// hook in buttons
 		findViewById(R.id.save).setOnClickListener(this);
@@ -377,8 +344,8 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 	}
 
 	protected void updateDetailsTab() {
-		boolean descriptionComplete = mDescriptionView.length() > 0;
-		boolean tagsComplete = mTags.getTags().size() > 0;
+		final boolean descriptionComplete = mDescriptionView.length() > 0;
+		final boolean tagsComplete = mTags.getTags().size() > 0;
 		mTabWidget.setTabChecked(2, descriptionComplete || tagsComplete);
 	}
 
@@ -511,7 +478,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 			if (mMapView.getZoomLevel() < 10) {
 				mMapController.setZoom(15);
 			}
-			mMapController.animateTo(new GeoPoint(location));
+			mMapController.animateTo(new GeoPoint((int)(location.getLatitude() * 1E6), (int)(location.getLongitude() * 1E6)));
 		}
 	}
 
@@ -609,7 +576,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		outState.putBoolean(RUNTIME_STATE_FIRST_LOAD, mFirstLoad);
 		outState.putInt(RUNTIME_STATE_CURRENT_TAB, mTabHost.getCurrentTab());
 		if (mLocation instanceof GeoPoint){
-			outState.putParcelable(RUNTIME_STATE_LOCATION, (GeoPoint)mLocation);
+			// XXX outState.putParcelable(RUNTIME_STATE_LOCATION, (GeoPoint)mLocation);
 		}
 		outState.putBoolean(RUNTIME_STATE_IS_DRAFT, mIsDraft);
 		outState.putParcelable(RUNTIME_STATE_CREATE_MEDIA_URI, mCreateMediaUri);
@@ -632,7 +599,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		final Location l = Locatable.toLocation(c);
 		if (l != null){
 			mRecenterMapOnCurrentLocation = false;
-			setLocation(new GeoPoint(l)); // XXX optimize
+			setLocation(new GeoPoint((int)(l.getLatitude() * 1E6), (int)(l.getLongitude() * 1E6))); // XXX optimize
 		}
 		mTags.clearAllTags();
 		mTags.addTags(TaggableItem.getTags(getContentResolver(), mCast));
@@ -649,22 +616,22 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		setEditable(Cast.canEdit(this, c));
 		updateDetailsTab();
 	}
-	
+
 	private void setEditable(boolean isEditable){
 		mIsEditable = isEditable;
-		
+
 		findViewById(R.id.cast_title).setEnabled(isEditable);
 		findViewById(R.id.save).setEnabled(isEditable);
-		
+
 		// location
 		mSetLocation.setEnabled(isEditable);
-		
+
 		// media
 		findViewById(R.id.new_photo).setEnabled(isEditable);
 		findViewById(R.id.new_video).setEnabled(isEditable);
 		findViewById(R.id.pick_media).setEnabled(isEditable);
-		
-		
+
+
 		// details
 		mTags.setEnabled(isEditable);
 		mDescriptionView.setEnabled(isEditable);
@@ -683,7 +650,8 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		if (mMapCenterIsLocation){
 			if (mLocation != null){
 				if (mLocation instanceof GeoPoint){
-					mMapCenterIsLocation = ((GeoPoint) mLocation).distanceTo(mMapView.getMapCenter()) <= 0.1;
+
+					// XXX mMapCenterIsLocation = mLocation.distanceTo(mMapView.getMapCenter()) <= 0.1;
 					if (!mMapCenterIsLocation){
 						mSetLocation.setImageState(STATE_INACTIVE_LOCATION_SET, false);
 					}else{
@@ -792,7 +760,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 
 						final boolean isInArmpit = lat == 0 && lon == 0; // Sorry, people in boats off the coast of Ghana, but you're an unfortunate edge case...
 						if (!c.isNull(latCol) && !c.isNull(lonCol) && ! isInArmpit){
-							setLocation(new GeoPoint(c.getDouble(latCol), c.getDouble(lonCol)));
+							setLocation(new GeoPoint((int)(c.getDouble(latCol) * 1E6), (int)(c.getDouble(lonCol) * 1E6)));
 						}
 					}
 
@@ -841,7 +809,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 			if (mMapView.getZoomLevel() < 10) {
 				mMapController.setZoom(15);
 			}
-			mMapController.animateTo(new GeoPoint(curLoc));
+			mMapController.animateTo(new GeoPoint((int)(curLoc.getLatitude() * 1E6), (int)(curLoc.getLongitude() * 1E6)));
 		}else{
 			Toast.makeText(this, R.string.notice_finding_your_location, Toast.LENGTH_SHORT).show();
 		}
@@ -849,7 +817,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		mRecenterMapOnCurrentLocation = true;
 	}
 
-	private void setLocation(IGeoPoint location) {
+	private void setLocation(GeoPoint location) {
 		mLocation = location;
 
 		final boolean hasLocation = mLocation != null;
@@ -899,7 +867,7 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 		if (!mIsEditable){
 			return mCast;
 		}
-		
+
 		Uri newCast;
 		final ContentResolver cr = getContentResolver();
 		final ContentValues cv = toContentValues();
@@ -995,6 +963,12 @@ public class CastEdit extends FragmentActivity implements OnClickListener,
 
 			return v;
 		}
+	}
+
+	@Override
+	protected boolean isRouteDisplayed() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 }

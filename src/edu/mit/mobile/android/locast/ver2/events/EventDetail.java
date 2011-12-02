@@ -18,22 +18,22 @@ package edu.mit.mobile.android.locast.ver2.events;
  */
 
 import android.content.Intent;
-import org.osmdroid.DefaultResourceProxyImpl;
-import org.osmdroid.views.MapController;
-import org.osmdroid.views.MapView;
-
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v4_map.app.LoaderManager;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.maps.MapController;
+import com.google.android.maps.MapView;
+
 import edu.mit.mobile.android.locast.data.Event;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
@@ -70,9 +70,14 @@ public class EventDetail extends LocatableDetail implements LoaderManager.Loader
 	protected LocatableItemOverlay createItemOverlay() {
 		mEventOverlay = new BasicLocatableOverlay(
 				BasicLocatableOverlay.boundCenterBottom(
-						getResources().getDrawable(R.drawable.ic_map_event)), new DefaultResourceProxyImpl(this));
+						getResources().getDrawable(R.drawable.ic_map_event)));
 		return mEventOverlay;
 
+	}
+
+	@Override
+	protected boolean isRouteDisplayed() {
+		return false;
 	}
 
 	@Override

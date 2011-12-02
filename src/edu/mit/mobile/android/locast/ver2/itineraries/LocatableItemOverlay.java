@@ -17,16 +17,15 @@ package edu.mit.mobile.android.locast.ver2.itineraries;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import org.osmdroid.ResourceProxy;
-import org.osmdroid.util.BoundingBoxE6;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.overlay.ItemizedOverlay;
-import org.osmdroid.views.overlay.OverlayItem;
-
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
+
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.ItemizedOverlay;
+import com.google.android.maps.OverlayItem;
+
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.maps.MapsUtils;
 
@@ -44,13 +43,12 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 		}
 	};
 
-	public LocatableItemOverlay(Drawable marker, ResourceProxy resourceProxy) {
-		this(marker, null, resourceProxy);
+	public LocatableItemOverlay(Drawable marker) {
+		this(marker, null);
 	}
 
-	public LocatableItemOverlay(Drawable marker, Cursor items, ResourceProxy resourceProxy) {
-		super(marker, resourceProxy);
-
+	public LocatableItemOverlay(Drawable marker, Cursor items) {
+		super(marker);
 
 		mLocatableItems = items;
 
@@ -59,8 +57,7 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 
 	public static Drawable boundCenterBottom(Drawable drawable){
 		// why isn't this visible?
-		return drawable;
-		//return ItemizedOverlay.boundCenterBottom(drawable);
+		return ItemizedOverlay.boundCenterBottom(drawable);
 	}
 
 	public void swapCursor(Cursor locatableItems){
@@ -104,16 +101,12 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 		return MapsUtils.getGeoPoint(item, mLatCol, mLonCol);
 	}
 
-	public BoundingBoxE6 getBounds(){
-		//return BoundingBoxE6.fromGeoPoints();
-		return null;
-	}
-
 	/**
 	 * this does not work properly when crossing -180/180 boundaries.
 	 *
 	 * @see com.google.android.maps.ItemizedOverlay#getCenter()
 	 */
+	@Override
 	public GeoPoint getCenter() {
 		int maxLat, minLat;
 		int maxLon, minLon;

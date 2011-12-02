@@ -1,39 +1,42 @@
 package edu.mit.mobile.android.locast.maps;
 
-import java.util.ArrayList;
-
-import org.osmdroid.ResourceProxy;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.overlay.ItemizedIconOverlay;
-import org.osmdroid.views.overlay.OverlayItem;
-import org.osmdroid.views.overlay.OverlayItem.HotspotPlace;
-
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.ItemizedOverlay;
+import com.google.android.maps.OverlayItem;
+
 import edu.mit.mobile.android.locast.ver2.R;
 
-public class CastLocationOverlay extends ItemizedIconOverlay<OverlayItem> {
+public class CastLocationOverlay extends ItemizedOverlay<OverlayItem> {
 	private OverlayItem mOverlayItem;
 	private final Context mContext;
 
-	public CastLocationOverlay(Context context,
-			OnItemGestureListener<OverlayItem> pOnItemGestureListener,
-			ResourceProxy pResourceProxy) {
-		super(new ArrayList<OverlayItem>(), pResourceProxy.getDrawable(ResourceProxy.bitmap.marker_default),
-				pOnItemGestureListener, pResourceProxy);
+	public CastLocationOverlay(Context context) {
+		super(context.getResources().getDrawable(R.drawable.map_marker_user_cast));
+
 		mContext = context;
 
 	}
 
 	public Drawable getDefaultMarker(){
-		return boundToHotspot(mContext.getResources().getDrawable(R.drawable.ic_map_cast_location), HotspotPlace.CENTER);
+		return boundCenterBottom(mContext.getResources().getDrawable(R.drawable.ic_map_cast_location));
 	}
 
 	public void setLocation(GeoPoint location) {
-		mOverlayItem = new OverlayItem("cast", "", location);
+		mOverlayItem = new OverlayItem(location, "", "cast");
 		mOverlayItem.setMarker(getDefaultMarker());
-		removeAllItems();
-		addItem(mOverlayItem);
+		this.populate();
+	}
 
+	@Override
+	protected OverlayItem createItem(int i) {
+		return mOverlayItem;
+	}
+
+	@Override
+	public int size() {
+		return mOverlayItem == null ? 0 : 1;
 	}
 }

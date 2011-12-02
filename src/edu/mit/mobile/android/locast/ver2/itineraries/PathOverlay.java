@@ -20,11 +20,6 @@ package edu.mit.mobile.android.locast.ver2.itineraries;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.osmdroid.api.IProjection;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.Overlay;
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -33,6 +28,11 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathEffect;
 import android.graphics.Point;
+
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.MapView;
+import com.google.android.maps.Overlay;
+import com.google.android.maps.Projection;
 
 /**
  * Shows a single path, with an optional outline.
@@ -60,7 +60,6 @@ public class PathOverlay extends Overlay {
 	}
 
 	public PathOverlay(Context context, Paint pathPaint) {
-		super(context);
 		if (pathPaint != null){
 			mPathPaint = pathPaint;
 		}else{
@@ -131,7 +130,7 @@ public class PathOverlay extends Overlay {
 	private int maxLat, minLat;
 	private int maxLon, minLon;
 
-	private void updatePath(IProjection projection){
+	private void updatePath(Projection projection){
 		mPath = new Path();
 		final Point p = new Point();
 

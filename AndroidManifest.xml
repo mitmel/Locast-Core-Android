@@ -18,7 +18,7 @@
 		*                                              Casts                                                *
 		*****************************************************************************************************
 	 -->
-		<activity android:name=".casts.CastDetail">
+		<activity android:name=".casts.CastDetail" android:process="edu.mit.mobile.android.locast.Detail">
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
 				<action android:name="android.intent.action.DELETE" />
@@ -75,7 +75,7 @@
 		</activity>		
  -->
  
- 		<activity android:name=".events.EventDetail">
+ 		<activity android:name=".events.EventDetail" android:process="edu.mit.mobile.android.locast.Detail">
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
 				<!-- <action android:name="android.intent.action.DELETE" /> -->
@@ -223,6 +223,8 @@
 		android:name="edu.mit.mobile.android.locast.accounts.SigninOrSkip" android:excludeFromRecents="true" />
 		
 		<activity android:name=".browser.ResetActivity"  android:excludeFromRecents="true" android:theme="@android:style/Theme.Dialog" />
+			
+	<uses-library android:name="com.google.android.maps" />
 
 </application>
 

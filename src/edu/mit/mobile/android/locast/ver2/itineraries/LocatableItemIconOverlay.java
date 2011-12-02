@@ -1,22 +1,19 @@
 package edu.mit.mobile.android.locast.ver2.itineraries;
 
-import java.util.ArrayList;
-
-import org.osmdroid.ResourceProxy;
-import org.osmdroid.util.BoundingBoxE6;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.overlay.ItemizedIconOverlay;
-import org.osmdroid.views.overlay.OverlayItem;
-
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
+
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.ItemizedOverlay;
+import com.google.android.maps.OverlayItem;
+
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.maps.MapsUtils;
 
-public class LocatableItemIconOverlay extends ItemizedIconOverlay<OverlayItem> {
-	
+abstract public class LocatableItemIconOverlay extends ItemizedOverlay<OverlayItem> {
+
 	protected Cursor mLocatableItems;
 	private int mLatCol, mLonCol;
 
@@ -29,26 +26,21 @@ public class LocatableItemIconOverlay extends ItemizedIconOverlay<OverlayItem> {
 			populate();
 		}
 	};
-	
-	public LocatableItemIconOverlay(Drawable marker,
-			ItemizedIconOverlay.OnItemGestureListener<OverlayItem> onItemGestureListener,
-			ResourceProxy resourceProxy) {	
-		
-		this(new ArrayList<OverlayItem>() , null, marker, onItemGestureListener, resourceProxy);
+
+	public LocatableItemIconOverlay(Drawable marker) {
+
+		this(null, marker);
 	}
-	
-	public LocatableItemIconOverlay(ArrayList<OverlayItem> list, Cursor items, Drawable marker,
-			ItemizedIconOverlay.OnItemGestureListener<OverlayItem> onItemGestureListener,
-			ResourceProxy resourceProxy) {
-		super(list, marker, onItemGestureListener, resourceProxy);
+
+	public LocatableItemIconOverlay(Cursor items, Drawable marker) {
+		super(marker);
 		mLocatableItems = items;
 		populate();
 	}
 
 	public static Drawable boundCenterBottom(Drawable drawable){
 		// why isn't this visible?
-		return drawable;
-		//return ItemizedOverlay.boundCenterBottom(drawable);
+		return ItemizedOverlay.boundCenterBottom(drawable);
 	}
 
 	public void swapCursor(Cursor locatableItems){
@@ -70,7 +62,7 @@ public class LocatableItemIconOverlay extends ItemizedIconOverlay<OverlayItem> {
 	}
 
 	public void changeCursor(Cursor locatableItems){
-		final Cursor oldCursor = mLocatableItems;		
+		final Cursor oldCursor = mLocatableItems;
 		mLocatableItems = locatableItems;
 		updateCursorCols();
 		populate();
@@ -82,7 +74,7 @@ public class LocatableItemIconOverlay extends ItemizedIconOverlay<OverlayItem> {
 
 	protected void updateCursorCols(){
 		if (mLocatableItems != null){
-			mItemList.clear();
+			//mItemList.clear();
 			mLatCol = mLocatableItems.getColumnIndex(Locatable.Columns._LATITUDE);
 			mLonCol = mLocatableItems.getColumnIndex(Locatable.Columns._LONGITUDE);
 		}
@@ -92,16 +84,13 @@ public class LocatableItemIconOverlay extends ItemizedIconOverlay<OverlayItem> {
 		return MapsUtils.getGeoPoint(item, mLatCol, mLonCol);
 	}
 
-	public BoundingBoxE6 getBounds(){
-		//return BoundingBoxE6.fromGeoPoints();
-		return null;
-	}
 
 	/**
 	 * this does not work properly when crossing -180/180 boundaries.
 	 *
 	 * @see com.google.android.maps.ItemizedOverlay#getCenter()
 	 */
+	@Override
 	public GeoPoint getCenter() {
 		int maxLat, minLat;
 		int maxLon, minLon;
@@ -130,5 +119,5 @@ public class LocatableItemIconOverlay extends ItemizedIconOverlay<OverlayItem> {
 			return 0;
 		}
 		return mLocatableItems.getCount();
-	}	
+	}
 }
