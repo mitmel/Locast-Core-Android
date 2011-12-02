@@ -249,7 +249,11 @@ public class CastMedia extends JsonSyncableItem {
 						cv.put(_MIME_TYPE, primary.getString("mime_type"));
 						cv.put(_MEDIA_URL, primary.getString("url"));
 					}
-					if (jo.has("screenshot")){
+					if (jo.has("medium")){
+						final JSONObject screenshot = jo.getJSONObject("medium");
+						cv.put(_THUMBNAIL, screenshot.getString("url"));
+
+					}else if (jo.has("screenshot")){
 						final JSONObject screenshot = jo.getJSONObject("screenshot");
 						cv.put(_THUMBNAIL, screenshot.getString("url"));
 					}

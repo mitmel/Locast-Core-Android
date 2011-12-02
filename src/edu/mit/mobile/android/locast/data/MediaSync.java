@@ -73,6 +73,12 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 	private final boolean DEBUG = Constants.DEBUG;
 
+
+	/**
+	 * If this many errors are encountered, media sync gives up.
+	 */
+	private static final int TOO_MANY_ERRORS = 5;
+
 	private final Map<String, ScanQueueItem> scanMap = new TreeMap<String, ScanQueueItem>();
 	private MediaScannerConnection msc;
 	private final Queue<String> toScan = new LinkedList<String>();
@@ -111,6 +117,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	}
 
 	private static final int MSG_DONE = 0;
+
 
 	private final Handler mDoneTimeout = new Handler() {
 		@Override
@@ -203,8 +210,11 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	 */
 	private class SyncTask extends AsyncTask<Void, Void, Void> {
 
+
+
 		@Override
 		protected Void doInBackground(Void... params) {
+			int errorCount = 0;
 			while (!mSyncQueue.isEmpty()) {
 				try {
 					final SyncQueueItem qi = mSyncQueue.remove();
@@ -213,7 +223,16 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 					addUriToRecentlySyncd(qi.uri);
 
 				} catch (final SyncException se) {
-					se.printStackTrace();
+					Log.e(TAG, se.getLocalizedMessage(), se);
+					errorCount++;
+
+				} catch (final IllegalArgumentException e){
+					Log.e(TAG, e.getLocalizedMessage(), e);
+					errorCount++;
+				}
+				if (errorCount >= TOO_MANY_ERRORS){
+					Log.e(TAG, "Too many errors. Stopping sync.");
+					break;
 				}
 			}
 			scheduleSelfDestruct();
@@ -330,7 +349,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 				final File destfile = getFilePath(pubMediaUri);
 
 				// the following conditions indicate that the cast media should be downloaded.
-				if (keepOffline || isFavorite || isImage){
+				if (keepOffline || isFavorite){
 					final boolean anythingChanged = downloadMediaFile(pubMedia,
 							destfile, castMediaUri);
 
