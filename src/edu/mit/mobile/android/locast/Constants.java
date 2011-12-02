@@ -25,6 +25,11 @@ public class Constants {
 	public static final boolean DEBUG = false;
 
 	/**
+	 * Enables a built-in app update checker if the app is not going to be published on the Market.
+	 */
+	public static final boolean USE_APPUPDATE_CHECKER = false;
+
+	/**
 	 * For various cursor views, this says how frequently it should refresh the UI.
 	 */
 	public static final long UPDATE_THROTTLE = 500;

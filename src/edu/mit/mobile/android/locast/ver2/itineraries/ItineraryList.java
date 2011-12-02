@@ -91,8 +91,10 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		mListView.addFooterView(LayoutInflater.from(this).inflate(R.layout.list_footer, null), null, false);
 		mListView.setEmptyView(findViewById(android.R.id.empty));
 
-		mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url), new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
-		mAppUpdateChecker.checkForUpdates();
+		if (Constants.USE_APPUPDATE_CHECKER){
+			mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url), new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
+			mAppUpdateChecker.checkForUpdates();
+		}
 
 		final Intent intent = getIntent();
 		final String action = intent.getAction();

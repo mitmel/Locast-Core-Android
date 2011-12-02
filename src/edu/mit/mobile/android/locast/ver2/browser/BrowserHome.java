@@ -43,6 +43,7 @@ import android.widget.Gallery;
 import edu.mit.mobile.android.appupdater.AppUpdateChecker;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
@@ -102,8 +103,10 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 		setContentView(R.layout.browser_main);
 
-		mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url), new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
-		mAppUpdateChecker.checkForUpdates();
+		if (Constants.USE_APPUPDATE_CHECKER){
+			mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url), new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
+			mAppUpdateChecker.checkForUpdates();
+		}
 
 		final Gallery casts = (Gallery) findViewById(R.id.casts);
 
