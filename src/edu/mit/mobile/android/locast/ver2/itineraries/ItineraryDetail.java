@@ -84,6 +84,8 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 	private CastsIconOverlay mCastsOverlay;
 	private PathOverlay mPathOverlay;
+	private static final int UNKNOWN_COUNT = -1;
+	private int mItineraryCastCount = UNKNOWN_COUNT;
 
 	private Timer clickTimer;
 	private final boolean markerClicked = false;
@@ -92,7 +94,9 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	CursorLoader itinLoader;
 	CursorLoader castLoader;
 
-	private boolean mExpeditedSync = true;
+	private boolean mFirstLoadSync = true;
+
+	private static final String[] ITINERARY_PROJECTION = new String[]{Itinerary._ID, Itinerary._DESCRIPTION, Itinerary._TITLE, Itinerary._CASTS_COUNT, Itinerary._PATH};
 
 	@Override
 	protected void onCreate(Bundle icicle) {
@@ -152,8 +156,8 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 	@Override
 	protected void onResume() {
+		mFirstLoadSync = true;
 		super.onResume();
-		mExpeditedSync = true;
 	}
 
 	@Override
@@ -239,7 +243,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	private void refresh(boolean explicitSync){
 		LocastSyncService.startSync(this, mUri, explicitSync);
 		final Bundle extras = new Bundle();
-		if (mCastAdapter.isEmpty()){
+		if (mItineraryCastCount == UNKNOWN_COUNT || (mItineraryCastCount != mCastAdapter.getCount())){
 			extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
 		}
 		LocastSyncService.startSync(this, mCastsUri, explicitSync, extras);
@@ -291,7 +295,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 		switch (id){
 		case LOADER_ITINERARY:
-			cl = new CursorLoader(this, uri, Itinerary.PROJECTION, null, null, null);
+			cl = new CursorLoader(this, uri, ITINERARY_PROJECTION, null, null, null);
 			break;
 
 		case LOADER_CASTS:
@@ -310,6 +314,8 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		switch (loader.getId()){
 		case LOADER_ITINERARY:{
 			if (c.moveToFirst()){
+				mItineraryCastCount = c.getInt(c.getColumnIndex(Itinerary._CASTS_COUNT));
+				mCastAdapter.setExpectedCount(mItineraryCastCount);
 				final String description = c.getString(c.getColumnIndex(Itinerary._DESCRIPTION));
 				((TextView)findViewById(R.id.description)).setText(description);
 				((TextView)findViewById(R.id.description_empty)).setText(description);
@@ -353,9 +359,9 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 				mCastsOverlay.swapCursor(c);
 			}
 			// this is done after the casts are loaded so that an expedited sync can be requested if the list is empty.
-			if (mExpeditedSync){
+			if (mFirstLoadSync){
 				refresh(false);
-				mExpeditedSync = false;
+				mFirstLoadSync = false;
 			}
 		}break;
 		}
