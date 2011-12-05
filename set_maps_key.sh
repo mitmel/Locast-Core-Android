@@ -1,18 +1,12 @@
 #!/bin/sh
 
-# for FC:84:2A:A7:F4:7E:5C:49:CD:6A:C7:0C:3B:A6:BE:E1
-dev="0mv3f-QVdQ_CF3MFrN2I0MO8Wgu_QPqzOKx2GHw"
-
-# for fingerint
-# 1E:4B:71:20:73:45:0F:D4:77:A6:B8:18:0C:42:D7:F3
-prod="0mv3f-QVdQ_DwBwdfkqD1df8s37Ezhu5qfmJR_A"
-
-if [ "$1" = 'prod' ]; then
-    key="$prod"
-elif [ "$1" = 'dev' ]; then
-    key="$dev"
-else
-    key="$1"
+if [ -z "$1" ]; then
+    echo "usage $0 API_KEY"
+    echo
+    echo "where API_KEY is the Google Maps API key"
+    exit 1
 fi
+key="$1"
 
 sed -i -e "s!android:apiKey=\"[^\"]*\"!android:apiKey=\"$key\"!" res/**/*.xml
+echo "All android:apiKey set to $key"
