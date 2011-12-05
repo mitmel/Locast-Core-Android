@@ -54,6 +54,7 @@
 			</intent-filter>
 		</activity>
 
+		    <!-- 
 		<activity android:name=".casts.CastEdit">
 			<intent-filter>
 				<action android:name="android.intent.action.EDIT" />

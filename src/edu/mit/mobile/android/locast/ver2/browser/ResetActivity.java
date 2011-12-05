@@ -23,7 +23,6 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.ContentResolver;
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -33,7 +32,7 @@ import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Comment;
 import edu.mit.mobile.android.locast.data.Event;
 import edu.mit.mobile.android.locast.data.Itinerary;
-import edu.mit.mobile.android.locast.data.Sync;
+import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.ver2.R;
 
 public class ResetActivity extends Activity implements OnClickListener {
@@ -43,7 +42,7 @@ public class ResetActivity extends Activity implements OnClickListener {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.reset_activity);
 
-		startService(new Intent(Sync.ACTION_CANCEL_SYNC));
+		ContentResolver.cancelSync(Authenticator.getFirstAccount(this), MediaProvider.AUTHORITY);
 
 		findViewById(R.id.reset).setOnClickListener(this);
 		findViewById(R.id.cancel).setOnClickListener(this);
