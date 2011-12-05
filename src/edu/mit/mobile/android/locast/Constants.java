@@ -33,4 +33,6 @@ public class Constants {
 	 * For various cursor views, this says how frequently it should refresh the UI.
 	 */
 	public static final long UPDATE_THROTTLE = 500;
+
+	public static final boolean USES_OSMDROID = false;
 }

@@ -321,19 +321,23 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 					mPathOverlay.setPath(path);
 
 					mMapController.setCenter(mPathOverlay.getCenter());
-					// this needs to be run after the MapView has been first sized due to a bug in zoomToSpan()
-					mMapView.post(new Runnable() {
 
-						@Override
-						public void run() {
-							if (mMapView.getHeight() > 0){
-								mMapController.zoomToSpan(mPathOverlay.getLatSpanE6(), mPathOverlay.getLonSpanE6());
-							}else{
-								mMapView.post(this);
+					if (Constants.USES_OSMDROID){
+						// this needs to be run after the MapView has been first sized due to a bug in zoomToSpan()
+						mMapView.post(new Runnable() {
+
+							@Override
+							public void run() {
+								if (mMapView.getHeight() > 0){
+									mMapController.zoomToSpan(mPathOverlay.getLatSpanE6(), mPathOverlay.getLonSpanE6());
+								}else{
+									mMapView.post(this);
+								}
 							}
-						}
-					});
-
+						});
+					}else{
+						mMapController.zoomToSpan(mPathOverlay.getLatSpanE6(), mPathOverlay.getLonSpanE6());
+					}
 
 					mMapView.setVisibility(View.VISIBLE);
 				}
