@@ -35,10 +35,9 @@ Dependencies
 *   [MEL ImageCache][]
 *   [MelAUtils][]
 *   [AppUpdateChecker][]
-*   [CWAC Task][] (included)
-*   [CWAC Bus][] (included)
 *   [CWAC Adapter Wrapper][] (included)
 *   [android-support-v4][] (included)
+*   [Apache HTTP MIME][] (included)
 
 Publishing
 ----------
@@ -75,8 +74,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-[CWAC Task]: https://github.com/commonsguy/cwac-task
-[CWAC Bus]: https://github.com/commonsguy/cwac-bus
 [CWAC Adapter Wrapper]: https://github.com/commonsguy/cwac-adapter
 [android-support-v4]: http://android-developers.blogspot.com/2011/03/fragments-for-all.html
 [android2po]: https://github.com/miracle2k/android2po/
@@ -85,3 +82,4 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 [mel]: http://mobile.mit.edu/
 [MelAUtils]: https://github.com/mitmel/MelAUtils
 [AppUpdateChecker]: https://github.com/mitmel/AppUpdateChecker
+[Apache HTTP MIME]: http://hc.apache.org/httpcomponents-client-ga/httpmime/
