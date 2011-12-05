@@ -81,7 +81,7 @@
 		android:text="@string/featured_casts"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
-		android:paddingBottom="70dip"
+		android:paddingBottom="20dip"
 		android:paddingRight="15dip"
 		android:gravity="right" />
 		
