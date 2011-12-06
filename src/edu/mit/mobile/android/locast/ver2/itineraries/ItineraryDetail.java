@@ -21,13 +21,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 
+import android.accounts.Account;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SyncStatusObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4_map.app.LoaderManager;
@@ -56,13 +60,17 @@ import com.google.android.maps.OverlayItem;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.Constants;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
+import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.maps.CastsIconOverlay;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
+import edu.mit.mobile.android.locast.ver2.casts.LocatableListWithMap;
+import edu.mit.mobile.android.widget.RefreshButton;
 
 public class ItineraryDetail extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener, DialogInterface.OnClickListener {
 	private static final String TAG = ItineraryDetail.class.getSimpleName();
@@ -97,7 +105,34 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	private boolean mFirstLoadSync = true;
 
 	private static final String[] ITINERARY_PROJECTION = new String[]{Itinerary._ID, Itinerary._DESCRIPTION, Itinerary._TITLE, Itinerary._CASTS_COUNT, Itinerary._PATH};
+	
+	private static final int
+	MSG_SET_REFRESHING = 100,
+	MSG_SET_NOT_REFRESHING = 101;
+	
+	private RefreshButton mRefresh;
+	
+	private Object mSyncHandle;
+	
+	private final Handler mHandler = new Handler(){
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what){
+			case MSG_SET_REFRESHING:
+				Log.d(TAG, "refreshing...");
+				((TextView)((findViewById(android.R.id.empty)).findViewById(R.id.empty_message))).setText(R.string.loading_data);
+				mRefresh.setRefreshing(true);
+				break;
 
+			case MSG_SET_NOT_REFRESHING:
+				Log.d(TAG, "done loading.");
+				((TextView)((findViewById(android.R.id.empty)).findViewById(R.id.empty_message))).setText(R.string.itinerary_no_casts);
+				mRefresh.setRefreshing(false);
+				break;
+			}
+		};
+	};
+	
 	@Override
 	protected void onCreate(Bundle icicle) {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -117,7 +152,8 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		mCastView.addHeaderView(layoutInflater.inflate(R.layout.itinerary_detail_list_header, mCastView, false), null, false);
 		mCastView.addFooterView(layoutInflater.inflate(R.layout.list_footer, null), null, false);
 		mCastView.setEmptyView(findViewById(android.R.id.empty));
-
+		mRefresh = (RefreshButton) findViewById(R.id.refresh);
+		mRefresh.setOnClickListener(this);
 
 		findViewById(R.id.add_cast).setOnClickListener(this);
 		mCastView.setOnItemClickListener(this);
@@ -158,6 +194,41 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	protected void onResume() {
 		mFirstLoadSync = true;
 		super.onResume();
+		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new SyncStatusObserver() {
+
+			@Override
+			public void onStatusChanged(int which) {
+				Account a = Authenticator.getFirstAccount(ItineraryDetail.this);
+		        if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY) &&
+		                !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
+		            Log.d(TAG, "Sync finished, should refresh naw!!");
+		            mHandler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
+					
+		        }
+		        else{
+		        	Log.d(TAG, "Sync Active or Pending!!");
+		        	mHandler.sendEmptyMessage(MSG_SET_REFRESHING);
+		        }
+			}
+		});
+		//check if synch is in progress 
+		Account a = Authenticator.getFirstAccount(ItineraryDetail.this);
+        if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY) &&
+                !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
+            Log.d(TAG, "Sync finished, should refresh naw!!");
+            mHandler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
+        }
+        else{
+        	Log.d(TAG, "Sync Active or Pending!!");
+        	mHandler.sendEmptyMessage(MSG_SET_REFRESHING);
+        }
+	}
+	@Override
+	protected void onPause() {
+		super.onPause();
+		if (mSyncHandle != null){
+			ContentResolver.removeStatusChangeListener(mSyncHandle);
+		}
 	}
 
 	@Override

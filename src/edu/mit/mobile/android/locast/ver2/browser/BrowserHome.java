@@ -17,6 +17,7 @@ package edu.mit.mobile.android.locast.ver2.browser;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import android.accounts.Account;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -39,6 +40,7 @@ import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Gallery;
+import android.widget.TextView;
 import edu.mit.mobile.android.appupdater.AppUpdateChecker;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
@@ -79,11 +81,13 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 			switch (msg.what){
 			case MSG_SET_REFRESHING:
 				Log.d(TAG, "refreshing...");
+				((TextView)findViewById(android.R.id.empty)).setText(R.string.loading_data);
 				mRefresh.setRefreshing(true);
 				break;
 
 			case MSG_SET_NOT_REFRESHING:
 				Log.d(TAG, "done loading.");
+				((TextView)findViewById(android.R.id.empty)).setText(R.string.error_no_featured_casts);
 				mRefresh.setRefreshing(false);
 				break;
 			}
@@ -145,17 +149,31 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 			@Override
 			public void onStatusChanged(int which) {
-				final SyncInfo info = ContentResolver.getCurrentSync();
-				if (! MediaProvider.AUTHORITY.equals(info.authority)){
-					return;
-				}
-				Log.d(TAG, "onStatusChanged " + which);
-
-				mHandler.sendEmptyMessage(which == ContentResolver.SYNC_OBSERVER_TYPE_ACTIVE ? MSG_SET_REFRESHING : MSG_SET_NOT_REFRESHING);
-
+				Account a = Authenticator.getFirstAccount(BrowserHome.this);
+		        if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY) &&
+		                !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
+		            Log.d(TAG, "Sync finished, should refresh naw!!");
+		            mHandler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
+					
+		        }
+		        else{
+		        	Log.d(TAG, "Sync Active or Pending!!");
+		        	mHandler.sendEmptyMessage(MSG_SET_REFRESHING);
+		        }
 			}
 		});
-
+		//check if synch is in progress 
+		Account a = Authenticator.getFirstAccount(BrowserHome.this);
+        if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY) &&
+                !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
+            Log.d(TAG, "Sync finished, should refresh naw!!");
+            mHandler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
+        }
+        else{
+        	Log.d(TAG, "Sync Active or Pending!!");
+        	mHandler.sendEmptyMessage(MSG_SET_REFRESHING);
+        }
+        
 		if (shouldRefresh) {
 			refresh(false);
 		}

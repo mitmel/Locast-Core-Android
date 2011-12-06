@@ -17,18 +17,24 @@ package edu.mit.mobile.android.locast.ver2.itineraries;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import android.accounts.Account;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.SyncStatusObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
@@ -54,6 +60,7 @@ import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
+import edu.mit.mobile.android.widget.RefreshButton;
 
 public class ItineraryList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
 
@@ -78,6 +85,33 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 
 	private boolean mSyncWhenLoaded = true;
 
+	private static final int
+	MSG_SET_REFRESHING = 100,
+	MSG_SET_NOT_REFRESHING = 101;
+	
+	private RefreshButton mRefresh;
+	
+	private Object mSyncHandle;
+	
+	private final Handler mHandler = new Handler(){
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what){
+			case MSG_SET_REFRESHING:
+				Log.d(TAG, "refreshing...");
+				((TextView)findViewById(android.R.id.empty)).setText(R.string.loading_data);
+				mRefresh.setRefreshing(true);
+				break;
+
+			case MSG_SET_NOT_REFRESHING:
+				Log.d(TAG, "done loading.");
+				((TextView)findViewById(android.R.id.empty)).setText(R.string.error_no_items_in_this_list);
+				mRefresh.setRefreshing(false);
+				break;
+			}
+		};
+	};
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -90,7 +124,8 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		mListView.setOnItemClickListener(this);
 		mListView.addFooterView(LayoutInflater.from(this).inflate(R.layout.list_footer, null), null, false);
 		mListView.setEmptyView(findViewById(android.R.id.empty));
-
+		mRefresh = (RefreshButton) findViewById(R.id.refresh);
+		mRefresh.setOnClickListener(this);
 		if (Constants.USE_APPUPDATE_CHECKER){
 			mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url), new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
 			mAppUpdateChecker.checkForUpdates();
@@ -127,8 +162,42 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		super.onResume();
 
 		mSyncWhenLoaded = true;
-	}
+		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new SyncStatusObserver() {
 
+			@Override
+			public void onStatusChanged(int which) {
+				Account a = Authenticator.getFirstAccount(ItineraryList.this);
+		        if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY) &&
+		                !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
+		            Log.d(TAG, "Sync finished, should refresh naw!!");
+		            mHandler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
+					
+		        }
+		        else{
+		        	Log.d(TAG, "Sync Active or Pending!!");
+		        	mHandler.sendEmptyMessage(MSG_SET_REFRESHING);
+		        }
+			}
+		});
+		//check if synch is in progress 
+		Account a = Authenticator.getFirstAccount(ItineraryList.this);
+        if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY) &&
+                !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
+            Log.d(TAG, "Sync finished, should refresh naw!!");
+            mHandler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
+        }
+        else{
+        	Log.d(TAG, "Sync Active or Pending!!");
+        	mHandler.sendEmptyMessage(MSG_SET_REFRESHING);
+        }
+	}
+	@Override
+	protected void onPause() {
+		super.onPause();
+		if (mSyncHandle != null){
+			ContentResolver.removeStatusChangeListener(mSyncHandle);
+		}
+	}
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v,
 			ContextMenuInfo menuInfo) {
