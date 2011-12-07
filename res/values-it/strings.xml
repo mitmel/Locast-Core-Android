@@ -125,4 +125,5 @@
   <string name="auth_error_server_returned_invalid_data">Il server ha comunicato dati non corretti.</string>
   <string name="auth_error_network_protocol_error">Errore di protocollo Network: %1$s</string>
   <string name="videoplayer_notice_loading_video">Caricamento video...</string>
+  <string name="loading_data">Caricamento dati...</string>
 </resources>

@@ -202,4 +202,5 @@
 		<string name="auth_set_site">Set Locast Site</string>
 		<string name="cast_edit_error_camera_did_not_return_image">Error: camera did not return an image. Please try again.</string>
 		<string name="cast_edit_media_empty">Tap the buttons below to add photos and videos</string>
+	<string name="loading_data">Loading data...</string>
 </resources>

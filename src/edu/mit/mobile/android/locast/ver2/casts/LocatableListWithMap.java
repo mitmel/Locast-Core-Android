@@ -18,15 +18,20 @@ package edu.mit.mobile.android.locast.ver2.casts;
  */
 import java.util.List;
 
+import android.accounts.Account;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SyncStatusObserver;
 import android.database.Cursor;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
@@ -49,6 +54,7 @@ import com.google.android.maps.Overlay;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Event;
@@ -94,6 +100,33 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 
 	private boolean actionSearchNearby = false;
 	private boolean mExpeditedSync;
+	
+	private static final int
+	MSG_SET_REFRESHING = 100,
+	MSG_SET_NOT_REFRESHING = 101;
+	
+	private RefreshButton mRefresh;
+	
+	private Object mSyncHandle;
+	
+	private final Handler mHandler = new Handler(){
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what){
+			case MSG_SET_REFRESHING:
+				Log.d(TAG, "refreshing...");
+				((TextView)findViewById(android.R.id.empty)).setText(R.string.loading_data);
+				mRefresh.setRefreshing(true);
+				break;
+
+			case MSG_SET_NOT_REFRESHING:
+				Log.d(TAG, "done loading.");
+				((TextView)findViewById(android.R.id.empty)).setText(R.string.error_no_featured_casts);
+				mRefresh.setRefreshing(false);
+				break;
+			}
+		};
+	};
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -109,7 +142,8 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		mListView.setOnItemClickListener(this);
 		mListView.addFooterView(getLayoutInflater().inflate(R.layout.list_footer, null), null, false);
 		mListView.setEmptyView(findViewById(android.R.id.empty));
-
+		mRefresh = (RefreshButton) findViewById(R.id.refresh);
+		mRefresh.setOnClickListener(this);
 		mLoaderManager = getSupportLoaderManager();
 
 		final Intent intent = getIntent();
@@ -182,13 +216,43 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		super.onResume();
 		mMyLocationOverlay.enableMyLocation();
 		mExpeditedSync = true;
+		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new SyncStatusObserver() {
 
+			@Override
+			public void onStatusChanged(int which) {
+				Account a = Authenticator.getFirstAccount(LocatableListWithMap.this);
+		        if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY) &&
+		                !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
+		            Log.d(TAG, "Sync finished, should refresh naw!!");
+		            mHandler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
+					
+		        }
+		        else{
+		        	Log.d(TAG, "Sync Active or Pending!!");
+		        	mHandler.sendEmptyMessage(MSG_SET_REFRESHING);
+		        }
+			}
+		});
+		//check if synch is in progress 
+		Account a = Authenticator.getFirstAccount(LocatableListWithMap.this);
+        if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY) &&
+                !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
+            Log.d(TAG, "Sync finished, should refresh naw!!");
+            mHandler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
+        }
+        else{
+        	Log.d(TAG, "Sync Active or Pending!!");
+        	mHandler.sendEmptyMessage(MSG_SET_REFRESHING);
+        }
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
 		mMyLocationOverlay.disableMyLocation();
+		if (mSyncHandle != null){
+			ContentResolver.removeStatusChangeListener(mSyncHandle);
+		}
 	}
 
 	/**
