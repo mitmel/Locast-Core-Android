@@ -63,6 +63,7 @@ import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.maps.CastsOverlay;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
+import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 import edu.mit.mobile.android.locast.ver2.events.EventCursorAdapter;
@@ -101,10 +102,6 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	private boolean actionSearchNearby = false;
 	private boolean mExpeditedSync;
 	
-	private static final int
-	MSG_SET_REFRESHING = 100,
-	MSG_SET_NOT_REFRESHING = 101;
-	
 	private RefreshButton mRefresh;
 	
 	private Object mSyncHandle;
@@ -113,13 +110,13 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what){
-			case MSG_SET_REFRESHING:
+			case LocastSyncStatusObserver.MSG_SET_REFRESHING:
 				Log.d(TAG, "refreshing...");
 				((TextView)findViewById(android.R.id.empty)).setText(R.string.loading_data);
 				mRefresh.setRefreshing(true);
 				break;
 
-			case MSG_SET_NOT_REFRESHING:
+			case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
 				Log.d(TAG, "done loading.");
 				((TextView)findViewById(android.R.id.empty)).setText(R.string.error_no_featured_casts);
 				mRefresh.setRefreshing(false);
@@ -216,34 +213,8 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		super.onResume();
 		mMyLocationOverlay.enableMyLocation();
 		mExpeditedSync = true;
-		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new SyncStatusObserver() {
-
-			@Override
-			public void onStatusChanged(int which) {
-				Account a = Authenticator.getFirstAccount(LocatableListWithMap.this);
-		        if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY) &&
-		                !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
-		            Log.d(TAG, "Sync finished, should refresh naw!!");
-		            mHandler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
-					
-		        }
-		        else{
-		        	Log.d(TAG, "Sync Active or Pending!!");
-		        	mHandler.sendEmptyMessage(MSG_SET_REFRESHING);
-		        }
-			}
-		});
-		//check if synch is in progress 
-		Account a = Authenticator.getFirstAccount(LocatableListWithMap.this);
-        if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY) &&
-                !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
-            Log.d(TAG, "Sync finished, should refresh naw!!");
-            mHandler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
-        }
-        else{
-        	Log.d(TAG, "Sync Active or Pending!!");
-        	mHandler.sendEmptyMessage(MSG_SET_REFRESHING);
-        }
+		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(this, mHandler));
+		LocastSyncStatusObserver.notifySyncStatusToHandler(this, mHandler);
 	}
 
 	@Override
