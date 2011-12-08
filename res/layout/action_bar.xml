@@ -2,32 +2,39 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:mel="http://mobile.mit.edu/schemas/android"
     android:id="@+id/action_bar"
+    style="@style/ActionBar"
     android:layout_width="fill_parent"
-    android:layout_height="48dip"
-    android:background="@drawable/title_background" >
-
-    <Button
-        android:id="@+id/home"
-        style="@style/ActionBar.Button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/refresh"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignWithParentIfMissing="true"
-        android:layout_toLeftOf="@+id/refresh"
-        android:drawableLeft="@drawable/title"
-        android:paddingLeft="10dip" />
+    android:layout_height="wrap_content" >
 
     <edu.mit.mobile.android.widget.RefreshButton
         android:id="@+id/refresh"
         style="@style/ActionBar.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:padding="10dip"
+        mel:refreshingDrawable="@drawable/title"
+        android:src="@drawable/title" />
+
+    <ImageView
+        android:id="@+id/home"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="10dip"
+        android:src="@drawable/ic_mel_logo" />
+
+<!--     <edu.mit.mobile.android.widget.RefreshButton
+        android:id="@+id/refresh"
+        style="@style/ActionBar.Button"
         android:layout_width="48dip"
-        android:layout_height="fill_parent"
+        android:layout_height="48dip"
         android:layout_alignBottom="@+id/title"
         android:layout_alignParentRight="true"
         android:layout_alignTop="@+id/title"
         mel:refreshingDrawable="@drawable/ic_refresh_refreshing"
-        android:src="@drawable/ic_refresh" />
+        android:src="@drawable/ic_refresh" /> -->
 
 </RelativeLayout>

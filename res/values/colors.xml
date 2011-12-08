@@ -4,6 +4,6 @@
     <color name="charred_orange_inverse">#b5b8bf</color>
     <color name="solid_version_of_stripes">#eaeae2</color>
     <color name="foreground_dark">#fff</color>
-    <color name="background_dark">#4a4740</color>
+    <color name="background_dark">#0099ff</color>
     <color name="negative_action">#d93131</color>
 </resources>

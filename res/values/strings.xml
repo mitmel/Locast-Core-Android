@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Default, English -->
 <resources>
-	<string name="app_name">Rai Local Abruzzo</string>
+	<string name="app_name">UNICEF GIS</string>
 
-	<string name="default_api_url" translatable="false">http://www.railocal.rai.it/api/</string>
-	<string name="app_update_url" translatable="false">http://locast.mit.edu/m/rai_local.json</string>
+    <string name="default_api_url" translatable="false">https://locast.mit.edu/unicef/</string>
+	<string name="app_update_url" translatable="false">http://locast.mit.edu/m/unicef.json</string>
 	
-	<string name="signup_url" translatable="false">http://www.railocal.rai.it/register/</string>
+    <string name="signup_url" translatable="false">https://locast.mit.edu/unicef/register/</string>
 	<string name="signup_text">Register to join Locast</string>
 	
 	<!-- Main screen -->
