@@ -4,7 +4,7 @@
 	<string name="app_name">UNICEF GIS</string>
 
     <string name="default_api_url" translatable="false">https://locast.mit.edu/unicef/</string>
-	<string name="app_update_url" translatable="false">http://locast.mit.edu/m/unicef.json</string>
+	<string name="app_update_url" translatable="false">http://locast.mit.edu/m/unicef_gis.json</string>
 	
     <string name="signup_url" translatable="false">https://locast.mit.edu/unicef/register/</string>
 	<string name="signup_text">Register to join Locast</string>
