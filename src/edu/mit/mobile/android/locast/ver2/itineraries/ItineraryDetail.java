@@ -69,7 +69,6 @@ import edu.mit.mobile.android.locast.maps.CastsIconOverlay;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
-import edu.mit.mobile.android.locast.ver2.casts.LocatableListWithMap;
 import edu.mit.mobile.android.widget.RefreshButton;
 
 public class ItineraryDetail extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener, DialogInterface.OnClickListener {
@@ -105,15 +104,15 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	private boolean mFirstLoadSync = true;
 
 	private static final String[] ITINERARY_PROJECTION = new String[]{Itinerary._ID, Itinerary._DESCRIPTION, Itinerary._TITLE, Itinerary._CASTS_COUNT, Itinerary._PATH};
-	
+
 	private static final int
 	MSG_SET_REFRESHING = 100,
 	MSG_SET_NOT_REFRESHING = 101;
-	
+
 	private RefreshButton mRefresh;
-	
+
 	private Object mSyncHandle;
-	
+
 	private final Handler mHandler = new Handler(){
 		@Override
 		public void handleMessage(Message msg) {
@@ -132,7 +131,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 			}
 		};
 	};
-	
+
 	@Override
 	protected void onCreate(Bundle icicle) {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -155,7 +154,11 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		mRefresh = (RefreshButton) findViewById(R.id.refresh);
 		mRefresh.setOnClickListener(this);
 
-		findViewById(R.id.add_cast).setOnClickListener(this);
+		final View addCast = findViewById(R.id.add_cast);
+		addCast.setOnClickListener(this);
+		if (Constants.CAN_CREATE_CASTS){
+			addCast.setVisibility(View.VISIBLE);
+		}
 		mCastView.setOnItemClickListener(this);
 
 		mCastView.setAdapter(null);
@@ -198,12 +201,12 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 			@Override
 			public void onStatusChanged(int which) {
-				Account a = Authenticator.getFirstAccount(ItineraryDetail.this);
+				final Account a = Authenticator.getFirstAccount(ItineraryDetail.this);
 		        if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY) &&
 		                !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
 		            Log.d(TAG, "Sync finished, should refresh naw!!");
 		            mHandler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
-					
+
 		        }
 		        else{
 		        	Log.d(TAG, "Sync Active or Pending!!");
@@ -211,8 +214,8 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		        }
 			}
 		});
-		//check if synch is in progress 
-		Account a = Authenticator.getFirstAccount(ItineraryDetail.this);
+		//check if synch is in progress
+		final Account a = Authenticator.getFirstAccount(ItineraryDetail.this);
         if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY) &&
                 !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
             Log.d(TAG, "Sync finished, should refresh naw!!");
@@ -386,7 +389,6 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		case LOADER_ITINERARY:{
 			if (c.moveToFirst()){
 				mItineraryCastCount = c.getInt(c.getColumnIndex(Itinerary._CASTS_COUNT));
-				mCastAdapter.setExpectedCount(mItineraryCastCount);
 				final String description = c.getString(c.getColumnIndex(Itinerary._DESCRIPTION));
 				((TextView)findViewById(R.id.description)).setText(description);
 				((TextView)findViewById(R.id.description_empty)).setText(description);
@@ -458,6 +460,9 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 		getMenuInflater().inflate(R.menu.itinerary_detail, menu);
+		if (Constants.CAN_CREATE_CASTS){
+			menu.findItem(R.id.add_cast).setVisible(true);
+		}
 		return true;
 	}
 
