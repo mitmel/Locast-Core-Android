@@ -26,7 +26,7 @@ public class Constants {
 	/**
 	 * If true, the user can create casts.
 	 */
-	public static final boolean CAN_CREATE_CASTS = true;
+	public static final boolean CAN_CREATE_CASTS = false;
 
 	/**
 	 * Enables a built-in app update checker if the app is not going to be published on the Market.
