@@ -24,7 +24,7 @@
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
         android:layout_marginLeft="10dip"
-        android:src="@drawable/ic_mel_logo" />
+        android:src="@drawable/powered_by_locast_white" />
 
 <!--     <edu.mit.mobile.android.widget.RefreshButton
         android:id="@+id/refresh"
