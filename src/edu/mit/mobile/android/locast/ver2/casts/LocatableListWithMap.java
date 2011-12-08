@@ -65,7 +65,6 @@ import edu.mit.mobile.android.locast.maps.CastsOverlay;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 import edu.mit.mobile.android.locast.ver2.events.EventCursorAdapter;
 import edu.mit.mobile.android.locast.ver2.itineraries.BasicLocatableOverlay;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
@@ -335,7 +334,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 			refresh(true);
 			break;
 		case R.id.home:
-			startActivity(new Intent(this, BrowserHome.class));
+			startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
 			break;
 		}
 	}

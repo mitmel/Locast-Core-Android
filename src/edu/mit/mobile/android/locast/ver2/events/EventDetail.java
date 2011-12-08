@@ -17,7 +17,6 @@ package edu.mit.mobile.android.locast.ver2.events;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -36,7 +35,6 @@ import com.google.android.maps.MapView;
 
 import edu.mit.mobile.android.locast.data.Event;
 import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 import edu.mit.mobile.android.locast.ver2.casts.LocatableDetail;
 import edu.mit.mobile.android.locast.ver2.itineraries.BasicLocatableOverlay;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
@@ -88,7 +86,7 @@ public class EventDetail extends LocatableDetail implements LoaderManager.Loader
 			break;
 
 		case R.id.home:
-			startActivity(new Intent(this, BrowserHome.class));
+			startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
 			break;
 		}
 	}

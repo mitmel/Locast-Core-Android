@@ -60,7 +60,6 @@ import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 import edu.mit.mobile.android.widget.RefreshButton;
 
 public class ItineraryList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
@@ -257,7 +256,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 			break;
 
 		case R.id.home:
-			startActivity(new Intent(this, BrowserHome.class));
+			startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
 			break;
 		}
 	}

@@ -69,7 +69,6 @@ import edu.mit.mobile.android.locast.maps.CastsIconOverlay;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 import edu.mit.mobile.android.widget.RefreshButton;
 
 public class ItineraryDetail extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener, DialogInterface.OnClickListener {
@@ -317,7 +316,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 			break;
 
 		case R.id.home:
-			startActivity(new Intent(this, BrowserHome.class));
+			startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
             break;
 
 		case R.id.add_cast:

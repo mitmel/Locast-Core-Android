@@ -53,7 +53,6 @@ import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.maps.CastsOverlay;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.locast.ver2.browser.BrowserHome;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 import edu.mit.mobile.android.locast.widget.FavoriteClickHandler;
 import edu.mit.mobile.android.widget.ValidatingCheckBox;
@@ -131,7 +130,7 @@ public class CastDetail extends LocatableDetail implements
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.home:
-			startActivity(new Intent(this, BrowserHome.class));
+			startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
 			break;
 
 		case R.id.refresh:
