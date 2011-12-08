@@ -17,6 +17,7 @@ public class CastLocationOverlay extends ItemizedOverlay<OverlayItem> {
 		super(context.getResources().getDrawable(R.drawable.map_marker_user_cast));
 
 		mContext = context;
+		this.populate();
 
 	}
 
