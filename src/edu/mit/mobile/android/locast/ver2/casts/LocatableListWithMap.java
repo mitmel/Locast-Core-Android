@@ -18,12 +18,10 @@ package edu.mit.mobile.android.locast.ver2.casts;
  */
 import java.util.List;
 
-import android.accounts.Account;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SyncStatusObserver;
 import android.database.Cursor;
 import android.location.Criteria;
 import android.location.Location;
@@ -54,7 +52,6 @@ import com.google.android.maps.Overlay;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
-import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Event;
@@ -100,11 +97,11 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 
 	private boolean actionSearchNearby = false;
 	private boolean mExpeditedSync;
-	
+
 	private RefreshButton mRefresh;
-	
+
 	private Object mSyncHandle;
-	
+
 	private final Handler mHandler = new Handler(){
 		@Override
 		public void handleMessage(Message msg) {

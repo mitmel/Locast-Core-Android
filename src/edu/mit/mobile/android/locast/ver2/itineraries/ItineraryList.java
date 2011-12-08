@@ -17,12 +17,10 @@ package edu.mit.mobile.android.locast.ver2.itineraries;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import android.accounts.Account;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.SyncStatusObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -86,9 +84,9 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	private boolean mSyncWhenLoaded = true;
 
 	private RefreshButton mRefresh;
-	
+
 	private Object mSyncHandle;
-	
+
 	private final Handler mHandler = new Handler(){
 		@Override
 		public void handleMessage(Message msg) {
@@ -107,7 +105,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 			}
 		};
 	};
-	
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
