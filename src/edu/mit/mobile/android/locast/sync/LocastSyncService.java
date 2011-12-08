@@ -204,10 +204,11 @@ public class LocastSyncService extends Service {
 				ContentProviderClient provider, SyncResult syncResult) {
 
 			final String uriString = extras.getString(EXTRA_SYNC_URI);
-			Uri uri = null;
-			if (uriString != null) {
-				uri = Uri.parse(uriString);
-			}
+
+			final Uri uri = uriString != null ? Uri.parse(uriString) : null;
+
+			final boolean uploadOnly = extras.getBoolean(ContentResolver.SYNC_EXTRAS_UPLOAD, false);
+
 			if (DEBUG){
 				if (uri != null) {
 					Log.d(TAG, "onPerformSync() triggered with uri: " + uri);
@@ -220,10 +221,15 @@ public class LocastSyncService extends Service {
 				if (uri != null) {
 					mSyncEngine.sync(uri, account, extras, provider, syncResult);
 				} else {
-					mSyncEngine.sync(Cast.FEATURED, account, extras, provider, syncResult);
-					mSyncEngine.sync(Itinerary.CONTENT_URI, account, extras, provider, syncResult);
-					mSyncEngine.sync(Cast.FAVORITE, account, extras, provider, syncResult);
+					if (uploadOnly){
+						mSyncEngine.uploadUnpublished(Cast.CONTENT_URI, account, extras, provider, syncResult);
+					}else{
+						mSyncEngine.sync(Cast.FEATURED, account, extras, provider, syncResult);
+						mSyncEngine.sync(Itinerary.CONTENT_URI, account, extras, provider, syncResult);
+						mSyncEngine.sync(Cast.FAVORITE, account, extras, provider, syncResult);
+					}
 				}
+
 			} catch (final RemoteException e) {
 				Log.e(TAG, e.toString(), e);
 				// TODO handle
