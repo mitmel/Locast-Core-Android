@@ -45,6 +45,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.SettingsActivity;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.net.NetworkClient;
@@ -387,6 +388,9 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     public boolean onCreateOptionsMenu(Menu menu) {
     	super.onCreateOptionsMenu(menu);
     	getMenuInflater().inflate(R.menu.login_options, menu);
+    	if (Constants.DEBUG){
+    		menu.findItem(R.id.set_base_url).setVisible(true);
+    	}
     	return true;
     }
 

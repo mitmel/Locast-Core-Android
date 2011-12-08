@@ -38,6 +38,7 @@ import org.json.JSONObject;
 import android.accounts.Account;
 import android.content.ContentProviderClient;
 import android.content.ContentProviderOperation;
+import android.content.ContentProviderOperation.Builder;
 import android.content.ContentProviderResult;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -126,6 +127,8 @@ public class SyncEngine {
 
 	};
 
+	private static final String SELECTION_UNPUBLISHED = JsonSyncableItem._PUBLIC_URI + " ISNULL";
+
 	final String[] PUB_URI_PROJECTION = new String[] { JsonSyncableItem._ID,
 			JsonSyncableItem._PUBLIC_URI };
 
@@ -142,7 +145,15 @@ public class SyncEngine {
 			SyncResult syncResult) throws RemoteException, SyncException, JSONException,
 			IOException, NetworkProtocolException, NoPublicPath, OperationApplicationException {
 
-		String pubPath;
+		final String type = provider.getType(toSync);
+		final boolean isDir = type.startsWith(CONTENT_TYPE_PREFIX_DIR);
+
+		String pubPath = null;
+
+		//
+		// Handle http or https uris separately. These require the destination uri.
+		//
+
 		if ("http".equals(toSync.getScheme()) || "https".equals(toSync.getScheme())) {
 			pubPath = toSync.toString();
 
@@ -151,8 +162,6 @@ public class SyncEngine {
 						"missing EXTRA_DESTINATION_URI when syncing HTTP URIs");
 			}
 			toSync = Uri.parse(extras.getString(EXTRA_DESTINATION_URI));
-		} else {
-			pubPath = MediaProvider.getPublicPath(mContext, toSync);
 		}
 
 		final boolean manualSync = extras.getBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, false);
@@ -165,15 +174,45 @@ public class SyncEngine {
 			return false;
 		}
 
+		// the sync map will convert the json data to ContentValues
+		final SyncMap syncMap = getSyncMap(provider, toSync);
+
+
+
+		final HashMap<String, SyncStatus> syncStatuses = new HashMap<String, SyncEngine.SyncStatus>();
+		final ArrayList<ContentProviderOperation> cpo = new ArrayList<ContentProviderOperation>();
+		final LinkedList<String> cpoPubUris = new LinkedList<String>();
+
+		//
+		// first things first, upload any content that needs to be uploaded.
+		//
+
+		uploadUnpublished(toSync, provider, syncMap, syncStatuses, syncResult);
+
+		// this should ensure that all items have a pubPath when we query it below.
+
+		try {
+			if (pubPath == null) {
+				// we should avoid calling this too much as it can be expensive
+				pubPath = MediaProvider.getPublicPath(mContext, toSync);
+			}
+		} catch (final NoPublicPath e) {
+			// if it's an item, we can handle it.
+			if (isDir) {
+				throw e;
+			}
+		}
+
+		if (pubPath == null){
+
+			// this should have been updated already by the initial upload, so something must be wrong
+			throw new SyncException("never got a public path for "+ toSync);
+		}
+
 		if (DEBUG){
 			Log.d(TAG, "sync(toSync="+toSync+", account="+account+", extras="+extras+", manualSync="+manualSync+",...)");
 			Log.d(TAG, "pubPath: "+pubPath);
 		}
-
-		final HashMap<String, SyncStatus> syncStatuses = new HashMap<String, SyncEngine.SyncStatus>();
-
-		final String type = provider.getType(toSync);
-		final boolean isDir = type.startsWith(CONTENT_TYPE_PREFIX_DIR);
 
 		final long request_time = System.currentTimeMillis();
 
@@ -190,18 +229,14 @@ public class SyncEngine {
 		long serverTime;
 
 		try {
-			final Header hDate = hr.getFirstHeader("Date");
-			if (hDate == null) {
-				throw new DateParseException("No Date header in http response");
-			}
-			serverTime = DateUtils.parseDate(hDate.getValue()).getTime();
-
+			serverTime = getServerTime(hr);
 		} catch (final DateParseException e) {
 			Log.w(TAG,
 					"could not retrieve date from server. Using local time, which may be incorrect.",
 					e);
 			serverTime = System.currentTimeMillis();
 		}
+
 
 		// TODO check out http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html
 		final long response_delay = response_time - request_time;
@@ -218,9 +253,6 @@ public class SyncEngine {
 		if (Math.abs(localOffset) > 30 * 60 * 1000) {
 			Log.w(TAG, "local clock is off by " + localOffset + "ms");
 		}
-
-		// the sync map will convert the json data to ContentValues
-		final SyncMap syncMap = getSyncMap(provider, toSync);
 
 		final HttpEntity ent = hr.getEntity();
 
@@ -239,7 +271,7 @@ public class SyncEngine {
 			selection.append(" in (");
 
 			for (int i = 0; i < len; i++) {
-				final SyncStatus syncStatus = loadItemFromServer(ja.getJSONObject(i), syncMap,
+				final SyncStatus syncStatus = loadItemFromJsonObject(ja.getJSONObject(i), syncMap,
 						serverTime);
 
 				syncStatuses.put(syncStatus.remote, syncStatus);
@@ -259,7 +291,7 @@ public class SyncEngine {
 
 			final JSONObject jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
 			ent.consumeContent();
-			final SyncStatus syncStatus = loadItemFromServer(jo, syncMap, serverTime);
+			final SyncStatus syncStatus = loadItemFromJsonObject(jo, syncMap, serverTime);
 
 			syncStatuses.put(syncStatus.remote, syncStatus);
 
@@ -267,11 +299,7 @@ public class SyncEngine {
 					new String[] { syncStatus.remote }, null);
 		}
 
-		// ///////////////////////////////////////////////////////////////
-
-		final ArrayList<ContentProviderOperation> cpo = new ArrayList<ContentProviderOperation>();
-		final LinkedList<String> cpoPubUris = new LinkedList<String>();
-
+		// these items are on both sides
 		try {
 			final int pubUriCol = c.getColumnIndex(JsonSyncableItem._PUBLIC_URI);
 			final int localModifiedCol = c.getColumnIndex(JsonSyncableItem._MODIFIED_DATE);
@@ -281,11 +309,19 @@ public class SyncEngine {
 			// All the items in this cursor should be found on both the client
 			// and the server.
 			for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
-				final String pubUri = c.getString(pubUriCol);
-				final SyncStatus itemStatus = syncStatuses.get(pubUri);
-
 				final long id = c.getLong(idCol);
 				final Uri localUri = ContentUris.withAppendedId(toSync, id);
+
+				final String pubUri = c.getString(pubUriCol);
+
+				final SyncStatus itemStatus = syncStatuses.get(pubUri);
+
+				if (itemStatus.state == SyncState.ALREADY_UP_TO_DATE || itemStatus.state == SyncState.NOW_UP_TO_DATE){
+					if (DEBUG){
+						Log.d(TAG, pubUri + " is already up to date");
+					}
+					continue;
+				}
 
 				itemStatus.local = localUri;
 
@@ -367,11 +403,13 @@ public class SyncEngine {
 					}
 					itemStatus.state = SyncState.LOCAL_DIRTY;
 
-					// TODO publish the local info
+					mNetworkClient.putJson(pubPath, JsonSyncableItem.toJSON(mContext, localUri, c, syncMap));
 				}
 
 				mLastUpdated.markUpdated(localUri);
-			}
+
+				syncResult.stats.numEntries++;
+			} // end for
 		} finally {
 
 			c.close();
@@ -409,6 +447,7 @@ public class SyncEngine {
 			cpoPubUris.clear();
 		}
 
+
 		/*
 		 * Look through the SyncState.state values and find ones that need to be
 		 * stored.
@@ -435,6 +474,7 @@ public class SyncEngine {
 				cpo.add(b.build());
 				cpoPubUris.add(pubUri);
 				syncResult.stats.numInserts++;
+
 			}
 		}
 
@@ -489,7 +529,144 @@ public class SyncEngine {
 	}
 
 	/**
+	 * Uploads any unpublished casts.
+	 *
+	 * This is the method that does all the hard work.
+	 *
+	 * @param itemDir
+	 * @param provider
+	 * @param syncMap
+	 * @param syncResult
+	 * @return the number of casts uploaded.
+	 * @throws JSONException
+	 * @throws NetworkProtocolException
+	 * @throws IOException
+	 * @throws NoPublicPath
+	 * @throws RemoteException
+	 * @throws OperationApplicationException
+	 * @throws SyncException
+	 */
+	private int uploadUnpublished(Uri itemDir, ContentProviderClient provider, SyncMap syncMap, HashMap<String, SyncEngine.SyncStatus> syncStatuses, SyncResult syncResult) throws JSONException, NetworkProtocolException, IOException, NoPublicPath, RemoteException, OperationApplicationException, SyncException{
+		int count = 0;
+		final ArrayList<ContentProviderOperation> cpo = new ArrayList<ContentProviderOperation>();
+
+		final Cursor uploadMe = provider.query(itemDir, null, SELECTION_UNPUBLISHED, null, null);
+
+		final int idCol = uploadMe.getColumnIndex(JsonSyncableItem._ID);
+
+		final int toUpload = uploadMe.getCount();
+
+		final String[] localUris = new String[toUpload];
+
+		int i = 0;
+
+		try {
+			for (uploadMe.moveToFirst(); !uploadMe.isAfterLast(); uploadMe.moveToNext()){
+				final Uri localUri = ContentUris.withAppendedId(itemDir, uploadMe.getLong(idCol));
+				final String postUri = MediaProvider.getPostPath(mContext, localUri);
+
+				final JSONObject jo = JsonSyncableItem.toJSON(mContext, localUri, uploadMe, syncMap);
+
+				if (DEBUG){
+					Log.d(TAG, "uploading " + localUri + " to "+ postUri);
+				}
+				final HttpResponse res = mNetworkClient.post(postUri, jo.toString());
+
+				mNetworkClient.checkStatusCode(res, true);
+
+				long serverTime;
+				try {
+					serverTime = getServerTime(res);
+				}catch (final DateParseException e){
+					serverTime = System.currentTimeMillis();
+				}
+
+				final JSONObject newJo = NetworkClient.toJsonObject(res);
+				try {
+					final SyncStatus ss = loadItemFromJsonObject(newJo, syncMap, serverTime);
+
+					final Builder update = ContentProviderOperation.newUpdate(localUri);
+					update.withValues(ss.remoteCVs);
+					cpo.add(update.build());
+					localUris[i] = localUri.toString();
+
+					syncStatuses.put(localUris[i], ss);
+
+					i++;
+					count++;
+					syncResult.stats.numEntries++;
+					syncResult.stats.numUpdates++;
+
+				}catch (final JSONException e){
+					if (DEBUG){
+						Log.e(TAG, "result was "+newJo.toString());
+					}
+					throw e;
+				}
+			}
+		}finally{
+			uploadMe.close();
+		}
+
+		final ContentProviderResult[] cpr = provider.applyBatch(cpo);
+
+		for (i = 0; i < cpr.length; i++){
+			if (cpr[i].count != 1){
+				Log.e(TAG, "error updating "+ localUris[i]);
+				syncResult.stats.numSkippedEntries++;
+				continue;
+			}
+
+			final SyncStatus ss = syncStatuses.get(localUris[i]);
+
+			syncMap.onPostSyncItem(mContext, itemDir, ss.remoteJson, true);
+		}
+
+		return count;
+	}
+
+	/**
+	 * Gets the server's time.
+	 *
+	 * @param hr
+	 * @return the time that the response was generated, according to the server
+	 * @throws DateParseException if the header is missing or if it can't be parsed.
+	 */
+	private long getServerTime(HttpResponse hr) throws DateParseException {
+		final Header hDate = hr.getFirstHeader("Date");
+		if (hDate == null) {
+			throw new DateParseException("No Date header in http response");
+		}
+		return DateUtils.parseDate(hDate.getValue()).getTime();
+	}
+
+	/**
+	 * Uploads any unpublished items.
+	 *
+	 * @param itemDir
+	 * @param account
+	 * @param extras
+	 * @param provider
+	 * @param syncResult
+	 * @return the number of casts uploaded.
+	 * @throws RemoteException
+	 * @throws SyncException
+	 * @throws JSONException
+	 * @throws NetworkProtocolException
+	 * @throws IOException
+	 * @throws NoPublicPath
+	 * @throws OperationApplicationException
+	 */
+	public int uploadUnpublished(Uri itemDir, Account account, Bundle extras, ContentProviderClient provider,
+			SyncResult syncResult) throws RemoteException, SyncException, JSONException, NetworkProtocolException, IOException, NoPublicPath, OperationApplicationException {
+
+		return uploadUnpublished(itemDir, provider, getSyncMap(provider, itemDir), new HashMap<String, SyncEngine.SyncStatus>(), syncResult);
+	}
+
+	/**
 	 * Loads the an item from a JSONObject into a SyncStatus object.
+	 *
+	 * Sets {@link SyncStatus#remoteCVs}, {@link SyncStatus#remoteModifiedTime}, {@link SyncStatus#remoteJson}, {@link SyncStatus#remote}
 	 *
 	 * @param jo
 	 * @param syncMap
@@ -499,7 +676,7 @@ public class SyncEngine {
 	 * @throws IOException
 	 * @throws NetworkProtocolException
 	 */
-	private SyncStatus loadItemFromServer(JSONObject jo, SyncMap syncMap, long serverTime)
+	private SyncStatus loadItemFromJsonObject(JSONObject jo, SyncMap syncMap, long serverTime)
 			throws JSONException, IOException, NetworkProtocolException {
 		final ContentValues cv = JsonSyncableItem.fromJSON(mContext, null, jo, syncMap);
 

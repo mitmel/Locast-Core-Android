@@ -23,6 +23,10 @@ public class Constants {
 	 * General debugging flag. This needs to be a constant so that the compiler will remove any debugging code.
 	 */
 	public static final boolean DEBUG = false;
+	/**
+	 * If true, the user can create casts.
+	 */
+	public static final boolean CAN_CREATE_CASTS = true;
 
 	/**
 	 * Enables a built-in app update checker if the app is not going to be published on the Market.

@@ -8,12 +8,10 @@
 	<string-array name="locast_sites">
 		<item>Abruzzo</item>
 		<item>Abruzzo Dev</item>
-		<item>Lucca</item>
 	</string-array>
 	
 	<string-array name="locast_urls" translatable="false">
-		<item>https://locast.mit.edu/abruzzo/api/</item>
-		<item>http://mel-pydev.mit.edu/abruzzo/api/</item>
-		<item>https://locast.mit.edu/luccarts/api/</item>
+		<item>http://www.railocal.rai.it/api/</item>
+		<item>http://mel-pydev.mit.edu/tourism/api/</item>
 	</string-array>
 </resources>
