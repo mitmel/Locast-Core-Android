@@ -18,17 +18,17 @@ package edu.mit.mobile.android.locast.sync;
  */
 
 import android.accounts.Account;
-import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SyncStatusObserver;
 import android.os.Handler;
 import android.util.Log;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 
 /**
- * A implementation of a SyncStatusObserver that will be used to monitor 
+ * A implementation of a SyncStatusObserver that will be used to monitor
  * the current account synchronization and notify to a specific handler
  * when the process is ended
  *
@@ -36,16 +36,16 @@ import edu.mit.mobile.android.locast.data.MediaProvider;
  *
  */
 public class LocastSyncStatusObserver implements SyncStatusObserver{
-	
+
 	Context mContext;
 	Handler mHandler;
-	
+
 	public static final int
 	MSG_SET_REFRESHING = 100,
 	MSG_SET_NOT_REFRESHING = 101;
-	
+
 	private static final String TAG = LocastSyncStatusObserver.class.getSimpleName();
-	
+
 	public LocastSyncStatusObserver(Context context,Handler handler) {
 		this.mContext=context;
 		this.mHandler=handler;
@@ -55,14 +55,18 @@ public class LocastSyncStatusObserver implements SyncStatusObserver{
 		notifySyncStatusToHandler(mContext, mHandler);
 	}
 	public static void notifySyncStatusToHandler(Context context,Handler handler){
-		Account a = Authenticator.getFirstAccount(context);
+		final Account a = Authenticator.getFirstAccount(context);
         if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY) &&
                 !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
-            Log.d(TAG, "Sync finished, should refresh now!!");
+        	if (Constants.DEBUG){
+        		Log.d(TAG, "Sync finished, should refresh now!!");
+        	}
             handler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
         }
         else{
-        	Log.d(TAG, "Sync Active or Pending!!");
+        	if (Constants.DEBUG){
+        		Log.d(TAG, "Sync Active or Pending!!");
+        	}
         	handler.sendEmptyMessage(MSG_SET_REFRESHING);
         }
 	}
