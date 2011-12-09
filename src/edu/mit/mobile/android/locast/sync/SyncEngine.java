@@ -145,9 +145,6 @@ public class SyncEngine {
 			SyncResult syncResult) throws RemoteException, SyncException, JSONException,
 			IOException, NetworkProtocolException, NoPublicPath, OperationApplicationException {
 
-		final String type = provider.getType(toSync);
-		final boolean isDir = type.startsWith(CONTENT_TYPE_PREFIX_DIR);
-
 		String pubPath = null;
 
 		//
@@ -163,6 +160,9 @@ public class SyncEngine {
 			}
 			toSync = Uri.parse(extras.getString(EXTRA_DESTINATION_URI));
 		}
+
+		final String type = provider.getType(toSync);
+		final boolean isDir = type.startsWith(CONTENT_TYPE_PREFIX_DIR);
 
 		final boolean manualSync = extras.getBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, false);
 
