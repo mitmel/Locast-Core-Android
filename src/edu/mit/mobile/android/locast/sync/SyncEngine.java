@@ -177,7 +177,7 @@ public class SyncEngine {
 		// the sync map will convert the json data to ContentValues
 		final SyncMap syncMap = getSyncMap(provider, toSync);
 
-
+		final Uri toSyncWithoutQuerystring = toSync.buildUpon().query(null).build();
 
 		final HashMap<String, SyncStatus> syncStatuses = new HashMap<String, SyncEngine.SyncStatus>();
 		final ArrayList<ContentProviderOperation> cpo = new ArrayList<ContentProviderOperation>();
@@ -256,19 +256,21 @@ public class SyncEngine {
 
 		final HttpEntity ent = hr.getEntity();
 
-		Cursor c;
+		String selection;
+		String[] selectionArgs;
+
 		if (isDir) {
 
 			final JSONArray ja = new JSONArray(StreamUtils.inputStreamToString(ent.getContent()));
 			ent.consumeContent();
 
 			final int len = ja.length();
-			final String[] selectionArgs = new String[len];
+			selectionArgs = new String[len];
 
 			// build the query to see which items are already in the database
-			final StringBuilder selection = new StringBuilder();
-			selection.append(JsonSyncableItem._PUBLIC_URI);
-			selection.append(" in (");
+			final StringBuilder sb = new StringBuilder();
+			sb.append(JsonSyncableItem._PUBLIC_URI);
+			sb.append(" in (");
 
 			for (int i = 0; i < len; i++) {
 				final SyncStatus syncStatus = loadItemFromJsonObject(ja.getJSONObject(i), syncMap,
@@ -279,14 +281,14 @@ public class SyncEngine {
 				selectionArgs[i] = syncStatus.remote;
 
 				// add in a placeholder for the query
-				selection.append('?');
+				sb.append('?');
 				if (i != (len - 1)) {
-					selection.append(',');
+					sb.append(',');
 				}
 			}
-			selection.append(")");
+			sb.append(")");
 
-			c = provider.query(toSync, SYNC_PROJECTION, selection.toString(), selectionArgs, null);
+			selection = sb.toString();
 		} else {
 
 			final JSONObject jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
@@ -295,9 +297,41 @@ public class SyncEngine {
 
 			syncStatuses.put(syncStatus.remote, syncStatus);
 
-			c = provider.query(toSync, SYNC_PROJECTION, JsonSyncableItem._PUBLIC_URI + "=?",
-					new String[] { syncStatus.remote }, null);
+			selection = JsonSyncableItem._PUBLIC_URI + "=?";
+			selectionArgs = new String[] { syncStatus.remote };
 		}
+
+		// first check without the querystring. This will ensure that we properly mark things that we already have
+		// in the database.
+		final Cursor check = provider.query(toSyncWithoutQuerystring, SYNC_PROJECTION, selection, selectionArgs, null);
+
+		// these items are on both sides
+		try {
+			final int pubUriCol = check.getColumnIndex(JsonSyncableItem._PUBLIC_URI);
+			final int idCol = check.getColumnIndex(JsonSyncableItem._ID);
+
+			// All the items in this cursor should be found on both the client
+			// and the server.
+			for (check.moveToFirst(); !check.isAfterLast(); check.moveToNext()) {
+				final long id = check.getLong(idCol);
+				final Uri localUri = ContentUris.withAppendedId(toSync, id);
+
+				final String pubUri = check.getString(pubUriCol);
+
+				final SyncStatus itemStatus = syncStatuses.get(pubUri);
+
+				itemStatus.state = SyncState.BOTH_UNKNOWN;
+
+				itemStatus.local = localUri;
+
+				// make the status searchable by both remote and local uri
+				syncStatuses.put(localUri.toString(), itemStatus);
+			}
+		}finally{
+			check.close();
+		}
+
+		final Cursor c = provider.query(toSync, SYNC_PROJECTION, selection, selectionArgs, null);
 
 		// these items are on both sides
 		try {
@@ -786,6 +820,9 @@ public class SyncEngine {
 		 * The item is now up to date, as a result of the sync.
 		 */
 		NOW_UP_TO_DATE,
+
+
+		BOTH_UNKNOWN,
 
 		/**
 		 * The item exists both remotely and locally, but has been changed on
