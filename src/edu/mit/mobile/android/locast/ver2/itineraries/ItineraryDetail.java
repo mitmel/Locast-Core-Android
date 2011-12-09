@@ -281,12 +281,12 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	}
 
 	private void refresh(boolean explicitSync){
-		LocastSyncService.startSync(this, mUri, explicitSync);
 		final Bundle extras = new Bundle();
 		if (mItineraryCastCount == UNKNOWN_COUNT || (mItineraryCastCount != mCastAdapter.getCount())){
 			extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
 		}
 		LocastSyncService.startSync(this, mCastsUri, explicitSync, extras);
+        LocastSyncService.startSync(this, mUri, explicitSync);
 	}
 
 

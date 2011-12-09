@@ -71,8 +71,8 @@ public class SyncEngine {
 	private static final String TAG = SyncEngine.class.getSimpleName();
 
 	/**
-	 * If syncing a server URI that is destined for a specific local URI space,
-	 * add the destination URI here.
+	 * If syncing a server URI that is destined for a specific local URI space, add the destination
+	 * URI here.
 	 */
 	public final static String EXTRA_DESTINATION_URI = "edu.mit.mobile.android.locast.EXTRA_DESTINATION_URI";
 
@@ -108,10 +108,9 @@ public class SyncEngine {
 	private final LastUpdatedMap<Uri> mLastUpdated = new LastUpdatedMap<Uri>(
 			TIMEOUT_AUTO_SYNC_MINIMUM);
 
-	private static final long AGE_EQUALITY_SLOP = 1000; // ms; the amount of
-														// time that an age can
-														// differ by and still
-														// be considered equal.
+	// the amount of time by which an age can differ and still be considered
+	// equal
+	private static final long AGE_EQUALITY_SLOP = 1000; // ms
 
 	private static final String[] SYNC_PROJECTION = new String[] {
 
@@ -143,12 +142,14 @@ public class SyncEngine {
 
 	public boolean sync(Uri toSync, Account account, Bundle extras, ContentProviderClient provider,
 			SyncResult syncResult) throws RemoteException, SyncException, JSONException,
-			IOException, NetworkProtocolException, NoPublicPath, OperationApplicationException {
+			IOException, NetworkProtocolException, NoPublicPath, OperationApplicationException,
+			InterruptedException {
 
 		String pubPath = null;
 
 		//
-		// Handle http or https uris separately. These require the destination uri.
+		// Handle http or https uris separately. These require the
+		// destination uri.
 		//
 
 		if ("http".equals(toSync.getScheme()) || "https".equals(toSync.getScheme())) {
@@ -168,8 +169,8 @@ public class SyncEngine {
 
 		// skip any items already sync'd
 		if (!manualSync && mLastUpdated.isUpdatedRecently(toSync)) {
-			if (DEBUG){
-				Log.d(TAG, "not syncing "+toSync+" as it's been updated recently");
+			if (DEBUG) {
+				Log.d(TAG, "not syncing " + toSync + " as it's been updated recently");
 			}
 			return false;
 		}
@@ -184,16 +185,23 @@ public class SyncEngine {
 		final LinkedList<String> cpoPubUris = new LinkedList<String>();
 
 		//
-		// first things first, upload any content that needs to be uploaded.
+		// first things first, upload any content that needs to be
+		// uploaded.
 		//
 
 		uploadUnpublished(toSync, provider, syncMap, syncStatuses, syncResult);
 
-		// this should ensure that all items have a pubPath when we query it below.
+		if (Thread.interrupted()) {
+			throw new InterruptedException();
+		}
+
+		// this should ensure that all items have a pubPath when we
+		// query it below.
 
 		try {
 			if (pubPath == null) {
-				// we should avoid calling this too much as it can be expensive
+				// we should avoid calling this too much as it
+				// can be expensive
 				pubPath = MediaProvider.getPublicPath(mContext, toSync);
 			}
 		} catch (final NoPublicPath e) {
@@ -203,15 +211,17 @@ public class SyncEngine {
 			}
 		}
 
-		if (pubPath == null){
+		if (pubPath == null) {
 
-			// this should have been updated already by the initial upload, so something must be wrong
-			throw new SyncException("never got a public path for "+ toSync);
+			// this should have been updated already by the initial
+			// upload, so something must be wrong
+			throw new SyncException("never got a public path for " + toSync);
 		}
 
-		if (DEBUG){
-			Log.d(TAG, "sync(toSync="+toSync+", account="+account+", extras="+extras+", manualSync="+manualSync+",...)");
-			Log.d(TAG, "pubPath: "+pubPath);
+		if (DEBUG) {
+			Log.d(TAG, "sync(toSync=" + toSync + ", account=" + account + ", extras=" + extras
+					+ ", manualSync=" + manualSync + ",...)");
+			Log.d(TAG, "pubPath: " + pubPath);
 		}
 
 		final long request_time = System.currentTimeMillis();
@@ -220,12 +230,11 @@ public class SyncEngine {
 
 		final long response_time = System.currentTimeMillis();
 
-		// the time compensation below allows a time-based synchronization to
-		// function even if the local clock is entirely wrong. The server's time
-		// is extracted using the Date header and all are compared relative to
-		// the respective clock reference. Any data that's stored on the mobile
-		// should be stored relative to the local clock and the server will
-		// respect the same.
+		// the time compensation below allows a time-based synchronization to function even if the
+		// local clock is entirely wrong. The server's time is extracted using the Date header and
+		// all are compared relative to the respective clock reference. Any data that's stored on
+		// the mobile should be stored relative to the local clock and the server will respect the
+		// same.
 		long serverTime;
 
 		try {
@@ -237,21 +246,23 @@ public class SyncEngine {
 			serverTime = System.currentTimeMillis();
 		}
 
-
-		// TODO check out http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html
+		// TODO check out
+		// http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html
 		final long response_delay = response_time - request_time;
 		if (DEBUG) {
 			Log.d(TAG, "request took " + response_delay + "ms");
 		}
 		final long localTime = request_time;
 
-		final long localOffset = (localTime - serverTime); // add this to the
-															// server time to
-															// get the local
-															// time
+		// add this to the server time to get the local time
+		final long localOffset = (localTime - serverTime);
 
 		if (Math.abs(localOffset) > 30 * 60 * 1000) {
 			Log.w(TAG, "local clock is off by " + localOffset + "ms");
+		}
+
+		if (Thread.interrupted()) {
+			throw new InterruptedException();
 		}
 
 		final HttpEntity ent = hr.getEntity();
@@ -267,12 +278,17 @@ public class SyncEngine {
 			final int len = ja.length();
 			selectionArgs = new String[len];
 
-			// build the query to see which items are already in the database
+			// build the query to see which items are already in the
+			// database
 			final StringBuilder sb = new StringBuilder();
 			sb.append(JsonSyncableItem._PUBLIC_URI);
 			sb.append(" in (");
 
 			for (int i = 0; i < len; i++) {
+				if (Thread.interrupted()) {
+					throw new InterruptedException();
+				}
+
 				final SyncStatus syncStatus = loadItemFromJsonObject(ja.getJSONObject(i), syncMap,
 						serverTime);
 
@@ -285,6 +301,7 @@ public class SyncEngine {
 				if (i != (len - 1)) {
 					sb.append(',');
 				}
+
 			}
 			sb.append(")");
 
@@ -301,18 +318,23 @@ public class SyncEngine {
 			selectionArgs = new String[] { syncStatus.remote };
 		}
 
-		// first check without the querystring. This will ensure that we properly mark things that we already have
-		// in the database.
-		final Cursor check = provider.query(toSyncWithoutQuerystring, SYNC_PROJECTION, selection, selectionArgs, null);
+		// first check without the querystring. This will ensure that we
+		// properly mark things that we already have in the database.
+		final Cursor check = provider.query(toSyncWithoutQuerystring, SYNC_PROJECTION, selection,
+				selectionArgs, null);
 
 		// these items are on both sides
 		try {
 			final int pubUriCol = check.getColumnIndex(JsonSyncableItem._PUBLIC_URI);
 			final int idCol = check.getColumnIndex(JsonSyncableItem._ID);
 
-			// All the items in this cursor should be found on both the client
-			// and the server.
+			// All the items in this cursor should be found on both
+			// the client and the server.
 			for (check.moveToFirst(); !check.isAfterLast(); check.moveToNext()) {
+				if (Thread.interrupted()) {
+					throw new InterruptedException();
+				}
+
 				final long id = check.getLong(idCol);
 				final Uri localUri = ContentUris.withAppendedId(toSync, id);
 
@@ -324,10 +346,11 @@ public class SyncEngine {
 
 				itemStatus.local = localUri;
 
-				// make the status searchable by both remote and local uri
+				// make the status searchable by both remote and
+				// local uri
 				syncStatuses.put(localUri.toString(), itemStatus);
 			}
-		}finally{
+		} finally {
 			check.close();
 		}
 
@@ -340,9 +363,13 @@ public class SyncEngine {
 			final int serverModifiedCol = c.getColumnIndex(JsonSyncableItem._SERVER_MODIFIED_DATE);
 			final int idCol = c.getColumnIndex(JsonSyncableItem._ID);
 
-			// All the items in this cursor should be found on both the client
-			// and the server.
+			// All the items in this cursor should be found on both
+			// the client and the server.
 			for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
+				if (Thread.interrupted()) {
+					throw new InterruptedException();
+				}
+
 				final long id = c.getLong(idCol);
 				final Uri localUri = ContentUris.withAppendedId(toSync, id);
 
@@ -350,8 +377,9 @@ public class SyncEngine {
 
 				final SyncStatus itemStatus = syncStatuses.get(pubUri);
 
-				if (itemStatus.state == SyncState.ALREADY_UP_TO_DATE || itemStatus.state == SyncState.NOW_UP_TO_DATE){
-					if (DEBUG){
+				if (itemStatus.state == SyncState.ALREADY_UP_TO_DATE
+						|| itemStatus.state == SyncState.NOW_UP_TO_DATE) {
+					if (DEBUG) {
 						Log.d(TAG, pubUri + " is already up to date");
 					}
 					continue;
@@ -437,7 +465,8 @@ public class SyncEngine {
 					}
 					itemStatus.state = SyncState.LOCAL_DIRTY;
 
-					mNetworkClient.putJson(pubPath, JsonSyncableItem.toJSON(mContext, localUri, c, syncMap));
+					mNetworkClient.putJson(pubPath,
+							JsonSyncableItem.toJSON(mContext, localUri, c, syncMap));
 				}
 
 				mLastUpdated.markUpdated(localUri);
@@ -449,7 +478,9 @@ public class SyncEngine {
 			c.close();
 		}
 
-		// apply bulk updates
+		/*
+		 * Apply updates in bulk
+		 */
 		if (cpo.size() > 0) {
 			if (DEBUG) {
 				Log.d(TAG, "applying " + cpo.size() + " bulk updates...");
@@ -481,13 +512,19 @@ public class SyncEngine {
 			cpoPubUris.clear();
 		}
 
+		if (Thread.interrupted()) {
+			throw new InterruptedException();
+		}
 
 		/*
-		 * Look through the SyncState.state values and find ones that need to be
-		 * stored.
+		 * Look through the SyncState.state values and find ones that need to be stored.
 		 */
 
 		for (final Map.Entry<String, SyncStatus> entry : syncStatuses.entrySet()) {
+			if (Thread.interrupted()) {
+				throw new InterruptedException();
+			}
+
 			final String pubUri = entry.getKey();
 			final SyncStatus status = entry.getValue();
 			if (status.state == SyncState.REMOTE_ONLY) {
@@ -516,8 +553,8 @@ public class SyncEngine {
 		 * Execute the content provider operations in bulk.
 		 */
 		if (cpo.size() > 0) {
-			if (DEBUG){
-				Log.d(TAG, "bulk inserting "+ cpo.size() + " items...");
+			if (DEBUG) {
+				Log.d(TAG, "bulk inserting " + cpo.size() + " items...");
 			}
 			final ContentProviderResult[] r = provider.applyBatch(cpo);
 			if (DEBUG) {
@@ -579,8 +616,12 @@ public class SyncEngine {
 	 * @throws RemoteException
 	 * @throws OperationApplicationException
 	 * @throws SyncException
+	 * @throws InterruptedException
 	 */
-	private int uploadUnpublished(Uri itemDir, ContentProviderClient provider, SyncMap syncMap, HashMap<String, SyncEngine.SyncStatus> syncStatuses, SyncResult syncResult) throws JSONException, NetworkProtocolException, IOException, NoPublicPath, RemoteException, OperationApplicationException, SyncException{
+	private int uploadUnpublished(Uri itemDir, ContentProviderClient provider, SyncMap syncMap,
+			HashMap<String, SyncEngine.SyncStatus> syncStatuses, SyncResult syncResult)
+			throws JSONException, NetworkProtocolException, IOException, NoPublicPath,
+			RemoteException, OperationApplicationException, SyncException, InterruptedException {
 		int count = 0;
 		final ArrayList<ContentProviderOperation> cpo = new ArrayList<ContentProviderOperation>();
 
@@ -595,14 +636,18 @@ public class SyncEngine {
 		int i = 0;
 
 		try {
-			for (uploadMe.moveToFirst(); !uploadMe.isAfterLast(); uploadMe.moveToNext()){
+			for (uploadMe.moveToFirst(); !uploadMe.isAfterLast(); uploadMe.moveToNext()) {
+				if (Thread.interrupted()) {
+					throw new InterruptedException();
+				}
 				final Uri localUri = ContentUris.withAppendedId(itemDir, uploadMe.getLong(idCol));
 				final String postUri = MediaProvider.getPostPath(mContext, localUri);
 
-				final JSONObject jo = JsonSyncableItem.toJSON(mContext, localUri, uploadMe, syncMap);
+				final JSONObject jo = JsonSyncableItem
+						.toJSON(mContext, localUri, uploadMe, syncMap);
 
-				if (DEBUG){
-					Log.d(TAG, "uploading " + localUri + " to "+ postUri);
+				if (DEBUG) {
+					Log.d(TAG, "uploading " + localUri + " to " + postUri);
 				}
 				final HttpResponse res = mNetworkClient.post(postUri, jo.toString());
 
@@ -611,7 +656,7 @@ public class SyncEngine {
 				long serverTime;
 				try {
 					serverTime = getServerTime(res);
-				}catch (final DateParseException e){
+				} catch (final DateParseException e) {
 					serverTime = System.currentTimeMillis();
 				}
 
@@ -631,22 +676,22 @@ public class SyncEngine {
 					syncResult.stats.numEntries++;
 					syncResult.stats.numUpdates++;
 
-				}catch (final JSONException e){
-					if (DEBUG){
-						Log.e(TAG, "result was "+newJo.toString());
+				} catch (final JSONException e) {
+					if (DEBUG) {
+						Log.e(TAG, "result was " + newJo.toString());
 					}
 					throw e;
 				}
 			}
-		}finally{
+		} finally {
 			uploadMe.close();
 		}
 
 		final ContentProviderResult[] cpr = provider.applyBatch(cpo);
 
-		for (i = 0; i < cpr.length; i++){
-			if (cpr[i].count != 1){
-				Log.e(TAG, "error updating "+ localUris[i]);
+		for (i = 0; i < cpr.length; i++) {
+			if (cpr[i].count != 1) {
+				Log.e(TAG, "error updating " + localUris[i]);
 				syncResult.stats.numSkippedEntries++;
 				continue;
 			}
@@ -664,7 +709,8 @@ public class SyncEngine {
 	 *
 	 * @param hr
 	 * @return the time that the response was generated, according to the server
-	 * @throws DateParseException if the header is missing or if it can't be parsed.
+	 * @throws DateParseException
+	 *             if the header is missing or if it can't be parsed.
 	 */
 	private long getServerTime(HttpResponse hr) throws DateParseException {
 		final Header hDate = hr.getFirstHeader("Date");
@@ -690,17 +736,22 @@ public class SyncEngine {
 	 * @throws IOException
 	 * @throws NoPublicPath
 	 * @throws OperationApplicationException
+	 * @throws InterruptedException
 	 */
-	public int uploadUnpublished(Uri itemDir, Account account, Bundle extras, ContentProviderClient provider,
-			SyncResult syncResult) throws RemoteException, SyncException, JSONException, NetworkProtocolException, IOException, NoPublicPath, OperationApplicationException {
+	public int uploadUnpublished(Uri itemDir, Account account, Bundle extras,
+			ContentProviderClient provider, SyncResult syncResult) throws RemoteException,
+			SyncException, JSONException, NetworkProtocolException, IOException, NoPublicPath,
+			OperationApplicationException, InterruptedException {
 
-		return uploadUnpublished(itemDir, provider, getSyncMap(provider, itemDir), new HashMap<String, SyncEngine.SyncStatus>(), syncResult);
+		return uploadUnpublished(itemDir, provider, getSyncMap(provider, itemDir),
+				new HashMap<String, SyncEngine.SyncStatus>(), syncResult);
 	}
 
 	/**
 	 * Loads the an item from a JSONObject into a SyncStatus object.
 	 *
-	 * Sets {@link SyncStatus#remoteCVs}, {@link SyncStatus#remoteModifiedTime}, {@link SyncStatus#remoteJson}, {@link SyncStatus#remote}
+	 * Sets {@link SyncStatus#remoteCVs}, {@link SyncStatus#remoteModifiedTime},
+	 * {@link SyncStatus#remoteJson}, {@link SyncStatus#remote}
 	 *
 	 * @param jo
 	 * @param syncMap
@@ -729,8 +780,8 @@ public class SyncEngine {
 	}
 
 	/**
-	 * The mobile needs to store the modified date in its own timescale, so it
-	 * can tell if a local update is newer than that of the server.
+	 * The mobile needs to store the modified date in its own timescale, so it can tell if a local
+	 * update is newer than that of the server.
 	 *
 	 * @param cv
 	 * @param fromKey
@@ -743,15 +794,14 @@ public class SyncEngine {
 	}
 
 	/**
-	 * Retrieves the class which maps to the given type of the specified uri.
-	 * The map is statically defined in this class.
+	 * Retrieves the class which maps to the given type of the specified uri. The map is statically
+	 * defined in this class.
 	 *
 	 * @param provider
 	 *            a provider which can retrieve the type for the given uri
 	 * @param data
 	 *            a uri to a dir or item which the engine knows how to handle
-	 * @return the class which contains the sync map (and other helpers) for the
-	 *         specified uri
+	 * @return the class which contains the sync map (and other helpers) for the specified uri
 	 * @throws SyncException
 	 *             if the map cannot be found
 	 * @throws RemoteException
@@ -821,18 +871,15 @@ public class SyncEngine {
 		 */
 		NOW_UP_TO_DATE,
 
-
 		BOTH_UNKNOWN,
 
 		/**
-		 * The item exists both remotely and locally, but has been changed on
-		 * the local side.
+		 * The item exists both remotely and locally, but has been changed on the local side.
 		 */
 		LOCAL_DIRTY,
 
 		/**
-		 * The item exists both remotely and locally, but has been changed on
-		 * the remote side.
+		 * The item exists both remotely and locally, but has been changed on the remote side.
 		 */
 		REMOTE_DIRTY,
 
