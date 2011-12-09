@@ -18,12 +18,12 @@ package edu.mit.mobile.android.locast.accounts;
  */
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.view.View;
 import android.view.View.OnClickListener;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.ver2.R;
 
 public class SigninOrSkip extends Activity implements OnClickListener {
@@ -39,12 +39,13 @@ public class SigninOrSkip extends Activity implements OnClickListener {
 	}
 
 	private void skip(){
-		final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-		prefs.edit().putBoolean(Authenticator.PREF_SKIP_AUTH, true).commit();
+		//final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		//prefs.edit().putBoolean(Authenticator.PREF_SKIP_AUTH, true).commit();
+		Authenticator.addDemoAccount(this);
 		setResult(RESULT_OK);
 		finish();
 	}
-	private static final int REQUEST_SIGNIN = 0;
+	public static final int REQUEST_SIGNIN = 100;
 
 	@Override
 	public void onClick(View v) {
@@ -69,5 +70,21 @@ public class SigninOrSkip extends Activity implements OnClickListener {
 			}
 			break;
 		}
+	}
+
+	/**
+	 * @return true if this seems to be the first time running the app
+	 */
+	public static final boolean checkFirstTime(Context context){
+		//final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		//final boolean skip = prefs.getBoolean(Authenticator.PREF_SKIP_AUTH, false);
+
+		final NetworkClient nc = NetworkClient.getInstance(context);
+
+		return !nc.isAuthenticated() && !Authenticator.isDemoMode(context);
+	}
+
+	public static final void startSignin(Activity context, int requestCode){
+		context.startActivityForResult(new Intent(context, SigninOrSkip.class), requestCode);
 	}
 }

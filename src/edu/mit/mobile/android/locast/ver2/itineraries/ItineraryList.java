@@ -20,13 +20,11 @@ package edu.mit.mobile.android.locast.ver2.itineraries;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -50,8 +48,7 @@ import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.accounts.Authenticator;
-import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity;
+import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.net.NetworkClient;
@@ -130,13 +127,13 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 
 		mImageCache = ImageCache.getInstance(this);
 
-		firstTime = checkFirstTime();
+		firstTime = SigninOrSkip.checkFirstTime(this);
 
 		if (REQUIRE_LOGIN){
 			final NetworkClient nc = NetworkClient.getInstance(this);
 
 			if (!nc.isAuthenticated()){
-				startActivityForResult(new Intent(this, AuthenticatorActivity.class), REQUEST_SIGNIN);
+				SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
 				return;
 			}
 		}
@@ -259,23 +256,10 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		}
 	}
 
-	private final static int REQUEST_SIGNIN = 0;
-
-
-	/**
-	 * @return true if this seems to be the first time running the app
-	 */
-	private boolean checkFirstTime(){
-		final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-		final boolean skip = prefs.getBoolean(Authenticator.PREF_SKIP_AUTH, false);
-
-		return skip;
-	}
-
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch (requestCode) {
-		case REQUEST_SIGNIN:
+		case SigninOrSkip.REQUEST_SIGNIN:
 			if (resultCode == RESULT_CANCELED){
 				finish();
 			}else if (resultCode == RESULT_OK){

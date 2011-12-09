@@ -101,6 +101,7 @@ import android.util.Log;
 import android.widget.Toast;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.AuthenticationService;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
@@ -1091,6 +1092,12 @@ public class NetworkClient extends DefaultHttpClient implements OnSharedPreferen
 			if (DEBUG) {
 				Log.w(TAG, "more than one Locast account is defined. Using the first one");
 			}
+		}
+		if (Authenticator.DEMO_ACCOUNT.equals(accounts[0].name)){
+			if (DEBUG){
+				Log.i(TAG, "demo account is being used");
+			}
+			return;
 		}
 		setCredentials(accounts[0].name, am.getPassword(accounts[0]));
 	}

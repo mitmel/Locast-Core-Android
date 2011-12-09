@@ -24,9 +24,11 @@ import android.accounts.AbstractAccountAuthenticator;
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.ver2.R;
@@ -227,5 +229,21 @@ public class Authenticator extends AbstractAccountAuthenticator {
     		throw new RuntimeException("no accounts registered");
     	}
 		return AccountManager.get(context).getUserData(account, key);
+    }
+
+    public static final String DEMO_ACCOUNT = "demo@locast.example.com";
+
+    public static void addDemoAccount(Context context){
+    	final AccountManager am = AccountManager.get(context);
+    	final Account account = new Account(DEMO_ACCOUNT, AuthenticationService.ACCOUNT_TYPE);
+    	am.addAccountExplicitly(account, null, null);
+
+    	ContentResolver.setSyncAutomatically(account,
+                MediaProvider.AUTHORITY, true);
+    }
+
+    public static boolean isDemoMode(Context context){
+    	final Account a = getFirstAccount(context);
+    	return a != null && DEMO_ACCOUNT.equals(a.name);
     }
 }

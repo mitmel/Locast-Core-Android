@@ -19,12 +19,10 @@ package edu.mit.mobile.android.locast.ver2.browser;
 
 import android.content.ContentResolver;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -42,7 +40,6 @@ import edu.mit.mobile.android.appupdater.AppUpdateChecker;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
@@ -50,7 +47,6 @@ import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Event;
 import edu.mit.mobile.android.locast.data.Favoritable;
 import edu.mit.mobile.android.locast.data.Itinerary;
-import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
@@ -121,7 +117,11 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		findViewById(R.id.nearby).setOnClickListener(this);
 		findViewById(R.id.favorites).setOnClickListener(this);
 
-		shouldRefresh = !checkFirstTime();
+		final boolean isFirstTime = SigninOrSkip.checkFirstTime(this);
+		shouldRefresh = !isFirstTime;
+		if (isFirstTime){
+			SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
+		}
 	}
 
 	private Object mSyncHandle;
@@ -140,7 +140,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		super.onResume();
 		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(this, mHandler));
 		LocastSyncStatusObserver.notifySyncStatusToHandler(this, mHandler);
-        
+
 		if (shouldRefresh) {
 			refresh(false);
 		}
@@ -153,23 +153,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		startActivity(new Intent(Intent.ACTION_VIEW, Cast.getCanonicalUri(c)));
 	}
 
-	private final static int REQUEST_SIGNIN = 0;
 
-	/**
-	 * @return true if this seems to be the first time running the app
-	 */
-	private boolean checkFirstTime(){
-		final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-		final boolean skip = prefs.getBoolean(Authenticator.PREF_SKIP_AUTH, false);
-
-		final NetworkClient nc = NetworkClient.getInstance(this);
-
-		if (nc.isAuthenticated() || skip){
-			return false;
-		}
-		startActivityForResult(new Intent(this, SigninOrSkip.class), REQUEST_SIGNIN);
-		return true;
-	}
 
 
 	private void refresh(boolean explicitSync){
@@ -181,7 +165,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch (requestCode) {
-		case REQUEST_SIGNIN:
+		case SigninOrSkip.REQUEST_SIGNIN:
 			if (resultCode == RESULT_CANCELED){
 				finish();
 			}

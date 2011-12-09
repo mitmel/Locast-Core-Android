@@ -226,7 +226,9 @@ public class LocastSyncService extends Service {
 					}else{
 						mSyncEngine.sync(Cast.FEATURED, account, extras, provider, syncResult);
 						mSyncEngine.sync(Itinerary.CONTENT_URI, account, extras, provider, syncResult);
-						mSyncEngine.sync(Cast.FAVORITE, account, extras, provider, syncResult);
+						if (!Authenticator.isDemoMode(mContext)){
+							mSyncEngine.sync(Cast.FAVORITE, account, extras, provider, syncResult);
+						}
 					}
 				}
 
