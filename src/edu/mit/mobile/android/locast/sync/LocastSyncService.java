@@ -19,6 +19,7 @@ package edu.mit.mobile.android.locast.sync;
  */
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 
 import org.json.JSONException;
 
@@ -169,6 +170,10 @@ public class LocastSyncService extends Service {
 			extras.putString(LocastSyncService.EXTRA_SYNC_URI, what.toString());
 		}
 
+		if (extras.getBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, false)){
+			ContentResolver.cancelSync(account, MediaProvider.AUTHORITY);
+		}
+
 		if (DEBUG){
 			Log.d(TAG, "requesting sync for "+account + " with extras: "+extras);
 		}
@@ -185,6 +190,8 @@ public class LocastSyncService extends Service {
 
 		private final SyncEngine mSyncEngine;
 
+		private WeakReference<Thread> mSyncThread;
+
 		public LocastSyncAdapter(Context context) {
 			super(context, true);
 			mContext = context;
@@ -197,11 +204,22 @@ public class LocastSyncService extends Service {
 				Log.d(TAG, "onSyncCanceled()");
 			}
 			super.onSyncCanceled();
+
+			if (mSyncThread != null){
+				final Thread syncThread = mSyncThread.get();
+				if (syncThread != null){
+					Log.d(TAG, "interrupting current sync thread "+syncThread.getId()+"...");
+					syncThread.interrupt();
+
+				}
+			}
 		}
 
 		@Override
 		public void onPerformSync(Account account, Bundle extras, String authority,
 				ContentProviderClient provider, SyncResult syncResult) {
+
+			mSyncThread = new WeakReference<Thread>(Thread.currentThread());
 
 			final String uriString = extras.getString(EXTRA_SYNC_URI);
 
@@ -263,16 +281,18 @@ public class LocastSyncService extends Service {
 			} catch ( final SQLiteException e){
 				syncResult.databaseError = true;
 				Log.e(TAG, e.toString(), e);
-				return;
 
 			} catch (final IllegalArgumentException e){
 				syncResult.databaseError = true;
 				Log.e(TAG, e.toString(), e);
-				return;
-			}
 
-		}
-	}
+            } catch (final InterruptedException e) {
+                if (DEBUG) {
+                    Log.i(TAG, "Sync was interrupted");
+                }
+            }
+        } // onPerformSync
+    } // LocastSyncAdapter
 
 	private LocastSyncAdapter getSyncAdapter() {
 		if (SYNC_ADAPTER == null) {
