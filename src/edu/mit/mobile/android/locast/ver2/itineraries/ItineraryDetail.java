@@ -104,20 +104,26 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	private RefreshButton mRefresh;
 
 	private Object mSyncHandle;
+	
+	private TextView mTextViewStatus;
 
 	private final Handler mHandler = new Handler(){
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what){
 			case LocastSyncStatusObserver.MSG_SET_REFRESHING:
-				Log.d(TAG, "refreshing...");
-				((TextView)((findViewById(android.R.id.empty)).findViewById(R.id.empty_message))).setText(R.string.loading_data);
+				if (Constants.DEBUG){
+					Log.d(TAG, "refreshing...");
+				}
+				mTextViewStatus.setText(R.string.loading_data);
 				mRefresh.setRefreshing(true);
 				break;
 
 			case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
-				Log.d(TAG, "done loading.");
-				((TextView)((findViewById(android.R.id.empty)).findViewById(R.id.empty_message))).setText(R.string.itinerary_no_casts);
+				if (Constants.DEBUG){
+					Log.d(TAG, "done loading.");
+				}
+				mTextViewStatus.setText(R.string.itinerary_no_casts);
 				mRefresh.setRefreshing(false);
 				break;
 			}
@@ -131,6 +137,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		super.onCreate(icicle);
 		setContentView(R.layout.itinerary_detail);
 
+		mTextViewStatus= ((TextView)((findViewById(android.R.id.empty)).findViewById(R.id.empty_message)));
 		mImageCache = ImageCache.getInstance(this);
 		clickTimer = new Timer();
 
