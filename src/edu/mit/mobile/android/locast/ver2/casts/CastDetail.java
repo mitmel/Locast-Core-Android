@@ -26,6 +26,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
@@ -52,9 +54,11 @@ import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.maps.CastsOverlay;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
+import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 import edu.mit.mobile.android.locast.widget.FavoriteClickHandler;
+import edu.mit.mobile.android.widget.RefreshButton;
 import edu.mit.mobile.android.widget.ValidatingCheckBox;
 
 public class CastDetail extends LocatableDetail implements
@@ -81,7 +85,30 @@ public class CastDetail extends LocatableDetail implements
 			new String[] { Cast._ID, Cast._TITLE, Cast._AUTHOR,
 					Cast._DESCRIPTION, Cast._FAVORITED },
 			CastsOverlay.CASTS_OVERLAY_PROJECTION);
+	
+	private Object mSyncHandle;
 
+	private final Handler mHandler = new Handler(){
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what){
+			case LocastSyncStatusObserver.MSG_SET_REFRESHING:
+				Log.d(TAG, "refreshing...");
+				((TextView)findViewById(android.R.id.empty)).setText(R.string.loading_data);
+				mRefresh.setRefreshing(true);
+				break;
+
+			case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
+				Log.d(TAG, "done loading.");
+				((TextView)findViewById(android.R.id.empty)).setText(R.string.empty_castmedia);
+				mRefresh.setRefreshing(false);
+				break;
+			}
+		};
+	};
+
+	private RefreshButton mRefresh;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 
@@ -100,7 +127,8 @@ public class CastDetail extends LocatableDetail implements
 		mLoaderManager.initLoader(LOADER_CAST_MEDIA, null, this);
 		findViewById(R.id.home).setOnClickListener(this);
 		findViewById(R.id.refresh).setOnClickListener(this);
-
+		mRefresh = (RefreshButton) findViewById(R.id.refresh);
+		mRefresh.setOnClickListener(this);
 		vcb = (ValidatingCheckBox) findViewById(R.id.favorite);
 
 		vcb.setValidatedClickHandler(new MyFavoriteClickHandler(this,
@@ -124,6 +152,19 @@ public class CastDetail extends LocatableDetail implements
 		if (Intent.ACTION_DELETE.equals(action)){
 			showDialog(DIALOG_CONFIRM_DELETE);
 		}
+	}
+	@Override
+	protected void onPause() {
+		super.onPause();
+		if (mSyncHandle != null){
+			ContentResolver.removeStatusChangeListener(mSyncHandle);
+		}
+	}
+	@Override
+	protected void onResume() {
+		super.onResume();
+		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(this, mHandler));
+		LocastSyncStatusObserver.notifySyncStatusToHandler(this, mHandler);
 	}
 
 	@Override
