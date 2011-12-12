@@ -153,6 +153,7 @@
 	<string name="welcome_message">Welcome! Rai Local Abruzzo is a location-based tourism application for visiting Abruzzo.</string>
 	
 	<string name="auth_signin_or_skip_notice">You\'ll need an account to upload photos and videos to Rai Local Abruzzo</string>
+	<string name="auth_signin_for_favorites">In order to save your favorite casts, you\'ll need a Rai Local account.</string>
 	
 	<string name="auth_signin_register">Sign In / Register</string>
 	

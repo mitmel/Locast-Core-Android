@@ -1,4 +1,5 @@
 package edu.mit.mobile.android.locast.ver2.browser;
+
 /*
  * Copyright (C) 2011  MIT Mobile Experience Lab
  *
@@ -40,6 +41,7 @@ import edu.mit.mobile.android.appupdater.AppUpdateChecker;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.Constants;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
@@ -53,7 +55,8 @@ import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.casts.LocatableListWithMap;
 import edu.mit.mobile.android.widget.RefreshButton;
 
-public class BrowserHome extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener{
+public class BrowserHome extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>,
+		OnItemClickListener, OnClickListener {
 
 	private ImageCache mImageCache;
 
@@ -63,28 +66,30 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	private boolean shouldRefresh;
 
 	private static final String TAG = BrowserHome.class.getSimpleName();
-	
+
 	private TextView mTextViewStatus;
 
-	private final Handler mHandler = new Handler(){
+	private static final int REQUEST_SIGNIN_FAVORITES = 0;
+
+	private final Handler mHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
-			switch (msg.what){
-			case LocastSyncStatusObserver.MSG_SET_REFRESHING:
-				if (Constants.DEBUG){
-					Log.d(TAG, "refreshing...");
-				}
-				mTextViewStatus.setText(R.string.loading_data);
-				mRefresh.setRefreshing(true);
-				break;
+			switch (msg.what) {
+				case LocastSyncStatusObserver.MSG_SET_REFRESHING:
+					if (Constants.DEBUG) {
+						Log.d(TAG, "refreshing...");
+					}
+					mTextViewStatus.setText(R.string.loading_data);
+					mRefresh.setRefreshing(true);
+					break;
 
-			case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
-				if (Constants.DEBUG){
-					Log.d(TAG, "done loading.");
-				}
-				mTextViewStatus.setText(R.string.error_no_featured_casts);
-				mRefresh.setRefreshing(false);
-				break;
+				case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
+					if (Constants.DEBUG) {
+						Log.d(TAG, "done loading.");
+					}
+					mTextViewStatus.setText(R.string.error_no_featured_casts);
+					mRefresh.setRefreshing(false);
+					break;
 			}
 		};
 	};
@@ -94,23 +99,25 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		mImageCache = ImageCache.getInstance(this);
 
 		setContentView(R.layout.browser_main);
-		mTextViewStatus= ((TextView)findViewById(android.R.id.empty));
-		if (Constants.USE_APPUPDATE_CHECKER){
-			mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url), new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
+		mTextViewStatus = ((TextView) findViewById(android.R.id.empty));
+		if (Constants.USE_APPUPDATE_CHECKER) {
+			mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url),
+					new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
 			mAppUpdateChecker.checkForUpdates();
 		}
 
 		final Gallery casts = (Gallery) findViewById(R.id.casts);
 
-		final String[] from = {Cast._TITLE, Cast._AUTHOR, Cast._THUMBNAIL_URI};
-		final int[] to = {R.id.cast_title, R.id.author, R.id.media_thumbnail};
+		final String[] from = { Cast._TITLE, Cast._AUTHOR, Cast._THUMBNAIL_URI };
+		final int[] to = { R.id.cast_title, R.id.author, R.id.media_thumbnail };
 
 		mAdapter = new CastCursorAdapter(this, null, R.layout.cast_large_thumbnail_item, from, to);
-		casts.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 320, 200, ImageLoaderAdapter.UNIT_DIP));
+		casts.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache,
+				new int[] { R.id.media_thumbnail }, 320, 200, ImageLoaderAdapter.UNIT_DIP));
 		casts.setOnItemClickListener(this);
 		casts.setEmptyView(findViewById(android.R.id.empty));
 		final LoaderManager lm = getSupportLoaderManager();
@@ -125,7 +132,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 		final boolean isFirstTime = SigninOrSkip.checkFirstTime(this);
 		shouldRefresh = !isFirstTime;
-		if (isFirstTime){
+		if (isFirstTime) {
 			SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
 		}
 	}
@@ -136,7 +143,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	protected void onPause() {
 		super.onPause();
 
-		if (mSyncHandle != null){
+		if (mSyncHandle != null) {
 			ContentResolver.removeStatusChangeListener(mSyncHandle);
 		}
 	}
@@ -144,7 +151,8 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	@Override
 	protected void onResume() {
 		super.onResume();
-		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(this, mHandler));
+		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(
+				this, mHandler));
 		LocastSyncStatusObserver.notifySyncStatusToHandler(this, mHandler);
 
 		if (shouldRefresh) {
@@ -159,10 +167,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		startActivity(new Intent(Intent.ACTION_VIEW, Cast.getCanonicalUri(c)));
 	}
 
-
-
-
-	private void refresh(boolean explicitSync){
+	private void refresh(boolean explicitSync) {
 
 		// the default sync should get all the things we care about for the home screen.
 		LocastSyncService.startSync(this, null, explicitSync);
@@ -171,40 +176,55 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch (requestCode) {
-		case SigninOrSkip.REQUEST_SIGNIN:
-			if (resultCode == RESULT_CANCELED){
-				finish();
-			}
-			break;
+			case SigninOrSkip.REQUEST_SIGNIN:
+				if (resultCode == RESULT_CANCELED) {
+					finish();
+				}
+				break;
 
-		default:
-			break;
+			case REQUEST_SIGNIN_FAVORITES:
+				if (resultCode == RESULT_OK) {
+					onClick(findViewById(R.id.favorites));
+				}
+
+			default:
+				break;
 		}
 	}
 
 	@Override
 	public void onClick(View v) {
-		switch (v.getId()){
-		case R.id.itineraries:
-			startActivity(new Intent(Intent.ACTION_VIEW, Itinerary.CONTENT_URI));
-			break;
+		switch (v.getId()) {
+			case R.id.itineraries:
+				startActivity(new Intent(Intent.ACTION_VIEW, Itinerary.CONTENT_URI));
+				break;
 
-		case R.id.events:
-			startActivity(new Intent(Intent.ACTION_VIEW, Event.CONTENT_URI));
-			break;
+			case R.id.events:
+				startActivity(new Intent(Intent.ACTION_VIEW, Event.CONTENT_URI));
+				break;
 
-		case R.id.nearby:
+			case R.id.nearby:
 
-			startActivity(new Intent(LocatableListWithMap.ACTION_SEARCH_NEARBY, Cast.CONTENT_URI));
-			break;
-		case R.id.favorites:
+				startActivity(new Intent(LocatableListWithMap.ACTION_SEARCH_NEARBY,
+						Cast.CONTENT_URI));
+				break;
+			case R.id.favorites:
+				if (Authenticator.hasRealAccount(this)) {
+					startActivity(new Intent(Intent.ACTION_VIEW, Favoritable.getFavoritedUri(
+							Cast.CONTENT_URI, true)));
+				} else {
+					startActivityForResult(
+							new Intent(this, SigninOrSkip.class).putExtra(
+									SigninOrSkip.EXTRA_MESSAGE,
+									getText(R.string.auth_signin_for_favorites)).putExtra(
+									SigninOrSkip.EXTRA_SKIP_IS_CANCEL, true),
+							REQUEST_SIGNIN_FAVORITES);
+				}
+				break;
 
-			startActivity(new Intent(Intent.ACTION_VIEW, Favoritable.getFavoritedUri(Cast.CONTENT_URI, true)));
-			break;
-
-		case R.id.refresh:
-			refresh(true);
-			break;
+			case R.id.refresh:
+				refresh(true);
+				break;
 		}
 
 	}
@@ -214,11 +234,10 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
-		switch(id){
-		case LOADER_FEATURED_CASTS:
-			return new CursorLoader(this,
-					Cast.FEATURED,
-					Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
+		switch (id) {
+			case LOADER_FEATURED_CASTS:
+				return new CursorLoader(this, Cast.FEATURED, Cast.PROJECTION, null, null,
+						Cast.SORT_ORDER_DEFAULT);
 
 			default:
 				return null;
@@ -248,12 +267,12 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()){
-		case R.id.login:
-			startActivity(new Intent(this, AuthenticatorActivity.class));
-			return true;
-		default:
-			return super.onOptionsItemSelected(item);
+		switch (item.getItemId()) {
+			case R.id.login:
+				startActivity(new Intent(this, AuthenticatorActivity.class));
+				return true;
+			default:
+				return super.onOptionsItemSelected(item);
 		}
 	}
 }

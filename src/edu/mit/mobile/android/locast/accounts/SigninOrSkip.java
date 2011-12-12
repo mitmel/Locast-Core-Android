@@ -23,10 +23,20 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.TextView;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.ver2.R;
 
 public class SigninOrSkip extends Activity implements OnClickListener {
+
+	/**
+	 * A CharSequence
+	 */
+	public static final String EXTRA_MESSAGE = "edu.mit.mobile.android.locast.SigninOrSkip.EXTRA_MESSAGE",
+			EXTRA_SKIP_IS_CANCEL = "edu.mit.mobile.android.locast.SigninOrSkip.EXTRA_SKIP_IS_CANCEL";
+
+	private boolean mSkipIsCancel = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -34,13 +44,29 @@ public class SigninOrSkip extends Activity implements OnClickListener {
 		setContentView(R.layout.auth_signin_or_skip);
 
 		findViewById(R.id.sign_in).setOnClickListener(this);
-		findViewById(R.id.skip).setOnClickListener(this);
+		final Button skip = (Button) findViewById(R.id.skip);
+		skip.setOnClickListener(this);
 
+		final Bundle extras = getIntent().getExtras();
+		if (extras != null) {
+			final CharSequence msg = extras.getCharSequence(EXTRA_MESSAGE);
+			if (msg != null) {
+				((TextView) findViewById(R.id.sign_in_or_skip_notice)).setText(msg);
+			}
+
+			mSkipIsCancel = extras.getBoolean(EXTRA_SKIP_IS_CANCEL, mSkipIsCancel);
+			if (mSkipIsCancel) {
+				skip.setText(android.R.string.cancel);
+			}
+		}
 	}
 
 	private void skip(){
-		//final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-		//prefs.edit().putBoolean(Authenticator.PREF_SKIP_AUTH, true).commit();
+		if (mSkipIsCancel) {
+			setResult(RESULT_CANCELED);
+			finish();
+			return;
+		}
 		Authenticator.addDemoAccount(this);
 		setResult(RESULT_OK);
 		finish();
