@@ -87,20 +87,26 @@ public class CastDetail extends LocatableDetail implements
 			CastsOverlay.CASTS_OVERLAY_PROJECTION);
 	
 	private Object mSyncHandle;
+	
+	private TextView mTextViewStatus;
 
 	private final Handler mHandler = new Handler(){
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what){
 			case LocastSyncStatusObserver.MSG_SET_REFRESHING:
-				Log.d(TAG, "refreshing...");
-				((TextView)findViewById(android.R.id.empty)).setText(R.string.loading_data);
+				if (Constants.DEBUG){
+					Log.d(TAG, "refreshing...");
+				}
+				mTextViewStatus.setText(R.string.loading_data);
 				mRefresh.setRefreshing(true);
 				break;
 
 			case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
-				Log.d(TAG, "done loading.");
-				((TextView)findViewById(android.R.id.empty)).setText(R.string.empty_castmedia);
+				if (Constants.DEBUG){
+					Log.d(TAG, "done loading.");
+				}
+				mTextViewStatus.setText(R.string.empty_castmedia);
 				mRefresh.setRefreshing(false);
 				break;
 			}
@@ -116,7 +122,7 @@ public class CastDetail extends LocatableDetail implements
 		setContentView(R.layout.cast_detail);
 
 		initOverlays();
-
+		mTextViewStatus= ((TextView)findViewById(android.R.id.empty));
 		final Uri data = getIntent().getData();
 
 		mCastMediaUri = Cast.getCastMediaUri(data);

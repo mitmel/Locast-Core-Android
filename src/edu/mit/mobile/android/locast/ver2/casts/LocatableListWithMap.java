@@ -52,6 +52,7 @@ import com.google.android.maps.Overlay;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Event;
@@ -101,20 +102,26 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	private RefreshButton mRefresh;
 
 	private Object mSyncHandle;
+	
+	private TextView mTextViewStatus;
 
 	private final Handler mHandler = new Handler(){
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what){
 			case LocastSyncStatusObserver.MSG_SET_REFRESHING:
-				Log.d(TAG, "refreshing...");
-				((TextView)findViewById(android.R.id.empty)).setText(R.string.loading_data);
+				if (Constants.DEBUG){
+					Log.d(TAG, "refreshing...");
+				}
+				mTextViewStatus.setText(R.string.loading_data);
 				mRefresh.setRefreshing(true);
 				break;
 
 			case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
-				Log.d(TAG, "done loading.");
-				((TextView)findViewById(android.R.id.empty)).setText(R.string.error_no_featured_casts);
+				if (Constants.DEBUG){
+					Log.d(TAG, "done loading.");
+				}
+				mTextViewStatus.setText(R.string.error_no_featured_casts);
 				mRefresh.setRefreshing(false);
 				break;
 			}
@@ -125,7 +132,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.map_list_activity);
-
+		mTextViewStatus= ((TextView)findViewById(android.R.id.empty));
 		findViewById(R.id.refresh).setOnClickListener(this);
 		findViewById(R.id.home).setOnClickListener(this);
 

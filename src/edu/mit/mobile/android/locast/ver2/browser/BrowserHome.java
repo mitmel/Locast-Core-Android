@@ -63,20 +63,26 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	private boolean shouldRefresh;
 
 	private static final String TAG = BrowserHome.class.getSimpleName();
+	
+	private TextView mTextViewStatus;
 
 	private final Handler mHandler = new Handler(){
 		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what){
 			case LocastSyncStatusObserver.MSG_SET_REFRESHING:
-				Log.d(TAG, "refreshing...");
-				((TextView)findViewById(android.R.id.empty)).setText(R.string.loading_data);
+				if (Constants.DEBUG){
+					Log.d(TAG, "refreshing...");
+				}
+				mTextViewStatus.setText(R.string.loading_data);
 				mRefresh.setRefreshing(true);
 				break;
 
 			case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
-				Log.d(TAG, "done loading.");
-				((TextView)findViewById(android.R.id.empty)).setText(R.string.error_no_featured_casts);
+				if (Constants.DEBUG){
+					Log.d(TAG, "done loading.");
+				}
+				mTextViewStatus.setText(R.string.error_no_featured_casts);
 				mRefresh.setRefreshing(false);
 				break;
 			}
@@ -88,11 +94,11 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
+		
 		mImageCache = ImageCache.getInstance(this);
 
 		setContentView(R.layout.browser_main);
-
+		mTextViewStatus= ((TextView)findViewById(android.R.id.empty));
 		if (Constants.USE_APPUPDATE_CHECKER){
 			mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url), new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
 			mAppUpdateChecker.checkForUpdates();
