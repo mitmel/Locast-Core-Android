@@ -23,10 +23,15 @@ import org.json.JSONException;
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -47,6 +52,7 @@ import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.SettingsActivity;
+import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
@@ -236,6 +242,47 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 
     protected void finishLogin(Bundle userData) {
         Log.i(TAG, "finishLogin()");
+		// ensure that there isn't a demo account sticking around.
+
+		// TODO this is NOT the place where this code belongs. Find it a better home
+		if (Authenticator.isDemoMode(this)) {
+			Log.d(TAG, "cleaning up demo mode account...");
+			ContentResolver
+					.cancelSync(Authenticator.getFirstAccount(this), MediaProvider.AUTHORITY);
+
+			mAccountManager.removeAccount(new Account(Authenticator.DEMO_ACCOUNT,
+					AuthenticationService.ACCOUNT_TYPE), new AccountManagerCallback<Boolean>() {
+
+				@Override
+				public void run(AccountManagerFuture<Boolean> arg0) {
+					try {
+						if (arg0.getResult()) {
+
+							final ContentValues cv = new ContentValues();
+							// invalidate all the content to force a sync.
+							// this is to ensure that items which were marked favorite get set as
+							// such.
+							cv.put(Cast._SERVER_MODIFIED_DATE, 0);
+							cv.put(Cast._MODIFIED_DATE, 0);
+							getContentResolver().update(Cast.CONTENT_URI, cv, null, null);
+							if (Constants.DEBUG) {
+								Log.d(TAG, "reset all cast modified dates to force a reload");
+							}
+						}
+					} catch (final OperationCanceledException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (final AuthenticatorException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (final IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}, null);
+
+		}
         final Account account = new Account(mUsername, AuthenticationService.ACCOUNT_TYPE);
 
         if (mRequestNewAccount) {

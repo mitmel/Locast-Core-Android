@@ -26,7 +26,7 @@ import android.util.Log;
  * and returns its IBinder.
  */
 public class AuthenticationService extends Service {
-    private static final String TAG = "AuthenticationService";
+	private static final String TAG = AuthenticationService.class.getSimpleName();
     private Authenticator mAuthenticator;
 
 	public static final String

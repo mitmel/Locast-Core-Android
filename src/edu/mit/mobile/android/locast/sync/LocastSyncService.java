@@ -24,6 +24,8 @@ import java.lang.ref.WeakReference;
 import org.json.JSONException;
 
 import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.accounts.OnAccountsUpdateListener;
 import android.app.Service;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
@@ -39,6 +41,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
+import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
@@ -65,6 +68,7 @@ public class LocastSyncService extends Service {
 	private static final boolean DEBUG = Constants.DEBUG;
 
 	private static LocastSyncAdapter SYNC_ADAPTER = null;
+
 
 	/**
 	 * A string extra specifying the URI of the object to sync. Can be a
@@ -185,17 +189,33 @@ public class LocastSyncService extends Service {
 		return getSyncAdapter().getSyncAdapterBinder();
 	}
 
-	private static class LocastSyncAdapter extends AbstractThreadedSyncAdapter {
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		AccountManager.get(this).addOnAccountsUpdatedListener(getSyncAdapter(), null, true);
+	}
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		AccountManager.get(this).removeOnAccountsUpdatedListener(getSyncAdapter());
+	}
+
+	private static class LocastSyncAdapter extends AbstractThreadedSyncAdapter implements
+			OnAccountsUpdateListener {
 		private final Context mContext;
 
-		private final SyncEngine mSyncEngine;
+		private SyncEngine mSyncEngine;
 
 		private WeakReference<Thread> mSyncThread;
+
+		private Account mCurrentlySyncing;
 
 		public LocastSyncAdapter(Context context) {
 			super(context, true);
 			mContext = context;
 			mSyncEngine = new SyncEngine(mContext, NetworkClient.getInstance(context));
+
 		}
 
 		@Override
@@ -218,6 +238,8 @@ public class LocastSyncService extends Service {
 		@Override
 		public void onPerformSync(Account account, Bundle extras, String authority,
 				ContentProviderClient provider, SyncResult syncResult) {
+
+			mCurrentlySyncing = account;
 
 			mSyncThread = new WeakReference<Thread>(Thread.currentThread());
 
@@ -290,8 +312,36 @@ public class LocastSyncService extends Service {
                 if (DEBUG) {
                     Log.i(TAG, "Sync was interrupted");
                 }
+			} finally {
+				mCurrentlySyncing = null;
             }
         } // onPerformSync
+
+		@Override
+		public void onAccountsUpdated(Account[] accounts) {
+			boolean areWeStillHere = false;
+			for (final Account account : accounts) {
+				if (!AuthenticationService.ACCOUNT_TYPE.equals(account.type)) {
+					continue;
+				}
+				if (account.equals(mCurrentlySyncing)) {
+					areWeStillHere = true;
+				}
+			}
+
+			// this is done to reset anything that depends on the account.
+			if (!areWeStillHere) {
+				if (DEBUG) {
+					Log.d(TAG, "reset sync engine due to account removal");
+				}
+
+				ContentResolver.cancelSync(mCurrentlySyncing, AuthenticationService.AUTHORITY);
+				mCurrentlySyncing = null;
+
+				mSyncEngine = new SyncEngine(mContext, NetworkClient.getInstance(mContext));
+
+			}
+		}
     } // LocastSyncAdapter
 
 	private LocastSyncAdapter getSyncAdapter() {

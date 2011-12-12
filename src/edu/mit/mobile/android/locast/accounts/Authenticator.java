@@ -67,8 +67,17 @@ public class Authenticator extends AbstractAccountAuthenticator {
         return bundle;
     }
 
-    public static boolean hasAccount(Context context){
-    	return getAccounts(context).length != 0;
+    public static boolean hasRealAccount(Context context){
+		final Account[] accounts = getAccounts(context);
+		boolean hasRealAccount = false;
+		for (final Account account : accounts) {
+			if (!DEMO_ACCOUNT.equals(account.name)) {
+				hasRealAccount = true;
+				break;
+			}
+		}
+
+		return hasRealAccount;
     }
 
     public static Account[] getAccounts(Context context){
@@ -233,7 +242,20 @@ public class Authenticator extends AbstractAccountAuthenticator {
 
     public static final String DEMO_ACCOUNT = "demo@locast.example.com";
 
+	/**
+	 * Adds an account that acts as a placeholder to allow the sync to work properly. The sync
+	 * framework always requires an account.
+	 * 
+	 * @param context
+	 */
     public static void addDemoAccount(Context context){
+		final Account[] accounts = Authenticator.getAccounts(context);
+
+		if (accounts.length > 0) {
+			// if there's already a demo account, we don't want to add another.
+			// if there isn't, we're not going to delete the actual account.
+			return;
+		}
     	final AccountManager am = AccountManager.get(context);
     	final Account account = new Account(DEMO_ACCOUNT, AuthenticationService.ACCOUNT_TYPE);
     	am.addAccountExplicitly(account, null, null);
@@ -242,6 +264,10 @@ public class Authenticator extends AbstractAccountAuthenticator {
                 MediaProvider.AUTHORITY, true);
     }
 
+	/**
+	 * @param context
+	 * @return true if there's a demo account
+	 */
     public static boolean isDemoMode(Context context){
     	final Account a = getFirstAccount(context);
     	return a != null && DEMO_ACCOUNT.equals(a.name);
