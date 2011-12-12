@@ -102,7 +102,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	private RefreshButton mRefresh;
 
 	private Object mSyncHandle;
-	
+
 	private TextView mTextViewStatus;
 
 	private final Handler mHandler = new Handler(){
@@ -207,14 +207,18 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 
 
 		setTitle(title);
-		updateLocation();
+		if (actionSearchNearby) {
+			updateLocation();
+		}
 		setRefreshing(true);
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		mMyLocationOverlay.enableMyLocation();
+		if (actionSearchNearby) {
+			mMyLocationOverlay.enableMyLocation();
+		}
 		mExpeditedSync = true;
 		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(this, mHandler));
 		LocastSyncStatusObserver.notifySyncStatusToHandler(this, mHandler);
@@ -223,7 +227,9 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	@Override
 	protected void onPause() {
 		super.onPause();
-		mMyLocationOverlay.disableMyLocation();
+		if (actionSearchNearby) {
+			mMyLocationOverlay.disableMyLocation();
+		}
 		if (mSyncHandle != null){
 			ContentResolver.removeStatusChangeListener(mSyncHandle);
 		}
@@ -307,7 +313,9 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		final List<Overlay> overlays = mMapView.getOverlays();
 		mMyLocationOverlay = new MyMyLocationOverlay(this, mMapView);
 
-		overlays.add(mMyLocationOverlay);
+		if (actionSearchNearby) {
+			overlays.add(mMyLocationOverlay);
+		}
 		overlays.add(mLocatableItemsOverlay);
 	}
 
