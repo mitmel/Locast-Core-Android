@@ -19,7 +19,9 @@ package edu.mit.mobile.android.locast.sync;
  */
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.lang.ref.WeakReference;
+import java.util.HashMap;
 
 import org.json.JSONException;
 
@@ -41,7 +43,6 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
@@ -175,6 +176,9 @@ public class LocastSyncService extends Service {
 		}
 
 		if (extras.getBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, false)){
+			if (DEBUG) {
+				Log.d(TAG, "canceling current sync to make room for expedited sync of " + what);
+			}
 			ContentResolver.cancelSync(account, MediaProvider.AUTHORITY);
 		}
 
@@ -205,7 +209,7 @@ public class LocastSyncService extends Service {
 			OnAccountsUpdateListener {
 		private final Context mContext;
 
-		private SyncEngine mSyncEngine;
+		private final HashMap<Account, SyncEngine> mSyncEngines = new HashMap<Account, SyncEngine>();
 
 		private WeakReference<Thread> mSyncThread;
 
@@ -214,7 +218,6 @@ public class LocastSyncService extends Service {
 		public LocastSyncAdapter(Context context) {
 			super(context, true);
 			mContext = context;
-			mSyncEngine = new SyncEngine(mContext, NetworkClient.getInstance(context));
 
 		}
 
@@ -230,7 +233,13 @@ public class LocastSyncService extends Service {
 				if (syncThread != null){
 					Log.d(TAG, "interrupting current sync thread "+syncThread.getId()+"...");
 					syncThread.interrupt();
-
+					Log.d(TAG, "waiting for previous sync to finish...");
+					try {
+						syncThread.join();
+					} catch (final InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 		}
@@ -239,7 +248,13 @@ public class LocastSyncService extends Service {
 		public void onPerformSync(Account account, Bundle extras, String authority,
 				ContentProviderClient provider, SyncResult syncResult) {
 
+
 			mCurrentlySyncing = account;
+			SyncEngine syncEngine = mSyncEngines.get(account);
+			if (syncEngine == null) {
+				syncEngine = new SyncEngine(mContext, NetworkClient.getInstance(mContext));
+				mSyncEngines.put(account, syncEngine);
+			}
 
 			mSyncThread = new WeakReference<Thread>(Thread.currentThread());
 
@@ -259,17 +274,28 @@ public class LocastSyncService extends Service {
 
 			try {
 				if (uri != null) {
-					mSyncEngine.sync(uri, account, extras, provider, syncResult);
+					syncEngine.sync(uri, account, extras, provider, syncResult);
 				} else {
 					if (uploadOnly){
-						mSyncEngine.uploadUnpublished(Cast.CONTENT_URI, account, extras, provider, syncResult);
+						syncEngine.uploadUnpublished(Cast.CONTENT_URI, account, extras, provider,
+								syncResult);
 					}else{
-						mSyncEngine.sync(Cast.FEATURED, account, extras, provider, syncResult);
-						mSyncEngine.sync(Itinerary.CONTENT_URI, account, extras, provider, syncResult);
+						syncEngine.sync(Cast.FEATURED, account, extras, provider, syncResult);
+						syncEngine.sync(Itinerary.CONTENT_URI, account, extras, provider,
+								syncResult);
 						if (!Authenticator.isDemoMode(mContext)){
-							mSyncEngine.sync(Cast.FAVORITE, account, extras, provider, syncResult);
+							syncEngine.sync(Cast.FAVORITE, account, extras, provider, syncResult);
 						}
 					}
+				}
+			} catch (final InterruptedIOException e) {
+				if (DEBUG) {
+					Log.i(TAG, "Sync was interrupted");
+				}
+
+			} catch (final InterruptedException e) {
+				if (DEBUG) {
+					Log.i(TAG, "Sync was interrupted");
 				}
 
 			} catch (final RemoteException e) {
@@ -308,10 +334,6 @@ public class LocastSyncService extends Service {
 				syncResult.databaseError = true;
 				Log.e(TAG, e.toString(), e);
 
-            } catch (final InterruptedException e) {
-                if (DEBUG) {
-                    Log.i(TAG, "Sync was interrupted");
-                }
 			} finally {
 				mCurrentlySyncing = null;
             }
@@ -319,27 +341,21 @@ public class LocastSyncService extends Service {
 
 		@Override
 		public void onAccountsUpdated(Account[] accounts) {
-			boolean areWeStillHere = false;
-			for (final Account account : accounts) {
-				if (!AuthenticationService.ACCOUNT_TYPE.equals(account.type)) {
-					continue;
+			for (final Account cachedEngines : mSyncEngines.keySet()) {
+				boolean accountStillExists = false;
+				for (final Account account : accounts) {
+					if (cachedEngines.equals(account)) {
+						accountStillExists = true;
+						break;
+					}
 				}
-				if (account.equals(mCurrentlySyncing)) {
-					areWeStillHere = true;
+				if (!accountStillExists) {
+					if (DEBUG) {
+						Log.d(TAG, "removing stale sync engine for removed account "
+								+ cachedEngines);
+						mSyncEngines.remove(cachedEngines);
+					}
 				}
-			}
-
-			// this is done to reset anything that depends on the account.
-			if (!areWeStillHere) {
-				if (DEBUG) {
-					Log.d(TAG, "reset sync engine due to account removal");
-				}
-
-				ContentResolver.cancelSync(mCurrentlySyncing, AuthenticationService.AUTHORITY);
-				mCurrentlySyncing = null;
-
-				mSyncEngine = new SyncEngine(mContext, NetworkClient.getInstance(mContext));
-
 			}
 		}
     } // LocastSyncAdapter

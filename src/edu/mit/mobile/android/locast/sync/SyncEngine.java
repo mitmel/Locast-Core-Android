@@ -102,8 +102,15 @@ public class SyncEngine {
 	private final Context mContext;
 	private final NetworkClient mNetworkClient;
 
-	private static final long TIMEOUT_MAX_ITEM_WAIT = (long) (30 * 1e9), // nanoseconds
-			TIMEOUT_AUTO_SYNC_MINIMUM = (long) (60 * 1e9); // nanoseconds
+	/**
+	 * in nanoseconds
+	 */
+	private static final long TIMEOUT_MAX_ITEM_WAIT = (long) (30 * 1e9);
+
+	/**
+	 * in nanoseconds
+	 */
+	static final long TIMEOUT_AUTO_SYNC_MINIMUM = (long) (60 * 1e9);
 
 	private final LastUpdatedMap<Uri> mLastUpdated = new LastUpdatedMap<Uri>(
 			TIMEOUT_AUTO_SYNC_MINIMUM);
@@ -151,7 +158,6 @@ public class SyncEngine {
 		// Handle http or https uris separately. These require the
 		// destination uri.
 		//
-
 		if ("http".equals(toSync.getScheme()) || "https".equals(toSync.getScheme())) {
 			pubPath = toSync.toString();
 
@@ -172,6 +178,7 @@ public class SyncEngine {
 			if (DEBUG) {
 				Log.d(TAG, "not syncing " + toSync + " as it's been updated recently");
 			}
+			syncResult.stats.numSkippedEntries++;
 			return false;
 		}
 
