@@ -261,6 +261,9 @@ public class LocastSyncService extends Service {
 			final String uriString = extras.getString(EXTRA_SYNC_URI);
 
 			final Uri uri = uriString != null ? Uri.parse(uriString) : null;
+			if (uri != null) {
+				extras.remove(EXTRA_SYNC_URI);
+			}
 
 			final boolean uploadOnly = extras.getBoolean(ContentResolver.SYNC_EXTRAS_UPLOAD, false);
 
