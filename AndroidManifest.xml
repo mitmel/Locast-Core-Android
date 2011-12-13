@@ -207,6 +207,11 @@
 		<meta-data android:name="android.content.SyncAdapter"
 			android:resource="@xml/syncadapter" />
 	</service>
+	<receiver android:name="edu.mit.mobile.android.locast.accounts.AccountChangeReceiver">
+	    <intent-filter>
+	        <action android:name="android.accounts.LOGIN_ACCOUNTS_CHANGED"/>
+	    </intent-filter>
+	</receiver>
 
 	<activity
 		android:name="edu.mit.mobile.android.locast.accounts.AuthenticatorActivity"

@@ -23,10 +23,13 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Comment;
@@ -36,6 +39,7 @@ import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.ver2.R;
 
 public class ResetActivity extends Activity implements OnClickListener {
+	private static final String TAG = ResetActivity.class.getSimpleName();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +56,7 @@ public class ResetActivity extends Activity implements OnClickListener {
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.reset:
-			resetEverything();
+				resetEverything(this, true, true);
 			setResult(RESULT_OK);
 			finish();
 			break;
@@ -64,25 +68,37 @@ public class ResetActivity extends Activity implements OnClickListener {
 		}
 	}
 
-	private void resetEverything(){
-		final AccountManager am = (AccountManager) getSystemService(ACCOUNT_SERVICE);
+	public static void resetEverything(Context context, boolean showNotice, boolean removeAccounts) {
+		if (Constants.DEBUG) {
+			Log.d(TAG, "erasing all data...");
+		}
 
-		for (final Account account : Authenticator.getAccounts(this)){
-			am.removeAccount(account, null, null);
+		if (removeAccounts) {
+			final AccountManager am = (AccountManager) context.getSystemService(ACCOUNT_SERVICE);
+
+			for (final Account account : Authenticator.getAccounts(context)) {
+				am.removeAccount(account, null, null);
+			}
 		}
 
 		// clear cache
-		for (final File file : getCacheDir().listFiles()){
+		for (final File file : context.getCacheDir().listFiles()) {
 			file.delete();
 		}
 
-		final ContentResolver cr = getContentResolver();
+		final ContentResolver cr = context.getContentResolver();
 
 		cr.delete(Cast.CONTENT_URI, null, null);
 		cr.delete(Comment.CONTENT_URI, null, null);
 		cr.delete(Event.CONTENT_URI, null, null);
 		cr.delete(Itinerary.CONTENT_URI, null, null);
 
-		Toast.makeText(getApplicationContext(), R.string.notice_databases_reset, Toast.LENGTH_LONG).show();
+		if (showNotice) {
+			Toast.makeText(context.getApplicationContext(), R.string.notice_databases_reset,
+					Toast.LENGTH_LONG).show();
+		}
+		if (Constants.DEBUG) {
+			Log.d(TAG, "All Locast data has been erased.");
+		}
 	}
 }
