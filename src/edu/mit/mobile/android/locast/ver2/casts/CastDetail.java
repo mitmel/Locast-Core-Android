@@ -87,6 +87,8 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 
 	private TextView mTextViewStatus;
 
+	private boolean mFirstLoad = true;
+
 	private final Handler mHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
@@ -237,6 +239,11 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 				 * for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
 				 * MediaProvider.dumpCursorToLog(c, CastMedia.PROJECTION); }
 				 */
+				if (mFirstLoad && c.getCount() == 0) {
+					LocastSyncService.startExpeditedAutomaticSync(this, mCastMediaUri);
+				}
+				mFirstLoad = false;
+
 				break;
 		}
 	}
