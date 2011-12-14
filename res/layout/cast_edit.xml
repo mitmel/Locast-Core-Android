@@ -1,72 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="fill_parent"
-	android:layout_height="fill_parent"
->
-	<include
-		layout="@layout/action_bar" />
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
 
-	<TextView
-		android:id="@android:id/title"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:layout_below="@id/action_bar"
-		android:textStyle="normal"
-		android:visibility="gone"
-		style="@style/Notice" />
+    <include layout="@layout/action_bar" />
 
-	<EditText
-		android:id="@+id/cast_title"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:hint="@string/cast_title_hint"
+    <TextView
+        android:id="@android:id/title"
+        style="@style/Notice"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/action_bar"
+        android:textStyle="normal"
+        android:visibility="gone" />
 
-		android:singleLine="true"
-		android:inputType="textEmailSubject|textAutoCorrect|textCapSentences|textImeMultiLine"
-		android:imeOptions="actionNext"
+    <EditText
+        android:id="@+id/cast_title"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@android:id/title"
+        android:layout_toLeftOf="@+id/save"
+        android:hint="@string/cast_title_hint"
+        android:imeOptions="actionNext"
+        android:inputType="textEmailSubject|textAutoCorrect|textCapSentences|textImeMultiLine"
+        android:singleLine="true" >
 
-		android:layout_toLeftOf="@+id/save"
-		android:layout_below="@android:id/title" />
-	<Button
-		android:id="@+id/save"
-		android:text="@string/save"
-		android:layout_height="wrap_content"
-		android:layout_width="wrap_content"
-		android:layout_alignParentRight="true"
-		android:layout_alignTop="@+id/cast_title" android:layout_alignBottom="@+id/cast_title" />
+        <requestFocus />
+    </EditText>
 
-	<TabHost
-		android:id="@android:id/tabhost"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:layout_below="@+id/cast_title"
-	>
-		<LinearLayout
-			android:orientation="vertical"
-			android:layout_width="fill_parent"
-			android:layout_height="fill_parent"
-		>
-			<edu.mit.mobile.android.widget.CheckableTabWidget
-				android:id="@android:id/tabs"
-				
-				style="@style/Widget.TabWidget"
-				android:tabStripEnabled="false"
-				android:gravity="center"
-				android:weightSum="3"
-				android:layout_width="fill_parent"
-				android:layout_height="wrap_content" />
-				
-			<FrameLayout
-				android:id="@android:id/tabcontent"
-				style="@style/Widget.TabContent"
-				android:layout_width="fill_parent"
-				android:layout_height="fill_parent"
-				android:padding="0dip">
-					<include layout="@layout/cast_edit_location" />
-					<include layout="@layout/cast_edit_media" />
-					<include layout="@layout/cast_edit_details" />
-				</FrameLayout>
-		</LinearLayout>
-	</TabHost>
+    <Button
+        android:id="@+id/save"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/cast_title"
+        android:layout_alignParentRight="true"
+        android:layout_alignTop="@+id/cast_title"
+        android:text="@string/save" />
+
+    <TabHost
+        android:id="@android:id/tabhost"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@+id/cast_title" >
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="vertical" >
+
+            <edu.mit.mobile.android.widget.CheckableTabWidget
+                android:id="@android:id/tabs"
+                style="@style/Widget.TabWidget"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:tabStripEnabled="false"
+                android:weightSum="3" />
+
+            <FrameLayout
+                android:id="@android:id/tabcontent"
+                style="@style/Widget.TabContent"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:padding="0dip" >
+
+                <include layout="@layout/cast_edit_location" />
+
+                <include layout="@layout/cast_edit_media" />
+
+                <include layout="@layout/cast_edit_details" />
+            </FrameLayout>
+        </LinearLayout>
+    </TabHost>
+
 </RelativeLayout>

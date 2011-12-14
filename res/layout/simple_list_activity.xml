@@ -1,30 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="fill_parent"
-	android:layout_height="fill_parent"
->
-	<include
-		layout="@layout/action_bar" />
-	<TextView
-		android:id="@android:id/title"
-		style="@style/SubTitle"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:layout_below="@id/action_bar" />
-	<ListView
-		android:id="@android:id/list"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:layout_below="@android:id/title" />
-	<TextView
-		android:id="@android:id/empty"
-		android:text="@string/error_no_items_in_this_list"
-		style="@style/EmptyList"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
 
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:layout_below="@android:id/title"
-		android:layout_alignParentBottom="true"
-		android:visibility="gone"/>
+    <include layout="@layout/action_bar" />
+
+    <TextView
+        android:id="@android:id/title"
+        style="@style/SubTitle"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/action_bar" />
+
+    <ListView
+        android:id="@android:id/list"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@android:id/title" >
+
+        <requestFocus />
+    </ListView>
+
+    <TextView
+        android:id="@android:id/empty"
+        style="@style/EmptyList"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_below="@android:id/title"
+        android:text="@string/error_no_items_in_this_list"
+        android:visibility="gone" />
+
 </RelativeLayout>

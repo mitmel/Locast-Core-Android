@@ -1,122 +1,131 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="fill_parent"
-	android:layout_height="fill_parent"
-	android:orientation="vertical"
->
-	<include
-		layout="@layout/action_bar" />
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
 
-	<TextView
-		android:id="@+id/message"
-		android:text="@string/welcome_message"
-		style="@style/Notice.Info"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content" />
-	<LinearLayout
-		android:id="@+id/linearLayout1"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-	>
-		<LinearLayout
-			android:id="@+id/linearLayout2"
-			android:layout_height="fill_parent"
-			android:orientation="vertical"
-			android:gravity="center_vertical"
-			android:layout_width="wrap_content"
-			android:layout_marginLeft="10dip"
-			android:layout_marginRight="10dip"
-		>
-			<Button
-				android:id="@+id/itineraries"
-				android:layout_weight="1"
-				android:layout_width="fill_parent"
-				android:text="@string/itineraries"
-				android:layout_height="wrap_content"
-				style="@style/BrowserMainIcon"
-				android:drawableLeft="@drawable/ic_itinerary"
-				android:gravity="center_vertical|left"
-			></Button>
-			<Button
-				android:id="@+id/nearby"
-				android:layout_weight="1"
-				android:layout_width="fill_parent"
-				android:text="@string/nearby"
-				android:layout_height="wrap_content"
-				style="@style/BrowserMainIcon"
-				android:drawableLeft="@drawable/ic_nearby"
-				android:gravity="center_vertical|left"
-			></Button>
-			<Button
-				android:id="@+id/favorites"
-				android:layout_weight="1"
-				android:layout_width="fill_parent"
-				android:text="@string/favorites"
-				android:layout_height="wrap_content"
-				style="@style/BrowserMainIcon"
-				android:drawableLeft="@drawable/ic_favorites"
-				android:gravity="center_vertical|left"
-			></Button>
-			<Button
-				android:id="@+id/events"
-				android:layout_weight="1"
-				android:layout_width="fill_parent"
-				android:text="@string/events"
-				android:layout_height="wrap_content"
-				style="@style/BrowserMainIcon"
-				android:drawableLeft="@drawable/ic_event"
-				android:gravity="center_vertical|left"
-			></Button>
-		</LinearLayout>
-		<RelativeLayout
-			android:layout_height="fill_parent"
-			android:id="@+id/linearLayout3"
-			android:orientation="vertical"
-			android:layout_width="fill_parent"
-		>
-			<TextView
-				android:id="@android:id/empty"
-				android:layout_weight="1"
-				android:layout_width="fill_parent"
-				android:textStyle="italic"
-				android:visibility="gone"
-				android:textAppearance="?android:attr/textAppearanceLarge"
-				android:layout_height="fill_parent"
-				android:gravity="center"
-				android:text="@string/error_no_featured_casts"
-			></TextView>
-			<Gallery
-				android:layout_weight="1"
-				android:layout_width="fill_parent"
-				android:id="@+id/casts"
-				android:spacing="0dip"
-				android:layout_height="fill_parent"
-				android:layout_above="@+id/powered_by_locast"
-				android:layout_below="@+id/text_featured"
-			></Gallery>
-			<TextView
-				android:id="@+id/text_featured"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:gravity="right"
-				android:text="@string/featured_casts"
-				android:layout_gravity="right"
-				android:paddingTop="5dip"
-				android:paddingRight="15dip"
-				android:layout_alignParentTop="true"
-				android:layout_alignParentRight="true"
-			></TextView>
+    <include layout="@layout/action_bar" />
 
-			<ImageView android:id="@+id/powered_by_locast"
-				android:layout_height="wrap_content"
-				android:layout_width="wrap_content"
-				android:src="@drawable/powered_by_locast"
-				android:layout_gravity="right"
-				android:paddingRight="4dip"
-				android:paddingBottom="7sp"
-				android:layout_alignParentRight="true"
-				android:layout_alignParentBottom="true" />
-		</RelativeLayout>
-	</LinearLayout>
+    <TextView
+        android:id="@+id/message"
+        style="@style/Notice.Info"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/welcome_message" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout1"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
+
+        <LinearLayout
+            android:id="@+id/linearLayout2"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:layout_marginLeft="10dip"
+            android:layout_marginRight="10dip"
+            android:gravity="center_vertical"
+            android:orientation="vertical" >
+
+            <Button
+                android:id="@+id/itineraries"
+                style="@style/BrowserMainIcon"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:drawableLeft="@drawable/ic_itinerary"
+                android:gravity="center_vertical|left"
+                android:text="@string/itineraries" >
+
+                <requestFocus />
+            </Button>
+
+            <Button
+                android:id="@+id/nearby"
+                style="@style/BrowserMainIcon"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:drawableLeft="@drawable/ic_nearby"
+                android:gravity="center_vertical|left"
+                android:text="@string/nearby" >
+            </Button>
+
+            <Button
+                android:id="@+id/favorites"
+                style="@style/BrowserMainIcon"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:drawableLeft="@drawable/ic_favorites"
+                android:gravity="center_vertical|left"
+                android:text="@string/favorites" >
+            </Button>
+
+            <Button
+                android:id="@+id/events"
+                style="@style/BrowserMainIcon"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:drawableLeft="@drawable/ic_event"
+                android:gravity="center_vertical|left"
+                android:text="@string/events" >
+            </Button>
+        </LinearLayout>
+
+        <RelativeLayout
+            android:id="@+id/linearLayout3"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="vertical" >
+
+            <TextView
+                android:id="@android:id/empty"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/error_no_featured_casts"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textStyle="italic"
+                android:visibility="gone" >
+            </TextView>
+
+            <Gallery
+                android:id="@+id/casts"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_above="@+id/powered_by_locast"
+                android:layout_below="@+id/text_featured"
+                android:layout_weight="1"
+                android:spacing="0dip" >
+            </Gallery>
+
+            <TextView
+                android:id="@+id/text_featured"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentTop="true"
+                android:layout_gravity="right"
+                android:gravity="right"
+                android:paddingRight="15dip"
+                android:paddingTop="5dip"
+                android:text="@string/featured_casts" >
+            </TextView>
+
+            <ImageView
+                android:id="@+id/powered_by_locast"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentRight="true"
+                android:layout_gravity="right"
+                android:paddingBottom="7sp"
+                android:paddingRight="4dip"
+                android:src="@drawable/powered_by_locast" />
+        </RelativeLayout>
+    </LinearLayout>
+
 </LinearLayout>

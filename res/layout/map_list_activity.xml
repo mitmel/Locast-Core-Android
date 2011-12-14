@@ -1,54 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="fill_parent"
-	android:layout_height="fill_parent"
-	android:orientation="vertical"
->
-	<include
-		layout="@layout/action_bar" />
-		
-	<TextView
-		android:id="@android:id/title"
-		style="@style/SubTitle"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content" />
-		
-	<FrameLayout android:id="@+id/map_frame"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:layout_weight="3"
-		>
-	<com.google.android.maps.MapView
-		android:id="@+id/map"	
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:clickable="true"
-		android:visibility="invisible"
-		
-		android:apiKey="" />
-	
-	<View
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <include layout="@layout/action_bar" />
+
+    <TextView
+        android:id="@android:id/title"
+        style="@style/SubTitle"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" />
+
+    <FrameLayout
+        android:id="@+id/map_frame"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="3" >
+
+        <com.google.android.maps.MapView
+            android:id="@+id/map"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:apiKey=""
+            android:clickable="true"
+            android:visibility="invisible" />
+
+        <View
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:background="@drawable/shadow_top_bottom"
             android:clickable="false" />
-	</FrameLayout>
+    </FrameLayout>
 
-	<!-- Android Debug key: 0mv3f-QVdQ_CF3MFrN2I0MO8Wgu_QPqzOKx2GHw (debug fprint 
-		FC:84:2A:A7:F4:7E:5C:49:CD:6A:C7:0C:3B:A6:BE:E1) -->
-		
-	<ListView
-		android:id="@android:id/list"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:layout_weight="2"
-		android:layout_below="@id/map_frame" />
-	<TextView
-		android:id="@android:id/empty"
-		android:text="@string/list_empty"
-		style="@style/EmptyList"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:visibility="gone"/>
+    <ListView
+        android:id="@android:id/list"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@id/map_frame"
+        android:layout_weight="2" >
+
+        <requestFocus />
+    </ListView>
+
+    <TextView
+        android:id="@android:id/empty"
+        style="@style/EmptyList"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:text="@string/list_empty"
+        android:visibility="gone" />
+
 </LinearLayout>

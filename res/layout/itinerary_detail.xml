@@ -40,7 +40,7 @@
         android:layout_height="fill_parent"
         android:layout_weight="3" >
 
-	<com.google.android.maps.MapView
+        <com.google.android.maps.MapView
             android:id="@+id/map"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
@@ -56,7 +56,10 @@
             android:clickable="false" />
     </FrameLayout>
 
-    <include layout="@layout/itinerary_detail_list_empty" android:id="@android:id/empty" android:layout_weight="2" />
+    <include
+        android:id="@android:id/empty"
+        android:layout_weight="2"
+        layout="@layout/itinerary_detail_list_empty" />
 
     <ListView
         android:id="@+id/casts"
@@ -66,7 +69,10 @@
         android:footerDividersEnabled="true"
         android:headerDividersEnabled="false"
         android:scrollbarAlwaysDrawVerticalTrack="true"
-        android:scrollbarDefaultDelayBeforeFade="1000" />
+        android:scrollbarDefaultDelayBeforeFade="1000" >
+
+        <requestFocus />
+    </ListView>
 
     <Button
         android:id="@+id/add_cast"

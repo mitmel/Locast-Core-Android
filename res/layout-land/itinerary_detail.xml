@@ -35,7 +35,6 @@
             android:drawableLeft="@drawable/ic_add"
             android:text="@string/add_cast"
             android:visibility="gone" >
-
         </Button>
 
         <TextView
@@ -59,9 +58,7 @@
             android:layout_height="fill_parent"
             android:layout_weight="3" >
 
-            <!-- com.google.android.maps -->
-
-			<com.google.android.maps.MapView
+            <com.google.android.maps.MapView
                 android:id="@+id/map"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
@@ -76,7 +73,9 @@
                 android:clickable="false" />
         </FrameLayout>
 
-        <include layout="@layout/itinerary_detail_list_empty" android:id="@android:id/empty" />
+        <include
+            android:id="@android:id/empty"
+            layout="@layout/itinerary_detail_list_empty" />
 
         <ListView
             android:id="@+id/casts"
@@ -87,6 +86,8 @@
             android:headerDividersEnabled="false"
             android:scrollbarAlwaysDrawVerticalTrack="true"
             android:scrollbarDefaultDelayBeforeFade="1000" >
+
+            <requestFocus />
         </ListView>
     </LinearLayout>
 
