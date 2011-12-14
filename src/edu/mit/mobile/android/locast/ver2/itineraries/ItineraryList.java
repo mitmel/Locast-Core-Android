@@ -59,15 +59,12 @@ import edu.mit.mobile.android.widget.RefreshButton;
 
 public class ItineraryList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
 
-	@SuppressWarnings("unused")
 	private static final String TAG = ItineraryList.class.getSimpleName();
 	private CursorAdapter mAdapter;
 	private ListView mListView;
 	private Uri mUri;
 
 	private ImageCache mImageCache;
-
-	private boolean firstTime;
 
 	private static final boolean REQUIRE_LOGIN = false;
 
@@ -133,8 +130,6 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		final String action = intent.getAction();
 
 		mImageCache = ImageCache.getInstance(this);
-
-		firstTime = SigninOrSkip.checkFirstTime(this);
 
 		if (REQUIRE_LOGIN){
 			final NetworkClient nc = NetworkClient.getInstance(this);
