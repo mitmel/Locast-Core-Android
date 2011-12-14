@@ -121,7 +121,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 				if (Constants.DEBUG){
 					Log.d(TAG, "done loading.");
 				}
-				mTextViewStatus.setText(R.string.error_no_featured_casts);
+				mTextViewStatus.setText(R.string.list_empty);
 				mRefresh.setRefreshing(false);
 				break;
 			}
