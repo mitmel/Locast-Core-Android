@@ -80,17 +80,18 @@
             android:layout_height="fill_parent"
             android:orientation="vertical" >
 
-            <TextView
-                android:id="@android:id/empty"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="@string/error_no_featured_casts"
-                android:textAppearance="?android:attr/textAppearanceLarge"
-                android:textStyle="italic"
-                android:visibility="gone" >
-            </TextView>
+            <edu.mit.mobile.android.widget.NotificationProgressBar
+				 android:id="@+id/progressNotification"
+				 android:layout_width="fill_parent"
+				 android:layout_height="fill_parent"
+				 android:visibility="gone"
+				 android:layout_weight="1"
+				 android:gravity="center"
+				 android:text="@string/error_no_featured_casts"
+				 android:textAppearance="?android:attr/textAppearanceLarge"
+				 android:textStyle="italic"
+				 >		 
+			</edu.mit.mobile.android.widget.NotificationProgressBar>
 
             <Gallery
                 android:id="@+id/casts"

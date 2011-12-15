@@ -65,6 +65,7 @@ import edu.mit.mobile.android.locast.maps.CastsIconOverlay;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.widget.NotificationProgressBar;
 import edu.mit.mobile.android.widget.RefreshButton;
 
 public class ItineraryDetail extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener, DialogInterface.OnClickListener {
@@ -105,7 +106,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 	private Object mSyncHandle;
 	
-	private TextView mTextViewStatus;
+	private NotificationProgressBar mProgressBar;
 
 	private final Handler mHandler = new Handler(){
 		@Override
@@ -115,7 +116,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 				if (Constants.DEBUG){
 					Log.d(TAG, "refreshing...");
 				}
-				mTextViewStatus.setText(R.string.loading_data);
+				mProgressBar.showProgressBar(true);
 				mRefresh.setRefreshing(true);
 				break;
 
@@ -123,7 +124,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 				if (Constants.DEBUG){
 					Log.d(TAG, "done loading.");
 				}
-				mTextViewStatus.setText(R.string.itinerary_no_casts);
+				mProgressBar.showProgressBar(false);
 				mRefresh.setRefreshing(false);
 				break;
 			}
@@ -136,8 +137,8 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 		super.onCreate(icicle);
 		setContentView(R.layout.itinerary_detail);
-
-		mTextViewStatus= ((TextView)((findViewById(android.R.id.empty)).findViewById(R.id.empty_message)));
+		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
+		
 		mImageCache = ImageCache.getInstance(this);
 		clickTimer = new Timer();
 
@@ -149,7 +150,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 		mCastView.addHeaderView(layoutInflater.inflate(R.layout.itinerary_detail_list_header, mCastView, false), null, false);
 		mCastView.addFooterView(layoutInflater.inflate(R.layout.list_footer, null), null, false);
-		mCastView.setEmptyView(findViewById(android.R.id.empty));
+		mCastView.setEmptyView(findViewById(R.id.empty2));
 		mRefresh = (RefreshButton) findViewById(R.id.refresh);
 		mRefresh.setOnClickListener(this);
 

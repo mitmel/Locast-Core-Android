@@ -41,14 +41,17 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/author" >
 
-        <TextView
-            android:id="@android:id/empty"
-            style="@style/EmptyList"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/empty_castmedia"
-            android:visibility="gone" />
-
+		<edu.mit.mobile.android.widget.NotificationProgressBar
+		 android:id="@+id/progressNotification"
+		 android:layout_width="fill_parent"
+		 android:layout_height="wrap_content"
+		 android:visibility="gone"
+		 android:layout_weight="1"
+		 style="@style/EmptyList"
+		 android:text="@string/empty_castmedia"
+		 >		 
+		 
+		</edu.mit.mobile.android.widget.NotificationProgressBar>
         <Gallery
             android:id="@+id/cast_media"
             android:layout_width="fill_parent"

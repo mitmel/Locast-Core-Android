@@ -55,6 +55,7 @@ import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.widget.NotificationProgressBar;
 import edu.mit.mobile.android.widget.RefreshButton;
 
 public class ItineraryList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
@@ -81,7 +82,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 
 	private Object mSyncHandle;
 	
-	private TextView mTextViewStatus;
+	private NotificationProgressBar mProgressBar;
 
 	private final Handler mHandler = new Handler(){
 		@Override
@@ -91,7 +92,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 				if (Constants.DEBUG){
 					Log.d(TAG, "refreshing...");
 				}
-				mTextViewStatus.setText(R.string.loading_data);
+				mProgressBar.showProgressBar(true);
 				mRefresh.setRefreshing(true);
 				break;
 
@@ -99,7 +100,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 				if (Constants.DEBUG){
 					Log.d(TAG, "done loading.");
 				}
-				mTextViewStatus.setText(R.string.error_no_items_in_this_list);
+				mProgressBar.showProgressBar(false);
 				mRefresh.setRefreshing(false);
 				break;
 			}
@@ -110,7 +111,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.simple_list_activity);
-		mTextViewStatus=  ((TextView)findViewById(android.R.id.empty));
+		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
 		
 		findViewById(R.id.refresh).setOnClickListener(this);
 		findViewById(R.id.home).setOnClickListener(this);
@@ -118,7 +119,7 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		mListView = (ListView) findViewById(android.R.id.list);
 		mListView.setOnItemClickListener(this);
 		mListView.addFooterView(LayoutInflater.from(this).inflate(R.layout.list_footer, null), null, false);
-		mListView.setEmptyView(findViewById(android.R.id.empty));
+		mListView.setEmptyView(findViewById(R.id.progressNotification));
 		mRefresh = (RefreshButton) findViewById(R.id.refresh);
 		mRefresh.setOnClickListener(this);
 		if (Constants.USE_APPUPDATE_CHECKER){

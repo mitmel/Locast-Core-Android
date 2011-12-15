@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res/edu.mit.mobile.android.widget" 
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical" >
@@ -60,16 +60,17 @@
             android:text="@string/events" />
     </LinearLayout>
 
-    <TextView
-        android:id="@android:id/empty"
-        style="@style/EmptyList"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_weight="1"
-        android:spacing="0dip"
-        android:text="@string/error_no_featured_casts"
-        android:visibility="gone" />
-
+	<edu.mit.mobile.android.widget.NotificationProgressBar
+		 android:id="@+id/progressNotification"
+		 android:layout_width="fill_parent"
+		 android:layout_height="fill_parent"
+		 android:visibility="gone"
+		 android:layout_weight="1"
+		 style="@style/EmptyList"
+		 android:text="@string/error_no_featured_casts"
+		 >		 
+	</edu.mit.mobile.android.widget.NotificationProgressBar>
+	
     <Gallery
         android:id="@+id/casts"
         android:layout_width="fill_parent"
