@@ -26,29 +26,14 @@
         android:paddingTop="6dip" />
 
     <TextView
-        android:id="@+id/favorites"
-        android:layout_width="wrap_content"
+        android:id="@android:id/text2"
+        style="@style/CastListItem.Description"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@android:id/text1"
         android:layout_below="@android:id/text1"
-        android:drawableLeft="@drawable/ic_favorites_count"
-        android:drawablePadding="2dip"
+        android:layout_toRightOf="@id/media_thumbnail"
         android:paddingBottom="1dip"
         android:paddingLeft="6dip"
         android:paddingRight="1dip"
-        android:singleLine="true" />
-
-    <TextView
-        android:id="@+id/casts"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@android:id/text1"
-        android:layout_toRightOf="@id/favorites"
-        android:drawableLeft="@drawable/ic_casts_count"
-        android:drawablePadding="2dip"
-        android:paddingBottom="1dip"
-        android:paddingLeft="6dip"
-        android:paddingRight="1dip"
-        android:singleLine="true" />
-
+        android:paddingTop="6dip" />
 </RelativeLayout>

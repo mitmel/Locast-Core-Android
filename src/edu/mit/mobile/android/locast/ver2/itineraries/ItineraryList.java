@@ -1,4 +1,5 @@
 package edu.mit.mobile.android.locast.ver2.itineraries;
+
 /*
  * Copyright (C) 2011  MIT Mobile Experience Lab
  *
@@ -57,7 +58,8 @@ import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.widget.RefreshButton;
 
-public class ItineraryList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
+public class ItineraryList extends FragmentActivity implements
+		LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
 
 	private static final String TAG = ItineraryList.class.getSimpleName();
 	private CursorAdapter mAdapter;
@@ -67,9 +69,18 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	private ImageCache mImageCache;
 
 	private static final boolean REQUIRE_LOGIN = false;
+	private static final boolean SHOW_DESCRIPTION = false;
 
-	private final String[] ITINERARY_DISPLAY = new String[]{Itinerary._TITLE, Itinerary._THUMBNAIL, Itinerary._DESCRIPTION};
-	private final String[] ITINERARY_PROJECTION = ArrayUtils.concat(new String[]{Itinerary._ID}, ITINERARY_DISPLAY);
+	private final String[] ITINERARY_DISPLAY = SHOW_DESCRIPTION ? new String[] { Itinerary._TITLE,
+			Itinerary._THUMBNAIL, Itinerary._DESCRIPTION } : new String[] { Itinerary._TITLE,
+			Itinerary._THUMBNAIL, Itinerary._CASTS_COUNT, Itinerary._FAVORITES_COUNT };
+
+	private final String[] ITINERARY_PROJECTION = ArrayUtils.concat(new String[] { Itinerary._ID },
+			ITINERARY_DISPLAY);
+
+	private final int[] ITINERARY_LAYOUT_IDS = SHOW_DESCRIPTION ? new int[] { android.R.id.text1,
+			R.id.media_thumbnail, android.R.id.text2 } : new int[] { android.R.id.text1,
+			R.id.media_thumbnail, R.id.casts, R.id.favorites };
 
 	private AppUpdateChecker mAppUpdateChecker;
 
@@ -80,28 +91,28 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	private RefreshButton mRefresh;
 
 	private Object mSyncHandle;
-	
+
 	private TextView mTextViewStatus;
 
-	private final Handler mHandler = new Handler(){
+	private final Handler mHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
-			switch (msg.what){
-			case LocastSyncStatusObserver.MSG_SET_REFRESHING:
-				if (Constants.DEBUG){
-					Log.d(TAG, "refreshing...");
-				}
-				mTextViewStatus.setText(R.string.loading_data);
-				mRefresh.setRefreshing(true);
-				break;
+			switch (msg.what) {
+				case LocastSyncStatusObserver.MSG_SET_REFRESHING:
+					if (Constants.DEBUG) {
+						Log.d(TAG, "refreshing...");
+					}
+					mTextViewStatus.setText(R.string.loading_data);
+					mRefresh.setRefreshing(true);
+					break;
 
-			case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
-				if (Constants.DEBUG){
-					Log.d(TAG, "done loading.");
-				}
-				mTextViewStatus.setText(R.string.error_no_items_in_this_list);
-				mRefresh.setRefreshing(false);
-				break;
+				case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
+					if (Constants.DEBUG) {
+						Log.d(TAG, "done loading.");
+					}
+					mTextViewStatus.setText(R.string.error_no_items_in_this_list);
+					mRefresh.setRefreshing(false);
+					break;
 			}
 		};
 	};
@@ -110,19 +121,21 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.simple_list_activity);
-		mTextViewStatus=  ((TextView)findViewById(android.R.id.empty));
-		
+		mTextViewStatus = ((TextView) findViewById(android.R.id.empty));
+
 		findViewById(R.id.refresh).setOnClickListener(this);
 		findViewById(R.id.home).setOnClickListener(this);
 
 		mListView = (ListView) findViewById(android.R.id.list);
 		mListView.setOnItemClickListener(this);
-		mListView.addFooterView(LayoutInflater.from(this).inflate(R.layout.list_footer, null), null, false);
+		mListView.addFooterView(LayoutInflater.from(this).inflate(R.layout.list_footer, null),
+				null, false);
 		mListView.setEmptyView(findViewById(android.R.id.empty));
 		mRefresh = (RefreshButton) findViewById(R.id.refresh);
 		mRefresh.setOnClickListener(this);
-		if (Constants.USE_APPUPDATE_CHECKER){
-			mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url), new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
+		if (Constants.USE_APPUPDATE_CHECKER) {
+			mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url),
+					new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
 			mAppUpdateChecker.checkForUpdates();
 		}
 
@@ -131,22 +144,21 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 
 		mImageCache = ImageCache.getInstance(this);
 
-		if (REQUIRE_LOGIN){
+		if (REQUIRE_LOGIN) {
 			final NetworkClient nc = NetworkClient.getInstance(this);
 
-			if (!nc.isAuthenticated()){
+			if (!nc.isAuthenticated()) {
 				SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
 				return;
 			}
 		}
 
-		if (Intent.ACTION_VIEW.equals(action)){
+		if (Intent.ACTION_VIEW.equals(action)) {
 			loadData(intent.getData());
 
-		}else if (Intent.ACTION_MAIN.equals(action)){
+		} else if (Intent.ACTION_MAIN.equals(action)) {
 			loadData(Itinerary.CONTENT_URI);
 		}
-
 
 	}
 
@@ -155,38 +167,37 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		super.onResume();
 
 		mSyncWhenLoaded = true;
-		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(this, mHandler));
+		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(
+				this, mHandler));
 		LocastSyncStatusObserver.notifySyncStatusToHandler(this, mHandler);
 	}
+
 	@Override
 	protected void onPause() {
 		super.onPause();
-		if (mSyncHandle != null){
+		if (mSyncHandle != null) {
 			ContentResolver.removeStatusChangeListener(mSyncHandle);
 		}
 	}
+
 	@Override
-	public void onCreateContextMenu(ContextMenu menu, View v,
-			ContextMenuInfo menuInfo) {
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 
 		super.onCreateContextMenu(menu, v, menuInfo);
 	}
 
-	private void loadData(Uri data){
+	private void loadData(Uri data) {
 		final String type = getContentResolver().getType(data);
 
-		if (! MediaProvider.TYPE_ITINERARY_DIR.equals(type)){
+		if (!MediaProvider.TYPE_ITINERARY_DIR.equals(type)) {
 			throw new IllegalArgumentException("cannot load type: " + type);
 		}
 		mAdapter = new SimpleThumbnailCursorAdapter(this,
-				R.layout.itinerary_item,
-				null,
-		ITINERARY_DISPLAY,
-		new int[] {android.R.id.text1, R.id.media_thumbnail, android.R.id.text2},
-		new int[]{R.id.media_thumbnail},
-		0
-		);
-		mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP));
+				SHOW_DESCRIPTION ? R.layout.itinerary_item_with_description
+						: R.layout.itinerary_item, null, ITINERARY_DISPLAY, ITINERARY_LAYOUT_IDS,
+				new int[] { R.id.media_thumbnail }, 0);
+		mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache,
+				new int[] { R.id.media_thumbnail }, 48, 48, ImageLoaderAdapter.UNIT_DIP));
 
 		final LoaderManager lm = getSupportLoaderManager();
 		final Bundle loaderArgs = new Bundle();
@@ -196,19 +207,20 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 		mUri = data;
 
 	}
+
 	@Override
-	public void setTitle(CharSequence title){
+	public void setTitle(CharSequence title) {
 		super.setTitle(title);
-		((TextView)findViewById(android.R.id.title)).setText(title);
+		((TextView) findViewById(android.R.id.title)).setText(title);
 	}
 
 	@Override
-	public void setTitle(int title){
+	public void setTitle(int title) {
 		super.setTitle(title);
-		((TextView)findViewById(android.R.id.title)).setText(title);
+		((TextView) findViewById(android.R.id.title)).setText(title);
 	}
 
-	private void refresh(boolean explicitSync){
+	private void refresh(boolean explicitSync) {
 		LocastSyncService.startSync(this, mUri, explicitSync);
 	}
 
@@ -216,7 +228,8 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		final Uri data = args.getParcelable(LOADER_DATA);
 
-		final CursorLoader cl = new CursorLoader(this, data, ITINERARY_PROJECTION, null, null, Itinerary.SORT_DEFAULT);
+		final CursorLoader cl = new CursorLoader(this, data, ITINERARY_PROJECTION, null, null,
+				Itinerary.SORT_DEFAULT);
 		cl.setUpdateThrottle(Constants.UPDATE_THROTTLE);
 		return cl;
 	}
@@ -224,11 +237,11 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 	@Override
 	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
 		mAdapter.swapCursor(c);
-		if (mSyncWhenLoaded){
+		if (mSyncWhenLoaded) {
 			mSyncWhenLoaded = false;
-			if (mListView.getAdapter().isEmpty()){
+			if (mListView.getAdapter().isEmpty()) {
 				LocastSyncService.startExpeditedAutomaticSync(this, mUri);
-			}else{
+			} else {
 				refresh(false);
 			}
 		}
@@ -247,30 +260,30 @@ public class ItineraryList extends FragmentActivity implements LoaderManager.Loa
 
 	@Override
 	public void onClick(View v) {
-		switch (v.getId()){
-		case R.id.refresh:
-			refresh(true);
-			break;
+		switch (v.getId()) {
+			case R.id.refresh:
+				refresh(true);
+				break;
 
-		case R.id.home:
-			startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
-			break;
+			case R.id.home:
+				startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
+				break;
 		}
 	}
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch (requestCode) {
-		case SigninOrSkip.REQUEST_SIGNIN:
-			if (resultCode == RESULT_CANCELED){
-				finish();
-			}else if (resultCode == RESULT_OK){
-				refresh(false);
-			}
-			break;
+			case SigninOrSkip.REQUEST_SIGNIN:
+				if (resultCode == RESULT_CANCELED) {
+					finish();
+				} else if (resultCode == RESULT_OK) {
+					refresh(false);
+				}
+				break;
 
-		default:
-			break;
+			default:
+				break;
 		}
 	}
 }
