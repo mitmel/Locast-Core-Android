@@ -378,7 +378,9 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 					final List<GeoPoint> path = Itinerary.getPath(c);
 					mPathOverlay.setPath(path);
 
-					mMapController.setCenter(mPathOverlay.getCenter());
+						if (!path.isEmpty()) {
+							mMapController.setCenter(mPathOverlay.getCenter());
+						}
 
 					if (Constants.USES_OSMDROID){
 						// this needs to be run after the MapView has been first sized due to a bug in zoomToSpan()
