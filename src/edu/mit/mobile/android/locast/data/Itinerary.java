@@ -41,7 +41,7 @@ public class Itinerary extends TaggableItem implements Favoritable.Columns {
 	public final static String PATH = "itineraries";
 	public final static Uri CONTENT_URI = Uri
 			.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
-	public final static String SORT_DEFAULT = _MODIFIED_DATE + " DESC";
+
 
 	public final static String SERVER_PATH = "itinerary/";
 
@@ -53,6 +53,8 @@ public class Itinerary extends TaggableItem implements Favoritable.Columns {
 		_CASTS_COUNT = "casts_count",
 		_FAVORITES_COUNT = "favorites_count",
 		_THUMBNAIL = "thumbnail";
+
+	public final static String SORT_DEFAULT = _TITLE + " ASC";
 
 	public static final String[] PROJECTION = {
 		_ID,
