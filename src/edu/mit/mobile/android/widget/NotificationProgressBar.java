@@ -21,18 +21,17 @@ public class NotificationProgressBar extends LinearLayout {
 		View v=null;
 		LayoutInflater inflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         if(inflater != null){       
-            v=inflater.inflate(R.layout.notification_progress_bar,null);
+            v=inflater.inflate(R.layout.notification_progress_bar,this);
         }
-        addView(v);
 		mProgressBar=(ProgressBar)findViewById(R.id.progressBar);
-		mTextView=(TextView)findViewById(android.R.id.empty);
+		mTextView=(TextView)findViewById(R.id.emptyTextView);
 		mTextView.setText(textID);
 	}
 	public NotificationProgressBar(Context context) {
 		super(context);
-		View.inflate(context, R.layout.notification_progress_bar, null);
+		View.inflate(context, R.layout.notification_progress_bar, this);
 		mProgressBar=(ProgressBar)findViewById(R.id.progressBar);
-		mTextView=(TextView)findViewById(android.R.id.empty);
+		mTextView=(TextView)findViewById(R.id.emptyTextView);
 	}
 
 	private void init(AttributeSet attrs) {
