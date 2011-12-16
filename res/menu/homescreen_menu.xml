@@ -3,5 +3,9 @@
 		android:id="@+id/login"
 		android:title="@string/auth_login"
 		android:icon="@drawable/ic_menu_login" />
+	<item
+		android:id="@+id/logout"
+		android:title="@string/auth_logout"
+		android:icon="@drawable/ic_menu_login" />
 </menu>
 

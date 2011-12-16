@@ -18,6 +18,7 @@ package edu.mit.mobile.android.locast.ver2.browser;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.Cursor;
@@ -37,12 +38,14 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Gallery;
 import android.widget.TextView;
+import android.widget.Toast;
 import edu.mit.mobile.android.appupdater.AppUpdateChecker;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity;
+import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity.LogoutHandler;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
@@ -70,6 +73,10 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	private TextView mTextViewStatus;
 
 	private static final int REQUEST_SIGNIN_FAVORITES = 0;
+
+	private static final int LOADER_FEATURED_CASTS = 0;
+
+	private static final int DIALOG_LOGOUT = 100;
 
 	private final Handler mHandler = new Handler() {
 		@Override
@@ -229,7 +236,6 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 	}
 
-	private static final int LOADER_FEATURED_CASTS = 0;
 
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
@@ -266,13 +272,53 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 	}
 
 	@Override
+	protected Dialog onCreateDialog(int id) {
+		switch (id) {
+			case DIALOG_LOGOUT:
+				return AuthenticatorActivity.createLogoutDialog(this, mLogoutHandler);
+			default:
+				return super.onCreateDialog(id);
+		}
+	}
+
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		final boolean hasRealAccount = Authenticator.hasRealAccount(this);
+		menu.findItem(R.id.login).setVisible(!hasRealAccount);
+		menu.findItem(R.id.logout).setVisible(hasRealAccount);
+
+		return super.onPrepareOptionsMenu(menu);
+	}
+
+	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.login:
 				startActivity(new Intent(this, AuthenticatorActivity.class));
 				return true;
+
+			case R.id.logout:
+				showDialog(DIALOG_LOGOUT);
+				return true;
+
 			default:
 				return super.onOptionsItemSelected(item);
 		}
 	}
+
+	private final LogoutHandler mLogoutHandler = new LogoutHandler(this) {
+
+		@Override
+		public void onAccountRemoved(boolean success) {
+			if (success) {
+				finish();
+			} else {
+				Log.e(TAG, "error removing account");
+				Toast.makeText(BrowserHome.this, R.string.auth_logout_error,
+						Toast.LENGTH_LONG).show();
+
+			}
+
+		}
+	}; // LogoutHandler
 }
