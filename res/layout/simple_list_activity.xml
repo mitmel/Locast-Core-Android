@@ -21,14 +21,19 @@
         <requestFocus />
     </ListView>
 
-    <TextView
-        android:id="@android:id/empty"
-        style="@style/EmptyList"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_below="@android:id/title"
-        android:text="@string/error_no_items_in_this_list"
-        android:visibility="gone" />
+    <edu.mit.mobile.android.widget.NotificationProgressBar
+		 android:id="@+id/progressNotification"
+		 style="@style/EmptyList"
+		 android:layout_width="fill_parent"
+		 android:layout_height="fill_parent"
+		 android:layout_alignParentBottom="true"
+		 android:layout_centerInParent="true"
+		 android:layout_centerHorizontal="true"
+		 android:layout_centerVertical="true"
+         android:layout_below="@android:id/title"
+         android:visibility="gone"
+         android:text="@string/error_no_items_in_this_list"
+	>
+	</edu.mit.mobile.android.widget.NotificationProgressBar>
 
 </RelativeLayout>

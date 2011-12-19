@@ -21,4 +21,11 @@
     </declare-styleable>
     <item  type="id" name="viewtag_item_position" />
     <item  type="id" name="viewtag_item_adapter" />
+    <declare-styleable name="NotificationProgressBar">
+        <attr name="android:text"/>
+        <attr name="android:id"/>
+        <attr name="android:layout_height"/>
+        <attr name="android:layout_width"/>
+        <attr name="android:visibility"/>        
+    </declare-styleable>
 </resources>

@@ -43,12 +43,12 @@
         <requestFocus />
     </ListView>
 
-    <TextView
-        android:id="@android:id/empty"
+    <edu.mit.mobile.android.widget.NotificationProgressBar
+        android:id="@+id/progressNotification"
         style="@style/EmptyList"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:text="@string/list_empty"
-        android:visibility="gone" />
+        android:text="@string/list_empty" >
+    </edu.mit.mobile.android.widget.NotificationProgressBar>
 
 </LinearLayout>

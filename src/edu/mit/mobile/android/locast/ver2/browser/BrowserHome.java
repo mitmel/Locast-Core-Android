@@ -37,6 +37,8 @@ import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Gallery;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import edu.mit.mobile.android.appupdater.AppUpdateChecker;
@@ -56,6 +58,7 @@ import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.casts.LocatableListWithMap;
+import edu.mit.mobile.android.widget.NotificationProgressBar;
 import edu.mit.mobile.android.widget.RefreshButton;
 
 public class BrowserHome extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>,
@@ -70,7 +73,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 	private static final String TAG = BrowserHome.class.getSimpleName();
 
-	private TextView mTextViewStatus;
+	private NotificationProgressBar mProgressBar;
 
 	private static final int REQUEST_SIGNIN_FAVORITES = 0;
 
@@ -86,7 +89,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 					if (Constants.DEBUG) {
 						Log.d(TAG, "refreshing...");
 					}
-					mTextViewStatus.setText(R.string.loading_data);
+					mProgressBar.showProgressBar(true);
 					mRefresh.setRefreshing(true);
 					break;
 
@@ -94,7 +97,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 					if (Constants.DEBUG) {
 						Log.d(TAG, "done loading.");
 					}
-					mTextViewStatus.setText(R.string.error_no_featured_casts);
+					mProgressBar.showProgressBar(false);
 					mRefresh.setRefreshing(false);
 					break;
 			}
@@ -110,7 +113,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		mImageCache = ImageCache.getInstance(this);
 
 		setContentView(R.layout.browser_main);
-		mTextViewStatus = ((TextView) findViewById(android.R.id.empty));
+		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
 		if (Constants.USE_APPUPDATE_CHECKER) {
 			mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url),
 					new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
@@ -126,7 +129,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		casts.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache,
 				new int[] { R.id.media_thumbnail }, 320, 200, ImageLoaderAdapter.UNIT_DIP));
 		casts.setOnItemClickListener(this);
-		casts.setEmptyView(findViewById(android.R.id.empty));
+		casts.setEmptyView(findViewById(R.id.progressNotification));
 		final LoaderManager lm = getSupportLoaderManager();
 		lm.initLoader(LOADER_FEATURED_CASTS, null, this);
 

@@ -59,6 +59,7 @@ import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 import edu.mit.mobile.android.locast.widget.FavoriteClickHandler;
+import edu.mit.mobile.android.widget.NotificationProgressBar;
 import edu.mit.mobile.android.widget.RefreshButton;
 import edu.mit.mobile.android.widget.ValidatingCheckBox;
 
@@ -85,7 +86,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 
 	private Object mSyncHandle;
 
-	private TextView mTextViewStatus;
+	private NotificationProgressBar mProgressBar;
 
 	private boolean mFirstLoad = true;
 
@@ -97,7 +98,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 					if (Constants.DEBUG) {
 						Log.d(TAG, "refreshing...");
 					}
-					mTextViewStatus.setText(R.string.loading_data);
+					mProgressBar.showProgressBar(true);
 					mRefresh.setRefreshing(true);
 					break;
 
@@ -105,7 +106,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 					if (Constants.DEBUG) {
 						Log.d(TAG, "done loading.");
 					}
-					mTextViewStatus.setText(R.string.empty_castmedia);
+					mProgressBar.showProgressBar(false);
 					mRefresh.setRefreshing(false);
 					break;
 			}
@@ -121,7 +122,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		setContentView(R.layout.cast_detail);
 
 		initOverlays();
-		mTextViewStatus = ((TextView) findViewById(android.R.id.empty));
+		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
 		final Uri data = getIntent().getData();
 
 		mCastMediaUri = Cast.getCastMediaUri(data);
@@ -142,7 +143,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 
 		mCastMedia = new CastMediaAdapter(this);
 
-		castMediaView.setEmptyView(findViewById(android.R.id.empty));
+		castMediaView.setEmptyView(findViewById(R.id.progressNotification));
 		castMediaView.setAdapter(new ImageLoaderAdapter(this, mCastMedia, ImageCache
 				.getInstance(this), new int[] { R.id.media_thumbnail }, 480, 360,
 				ImageLoaderAdapter.UNIT_DIP));

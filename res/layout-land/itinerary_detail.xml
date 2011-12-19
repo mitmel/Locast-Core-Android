@@ -74,7 +74,7 @@
         </FrameLayout>
 
         <include
-            android:id="@android:id/empty"
+            android:id="@+id/empty2"
             layout="@layout/itinerary_detail_list_empty" />
 
         <ListView
