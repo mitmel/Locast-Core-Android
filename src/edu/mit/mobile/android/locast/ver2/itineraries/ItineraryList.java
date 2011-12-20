@@ -49,10 +49,10 @@ import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
 import edu.mit.mobile.android.locast.Constants;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.MediaProvider;
-import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
@@ -122,7 +122,7 @@ public class ItineraryList extends FragmentActivity implements
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.simple_list_activity);
 		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
-		
+
 		findViewById(R.id.refresh).setOnClickListener(this);
 		findViewById(R.id.home).setOnClickListener(this);
 
@@ -144,9 +144,8 @@ public class ItineraryList extends FragmentActivity implements
 		mImageCache = ImageCache.getInstance(this);
 
 		if (REQUIRE_LOGIN) {
-			final NetworkClient nc = NetworkClient.getInstance(this);
 
-			if (!nc.isAuthenticated()) {
+			if (!Authenticator.hasRealAccount(this)) {
 				SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
 				return;
 			}

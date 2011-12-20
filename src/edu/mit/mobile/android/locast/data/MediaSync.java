@@ -61,6 +61,7 @@ import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient.InputStreamWatcher;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;
@@ -391,7 +392,9 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 			String contentType, final Uri locMedia) throws SyncException {
 		// upload
 		try {
-			final NetworkClient nc = NetworkClient.getInstance(this);
+			// TODO this should get the account info from something else.
+			final NetworkClient nc = NetworkClient.getInstance(this,
+					Authenticator.getFirstAccount(this));
 			nc.uploadContentWithNotification(this,
 					CastMedia.getCast(castMediaUri), uploadPath, locMedia,
 					contentType, NetworkClient.UploadType.FORM_POST);
@@ -476,7 +479,8 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	 */
 	public boolean downloadMediaFile(String pubUri, File saveFile,
 			Uri castMediaUri) throws SyncException {
-		final NetworkClient nc = NetworkClient.getInstance(this);
+		final NetworkClient nc = NetworkClient.getInstance(this,
+				Authenticator.getFirstAccount(this));
 		try {
 			boolean dirty = true;
 			//String contentType = null;

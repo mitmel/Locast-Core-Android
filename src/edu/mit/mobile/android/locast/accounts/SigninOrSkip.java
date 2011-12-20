@@ -25,7 +25,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
-import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.ver2.R;
 
 public class SigninOrSkip extends Activity implements OnClickListener {
@@ -102,13 +101,8 @@ public class SigninOrSkip extends Activity implements OnClickListener {
 	/**
 	 * @return true if this seems to be the first time running the app
 	 */
-	public static final boolean checkFirstTime(Context context){
-		//final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-		//final boolean skip = prefs.getBoolean(Authenticator.PREF_SKIP_AUTH, false);
-
-		final NetworkClient nc = NetworkClient.getInstance(context);
-
-		return !nc.isAuthenticated() && !Authenticator.isDemoMode(context);
+	public static final boolean checkFirstTime(Context context) {
+		return Authenticator.getAccounts(context).length == 0;
 	}
 
 	public static final void startSignin(Activity context, int requestCode){

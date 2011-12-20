@@ -39,6 +39,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
@@ -654,8 +655,11 @@ public abstract class JsonSyncableItem implements BaseColumns {
 			try {
 				final String childPubUri = item.getString(remoteKey);
 				// TODO optimize so it doesn't need to create a whole new instance
-				final NetworkClient nc = NetworkClient.getInstance(context);
-				final Uri serverUri = nc.getFullUri(childPubUri);
+				// TODO this shouldn't be getting the first account here, it should somehow use the
+				// one that's active for the sync. Perhaps this needs to be revised to allow this
+				// method to get the sync context.
+				final NetworkClient nc = NetworkClient.getInstance(context, Authenticator.getFirstAccount(context));
+				final Uri serverUri = nc.getFullUrl(childPubUri);
 
 				LocastSyncService.startSync(context, serverUri, childDir, false);
 

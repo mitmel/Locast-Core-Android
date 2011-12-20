@@ -24,7 +24,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.widget.ArrayAdapter;
-import edu.mit.mobile.android.locast.net.NetworkClient;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 
 public class RemoteTagsAdapter extends ArrayAdapter<String>{
@@ -58,7 +58,9 @@ public class RemoteTagsAdapter extends ArrayAdapter<String>{
 		protected List<String> doInBackground(Void... params) {
 
 			try {
-				final NetworkClient nc = NetworkClient.getInstance(getContext());
+				final Context context = getContext();
+				final NetworkClient nc = NetworkClient.getInstance(context,
+						Authenticator.getFirstAccount(context));
 				final List<String> tags =  nc.getTagsList();
 				lastUpdated = new Date().getTime();
 				return tags;

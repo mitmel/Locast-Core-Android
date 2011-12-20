@@ -17,20 +17,21 @@ package edu.mit.mobile.android.locast.casts;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import android.os.Bundle;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 
 public class MyCastsActivity extends CastListActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		final NetworkClient nc = NetworkClient.getInstance(getApplicationContext());
-		
-		loadList(managedQuery(Cast.CONTENT_URI, CastCursorAdapter.DEFAULT_PROJECTION, 
-				Cast._AUTHOR+"=?", 
-				new String[]{nc.getUsername()}, 
+
+		final NetworkClient nc = NetworkClient.getInstance(getApplicationContext(),
+				Authenticator.getFirstAccount(this));
+
+		loadList(managedQuery(Cast.CONTENT_URI, CastCursorAdapter.DEFAULT_PROJECTION,
+				Cast._AUTHOR+"=?",
+				new String[]{nc.getUsername()},
 				Cast._MODIFIED_DATE+" DESC"));
-	}	
+	}
 }

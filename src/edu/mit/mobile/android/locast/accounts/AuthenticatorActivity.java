@@ -203,8 +203,9 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 		}
 		mPassword = mPasswordEdit.getText().toString();
 		if (validateEntry()) {
+			final String baseUrl = NetworkClient.getBaseUrlFromPreferences(this);
 			mAuthenticationTask = new AuthenticationTask(this);
-			mAuthenticationTask.execute(mUsername, mPassword);
+			mAuthenticationTask.execute(baseUrl, mUsername, mPassword);
 		}
 	}
 
@@ -398,9 +399,10 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 
 		@Override
 		protected Bundle doInBackground(String... userPass) {
+
 			try {
 				return NetworkClient.authenticate(AuthenticatorActivity.this, userPass[0],
-						userPass[1]);
+						userPass[1], userPass[2]);
 
 			} catch (final IOException e) {
 				reason = mActivity.getString(R.string.auth_error_could_not_contact_server);
@@ -509,7 +511,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 		/**
 		 * This will be called after the account removal completes. If there is an error, success
 		 * will be false.
-		 * 
+		 *
 		 * @param success
 		 *            true if the account was successfully removed.
 		 */

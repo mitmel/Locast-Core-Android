@@ -25,6 +25,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Favoritable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.net.NetworkClient;
@@ -46,7 +47,7 @@ public class FavoriteClickHandler implements ValidatedClickHandler {
 		final boolean currentState = checkBox.isChecked();
 
 		try {
-			final boolean newState = NetworkClient.getInstance(this.context).setFavorite(data, !currentState);
+			final boolean newState = NetworkClient.getInstance(this.context, Authenticator.getFirstAccount(context)).setFavorite(data, !currentState);
 			final ContentResolver cr = context.getContentResolver();
 
 			final ContentValues cv = new ContentValues();

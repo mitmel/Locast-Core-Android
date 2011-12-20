@@ -252,7 +252,7 @@ public class LocastSyncService extends Service {
 			mCurrentlySyncing = account;
 			SyncEngine syncEngine = mSyncEngines.get(account);
 			if (syncEngine == null) {
-				syncEngine = new SyncEngine(mContext, NetworkClient.getInstance(mContext));
+				syncEngine = new SyncEngine(mContext, NetworkClient.getInstance(mContext, account));
 				mSyncEngines.put(account, syncEngine);
 			}
 

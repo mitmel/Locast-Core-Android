@@ -28,6 +28,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
@@ -93,8 +94,7 @@ public class Authenticator extends AbstractAccountAuthenticator {
         if (options != null && options.containsKey(AccountManager.KEY_PASSWORD)) {
             final String password =
                 options.getString(AccountManager.KEY_PASSWORD);
-            final Bundle verified =
-                onlineConfirmPassword(account.name, password);
+			final Bundle verified = onlineConfirmPassword(account, password);
             final Bundle result = new Bundle();
             result.putBoolean(AccountManager.KEY_BOOLEAN_RESULT, verified != null);
             return result;
@@ -134,8 +134,7 @@ public class Authenticator extends AbstractAccountAuthenticator {
         final AccountManager am = AccountManager.get(mContext);
         final String password = am.getPassword(account);
         if (password != null) {
-            final Bundle accountData =
-                onlineConfirmPassword(account.name, password);
+			final Bundle accountData = onlineConfirmPassword(account, password);
             if (accountData != null) {
                 final Bundle result = new Bundle();
 
@@ -185,17 +184,17 @@ public class Authenticator extends AbstractAccountAuthenticator {
     /**
      * Validates user's password on the server
      */
-    private Bundle onlineConfirmPassword(String username, String password) {
+    private Bundle onlineConfirmPassword(Account account, String password) {
     	Bundle response = null;
     	try {
-			response = NetworkClient.authenticate(mContext, username, password);
+			response = NetworkClient.authenticate(mContext, account, password);
 
 		} catch (final IOException e) {
-			e.printStackTrace();
+			Log.e(TAG, e.getLocalizedMessage(), e);
 		} catch (final JSONException e) {
-			e.printStackTrace();
+			Log.e(TAG, e.getLocalizedMessage(), e);
 		} catch (final NetworkProtocolException e) {
-			e.printStackTrace();
+			Log.e(TAG, e.getLocalizedMessage(), e);
 		}
         return response;
     }
@@ -245,7 +244,7 @@ public class Authenticator extends AbstractAccountAuthenticator {
 	/**
 	 * Adds an account that acts as a placeholder to allow the sync to work properly. The sync
 	 * framework always requires an account.
-	 * 
+	 *
 	 * @param context
 	 */
     public static void addDemoAccount(Context context){
