@@ -96,7 +96,6 @@
   <string name="pref_title_password">Password</string>
   <string name="pref_cat_advanced">Avanzato</string>
   <string name="pref_title_server_url">Server URL</string>
-  <string name="pref_locast_site_message">Attenzione: modificazione di questo cancellerà l\'attuale associazione (pairing) e anche il database locale. Tutti i casts non-pubblicati saranno cancellati.</string>
   <string name="welcome_message">Benvenuti! Rai Local Abruzzo è una applicazione turistica geo-localizzata che ti aiuta a visitare l\'Abruzzo.</string>
   <string name="auth_signin_or_skip_notice">Per caricare foto e video sulla piattaforma Rai Local Abruzzo devi registrare un account</string>
   <string name="auth_signin_register">Entra / Registrati</string>

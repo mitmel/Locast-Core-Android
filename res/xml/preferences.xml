@@ -20,7 +20,7 @@
 		<EditTextPreference android:key="server_url"
 			android:title="@string/pref_title_server_url"
 			android:singleLine="true"
-			android:defaultValue="@string/default_api_url" />
+			android:defaultValue="@string/default_api_url" android:dialogMessage="@string/pref_locast_site_message"/>
 
 	</PreferenceCategory>
 </PreferenceScreen>

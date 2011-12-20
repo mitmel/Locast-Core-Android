@@ -27,13 +27,14 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
+import android.util.Log;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.locast.ver2.browser.ResetActivity;
 
 public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceChangeListener {
 
 	private static final int REQUEST_RESET_DB = 0;
+	private static final String TAG = SettingsActivity.class.getSimpleName();
 	private String newUrl;
 
 	private PreferenceScreen preferenceScreen;
@@ -92,15 +93,25 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 			final String newUrl = sharedPreferences.getString(NetworkClient.PREF_LOCAST_SITE, null);
 			// only do this if something's actually changed.
 			if (newUrl != null && !newUrl.equals(sharedPreferences.getString(NetworkClient.PREF_SERVER_URL, null))){
-				startActivityForResult(new Intent(this, ResetActivity.class), REQUEST_RESET_DB);
-				SettingsActivity.this.newUrl = newUrl;
+				setUrl(newUrl);
+				// TODO this needs to ensure that the prefereces are up to date
 			}
 		}
 	}
 
 	@Override
 	public boolean onPreferenceChange(Preference preference, Object newValue) {
-		// TODO Auto-generated method stub
-		return false;
+		final String key = preference.getKey();
+		if (key.equals(NetworkClient.PREF_SERVER_URL)) {
+			String baseurl = (String) newValue;
+			if (!baseurl.endsWith("/")) {
+				if (Constants.DEBUG) {
+					Log.w(TAG, "Baseurl in preferences (" + baseurl
+							+ ") didn't end in a slash, so we added one.");
+				}
+				baseurl = baseurl + "/";
+			}
+		}
+		return true;
 	}
 }

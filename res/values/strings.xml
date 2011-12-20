@@ -148,7 +148,7 @@
 	<string name="pref_locast_site">Locast Site</string>
 	<string name="pref_locast_site_dialog_title">Choose a Locast site</string>
 	<string name="pref_locast_site_summary">Choose another Locast site.</string>
-	<string name="pref_locast_site_message">Warning: changing this will erase your current pairing as well as the local database. Any unpublished casts will be deleted.</string>
+	<string name="pref_locast_site_message">This will only affect any newly added accounts. To change this for the active instance you must first remove any existing accounts.</string>
 	
 	<string name="welcome_message">Welcome! Rai Local Abruzzo is a location-based tourism application for visiting Abruzzo.</string>
 	

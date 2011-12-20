@@ -104,7 +104,6 @@
   <string name="pref_locast_site">Site de UNICEF GIS</string>
   <string name="pref_locast_site_dialog_title">Escolhe um site de UNICEF GIS</string>
   <string name="pref_locast_site_summary">Escolhe outro site de UNICEF GIS.</string>
-  <string name="pref_locast_site_message">Aviso: qualquer mudança apagará o seu emparelhamento actual e o banco de dados local. Todos os informes que não foram publicados serão apagados.</string>
   <string name="welcome_message">Bem Vindo! UNICEF GIS Abruzzo é uma aplicação turística para visitar Abruzzo que é baseada em localizações.</string>
   <string name="auth_signin_or_skip_notice">É preciso ter uma conta para carregar fotos e vídeos a UNICEF GIS</string>
   <string name="auth_signin_register">Entrar/Cadastrar-se</string>
