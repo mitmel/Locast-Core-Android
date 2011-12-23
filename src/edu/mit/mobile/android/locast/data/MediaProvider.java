@@ -835,71 +835,97 @@ public class MediaProvider extends ContentProvider {
 
 		int count;
 		final int code = uriMatcher.match(uri);
-		switch (code){
-		case MATCHER_CAST_DIR:
-			count = db.delete(CAST_TABLE_NAME, where, whereArgs);
-			break;
+		switch (code) {
+			case MATCHER_CAST_DIR:
+				count = db.delete(CAST_TABLE_NAME, where, whereArgs);
+				// special case to handle deletion of ALL THE THINGS
+				if (where == null) {
+					db.delete(CASTS_CASTMEDIA_DBHELPER.getJoinTableName(), null, null);
+				}
 
-		case MATCHER_CAST_ITEM:
-			id = ContentUris.parseId(uri);
-			count = db.delete(CAST_TABLE_NAME, Cast._ID + "="+ id +
-					(where != null && where.length() > 0 ? " AND (" + where + ")" : ""),
-					whereArgs);
-			break;
+				break;
 
-		case MATCHER_COMMENT_DIR:
-			count = db.delete(COMMENT_TABLE_NAME, where, whereArgs);
-			break;
+			case MATCHER_CAST_ITEM:
+				id = ContentUris.parseId(uri);
+				count = db.delete(CAST_TABLE_NAME,
+						Cast._ID
+								+ "="
+								+ id
+								+ (where != null && where.length() > 0 ? " AND (" + where + ")"
+										: ""), whereArgs);
+				break;
 
-		case MATCHER_COMMENT_ITEM:{
-			id = ContentUris.parseId(uri);
-			count = db.delete(COMMENT_TABLE_NAME,
-					ProviderUtils.addExtraWhere(where, Comment._ID + "=?"),
-					ProviderUtils.addExtraWhereArgs(whereArgs, String.valueOf(id)));
-		}break;
+			case MATCHER_COMMENT_DIR:
+				count = db.delete(COMMENT_TABLE_NAME, where, whereArgs);
+				break;
 
-		case MATCHER_CHILD_COMMENT_ITEM:{
+			case MATCHER_COMMENT_ITEM: {
+				id = ContentUris.parseId(uri);
+				count = db.delete(COMMENT_TABLE_NAME,
+						ProviderUtils.addExtraWhere(where, Comment._ID + "=?"),
+						ProviderUtils.addExtraWhereArgs(whereArgs, String.valueOf(id)));
+			}
+				break;
 
-			final List<String>pathSegs = uri.getPathSegments();
-			id = ContentUris.parseId(uri);
+			case MATCHER_CHILD_COMMENT_ITEM: {
 
-			count = db.delete(COMMENT_TABLE_NAME,
-					ProviderUtils.addExtraWhere(where, Comment._ID+"=?", 				Comment._PARENT_ID+"=?", 			Comment._PARENT_CLASS+"=?"),
-					ProviderUtils.addExtraWhereArgs(whereArgs, Long.toString(id),  	pathSegs.get(pathSegs.size() - 3), 	pathSegs.get(pathSegs.size() - 4)));
-		}break;
+				final List<String> pathSegs = uri.getPathSegments();
+				id = ContentUris.parseId(uri);
 
-		case MATCHER_ITEM_TAGS:{
+				count = db.delete(
+						COMMENT_TABLE_NAME,
+						ProviderUtils.addExtraWhere(where, Comment._ID + "=?", Comment._PARENT_ID
+								+ "=?", Comment._PARENT_CLASS + "=?"),
+						ProviderUtils.addExtraWhereArgs(whereArgs, Long.toString(id),
+								pathSegs.get(pathSegs.size() - 3),
+								pathSegs.get(pathSegs.size() - 4)));
+			}
+				break;
 
-			final List<String> pathSegments = uri.getPathSegments();
+			case MATCHER_ITEM_TAGS: {
 
-			count = db.delete(TAG_TABLE_NAME,
-					ProviderUtils.addExtraWhere(where, 			Tag._REF_CLASS + "=?", 						Tag._REF_ID+"=?"),
-					ProviderUtils.addExtraWhereArgs(whereArgs, 	pathSegments.get(pathSegments.size() - 3), 	pathSegments.get(pathSegments.size() - 2)));
-			break;
-		}
+				final List<String> pathSegments = uri.getPathSegments();
 
-		case MATCHER_TAG_DIR:{
-			count = db.delete(TAG_TABLE_NAME, where, whereArgs);
-			break;
-		}
+				count = db.delete(
+						TAG_TABLE_NAME,
+						ProviderUtils.addExtraWhere(where, Tag._REF_CLASS + "=?", Tag._REF_ID
+								+ "=?"),
+						ProviderUtils.addExtraWhereArgs(whereArgs,
+								pathSegments.get(pathSegments.size() - 3),
+								pathSegments.get(pathSegments.size() - 2)));
+				break;
+			}
 
-		case MATCHER_ITINERARY_DIR:{
-			count = db.delete(ITINERARY_TABLE_NAME, where, whereArgs);
-		}break;
+			case MATCHER_TAG_DIR: {
+				count = db.delete(TAG_TABLE_NAME, where, whereArgs);
+				break;
+			}
 
-		case MATCHER_ITINERARY_ITEM:{
-			final String itemId = uri.getLastPathSegment();
-			count = db.delete(ITINERARY_TABLE_NAME, ProviderUtils.addExtraWhere(where, Itinerary._ID+"=?"), ProviderUtils.addExtraWhereArgs(whereArgs, itemId));
-		}break;
+			case MATCHER_ITINERARY_DIR: {
+				count = db.delete(ITINERARY_TABLE_NAME, where, whereArgs);
+				// special case to handle deletion of ALL THE THINGS
+				if (where == null) {
+					db.delete(ITINERARY_CASTS_DBHELPER.getJoinTableName(), null, null);
+				}
+			}
+				break;
+
+			case MATCHER_ITINERARY_ITEM: {
+				final String itemId = uri.getLastPathSegment();
+				count = db.delete(ITINERARY_TABLE_NAME,
+						ProviderUtils.addExtraWhere(where, Itinerary._ID + "=?"),
+						ProviderUtils.addExtraWhereArgs(whereArgs, itemId));
+			}
+				break;
 
 			default:
-				if (mDBHelperMapper.canDelete(code)){
+				if (mDBHelperMapper.canDelete(code)) {
 					count = mDBHelperMapper.delete(code, this, db, uri, where, whereArgs);
-				}else{
-					throw new IllegalArgumentException("Unknown URI: "+uri);
+				} else {
+					throw new IllegalArgumentException("Unknown URI: " + uri);
 				}
 		}
-		if (!db.inTransaction()){
+		if (!db.inTransaction()) {
 			db.execSQL("VACUUM");
 		}
 		getContext().getContentResolver().notifyChange(uri, null, true);
