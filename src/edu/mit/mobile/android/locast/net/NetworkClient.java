@@ -361,7 +361,10 @@ public class NetworkClient extends DefaultHttpClient {
 				jo = null;
 			}
 
-			return jsonObjectToBundle(jo, true);
+			final Bundle userData = jsonObjectToBundle(jo, true);
+			userData.putString(AuthenticationService.USERDATA_LOCAST_API_URL, nc.getBaseUrl());
+			return userData;
+
 		} catch (final HttpResponseException e) {
 			if (e.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
 				return null;
@@ -699,6 +702,10 @@ public class NetworkClient extends DefaultHttpClient {
 		}
 
 		return fullUri;
+	}
+
+	public String getBaseUrl() {
+		return mBaseUrl.toString();
 	}
 
 	public synchronized String getFullUrlAsString(String path) {
