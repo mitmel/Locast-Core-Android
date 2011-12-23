@@ -169,7 +169,9 @@ public class LocastSyncService extends Service {
 	public static void startSync(Account account, Uri what, boolean explicitSync, Bundle extras) {
 		if (explicitSync) {
 			extras.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
-			extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
+			if (!extras.containsKey(ContentResolver.SYNC_EXTRAS_EXPEDITED)) {
+				extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
+			}
 		}
 		if (what != null){
 			extras.putString(LocastSyncService.EXTRA_SYNC_URI, what.toString());
