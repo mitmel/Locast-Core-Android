@@ -454,7 +454,11 @@ public class NetworkClient extends DefaultHttpClient {
 
 	public HttpResponse head(String path) throws IOException, JSONException,
 			NetworkProtocolException {
-		final HttpHead req = new HttpHead(getFullUrlAsString(path));
+		final String fullUrl = getFullUrlAsString(path);
+		if (DEBUG) {
+			Log.d(TAG, "HEAD " + fullUrl);
+		}
+		final HttpHead req = new HttpHead(fullUrl);
 
 		return this.execute(req);
 	}
