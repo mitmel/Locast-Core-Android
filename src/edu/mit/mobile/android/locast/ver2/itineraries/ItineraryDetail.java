@@ -105,7 +105,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	private RefreshButton mRefresh;
 
 	private Object mSyncHandle;
-	
+
 	private NotificationProgressBar mProgressBar;
 
 	private final Handler mHandler = new Handler(){
@@ -138,7 +138,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		super.onCreate(icicle);
 		setContentView(R.layout.itinerary_detail);
 		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
-		
+
 		mImageCache = ImageCache.getInstance(this);
 		clickTimer = new Timer();
 
@@ -293,8 +293,13 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		if (mItineraryCastCount == UNKNOWN_COUNT || (mItineraryCastCount != mCastAdapter.getCount())){
 			extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
 		}
+
+		final Bundle extras2 = new Bundle();
+		// we always deprioritize this so that the casts will take priority.
+		extras2.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, false);
+		LocastSyncService.startSync(this, mUri, explicitSync, extras2);
 		LocastSyncService.startSync(this, mCastsUri, explicitSync, extras);
-        LocastSyncService.startSync(this, mUri, explicitSync);
+
 	}
 
 
