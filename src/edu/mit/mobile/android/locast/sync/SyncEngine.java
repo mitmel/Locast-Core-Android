@@ -51,6 +51,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.util.Log;
+import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.CastMedia;
@@ -233,7 +234,7 @@ public class SyncEngine {
 
 		final long request_time = System.currentTimeMillis();
 
-		final HttpResponse hr = mNetworkClient.get(pubPath);
+		HttpResponse hr = mNetworkClient.get(pubPath);
 
 		final long response_time = System.currentTimeMillis();
 
@@ -275,6 +276,7 @@ public class SyncEngine {
 		final HttpEntity ent = hr.getEntity();
 
 		String selection;
+		String selectionInverse;
 		String[] selectionArgs;
 
 		if (isDir) {
@@ -288,8 +290,8 @@ public class SyncEngine {
 			// build the query to see which items are already in the
 			// database
 			final StringBuilder sb = new StringBuilder();
-			sb.append(JsonSyncableItem._PUBLIC_URI);
-			sb.append(" in (");
+
+			sb.append("(");
 
 			for (int i = 0; i < len; i++) {
 				if (Thread.interrupted()) {
@@ -312,7 +314,9 @@ public class SyncEngine {
 			}
 			sb.append(")");
 
-			selection = sb.toString();
+			final String placeholders = sb.toString();
+			selection = JsonSyncableItem._PUBLIC_URI + " IN " + placeholders;
+			selectionInverse = JsonSyncableItem._PUBLIC_URI + " NOT IN " + placeholders;
 		} else {
 
 			final JSONObject jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
@@ -322,6 +326,7 @@ public class SyncEngine {
 			syncStatuses.put(syncStatus.remote, syncStatus);
 
 			selection = JsonSyncableItem._PUBLIC_URI + "=?";
+			selectionInverse = JsonSyncableItem._PUBLIC_URI + "!=?";
 			selectionArgs = new String[] { syncStatus.remote };
 		}
 
@@ -361,7 +366,7 @@ public class SyncEngine {
 			check.close();
 		}
 
-		final Cursor c = provider.query(toSync, SYNC_PROJECTION, selection, selectionArgs, null);
+		Cursor c = provider.query(toSync, SYNC_PROJECTION, selection, selectionArgs, null);
 
 		// these items are on both sides
 		try {
@@ -387,7 +392,7 @@ public class SyncEngine {
 				if (itemStatus.state == SyncState.ALREADY_UP_TO_DATE
 						|| itemStatus.state == SyncState.NOW_UP_TO_DATE) {
 					if (DEBUG) {
-						Log.d(TAG, pubUri + " is already up to date");
+						Log.d(TAG, localUri + "(" + pubUri + ")" + " is already up to date.");
 					}
 					continue;
 				}
@@ -412,7 +417,7 @@ public class SyncEngine {
 				if (itemServerModified == itemStatus.remoteModifiedTime) {
 					itemStatus.state = SyncState.ALREADY_UP_TO_DATE;
 					if (DEBUG) {
-						Log.d(TAG, pubUri + " is up to date");
+						Log.d(TAG, pubUri + " is up to date.");
 					}
 
 					// need to download
@@ -568,6 +573,7 @@ public class SyncEngine {
 				Log.d(TAG, "applyBatch completed. Processing results...");
 			}
 
+			int successful = 0;
 			for (int i = 0; i < r.length; i++) {
 				final ContentProviderResult res = r[i];
 				if (res.uri == null) {
@@ -575,7 +581,8 @@ public class SyncEngine {
 					Log.e(TAG, "result from content provider bulk operation returned null");
 					continue;
 				}
-				final SyncStatus ss = syncStatuses.get(cpoPubUris.get(i));
+				final String pubUri = cpoPubUris.get(i);
+				final SyncStatus ss = syncStatuses.get(pubUri);
 
 				if (ss == null) {
 					syncResult.stats.numSkippedEntries++;
@@ -584,20 +591,132 @@ public class SyncEngine {
 				}
 
 				ss.local = res.uri;
+				if (DEBUG) {
+					Log.d(TAG, "onPostSyncItem(" + res.uri + ", ...); pubUri: " + pubUri);
+				}
 
 				syncMap.onPostSyncItem(mContext, res.uri, ss.remoteJson,
 						res.count != null ? res.count == 1 : true);
 
 				ss.state = SyncState.NOW_UP_TO_DATE;
+				successful++;
 			}
 			if (DEBUG) {
-				Log.d(TAG, "batch updates successfully applied.");
+				Log.d(TAG, successful + " batch inserts successfully applied.");
 			}
 		} else {
 			if (DEBUG) {
 				Log.d(TAG, "no updates to perform.");
 			}
 		}
+
+		/**
+		 * Look through all the items that we didn't already find on the server side, but which
+		 * still have a public uri. They should be checked to make sure they're not deleted.
+		 */
+		c = provider.query(
+				toSync,
+				SYNC_PROJECTION,
+				ProviderUtils.addExtraWhere(selectionInverse, JsonSyncableItem._PUBLIC_URI
+						+ " NOT NULL"), selectionArgs, null);
+
+		try {
+			final int idCol = c.getColumnIndex(JsonSyncableItem._ID);
+			final int pubUriCol = c.getColumnIndex(JsonSyncableItem._PUBLIC_URI);
+
+			cpo.clear();
+
+			for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
+				final String pubUri = c.getString(pubUriCol);
+				SyncStatus ss = syncStatuses.get(pubUri);
+
+				final Uri item = isDir ? ContentUris.withAppendedId(toSyncWithoutQuerystring,
+						c.getLong(idCol)) : toSync;
+
+				if (ss == null) {
+					ss = syncStatuses.get(item.toString());
+				}
+
+
+				if (DEBUG) {
+					Log.d(TAG,
+							item
+ + " was not found in the main list of items on the server ("
+							+ pubPath + "), but appears to be a child of "
+							+ toSync);
+
+					if (ss != null) {
+						Log.d(TAG, "found sync status for " + item + ": " + ss);
+					}
+				}
+
+				if (ss != null) {
+					switch (ss.state) {
+						case ALREADY_UP_TO_DATE:
+						case NOW_UP_TO_DATE:
+							Log.d(TAG, item
+									+ " is already up to date. No need to see if it was deleted.");
+							continue;
+
+						case BOTH_UNKNOWN:
+							Log.d(TAG,
+									item
+											+ " was found on both sides, but has an unknown sync status. Skipping...");
+							continue;
+
+						default:
+
+							Log.w(TAG, "got an unexpected state for " + item + ": " + ss);
+					}
+
+				} else {
+					ss = new SyncStatus(pubUri, SyncState.LOCAL_ONLY);
+					ss.local = item;
+
+
+					hr = mNetworkClient.head(pubUri);
+
+					switch (hr.getStatusLine().getStatusCode()) {
+						case 200:
+							Log.d(TAG, "HEAD " + pubUri + " returned 200");
+							ss.state = SyncState.BOTH_UNKNOWN;
+							break;
+
+						case 404:
+							Log.d(TAG, "HEAD " + pubUri + " returned 404. Deleting locally...");
+							ss.state = SyncState.DELETED_REMOTELY;
+							final ContentProviderOperation deleteOp = ContentProviderOperation
+									.newDelete(
+											ContentUris.withAppendedId(toSyncWithoutQuerystring,
+													c.getLong(idCol))).build();
+							cpo.add(deleteOp);
+
+							break;
+
+						default:
+							syncResult.stats.numIoExceptions++;
+							Log.w(TAG,
+									"HEAD " + pubUri + " got unhandled result: "
+											+ hr.getStatusLine());
+					}
+				}
+				syncStatuses.put(pubUri, ss);
+			} // for cursor
+
+			if (cpo.size() > 0) {
+				final ContentProviderResult[] results = provider.applyBatch(cpo);
+
+				for (final ContentProviderResult result : results) {
+					if (result.count != 1) {
+						throw new SyncException("Error deleting item");
+					}
+				}
+			}
+
+		} finally {
+			c.close();
+		}
+
 
 		syncStatuses.clear();
 
@@ -915,5 +1034,16 @@ public class SyncEngine {
 		long remoteModifiedTime;
 		JSONObject remoteJson;
 		ContentValues remoteCVs;
+
+		public boolean isUpToDate() {
+			return state == SyncState.ALREADY_UP_TO_DATE || state == SyncState.NOW_UP_TO_DATE;
+		}
+
+		@Override
+		public String toString() {
+
+			return "[state: " + state + ", local uri: " + local + ", remote uri: " + remote
+					+ ", ...]";
+		}
 	}
 }
