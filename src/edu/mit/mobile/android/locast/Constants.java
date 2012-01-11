@@ -29,6 +29,11 @@ public class Constants {
 	public static final boolean CAN_CREATE_CASTS = true;
 
 	/**
+	 * If false, enables a demo account that can be used to make non-authenticated requests.
+	 */
+	public static final boolean REQUIRE_LOGIN = true;
+
+	/**
 	 * Enables a built-in app update checker if the app is not going to be published on the Market.
 	 */
 	public static final boolean USE_APPUPDATE_CHECKER = true;

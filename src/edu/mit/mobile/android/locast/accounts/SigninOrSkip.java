@@ -25,6 +25,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.ver2.R;
 
 public class SigninOrSkip extends Activity implements OnClickListener {
@@ -106,6 +107,11 @@ public class SigninOrSkip extends Activity implements OnClickListener {
 	}
 
 	public static final void startSignin(Activity context, int requestCode){
-		context.startActivityForResult(new Intent(context, SigninOrSkip.class), requestCode);
+		if (Constants.REQUIRE_LOGIN) {
+			context.startActivityForResult(new Intent(context, AuthenticatorActivity.class),
+					requestCode);
+		} else {
+			context.startActivityForResult(new Intent(context, SigninOrSkip.class), requestCode);
+		}
 	}
 }

@@ -69,7 +69,10 @@ public class ItineraryList extends FragmentActivity implements
 
 	private ImageCache mImageCache;
 
-	private static final boolean REQUIRE_LOGIN = false;
+	/**
+	 * If true, checks to ensure that there's an account before showing activity.
+	 */
+	private static final boolean CHECK_FOR_ACCOUNT = true;
 	private static final boolean SHOW_DESCRIPTION = false;
 
 	private final String[] ITINERARY_DISPLAY = SHOW_DESCRIPTION ? new String[] { Itinerary._TITLE,
@@ -143,7 +146,7 @@ public class ItineraryList extends FragmentActivity implements
 
 		mImageCache = ImageCache.getInstance(this);
 
-		if (REQUIRE_LOGIN) {
+		if (CHECK_FOR_ACCOUNT) {
 
 			if (!Authenticator.hasRealAccount(this)) {
 				SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
