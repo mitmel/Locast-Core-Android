@@ -40,6 +40,11 @@
 		
  	</style>
  	
+    <style name="CastMediaItem">
+        <item name="android:background">@drawable/picture_frame</item>
+    </style>
+ 	
+ 	
  	<style name="Thumbnail">
  		<item name="android:src">@drawable/ic_placeholder</item>
  		<item name="android:scaleType">centerCrop</item>
