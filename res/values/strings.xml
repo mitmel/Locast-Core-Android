@@ -210,4 +210,10 @@
 		<string name="cast_edit_error_camera_did_not_return_image">Error: camera did not return an image. Please try again.</string>
 		<string name="cast_edit_media_empty">Tap the buttons below to add photos and videos</string>
 	<string name="loading_data">Loading data...</string>
+	<string name="wait_location">Please wait while we add your current location to the cast you are creating. To improve GPS
+reception, try standing in a clear area outside away from buildings.</string>
+	<string name="need_more_time_to_retrieve_location">We need more time to retrieve your location. Press \'Continue\' to keep waiting or \'Stop\' to cancel the cast creation and try again later.</string>
+	<string name="location_service_not_working">Location service not working</string>
+	<string name="continue_res">Continue</string>
+	<string name="stop">Stop</string>
 </resources>

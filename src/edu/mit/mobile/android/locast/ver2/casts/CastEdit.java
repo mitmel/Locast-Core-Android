@@ -2,13 +2,12 @@ package edu.mit.mobile.android.locast.ver2.casts;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 
-import android.R.attr;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -18,8 +17,10 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.location.Location;
 import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images.Media;
 import android.provider.MediaStore.MediaColumns;
@@ -40,18 +41,12 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.maps.GeoPoint;
-import com.google.android.maps.MapController;
-import com.google.android.maps.MapView;
-import com.google.android.maps.MyLocationOverlay;
-import com.google.android.maps.Overlay;
 import com.stackoverflow.ArrayUtils;
 
 import edu.mit.mobile.android.content.ProviderUtils;
@@ -64,7 +59,6 @@ import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.TaggableItem;
-import edu.mit.mobile.android.locast.maps.CastLocationOverlay;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.widget.TagList;
 import edu.mit.mobile.android.locast.widget.TagList.OnTagListChangeListener;
@@ -82,8 +76,12 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	private boolean mIsDraft = true;
 	private boolean mIsEditable = false;
+	
+	private AlertDialog alertDialog = null;
+	private ProgressDialog waitForLocationDialog = null;
 	private GeoPoint mLocation;
-	private boolean mRecenterMapOnCurrentLocation = true;
+	private Location currentLocation = null;
+	
 	private boolean mFirstLoad = true;
 
 	// when creating media (on some devices), you need to first create the filename, save it, and then use it when the camera returns.
@@ -103,12 +101,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	private EditableCastMediaAdapter mCastMediaAdapter;
 
 	// location
-	private ImageButton mSetLocation;
-	private MapView mMapView;
-	private MapController mMapController;
-	private MyLocationOverlay mMyLocationOverlay;
-
-	private CastLocationOverlay mCastLocationOverlay;
+	private LocationManager locationManager;
+	private LocationListener locationListener;
 
 	// details
 	private EditText mDescriptionView;
@@ -117,7 +111,6 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	//////////////////////
 	// constants
 	private static final String
-		TAB_LOCATION = "location",
 		TAB_MEDIA = "media",
 		TAB_DETAILS = "details";
 
@@ -148,11 +141,10 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	private static final int[]
 	           CAST_MEDIA_TO = new int[]{R.id.cast_media_title, R.id.media_thumbnail, R.id.media_thumbnail};
-
-	private static final int[]
-	           STATE_ACTIVE_LOCATION_SET = new int[]{attr.state_active, attr.state_checked},
-	           STATE_INACTIVE_LOCATION_SET = new int[]{attr.state_checked},
-	           STATE_LOCATION_NOT_SET = new int[]{};
+	
+	
+	private static final int MINIMUM_REQUIRED_ACCURACY = 100;
+	private static final int MAXIMUM_WAIT_TIME_IN_SECONDS = 60;
 
 	///////////////////////////////////////////////////////////
 
@@ -162,39 +154,98 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 		setContentView(R.layout.cast_edit);
 
-		// configure tabs
-		mTabHost = (TabHost) findViewById(android.R.id.tabhost);
-		mTabWidget = (CheckableTabWidget) findViewById(android.R.id.tabs);
-		mTabHost.setup();
-
-		mTabHost.addTab(mTabHost
-				.newTabSpec(TAB_LOCATION)
-				.setIndicator(
-						getTabIndicator(R.layout.tab_indicator_left,
-								getString(R.string.tab_location),
-								R.drawable.ic_tab_location))
-				.setContent(R.id.cast_edit_location));
-
-		mTabHost.addTab(mTabHost
-				.newTabSpec(TAB_MEDIA)
-				.setIndicator(
-						getTabIndicator(R.layout.tab_indicator_middle,
-								getString(R.string.tab_media),
-								R.drawable.ic_tab_media))
-				.setContent(R.id.cast_edit_media));
-
-		mTabHost.addTab(mTabHost
-				.newTabSpec(TAB_DETAILS)
-				.setIndicator(
-						getTabIndicator(R.layout.tab_indicator_right,
-								getString(R.string.tab_details),
-								R.drawable.ic_tab_details))
-				.setContent(R.id.cast_edit_details));
-		mTabHost.setOnTabChangedListener(this);
+		configureTabs();
 
 		// find the other widgets
 		mTitleView = (EditText) findViewById(R.id.cast_title);
 
+		configureCastMediaControls();
+
+		configureDescriptionView();
+
+		configureTagsView();
+
+		findViewById(R.id.save).setOnClickListener(this);
+		findViewById(R.id.new_photo).setOnClickListener(this);
+		findViewById(R.id.new_video).setOnClickListener(this);
+		findViewById(R.id.pick_media).setOnClickListener(this);
+
+		processIntents(savedInstanceState);
+		
+		setupLocationRetrieval();
+	}
+
+	private void processIntents(Bundle savedInstanceState) {
+		final Intent intent = getIntent();
+		final String action = intent.getAction();
+
+		/////////////
+		// restore any existing state
+		final LoaderManager lm = getSupportLoaderManager();
+
+		if (savedInstanceState != null){
+			mCast = savedInstanceState.getParcelable(RUNTIME_STATE_CAST_URI);
+			mFirstLoad = savedInstanceState.getBoolean(RUNTIME_STATE_FIRST_LOAD, true);
+			mTabHost.setCurrentTab(savedInstanceState.getInt(RUNTIME_STATE_CURRENT_TAB, 0));
+			setLocation((GeoPoint)savedInstanceState.getParcelable(RUNTIME_STATE_LOCATION));
+			mIsDraft = savedInstanceState.getBoolean(RUNTIME_STATE_IS_DRAFT, true);
+			mCreateMediaUri = savedInstanceState.getParcelable(RUNTIME_STATE_CREATE_MEDIA_URI);
+		}
+
+		if (Intent.ACTION_EDIT.equals(action)) {
+			if (mCast == null){
+				mCast = intent.getData();
+			}
+			
+			mCastBase = ProviderUtils.removeLastPathSegment(mCast);
+		} else if (Intent.ACTION_INSERT.equals(action)){
+			setTitleFromIntent(intent);
+
+			mCastBase = intent.getData();
+		}
+
+		if (mCast != null) {
+			lm.initLoader(LOADER_CAST, null, this);
+		} else {
+			// XXX put on thread
+			setEditable(true);
+			mCast = save(); // create a new, blank cast
+		}
+
+		lm.initLoader(LOADER_CASTMEDIA, null, this);
+	}
+
+	private void configureTagsView() {
+		mTags = (TagList) findViewById(R.id.tags);
+		mTags.setOnTagListChangeListener(new OnTagListChangeListener() {
+
+			@Override
+			public void onTagListChange(TagList v) {
+				updateDetailsTab();
+			}
+		});
+	}
+
+	private void configureDescriptionView() {
+		mDescriptionView = (EditText) findViewById(R.id.description);
+		mDescriptionView.addTextChangedListener(new TextWatcher() {
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count,
+					int after) {}
+
+			@Override
+			public void afterTextChanged(Editable s) {
+				updateDetailsTab();
+
+			}
+		});
+	}
+
+	private void configureCastMediaControls() {
 		// cast media
 		mCastMediaView = (ListView) findViewById(android.R.id.list);
 		mCastMediaView.setEmptyView(findViewById(android.R.id.empty));
@@ -214,139 +265,57 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			}
 		});
 
-		/*
-		 * XXX doesn't work.
-		 *
-		 * mCastMediaAdapter.addOnFocusChangeListener(R.id.cast_media_title, new OnFocusChangeListener() {
-
-			@Override
-			public void onFocusChange(View v, boolean hasFocus) {
-				if (!hasFocus){
-					final CastMediaAdapter adapter = (CastMediaAdapter) v.getTag(R.id.viewtag_item_adapter);
-					final int position = (Integer) v.getTag(R.id.viewtag_item_position);
-					final Uri castMediaUri = ContentUris.withAppendedId(Cast.getCastMediaUri(mCast), adapter.getItemId(position));
-
-					final ContentValues cv = new ContentValues();
-					cv.put(CastMedia._TITLE, ((EditText)v).getText().toString());
-					getContentResolver().update(castMediaUri, cv, null, null);
-				}
-			}
-		});*/
-
-
-
 		mCastMediaView.setOnItemClickListener(mCastMediaOnItemClickListener);
 		mCastMediaView.setAdapter(new ImageLoaderAdapter(this, mCastMediaAdapter,
 				ImageCache.getInstance(this),
 				new int[] { R.id.media_thumbnail }, 100, 100,
 				ImageLoaderAdapter.UNIT_DIP));
+	}
 
-		mDescriptionView = (EditText) findViewById(R.id.description);
-		mDescriptionView.addTextChangedListener(new TextWatcher() {
+	private void configureTabs() {
+		// configure tabs
+		mTabHost = (TabHost) findViewById(android.R.id.tabhost);
+		mTabWidget = (CheckableTabWidget) findViewById(android.R.id.tabs);
+		mTabHost.setup();
 
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before, int count) {}
+		mTabHost.addTab(mTabHost
+				.newTabSpec(TAB_MEDIA)
+				.setIndicator(
+						getTabIndicator(R.layout.tab_indicator_middle,
+								getString(R.string.tab_media),
+								R.drawable.ic_tab_media))
+				.setContent(R.id.cast_edit_media));
 
-			@Override
-			public void beforeTextChanged(CharSequence s, int start, int count,
-					int after) {}
+		mTabHost.addTab(mTabHost
+				.newTabSpec(TAB_DETAILS)
+				.setIndicator(
+						getTabIndicator(R.layout.tab_indicator_right,
+								getString(R.string.tab_details),
+								R.drawable.ic_tab_details))
+				.setContent(R.id.cast_edit_details));
+		mTabHost.setOnTabChangedListener(this);
+	}
 
-			@Override
-			public void afterTextChanged(Editable s) {
-				updateDetailsTab();
+	private void setupLocationRetrieval() {
+		locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+		locationListener = new LocationListener() {
+		    public void onLocationChanged(Location location) {
+		    	if (isBetterLocation(location, currentLocation))
+		    		setLocation(location);
+		    }
 
-			}
-		});
+		    public void onStatusChanged(String provider, int status, Bundle extras) {}
 
-		mTags = (TagList) findViewById(R.id.tags);
-		mTags.setOnTagListChangeListener(new OnTagListChangeListener() {
+		    public void onProviderEnabled(String provider) {}
 
-			@Override
-			public void onTagListChange(TagList v) {
-				updateDetailsTab();
-			}
-		});
-
-		////////////////
-		// initialize map
-		mSetLocation = (ImageButton) findViewById(R.id.set_current_location);
-		mMapView = (MapView) findViewById(R.id.map);
-
-
-		mMapController = mMapView.getController();
-		mMapController.setZoom(7);
-		mMapView.setBuiltInZoomControls(true);
-
-		mCastLocationOverlay = new CastLocationOverlay(this);
-
-		mMyLocationOverlay = new MyLocationOverlay(this, mMapView);
-		//mMyLocationOverlay.setDrawAccuracyEnabled(true);
-
-		final List<Overlay> overlays = mMapView.getOverlays();
-		overlays.add(mMyLocationOverlay);
-		overlays.add(mCastLocationOverlay);
-
-		// hook in buttons
-		findViewById(R.id.save).setOnClickListener(this);
-		mSetLocation.setOnClickListener(this);
-		findViewById(R.id.center_on_current_location).setOnClickListener(this);
-		findViewById(R.id.new_photo).setOnClickListener(this);
-		findViewById(R.id.new_video).setOnClickListener(this);
-		findViewById(R.id.pick_media).setOnClickListener(this);
-
-		//mIncrementalLocator = new IncrementalLocator(this);
-
-
-		/////////////
-		// process intents
-
-		final Intent intent = getIntent();
-		final String action = intent.getAction();
-
-		/////////////
-		// restore any existing state
-
-		final LoaderManager lm = getSupportLoaderManager();
-
-		if (savedInstanceState != null){
-			mCast = savedInstanceState.getParcelable(RUNTIME_STATE_CAST_URI);
-			mFirstLoad = savedInstanceState.getBoolean(RUNTIME_STATE_FIRST_LOAD, true);
-			mTabHost.setCurrentTab(savedInstanceState.getInt(RUNTIME_STATE_CURRENT_TAB, 0));
-			setLocation((GeoPoint)savedInstanceState.getParcelable(RUNTIME_STATE_LOCATION));
-			mIsDraft = savedInstanceState.getBoolean(RUNTIME_STATE_IS_DRAFT, true);
-			mCreateMediaUri = savedInstanceState.getParcelable(RUNTIME_STATE_CREATE_MEDIA_URI);
-		}
-
-		if (Intent.ACTION_EDIT.equals(action)){
-			if (mCast == null){
-				mCast = intent.getData();
-			}
-			mCastBase = ProviderUtils.removeLastPathSegment(mCast);
-
-		}else if (Intent.ACTION_INSERT.equals(action)){
-			setTitleFromIntent(intent);
-
-			mCastBase = intent.getData();
-		}
-
-		if (mCast != null){
-			lm.initLoader(LOADER_CAST, null, this);
-
-		}else{
-			// XXX put on thread
-			setEditable(true);
-			mCast = save(); // create a new, blank cast
-
-		}
-
-		lm.initLoader(LOADER_CASTMEDIA, null, this);
-
+		    public void onProviderDisabled(String provider) {}
+		};
 	}
 
 	protected void updateDetailsTab() {
 		final boolean descriptionComplete = mDescriptionView.length() > 0;
 		final boolean tagsComplete = mTags.getTags().size() > 0;
-		mTabWidget.setTabChecked(2, descriptionComplete || tagsComplete);
+		mTabWidget.setTabChecked(1, descriptionComplete || tagsComplete);
 	}
 
 	@Override
@@ -357,74 +326,124 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		}
 
 		stopUpdatingLocation();
-		mMyLocationOverlay.disableMyLocation();
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-
-		if (TAB_LOCATION.equals(mTabHost.getCurrentTabTag())) {
-			startUpdatingLocation();
-		}
-
-		mMyLocationOverlay.enableMyLocation();
-		//getSupportLoaderManager().restartLoader(arg0, arg1, arg2)
+		startUpdatingLocation();
 	}
 
 	@Override
 	public void onBackPressed() {
-
 		if (mLocation == null && mTitleView.getText().length() == 0 && mCastMediaAdapter.getCount() == 0 && mDescriptionView.getText().length() == 0){
-			Log.d(TAG, "cast "+mCast+" seems to be empty, so deleting it");
+			Log.d(TAG, "cast "+ mCast + " seems to be empty, so deleting it");
 			final ContentResolver cr = getContentResolver();
 			cr.delete(Cast.getCastMediaUri(mCast), null, null);
 			cr.delete(mCast, null, null);
 			mCast = null;
 		}
 
-
 		super.onBackPressed();
-
 	}
 
+	private void showAlertDialog(){
+		alertDialog = new AlertDialog.Builder(this).create();
+		alertDialog.setTitle(getString(R.string.location_service_not_working));
+		alertDialog.setMessage(getString(R.string.need_more_time_to_retrieve_location));
+		
+		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.continue_res), new android.content.DialogInterface.OnClickListener(){			
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				alertDialog.dismiss();
+				alertDialog = null;
+				
+				showLocationDialog();
+			}
+		});
+		
+		alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.stop), new android.content.DialogInterface.OnClickListener() {			
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				alertDialog.dismiss();
+				alertDialog = null;
+			}
+		});	
+		
+		alertDialog.show();
+	}
+	
 	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.save:
 			if (saveButton()){
-				// this isn't necessary, but could be helpful for integration
-				setResult(RESULT_OK, new Intent().setData(mCast));
-				finish();
+				//If we still don't have a location, or if the location we have is not accurate enough, we open a modal dialog and ask the user to wait
+				if (showLocationDialog())
+					return;
+				
+				finishSave();
 			}
 			break;
 
-		case R.id.center_on_current_location:
-			centerOnCurrentLocation();
-			break;
-
-		case R.id.set_current_location:
-			setCurrentLocation();
-			break;
-
-		case R.id.new_photo:{
+		case R.id.new_photo:
 			final Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 			mCreateMediaUri = createNewMedia("jpg");
 			i.putExtra(MediaStore.EXTRA_OUTPUT, mCreateMediaUri);
 			startActivityForResult(i, REQUEST_NEW_PHOTO);
-		}break;
+			break;
 
-		case R.id.new_video:{
-			final Intent i = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+		case R.id.new_video:
+			final Intent i2 = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
 			mCreateMediaUri = createNewMedia("mp4");
-			i.putExtra(MediaStore.EXTRA_OUTPUT, mCreateMediaUri);
-			startActivityForResult(i, REQUEST_NEW_VIDEO);
-		}break;
+			i2.putExtra(MediaStore.EXTRA_OUTPUT, mCreateMediaUri);
+			startActivityForResult(i2, REQUEST_NEW_VIDEO);
+			break;
 
 		case R.id.pick_media:
 			showDialog(DIALOG_PICK_MEDIA);
 			break;
 		}
+	}
+
+	private boolean showLocationDialog() {
+		if (mLocation == null || (currentLocation != null && currentLocation.hasAccuracy() && currentLocation.getAccuracy() > MINIMUM_REQUIRED_ACCURACY))
+		{
+			waitForLocationDialog = ProgressDialog.show(this, "", getString(R.string.wait_location), true);
+			
+			scheduleAlertDialog();
+			
+			return true;
+		}
+		
+		return false;
+	}
+
+	private Handler handler = new Handler();
+	private Runnable showAlertDialog = new Runnable() {
+		@Override
+		public void run() {
+			if (waitForLocationDialog != null) {
+				dismissDialog();
+				showAlertDialog();
+			}
+		}
+	};
+	
+	private void scheduleAlertDialog() {
+		handler.removeCallbacks(showAlertDialog);
+		handler.postDelayed(showAlertDialog, MAXIMUM_WAIT_TIME_IN_SECONDS * 1000);
+	}
+
+	private void finishSave() {
+		if (alertDialog != null){
+			alertDialog.dismiss();
+			alertDialog = null;
+		}
+		
+		// this isn't necessary, but could be helpful for integration
+		setResult(RESULT_OK, new Intent().setData(mCast));
+		finish();
 	}
 
 	@Override
@@ -434,53 +453,30 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			mCreateMediaUri = null;
 			return;
 		}
-//		Log.d(TAG, "onActivityResult: " + data);
-//		if (data == null || data.getData() == null){
-//			Toast.makeText(this, R.string.cast_edit_error_camera_did_not_return_image, Toast.LENGTH_LONG).show();
-//			return;
-//		}
 
 		switch(requestCode){
-			case REQUEST_NEW_PHOTO:{
-
+			case REQUEST_NEW_PHOTO:
 				addMedia(mCreateMediaUri);
 				mCreateMediaUri = null;
-
-				}break;
-			case REQUEST_NEW_VIDEO:{
-
+				break;
+			case REQUEST_NEW_VIDEO:
 				addMedia(mCreateMediaUri);
 				mCreateMediaUri = null;
-			}break;
-
-			case REQUEST_PICK_MEDIA:{
+				break;
+			case REQUEST_PICK_MEDIA:
 				final Uri media = data.getData();
 				if (media != null){
 					addMedia(media);
 				}
-			}
-
+				break;
 		}
 	}
 
 	@Override
-	public void onTabChanged(String tabId) {
-		if (TAB_LOCATION.equals(tabId)) {
-			startUpdatingLocation();
-		} else {
-			stopUpdatingLocation();
-		}
-	}
+	public void onTabChanged(String tabId) {}
 
 	@Override
-	public void onLocationChanged(Location location) {
-		if (mRecenterMapOnCurrentLocation) {
-			if (mMapView.getZoomLevel() < 10) {
-				mMapController.setZoom(15);
-			}
-			mMapController.animateTo(new GeoPoint((int)(location.getLatitude() * 1E6), (int)(location.getLongitude() * 1E6)));
-		}
-	}
+	public void onLocationChanged(Location location) {}
 
 	@Override
 	public void onProviderDisabled(String provider) {}
@@ -559,7 +555,6 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	public void onLoaderReset(Loader<Cursor> loader) {
 		switch (loader.getId()){
 		case LOADER_CAST:
-
 			break;
 
 		case LOADER_CASTMEDIA:
@@ -598,9 +593,9 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 		final Location l = Locatable.toLocation(c);
 		if (l != null){
-			mRecenterMapOnCurrentLocation = false;
 			setLocation(new GeoPoint((int)(l.getLatitude() * 1E6), (int)(l.getLongitude() * 1E6))); // XXX optimize
 		}
+		
 		mTags.clearAllTags();
 		mTags.addTags(TaggableItem.getTags(getContentResolver(), mCast));
 
@@ -624,13 +619,12 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		findViewById(R.id.save).setEnabled(isEditable);
 
 		// location
-		mSetLocation.setEnabled(isEditable);
+		//mSetLocation.setEnabled(isEditable);
 
 		// media
 		findViewById(R.id.new_photo).setEnabled(isEditable);
 		findViewById(R.id.new_video).setEnabled(isEditable);
 		findViewById(R.id.pick_media).setEnabled(isEditable);
-
 
 		// details
 		mTags.setEnabled(isEditable);
@@ -638,36 +632,12 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	}
 
 	private void startUpdatingLocation() {
-		mMyLocationOverlay.enableMyLocation();
+		//locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
 	}
 
 	private void stopUpdatingLocation() {
-		mMyLocationOverlay.disableMyLocation();
-	}
-
-	private boolean mMapCenterIsLocation = false;
-	private void mapHasMoved(){
-		if (mMapCenterIsLocation){
-			if (mLocation != null){
-				if (mLocation instanceof GeoPoint){
-
-					// XXX mMapCenterIsLocation = mLocation.distanceTo(mMapView.getMapCenter()) <= 0.1;
-					if (!mMapCenterIsLocation){
-						mSetLocation.setImageState(STATE_INACTIVE_LOCATION_SET, false);
-					}else{
-						mSetLocation.setImageState(STATE_ACTIVE_LOCATION_SET, false);
-					}
-				}
-			}else{
-				mSetLocation.setImageState(STATE_LOCATION_NOT_SET, false);
-				mMapCenterIsLocation = false;
-			}
-
-			mSetLocation.postInvalidate();
-		}
-
-		// XXX this doesn't work as this function gets called even if the map is moved programatically
-		mRecenterMapOnCurrentLocation = false;
+		locationManager.removeUpdates(locationListener);
 	}
 
 	private View getTabIndicator(int layout, CharSequence title, int drawable) {
@@ -714,13 +684,12 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	public ContentValues toContentValues() {
 		final ContentValues cv = new ContentValues();
 
-
 		cv.put(Cast._TITLE, mTitleView.getText().toString());
 		cv.put(Cast._DRAFT, mIsDraft);
 		cv.put(Cast._DESCRIPTION, mDescriptionView.getText().toString());
 		cv.put(Cast._MODIFIED_DATE, System.currentTimeMillis());
 
-		if(mLocation != null){
+		if (mLocation != null) {
 			Locatable.toContentValues(cv, mLocation);
 		}
 
@@ -763,12 +732,11 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 							setLocation(new GeoPoint((int)(c.getDouble(latCol) * 1E6), (int)(c.getDouble(lonCol) * 1E6)));
 						}
 					}
-
 				}
-			}finally{
+			} finally{
 				c.close();
 			}
-		}else{
+		} else {
 			mediaPath = content.toString();
 		}
 
@@ -791,56 +759,35 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			return false;
 		}
 
-		if (mLocation == null) {
-			// focus tab on location
-			return false;
-		}
+//		if (mLocation == null) {
+//			// focus tab on location
+//			return false;
+//		}
 
 		return true;
 	}
 
-	/**
-	 * request that the map be centered on the user's current location
-	 */
-	private void centerOnCurrentLocation() {
-		final Location curLoc = mMyLocationOverlay.getLastFix();
-		//final Location curLoc = mIncrementalLocator.getLastKnownLocation();
-		if (curLoc != null) {
-			if (mMapView.getZoomLevel() < 10) {
-				mMapController.setZoom(15);
-			}
-			mMapController.animateTo(new GeoPoint((int)(curLoc.getLatitude() * 1E6), (int)(curLoc.getLongitude() * 1E6)));
-		}else{
-			Toast.makeText(this, R.string.notice_finding_your_location, Toast.LENGTH_SHORT).show();
-		}
-
-		mRecenterMapOnCurrentLocation = true;
-	}
-
-	private void setLocation(GeoPoint location) {
+	private void setLocation(GeoPoint location){
 		mLocation = location;
-
-		final boolean hasLocation = mLocation != null;
-
-		mRecenterMapOnCurrentLocation = false;
-
-		mTabWidget.setTabChecked(0, hasLocation);
-		//mSetLocation.setImageState(STATE_ACTIVE_LOCATION_SET, false);
-		//mSetLocation.postInvalidate();
-
-		mMapCenterIsLocation = hasLocation;
-
-		if (hasLocation){
-			mCastLocationOverlay.setLocation(new GeoPoint(location.getLatitudeE6(), location.getLongitudeE6()));
-			mMapController.setCenter(location);
+		
+		if (waitForLocationDialog != null && currentLocation != null && currentLocation.hasAccuracy() && currentLocation.getAccuracy() <= MINIMUM_REQUIRED_ACCURACY) {
+			dismissDialog();
+			finishSave();
 		}
-
-		mMapView.postInvalidate();
-
 	}
 
-	private void setCurrentLocation() {
-		setLocation(mMapView.getMapCenter());
+	private void dismissDialog() {
+		waitForLocationDialog.dismiss();
+		waitForLocationDialog = null;
+	}
+	
+	private void setLocation(Location location) {
+		int e6lat = (int)(location.getLatitude() * 1E6);
+    	int e6lon = (int)(location.getLongitude() * 1E6);
+    	
+		currentLocation = location;
+		
+		setLocation(new GeoPoint(e6lat, e6lon));
 	}
 
 	/**
@@ -930,11 +877,6 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			mClickListeners.put(viewID, onClickListener);
 		}
 
-		// TODO fix cast media title editing
-		public void addOnFocusChangeListener(int viewID, OnFocusChangeListener onFocusChangeListener){
-			mFocusChangeListeners.put(viewID, onFocusChangeListener);
-		}
-
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
 			final View v = super.getView(position, convertView, parent);
@@ -970,5 +912,59 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		// TODO Auto-generated method stub
 		return false;
 	}
+	
+	private static final int TWO_MINUTES = 1000 * 60 * 2;
+	/** Determines whether one Location reading is better than the current Location fix
+	 * @param location  The new Location that you want to evaluate
+	 * @param currentBestLocation  The current Location fix, to which you want to compare the new one
+	 */
+	protected boolean isBetterLocation(Location location, Location currentBestLocation) {
+	    if (currentBestLocation == null) {
+	        // A new location is always better than no location
+	        return true;
+	    }
 
+	    // Check whether the new location fix is newer or older
+	    long timeDelta = location.getTime() - currentBestLocation.getTime();
+	    boolean isSignificantlyNewer = timeDelta > TWO_MINUTES;
+	    boolean isSignificantlyOlder = timeDelta < -TWO_MINUTES;
+	    boolean isNewer = timeDelta > 0;
+
+	    // If it's been more than two minutes since the current location, use the new location
+	    // because the user has likely moved
+	    if (isSignificantlyNewer) {
+	        return true;
+	    // If the new location is more than two minutes older, it must be worse
+	    } else if (isSignificantlyOlder) {
+	        return false;
+	    }
+
+	    // Check whether the new location fix is more or less accurate
+	    int accuracyDelta = (int) (location.getAccuracy() - currentBestLocation.getAccuracy());
+	    boolean isLessAccurate = accuracyDelta > 0;
+	    boolean isMoreAccurate = accuracyDelta < 0;
+	    boolean isSignificantlyLessAccurate = accuracyDelta > 200;
+
+	    // Check if the old and new location are from the same provider
+	    boolean isFromSameProvider = isSameProvider(location.getProvider(),
+	            currentBestLocation.getProvider());
+
+	    // Determine location quality using a combination of timeliness and accuracy
+	    if (isMoreAccurate) {
+	        return true;
+	    } else if (isNewer && !isLessAccurate) {
+	        return true;
+	    } else if (isNewer && !isSignificantlyLessAccurate && isFromSameProvider) {
+	        return true;
+	    }
+	    return false;
+	}
+
+	/** Checks whether two providers are the same */
+	private boolean isSameProvider(String provider1, String provider2) {
+	    if (provider1 == null) {
+	      return provider2 == null;
+	    }
+	    return provider1.equals(provider2);
+	}
 }
