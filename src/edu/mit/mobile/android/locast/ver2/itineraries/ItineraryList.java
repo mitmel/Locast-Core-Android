@@ -146,14 +146,6 @@ public class ItineraryList extends FragmentActivity implements
 
 		mImageCache = ImageCache.getInstance(this);
 
-		if (CHECK_FOR_ACCOUNT) {
-
-			if (!Authenticator.hasRealAccount(this)) {
-				SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
-				return;
-			}
-		}
-
 		if (Intent.ACTION_VIEW.equals(action)) {
 			loadData(intent.getData());
 
@@ -161,6 +153,13 @@ public class ItineraryList extends FragmentActivity implements
 			loadData(Itinerary.CONTENT_URI);
 		}
 
+		if (CHECK_FOR_ACCOUNT) {
+
+			if (!Authenticator.hasRealAccount(this)) {
+				SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
+				return;
+			}
+		}
 	}
 
 	@Override
