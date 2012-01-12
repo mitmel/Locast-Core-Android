@@ -37,6 +37,12 @@
         android:layout_alignTop="@+id/cast_title"
         android:text="@string/save" />
     
+    <TextView
+        android:id="@+id/location_status"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textStyle="normal"
+        android:text="@string/location_unknown" />
 
     <TabHost
         android:id="@android:id/tabhost"

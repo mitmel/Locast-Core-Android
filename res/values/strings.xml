@@ -216,4 +216,6 @@ reception, try standing in a clear area outside away from buildings.</string>
 	<string name="location_service_not_working">Location service not working</string>
 	<string name="continue_res">Continue</string>
 	<string name="stop">Stop</string>
+	<string name="location_unknown">Location: unknown</string>
+	<string name="location_known">Location: known</string>
 </resources>
