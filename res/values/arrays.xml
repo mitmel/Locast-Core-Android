@@ -7,11 +7,11 @@
 	
 	<string-array name="locast_sites">
 		<item>@string/app_name</item>
-		<item>Abruzzo Dev</item>
+		<item>UNICEF Dev</item>
 	</string-array>
 	
 	<string-array name="locast_urls" translatable="false">
 		<item>@string/default_api_url</item>
-		<item>http://mel-pydev.mit.edu/tourism/api/</item>
+		<item>http://mel-pydev.mit.edu/unicef/api/</item>
 	</string-array>
 </resources>
