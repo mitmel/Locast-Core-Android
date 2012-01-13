@@ -770,13 +770,21 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	private void setLocation(GeoPoint location){
 		mLocation = location;
 		
-		TextView view = (TextView) findViewById(R.id.location_status);
-		view.setText(R.string.location_known);
-		view.setText(view.getText() + " (" + (location.getLatitudeE6() / 1.0E6) + ", " + (location.getLongitudeE6() / 1.0E6) + ")");
+		updateLocationStatusText();
 		
 		if (waitForLocationDialog != null && currentLocation != null && currentLocation.hasAccuracy() && currentLocation.getAccuracy() <= MINIMUM_REQUIRED_ACCURACY) {
 			dismissDialog();
 			finishSave();
+		}
+	}
+
+	private void updateLocationStatusText() {
+		TextView view = (TextView) findViewById(R.id.location_status);
+		if (mLocation == null) {
+			view.setText(R.string.location_unknown);
+		} else {
+			view.setText(R.string.location_known);
+			view.setText(view.getText() + " (" + (mLocation.getLatitudeE6() / 1.0E6) + ", " + (mLocation.getLongitudeE6() / 1.0E6) + ")");	
 		}
 	}
 
