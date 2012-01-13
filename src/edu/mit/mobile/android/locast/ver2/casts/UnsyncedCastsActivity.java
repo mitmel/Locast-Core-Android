@@ -33,8 +33,8 @@ public class UnsyncedCastsActivity extends CastListActivity {
 		final AccountManager am = AccountManager.get(this);
 
 		loadList(managedQuery(Cast.CONTENT_URI, Cast.PROJECTION,
-				Cast._AUTHOR + " = ? AND " + Cast._PUBLIC_URI + " is null",
-				new String[]{am.getUserData(me, AuthenticationService.USERDATA_DISPLAY_NAME)},
+				Cast._AUTHOR_URI + " = ? AND " + Cast._PUBLIC_URI + " is null",
+				new String[]{am.getUserData(me, AuthenticationService.USERDATA_USER_URI)},
 				Cast._MODIFIED_DATE+" DESC"));
 	}
 }
