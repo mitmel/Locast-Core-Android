@@ -158,6 +158,18 @@
 				<category android:name="android.intent.category.LAUNCHER" />
 			</intent-filter>
 		</activity>
+		  
+		<activity android:name=".casts.UnsyncedCastsActivity" android:label="@string/unicef_unsynced_casts" android:taskAffinity="edu.mit.mobile.android.locast.ver2.casts.UnsyncedCastsActivity">
+		    <intent-filter>
+				<action android:name="android.intent.action.VIEW" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.casts" />
+			</intent-filter>
+		 	<intent-filter>
+		 	    <action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
 				
 		<activity android:name=".itineraries.ItineraryDetail">
 			<intent-filter>

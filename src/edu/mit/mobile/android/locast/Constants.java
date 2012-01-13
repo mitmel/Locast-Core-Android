@@ -22,7 +22,7 @@ public class Constants {
 	/**
 	 * General debugging flag. This needs to be a constant so that the compiler will remove any debugging code.
 	 */
-	public static final boolean DEBUG = false;
+	public static final boolean DEBUG = true;
 	/**
 	 * If true, the user can create casts.
 	 */

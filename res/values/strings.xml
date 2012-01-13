@@ -218,4 +218,5 @@ reception, try standing in a clear area outside away from buildings.</string>
 	<string name="stop">Stop</string>
 	<string name="location_unknown">Location: unknown</string>
 	<string name="location_known">Location: known</string>
+	<string name="unicef_unsynced_casts">UNICEF Unsynced Casts</string>
 </resources>
