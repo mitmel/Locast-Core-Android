@@ -9,6 +9,35 @@
         android:minSdkVersion="7"
         android:targetSdkVersion="11" />
 
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!--
+    <uses-permission android:name="android.permission.CAMERA" />
+	<uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.USE_CREDENTIALS" />
+    <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+    <uses-permission android:name="android.permission.READ_SYNC_STATS" />
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+
+    <!--
+    <uses-feature android:name="android.hardware.camera" />
+	<uses-feature android:name="android.hardware.camera.autofocus" />
+    -->
+
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+
     <supports-screens
         android:anyDensity="true"
         android:largeScreens="true" />
@@ -26,7 +55,7 @@
         <activity
             android:name=".casts.CastDetail"
             android:process="edu.mit.mobile.android.locast.Detail" >
-            <intent-filter >
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <action android:name="android.intent.action.DELETE" />
 
@@ -45,7 +74,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".casts.LocatableListWithMap" >
-            <intent-filter >
+            <intent-filter>
                 <category android:name="android.intent.category.DEFAULT" />
 
                 <action android:name="android.intent.action.VIEW" />
@@ -56,10 +85,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:configChanges="orientation"
             android:name=".casts.VideoPlayer"
+            android:configChanges="orientation"
             android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" >
-            <intent-filter >
+            <intent-filter>
                 <category android:name="android.intent.category.DEFAULT" />
 
                 <action android:name="android.intent.action.VIEW" />
@@ -69,21 +98,21 @@
             </intent-filter>
         </activity>
         <activity android:name=".casts.CastEdit" >
-            <intent-filter >
+            <intent-filter>
                 <action android:name="android.intent.action.EDIT" />
 
                 <category android:name="android.intent.category.DEFAULT" />
 
                 <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.casts" />
             </intent-filter>
-            <intent-filter >
+            <intent-filter>
                 <action android:name="android.intent.action.INSERT" />
 
                 <category android:name="android.intent.category.DEFAULT" />
 
                 <data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.casts" />
             </intent-filter>
-            <intent-filter >
+            <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="edu.mit.mobile.android.locast.share.ACTION_CAST_FROM_MEDIA_URI" />
 
@@ -96,7 +125,7 @@
         <activity
             android:name=".events.EventDetail"
             android:process="edu.mit.mobile.android.locast.Detail" >
-            <intent-filter >
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <!-- <action android:name="android.intent.action.DELETE" /> -->
                 <category android:name="android.intent.category.DEFAULT" />
@@ -111,7 +140,7 @@
 		*****************************************************************************************************
         -->
         <activity android:name="edu.mit.mobile.android.locast.DiscussionActivity" >
-            <intent-filter >
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -119,7 +148,7 @@
                 <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.comments" />
                 <data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.comments" />
             </intent-filter>
-            <intent-filter >
+            <intent-filter>
                 <action android:name="android.intent.action.EDIT" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -141,43 +170,52 @@
 		*****************************************************************************************************
 		*                                              Browser                                              *
 		*****************************************************************************************************
-		 -->
-		 
-		 <activity android:name=".browser.BrowserHome" 
-		 	android:label="@string/app_name">
-		 </activity>
+        -->
 
-		<activity android:name=".itineraries.ItineraryList">
-			<intent-filter>
-				<action android:name="android.intent.action.VIEW" />
-				<category android:name="android.intent.category.DEFAULT" />
-				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.itineraries" />
-			</intent-filter>
-		 	<intent-filter>
-				<action android:name="android.intent.action.MAIN" />
-				<category android:name="android.intent.category.LAUNCHER" />
-			</intent-filter>
-		</activity>
-		  
-		<activity android:name=".casts.UnsyncedCastsActivity" android:label="@string/unicef_unsynced_casts" android:taskAffinity="edu.mit.mobile.android.locast.ver2.casts.UnsyncedCastsActivity">
-		    <intent-filter>
-				<action android:name="android.intent.action.VIEW" />
-				<category android:name="android.intent.category.DEFAULT" />
-				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.casts" />
-			</intent-filter>
-		 	<intent-filter>
-		 	    <action android:name="android.intent.action.MAIN" />
-				<category android:name="android.intent.category.LAUNCHER" />
-			</intent-filter>
-		</activity>
-				
-		<activity android:name=".itineraries.ItineraryDetail">
-			<intent-filter>
-				<action android:name="android.intent.action.VIEW" />
-				<category android:name="android.intent.category.DEFAULT" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.itineraries" />
-			</intent-filter>
-		</activity>
+        <activity
+            android:name=".browser.BrowserHome"
+            android:label="@string/app_name" >
+        </activity>
+        <activity android:name=".itineraries.ItineraryList" >
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.itineraries" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".casts.UnsyncedCastsActivity"
+            android:label="@string/unicef_unsynced_casts"
+            android:taskAffinity="edu.mit.mobile.android.locast.ver2.casts.UnsyncedCastsActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.casts" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".itineraries.ItineraryDetail" >
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.itineraries" />
+            </intent-filter>
+        </activity>
 
         <!--
 		*****************************************************************************************************
@@ -221,7 +259,7 @@
         <service
             android:name="edu.mit.mobile.android.locast.data.MediaSync"
             android:process="edu.mit.mobile.android.locast.SyncMedia" >
-            <intent-filter >
+            <intent-filter>
                 <action android:name="edu.mit.mobile.android.locast.ACTION_SYNC_RESOURCES" />
 
                 <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.castmedia" />
@@ -229,13 +267,13 @@
         </service>
 
         <provider
-            android:authorities="edu.mit.mobile.android.locast.ver2.provider"
-            android:name="edu.mit.mobile.android.locast.data.MediaProvider" />
+            android:name="edu.mit.mobile.android.locast.data.MediaProvider"
+            android:authorities="edu.mit.mobile.android.locast.ver2.provider" />
 
         <service
-            android:exported="true"
-            android:name="edu.mit.mobile.android.locast.accounts.AuthenticationService" >
-            <intent-filter >
+            android:name="edu.mit.mobile.android.locast.accounts.AuthenticationService"
+            android:exported="true" >
+            <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
             </intent-filter>
 
@@ -244,9 +282,9 @@
                 android:resource="@xml/authenticator" />
         </service>
         <service
-            android:exported="true"
-            android:name="edu.mit.mobile.android.locast.sync.LocastSyncService" >
-            <intent-filter >
+            android:name="edu.mit.mobile.android.locast.sync.LocastSyncService"
+            android:exported="true" >
+            <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>
 
@@ -256,15 +294,15 @@
         </service>
 
         <receiver android:name="edu.mit.mobile.android.locast.accounts.AccountChangeReceiver" >
-            <intent-filter >
+            <intent-filter>
                 <action android:name="android.accounts.LOGIN_ACCOUNTS_CHANGED" />
             </intent-filter>
         </receiver>
 
         <activity
+            android:name="edu.mit.mobile.android.locast.accounts.AuthenticatorActivity"
             android:excludeFromRecents="true"
-            android:label="@string/app_name"
-            android:name="edu.mit.mobile.android.locast.accounts.AuthenticatorActivity" >
+            android:label="@string/app_name" >
 
             <!--
 			No intent-filter here! This activity is only ever launched by someone
@@ -272,43 +310,14 @@
             -->
         </activity>
         <activity
-            android:excludeFromRecents="true"
-            android:name="edu.mit.mobile.android.locast.accounts.SigninOrSkip" />
+            android:name="edu.mit.mobile.android.locast.accounts.SigninOrSkip"
+            android:excludeFromRecents="true" />
         <activity
-            android:excludeFromRecents="true"
             android:name=".browser.ResetActivity"
+            android:excludeFromRecents="true"
             android:theme="@android:style/Theme.Dialog" />
 
         <uses-library android:name="com.google.android.maps" />
     </application>
-
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <!--
-    <uses-permission android:name="android.permission.CAMERA" />
-	<uses-permission android:name="android.permission.RECORD_AUDIO"/>
-    -->
-
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <uses-permission android:name="android.permission.USE_CREDENTIALS" />
-    <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
-    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
-    <uses-permission android:name="android.permission.READ_SYNC_STATS" />
-    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
-    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
-
-    <!--
-    <uses-feature android:name="android.hardware.camera" />
-	<uses-feature android:name="android.hardware.camera.autofocus" />
-    -->
-
-    <uses-feature
-        android:name="android.hardware.touchscreen"
-        android:required="false" />
 
 </manifest>
