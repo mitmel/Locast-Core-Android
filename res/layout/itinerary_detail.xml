@@ -34,7 +34,7 @@
             android:layout_alignWithParentIfMissing="true"
             android:layout_toRightOf="@id/follow" />
     </RelativeLayout>
-
+<!-- 
     <FrameLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
@@ -55,7 +55,7 @@
             android:background="@drawable/shadow_top_bottom"
             android:clickable="false" />
     </FrameLayout>
-
+ -->
 	<include
         android:id="@+id/empty2"
         android:layout_weight="2"

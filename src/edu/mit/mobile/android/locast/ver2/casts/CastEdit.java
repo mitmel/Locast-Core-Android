@@ -603,7 +603,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		mTags.addTags(TaggableItem.getTags(getContentResolver(), mCast));
 
 		if (mFirstLoad){
-			mTabHost.setCurrentTab(mTabWidget.getNextUncheckedTab());
+			//mTabHost.setCurrentTab(mTabWidget.getNextUncheckedTab());
 			mFirstLoad = false;
 		}
 
@@ -612,7 +612,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		mIsDraft = !c.isNull(draftCol) && c.getInt(draftCol) != 0;
 
 		setEditable(Cast.canEdit(this, c));
-		updateDetailsTab();
+		//updateDetailsTab();
 	}
 
 	private void setEditable(boolean isEditable){
