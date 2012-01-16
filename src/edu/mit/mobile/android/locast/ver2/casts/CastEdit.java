@@ -152,23 +152,23 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		setContentView(R.layout.cast_edit);
+		setContentView(R.layout.cast_edit_simple);
 
-		configureTabs();
+		//configureTabs();
 
 		// find the other widgets
 		mTitleView = (EditText) findViewById(R.id.cast_title);
 
-		configureCastMediaControls();
+		//configureCastMediaControls();
 
-		configureDescriptionView();
+		//configureDescriptionView();
 
 		configureTagsView();
 
 		findViewById(R.id.save).setOnClickListener(this);
-		findViewById(R.id.new_photo).setOnClickListener(this);
-		findViewById(R.id.new_video).setOnClickListener(this);
-		findViewById(R.id.pick_media).setOnClickListener(this);
+		//findViewById(R.id.new_photo).setOnClickListener(this);
+		//findViewById(R.id.new_video).setOnClickListener(this);
+		//findViewById(R.id.pick_media).setOnClickListener(this);
 
 		processIntents(savedInstanceState);
 		
@@ -274,6 +274,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	private void configureTabs() {
 		// configure tabs
+		
 		mTabHost = (TabHost) findViewById(android.R.id.tabhost);
 		mTabWidget = (CheckableTabWidget) findViewById(android.R.id.tabs);
 		mTabHost.setup();
@@ -313,9 +314,9 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	}
 
 	protected void updateDetailsTab() {
-		final boolean descriptionComplete = mDescriptionView.length() > 0;
+		//final boolean descriptionComplete = mDescriptionView.length() > 0;
 		final boolean tagsComplete = mTags.getTags().size() > 0;
-		mTabWidget.setTabChecked(1, descriptionComplete || tagsComplete);
+		//mTabWidget.setTabChecked(1, descriptionComplete || tagsComplete);
 	}
 
 	@Override
@@ -336,7 +337,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	@Override
 	public void onBackPressed() {
-		if (mLocation == null && mTitleView.getText().length() == 0 && mCastMediaAdapter.getCount() == 0 && mDescriptionView.getText().length() == 0){
+		if (mLocation == null && mTitleView.getText().length() == 0){
 			Log.d(TAG, "cast "+ mCast + " seems to be empty, so deleting it");
 			final ContentResolver cr = getContentResolver();
 			cr.delete(Cast.getCastMediaUri(mCast), null, null);
@@ -542,11 +543,13 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			break;
 
 		case LOADER_CASTMEDIA:
+			/*
 			mCastMediaAdapter.swapCursor(c);
 			mTabWidget.setTabChecked(1, c.getCount() != 0);
 			for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
 				ProviderUtils.dumpCursorToLog(c, CAST_MEDIA_PROJECTION);
 			}
+			*/
 			break;
 		}
 	}
@@ -558,7 +561,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			break;
 
 		case LOADER_CASTMEDIA:
-			mCastMediaAdapter.swapCursor(null);
+			//mCastMediaAdapter.swapCursor(null);
 			break;
 		}
 	}
@@ -589,7 +592,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	private void loadFromCursor(Cursor c){
 		mTitleView.setText(c.getString(c.getColumnIndexOrThrow(Cast._TITLE)));
-		mDescriptionView.setText(c.getString(c.getColumnIndexOrThrow(Cast._DESCRIPTION)));
+		//mDescriptionView.setText(c.getString(c.getColumnIndexOrThrow(Cast._DESCRIPTION)));
 
 		final Location l = Locatable.toLocation(c);
 		if (l != null){
@@ -622,13 +625,13 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		//mSetLocation.setEnabled(isEditable);
 
 		// media
-		findViewById(R.id.new_photo).setEnabled(isEditable);
-		findViewById(R.id.new_video).setEnabled(isEditable);
-		findViewById(R.id.pick_media).setEnabled(isEditable);
+		//findViewById(R.id.new_photo).setEnabled(isEditable);
+		//findViewById(R.id.new_video).setEnabled(isEditable);
+		//findViewById(R.id.pick_media).setEnabled(isEditable);
 
 		// details
 		mTags.setEnabled(isEditable);
-		mDescriptionView.setEnabled(isEditable);
+		//mDescriptionView.setEnabled(isEditable);
 	}
 
 	private void startUpdatingLocation() {
@@ -686,7 +689,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 		cv.put(Cast._TITLE, mTitleView.getText().toString());
 		cv.put(Cast._DRAFT, mIsDraft);
-		cv.put(Cast._DESCRIPTION, mDescriptionView.getText().toString());
+		//cv.put(Cast._DESCRIPTION, mDescriptionView.getText().toString());
 		cv.put(Cast._MODIFIED_DATE, System.currentTimeMillis());
 
 		if (mLocation != null) {

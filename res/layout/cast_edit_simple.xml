@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+    <include layout="@layout/action_bar" />
+
+    <TextView
+        android:id="@android:id/title"
+        style="@style/Notice"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/action_bar"
+        android:textStyle="normal"
+        android:visibility="gone" />
+    
+    <EditText
+        android:id="@+id/cast_title"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@android:id/title"
+        android:hint="@string/cast_title_hint"
+        android:imeOptions="actionNext"
+        android:inputType="textEmailSubject|textAutoCorrect|textCapSentences|textImeMultiLine"
+        android:singleLine="true" >
+        <requestFocus />
+    </EditText>
+
+    <ImageView
+        android:id="@+id/media_thumbnail"
+        style="@style/Thumbnail"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_below="@+id/cast_title"
+        android:layout_alignParentLeft="true"
+        android:layout_alignTop="@+id/photo_name"
+        android:adjustViewBounds="false" />    
+        
+    <EditText
+        android:id="@+id/photo_name"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_toLeftOf="@+id/photo_add_button"
+        android:layout_toRightOf="@+id/media_thumbnail"
+        android:layout_below="@+id/cast_title"
+        android:enabled="false"
+        android:singleLine="true" />
+        
+    <ImageButton android:id="@+id/photo_add_button"
+		android:src="@android:drawable/ic_input_add"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignTop="@+id/photo_name"
+	/>
+    
+    <TextView
+        android:id="@+id/location_status"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/photo_name"
+		style="@style/BodyEntryTitle"
+        android:text="@string/location_unknown" />
+
+	<TextView
+	    android:id="@+id/tag_title"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+		android:layout_below="@+id/location_status"
+		android:text="@string/casts_tags"
+		style="@style/BodyEntryTitle"
+		
+	/>
+	<edu.mit.mobile.android.locast.widget.TagList 
+		android:id="@+id/tags"
+		android:layout_below="@+id/tag_title"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content" /> 
+    
+    <Button
+        android:id="@+id/save"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tags"
+        android:text="@string/save" />
+	
+</RelativeLayout>
