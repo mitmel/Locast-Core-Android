@@ -72,7 +72,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	private static final String TAG = ItineraryDetail.class.getSimpleName();
 
 	// if the layout for this doesn't need a map, set this to false.
-	private static final boolean USE_MAP = true;
+	private static final boolean USE_MAP = false;
 	private static final int DIALOG_CASTS = 0;
 
 	private MapView mMapView;

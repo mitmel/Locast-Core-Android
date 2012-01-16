@@ -121,13 +121,13 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.cast_detail);
 
-		initOverlays();
+		//initOverlays();
 		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
 		final Uri data = getIntent().getData();
 
 		mCastMediaUri = Cast.getCastMediaUri(data);
 
-		mMapController = ((MapView) findViewById(R.id.map)).getController();
+		//mMapController = ((MapView) findViewById(R.id.map)).getController();
 		mLoaderManager = getSupportLoaderManager();
 		mLoaderManager.initLoader(LOADER_CAST, null, this);
 		mLoaderManager.initLoader(LOADER_CAST_MEDIA, null, this);
@@ -217,7 +217,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
 		switch (loader.getId()) {
 			case LOADER_CAST:
-				mCastsOverlay.swapCursor(c);
+				//mCastsOverlay.swapCursor(c);
 				if (c.moveToFirst()) {
 					// MediaProvider.dumpCursorToLog(c, Cast.PROJECTION);
 					((TextView) findViewById(R.id.title)).setText(c.getString(c
@@ -229,9 +229,9 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 					((CheckBox) findViewById(R.id.favorite)).setChecked(c.getInt(c
 							.getColumnIndex(Cast._FAVORITED)) != 0);
 
-					setPointerFromCursor(c);
+					//setPointerFromCursor(c);
+					
 				}
-
 				break;
 
 			case LOADER_CAST_MEDIA:
@@ -253,7 +253,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 	public void onLoaderReset(Loader<Cursor> loader) {
 		switch (loader.getId()) {
 			case LOADER_CAST:
-				mCastsOverlay.swapCursor(null);
+				//mCastsOverlay.swapCursor(null);
 				break;
 
 			case LOADER_CAST_MEDIA:

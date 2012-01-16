@@ -17,7 +17,7 @@
 	<include layout="@layout/cast_detail_body" />
 	</ScrollView>
 
-
+<!-- 
 	<edu.mit.mobile.android.locast.maps.PointerShadow
 		android:id="@+id/pointer_shadow"
 		android:layout_width="fill_parent"
@@ -38,5 +38,5 @@
 			android:visibility="invisible"
 			android:apiKey="" />
 	</edu.mit.mobile.android.locast.maps.PointerShadow>
-
+ -->
 </LinearLayout>
