@@ -218,6 +218,8 @@ public class CastMedia extends JsonSyncableItem {
 		public ItemSyncMap() {
 			super();
 
+			this.addFlag(FLAG_PARENT_MUST_SYNC_FIRST);
+
 			put(_TITLE,			new SyncFieldMap("title", 			SyncFieldMap.STRING, SyncFieldMap.FLAG_OPTIONAL));
 			put(_DESCRIPTION,	new SyncFieldMap("description", 	SyncFieldMap.STRING, SyncFieldMap.FLAG_OPTIONAL));
 			put(_LANGUAGE,		new SyncFieldMap("language", 		SyncFieldMap.STRING));

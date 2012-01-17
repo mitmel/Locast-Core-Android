@@ -197,22 +197,34 @@ public class SyncEngine {
 		// uploaded.
 		//
 
-		uploadUnpublished(toSync, provider, syncMap, syncStatuses, syncResult);
-
-		if (Thread.interrupted()) {
-			throw new InterruptedException();
-		}
-
-		// this should ensure that all items have a pubPath when we
-		// query it below.
-
 		try {
+			uploadUnpublished(toSync, provider, syncMap, syncStatuses, syncResult);
+
+			if (Thread.interrupted()) {
+				throw new InterruptedException();
+			}
+
+			// this should ensure that all items have a pubPath when we
+			// query it below.
+
+
 			if (pubPath == null) {
 				// we should avoid calling this too much as it
 				// can be expensive
 				pubPath = MediaProvider.getPublicPath(mContext, toSync);
 			}
 		} catch (final NoPublicPath e) {
+			// TODO this is a special case and this is probably not the best place to handle this.
+			// Ideally, this should be done in such a way as to reduce any extra DB queries -
+			// perhaps by doing a join with the parent.
+			if (syncMap.isFlagSet(SyncMap.FLAG_PARENT_MUST_SYNC_FIRST)) {
+				if (DEBUG) {
+					Log.d(TAG, "skipping " + toSync + " whose parent hasn't been sync'd first");
+				}
+				syncResult.stats.numSkippedEntries++;
+				return false;
+			}
+
 			// if it's an item, we can handle it.
 			if (isDir) {
 				throw e;
@@ -637,13 +649,9 @@ public class SyncEngine {
 					ss = syncStatuses.get(item.toString());
 				}
 
-
 				if (DEBUG) {
-					Log.d(TAG,
-							item
- + " was not found in the main list of items on the server ("
-							+ pubPath + "), but appears to be a child of "
-							+ toSync);
+					Log.d(TAG, item + " was not found in the main list of items on the server ("
+							+ pubPath + "), but appears to be a child of " + toSync);
 
 					if (ss != null) {
 						Log.d(TAG, "found sync status for " + item + ": " + ss);
@@ -672,7 +680,6 @@ public class SyncEngine {
 				} else {
 					ss = new SyncStatus(pubUri, SyncState.LOCAL_ONLY);
 					ss.local = item;
-
 
 					hr = mNetworkClient.head(pubUri);
 
@@ -716,7 +723,6 @@ public class SyncEngine {
 		} finally {
 			c.close();
 		}
-
 
 		syncStatuses.clear();
 
@@ -766,6 +772,7 @@ public class SyncEngine {
 				if (Thread.interrupted()) {
 					throw new InterruptedException();
 				}
+
 				final Uri localUri = ContentUris.withAppendedId(itemDir, uploadMe.getLong(idCol));
 				final String postUri = MediaProvider.getPostPath(mContext, localUri);
 
