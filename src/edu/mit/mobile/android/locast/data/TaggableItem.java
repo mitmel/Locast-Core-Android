@@ -55,8 +55,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 
 	public static final String _PRIVACY = "privacy",
 								_AUTHOR = "author",
-								_AUTHOR_URI = "author_uri",
-								_DRAFT  = "draft";
+			_AUTHOR_URI = "author_uri";
 
 	public static final String  PRIVACY_PUBLIC    = "public",
 								PRIVACY_PROTECTED = "protected",

@@ -63,6 +63,7 @@ import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.SyncException;
 import edu.mit.mobile.android.locast.data.SyncMap;
+import edu.mit.mobile.android.locast.data.TaggableItem;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.utils.LastUpdatedMap;
@@ -134,7 +135,8 @@ public class SyncEngine {
 
 	};
 
-	private static final String SELECTION_UNPUBLISHED = JsonSyncableItem._PUBLIC_URI + " ISNULL";
+	private static final String SELECTION_UNPUBLISHED = JsonSyncableItem._PUBLIC_URI
+			+ " ISNULL AND " + TaggableItem.SELECTION_NOT_DRAFT;
 
 	final String[] PUB_URI_PROJECTION = new String[] { JsonSyncableItem._ID,
 			JsonSyncableItem._PUBLIC_URI };

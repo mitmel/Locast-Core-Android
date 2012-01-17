@@ -119,7 +119,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 42;
+		private static final int DB_VER = 43;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -128,6 +128,7 @@ public class MediaProvider extends ContentProvider {
 		private static final String JSON_SYNCABLE_ITEM_FIELDS =
 			JsonSyncableItem._ID 			 + " INTEGER PRIMARY KEY,"
 			+ JsonSyncableItem._PUBLIC_URI 	 + " TEXT UNIQUE,"
+			+ JsonSyncableItem._DRAFT        + " BOOLEAN,"
 			+ JsonSyncableItem._MODIFIED_DATE+ " INTEGER,"
 			+ JsonSyncableItem._SERVER_MODIFIED_DATE+ " INTEGER,"
 			+ JsonSyncableItem._CREATED_DATE + " INTEGER,";
@@ -156,7 +157,6 @@ public class MediaProvider extends ContentProvider {
 					+ Cast._PRIVACY 	+ " TEXT,"
 
 					+ Cast._FAVORITED   + " BOOLEAN,"
-					+ Cast._DRAFT       + " BOOLEAN,"
 					+ Cast._OFFICIAL    + " BOOLEAN,"
 
 					+ Cast._THUMBNAIL_URI+ " TEXT"
@@ -215,9 +215,7 @@ public class MediaProvider extends ContentProvider {
 					+ Itinerary._FAVORITES_COUNT + " INTEGER,"
 					+ Itinerary._FAVORITED   + " BOOLEAN,"
 
-					+ Itinerary._THUMBNAIL     + " TEXT,"
-
-					+ Itinerary._DRAFT        + " BOOLEAN"
+					+ Itinerary._THUMBNAIL     + " TEXT"
 
 					+ ");"
 			);
@@ -231,8 +229,6 @@ public class MediaProvider extends ContentProvider {
 					+ Event._DESCRIPTION + " TEXT,"
 					+ Event._START_DATE  + " INTEGER,"
 					+ Event._END_DATE    + " INTEGER,"
-
-					+ Event._DRAFT       + " BOOLEAN,"
 
 					+ Event._THUMBNAIL_URI+ " TEXT"
 					+ ");"
@@ -387,7 +383,7 @@ public class MediaProvider extends ContentProvider {
 
 				update(Uri.withAppendedPath(newItem, Tag.PATH), cvTags, null, null);
 
-				if (values.containsKey(Cast._DRAFT)){
+				if (values.containsKey(JsonSyncableItem._DRAFT)){
 					isDraft = values.getAsBoolean(Cast._DRAFT);
 				}else{
 					isDraft = false;
@@ -458,8 +454,8 @@ public class MediaProvider extends ContentProvider {
 		default:
 			if (mDBHelperMapper.canInsert(code)){
 				// XXX draft should probably be looked at better.
-				if (values.containsKey(TaggableItem._DRAFT)){
-					isDraft = values.getAsBoolean(TaggableItem._DRAFT);
+				if (values.containsKey(JsonSyncableItem._DRAFT)){
+					isDraft = values.getAsBoolean(JsonSyncableItem._DRAFT);
 				}else{
 					isDraft = false;
 				}

@@ -56,15 +56,8 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		_PUBLIC_URI      = "uri",
 		_MODIFIED_DATE  = "modified",
 		_SERVER_MODIFIED_DATE  = "server_modified",
-		_CREATED_DATE 	= "created";
-
-	public static final String[] SYNC_PROJECTION = {
-		_ID,
-		_PUBLIC_URI,
-		_MODIFIED_DATE,
-		_SERVER_MODIFIED_DATE,
-		_CREATED_DATE,
-	};
+		_CREATED_DATE = "created",
+		_DRAFT = "draft";
 
 	/**
 	 * @return The URI for a given content directory.
@@ -72,6 +65,10 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	public abstract Uri getContentUri();
 
 	private static String[] PUB_URI_PROJECTION = {_ID, _PUBLIC_URI};
+
+	public static final String SELECTION_NOT_DRAFT = "(" + TaggableItem._DRAFT + " ISNULL OR "
+			+ TaggableItem._DRAFT + " = 0)";
+
 	/**
 	 * Given a public Uri fragment, finds the local item representing it. If there isn't any such item, null is returned.
 	 *
