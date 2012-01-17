@@ -186,7 +186,9 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		if (savedInstanceState != null){
 			mCast = savedInstanceState.getParcelable(RUNTIME_STATE_CAST_URI);
 			mFirstLoad = savedInstanceState.getBoolean(RUNTIME_STATE_FIRST_LOAD, true);
-			mTabHost.setCurrentTab(savedInstanceState.getInt(RUNTIME_STATE_CURRENT_TAB, 0));
+			if (mTabHost != null) {
+				mTabHost.setCurrentTab(savedInstanceState.getInt(RUNTIME_STATE_CURRENT_TAB, 0));
+			}
 			setLocation((GeoPoint)savedInstanceState.getParcelable(RUNTIME_STATE_LOCATION));
 			mIsDraft = savedInstanceState.getBoolean(RUNTIME_STATE_IS_DRAFT, true);
 			mCreateMediaUri = savedInstanceState.getParcelable(RUNTIME_STATE_CREATE_MEDIA_URI);
@@ -572,7 +574,9 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 		outState.putParcelable(RUNTIME_STATE_CAST_URI, mCast);
 		outState.putBoolean(RUNTIME_STATE_FIRST_LOAD, mFirstLoad);
-		outState.putInt(RUNTIME_STATE_CURRENT_TAB, mTabHost.getCurrentTab());
+		if (mTabHost != null) {
+			outState.putInt(RUNTIME_STATE_CURRENT_TAB, mTabHost.getCurrentTab());
+		}
 		if (mLocation instanceof GeoPoint){
 			// XXX outState.putParcelable(RUNTIME_STATE_LOCATION, (GeoPoint)mLocation);
 		}
@@ -635,8 +639,9 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	}
 
 	private void startUpdatingLocation() {
-		//locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
-		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+		for(String provider : locationManager.getProviders(true)) {
+			locationManager.requestLocationUpdates(provider, 0, 0, locationListener);
+		}
 	}
 
 	private void stopUpdatingLocation() {
