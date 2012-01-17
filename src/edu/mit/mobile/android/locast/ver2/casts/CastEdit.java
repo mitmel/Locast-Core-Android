@@ -339,7 +339,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	@Override
 	public void onBackPressed() {
-		if (mLocation == null && mTitleView.getText().length() == 0){
+		if (mTitleView.getText().length() == 0) {
 			Log.d(TAG, "cast "+ mCast + " seems to be empty, so deleting it");
 			final ContentResolver cr = getContentResolver();
 			cr.delete(Cast.getCastMediaUri(mCast), null, null);
