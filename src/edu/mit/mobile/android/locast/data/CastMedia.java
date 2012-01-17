@@ -91,11 +91,6 @@ public class CastMedia extends JsonSyncableItem {
 	}
 
 	@Override
-	public String[] getFullProjection() {
-		return PROJECTION;
-	}
-
-	@Override
 	public SyncMap getSyncMap() {
 
 		return SYNC_MAP;

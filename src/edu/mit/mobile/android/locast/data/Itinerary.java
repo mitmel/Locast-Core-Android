@@ -71,11 +71,6 @@ public class Itinerary extends TaggableItem implements Favoritable.Columns {
 	};
 
 	@Override
-	public String[] getFullProjection() {
-		return PROJECTION;
-	}
-
-	@Override
 	public Uri getContentUri() {
 		return CONTENT_URI;
 	}

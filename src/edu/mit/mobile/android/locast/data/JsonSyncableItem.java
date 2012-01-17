@@ -67,11 +67,6 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	};
 
 	/**
-	 * @return the complete DB projection for the local object. Really only needs to
-	 * contain all the fields that are used in the sync map.
-	 */
-	public abstract String[] getFullProjection();
-	/**
 	 * @return The URI for a given content directory.
 	 */
 	public abstract Uri getContentUri();
