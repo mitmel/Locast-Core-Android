@@ -150,6 +150,23 @@ public class SyncEngine {
 		mNetworkClient = networkClient;
 	}
 
+	/**
+	 * @param toSync
+	 * @param account
+	 * @param extras
+	 * @param provider
+	 * @param syncResult
+	 * @return true if the item was sync'd successfully. Soft errors will cause this to return
+	 *         false.
+	 * @throws RemoteException
+	 * @throws SyncException
+	 * @throws JSONException
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 * @throws NoPublicPath
+	 * @throws OperationApplicationException
+	 * @throws InterruptedException
+	 */
 	public boolean sync(Uri toSync, Account account, Bundle extras, ContentProviderClient provider,
 			SyncResult syncResult) throws RemoteException, SyncException, JSONException,
 			IOException, NetworkProtocolException, NoPublicPath, OperationApplicationException,
@@ -784,20 +801,26 @@ public class SyncEngine {
 				if (DEBUG) {
 					Log.d(TAG, "uploading " + localUri + " to " + postUri);
 				}
-				final HttpResponse res = mNetworkClient.post(postUri, jo.toString());
 
-				mNetworkClient.checkStatusCode(res, true);
+				// Upload! Any non-successful responses are handled by exceptions.
+				final HttpResponse res = mNetworkClient.post(postUri, jo.toString());
 
 				long serverTime;
 				try {
 					serverTime = getServerTime(res);
+					// We should never get a corrupted date from the server, but if it does happen,
+					// using the local time is a sane fallback.
 				} catch (final DateParseException e) {
 					serverTime = System.currentTimeMillis();
 				}
 
+				// newly-created items return the JSON serialization of the object as the server
+				// knows it, so the local database needs to be updated to reflect that.
 				final JSONObject newJo = NetworkClient.toJsonObject(res);
 				try {
 					final SyncStatus ss = loadItemFromJsonObject(newJo, syncMap, serverTime);
+					ss.state = SyncState.LOCAL_DIRTY;
+					ss.local = localUri;
 
 					final Builder update = ContentProviderOperation.newUpdate(localUri);
 					update.withValues(ss.remoteCVs);
@@ -833,7 +856,9 @@ public class SyncEngine {
 
 			final SyncStatus ss = syncStatuses.get(localUris[i]);
 
-			syncMap.onPostSyncItem(mContext, itemDir, ss.remoteJson, true);
+			ss.state = SyncState.NOW_UP_TO_DATE;
+
+			syncMap.onPostSyncItem(mContext, ss.local, ss.remoteJson, true);
 		}
 
 		return count;
