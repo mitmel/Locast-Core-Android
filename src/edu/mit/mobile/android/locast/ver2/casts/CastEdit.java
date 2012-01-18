@@ -170,6 +170,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 		findViewById(R.id.save).setOnClickListener(this);
 		findViewById(R.id.new_photo).setOnClickListener(this);
+		findViewById(R.id.media_thumbnail).setOnClickListener(this);
 		//findViewById(R.id.new_video).setOnClickListener(this);
 		//findViewById(R.id.pick_media).setOnClickListener(this);
 
@@ -385,6 +386,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			break;
 
 		case R.id.new_photo:
+		case R.id.media_thumbnail:
 			final Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 			mCreateMediaUri = createNewMedia("jpg");
 			i.putExtra(MediaStore.EXTRA_OUTPUT, mCreateMediaUri);
