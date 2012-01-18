@@ -41,8 +41,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TextView;
@@ -105,7 +105,6 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	// location
 	private LocationManager locationManager;
-	private LocationListener locationListener;
 
 	// details
 	private EditText mDescriptionView;
@@ -305,18 +304,6 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	private void setupLocationRetrieval() {
 		locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-		locationListener = new LocationListener() {
-		    public void onLocationChanged(Location location) {
-		    	if (isBetterLocation(location, currentLocation))
-		    		setLocation(location);
-		    }
-
-		    public void onStatusChanged(String provider, int status, Bundle extras) {}
-
-		    public void onProviderEnabled(String provider) {}
-
-		    public void onProviderDisabled(String provider) {}
-		};
 	}
 
 	protected void updateDetailsTab() {
@@ -485,7 +472,10 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	public void onTabChanged(String tabId) {}
 
 	@Override
-	public void onLocationChanged(Location location) {}
+	public void onLocationChanged(Location location) {
+		if (isBetterLocation(location, currentLocation))
+    		setLocation(location);
+	}
 
 	@Override
 	public void onProviderDisabled(String provider) {}
@@ -646,12 +636,12 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	private void startUpdatingLocation() {
 		for(String provider : locationManager.getProviders(true)) {
-			locationManager.requestLocationUpdates(provider, 0, 0, locationListener);
+			locationManager.requestLocationUpdates(provider, 0, 0, this);
 		}
 	}
 
 	private void stopUpdatingLocation() {
-		locationManager.removeUpdates(locationListener);
+		locationManager.removeUpdates(this);
 	}
 
 	private View getTabIndicator(int layout, CharSequence title, int drawable) {
