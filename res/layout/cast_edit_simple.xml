@@ -36,7 +36,7 @@
         android:layout_below="@+id/cast_title"
         android:adjustViewBounds="false" />    
                 
-    <ImageButton android:id="@+id/photo_add_button"
+    <ImageButton android:id="@+id/new_photo"
 		android:src="@android:drawable/ic_input_add"
         android:layout_toRightOf="@+id/media_thumbnail"
         android:layout_below="@+id/cast_title"        

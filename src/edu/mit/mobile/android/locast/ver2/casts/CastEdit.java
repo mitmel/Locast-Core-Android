@@ -42,6 +42,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ImageView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TextView;
@@ -95,8 +96,10 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	private TabHost mTabHost;
 	private EditText mTitleView;
 	private CheckableTabWidget mTabWidget;
+	private ImageView mMediaThumbnail;
 
 	// media
+	//private ListView mCastMediaView;
 	private ListView mCastMediaView;
 	private EditableCastMediaAdapter mCastMediaAdapter;
 
@@ -166,7 +169,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		configureTagsView();
 
 		findViewById(R.id.save).setOnClickListener(this);
-		//findViewById(R.id.new_photo).setOnClickListener(this);
+		findViewById(R.id.new_photo).setOnClickListener(this);
 		//findViewById(R.id.new_video).setOnClickListener(this);
 		//findViewById(R.id.pick_media).setOnClickListener(this);
 
@@ -241,7 +244,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 			@Override
 			public void afterTextChanged(Editable s) {
-				updateDetailsTab();
+				//updateDetailsTab();
 
 			}
 		});
@@ -268,6 +271,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		});
 
 		mCastMediaView.setOnItemClickListener(mCastMediaOnItemClickListener);
+		
 		mCastMediaView.setAdapter(new ImageLoaderAdapter(this, mCastMediaAdapter,
 				ImageCache.getInstance(this),
 				new int[] { R.id.media_thumbnail }, 100, 100,
@@ -460,6 +464,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		switch(requestCode){
 			case REQUEST_NEW_PHOTO:
 				addMedia(mCreateMediaUri);
+				mMediaThumbnail = (ImageView) findViewById(R.id.media_thumbnail);
+				mMediaThumbnail.setImageURI(mCreateMediaUri);
 				mCreateMediaUri = null;
 				break;
 			case REQUEST_NEW_VIDEO:
@@ -616,7 +622,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		mIsDraft = !c.isNull(draftCol) && c.getInt(draftCol) != 0;
 
 		setEditable(Cast.canEdit(this, c));
-		//updateDetailsTab();
+		updateDetailsTab();
 	}
 
 	private void setEditable(boolean isEditable){
@@ -629,7 +635,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		//mSetLocation.setEnabled(isEditable);
 
 		// media
-		//findViewById(R.id.new_photo).setEnabled(isEditable);
+		findViewById(R.id.new_photo).setEnabled(isEditable);
 		//findViewById(R.id.new_video).setEnabled(isEditable);
 		//findViewById(R.id.pick_media).setEnabled(isEditable);
 
