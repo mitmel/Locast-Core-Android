@@ -798,7 +798,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			view.setText(R.string.location_unknown);
 		} else {
 			view.setText(R.string.location_known);
-			view.setText(view.getText() + " (" + (mLocation.getLatitudeE6() / 1.0E6) + ", " + (mLocation.getLongitudeE6() / 1.0E6) + ")");	
+			//view.setText(view.getText() + " (" + (mLocation.getLatitudeE6() / 1.0E6) + ", " + (mLocation.getLongitudeE6() / 1.0E6) + ")");	
 		}
 	}
 
