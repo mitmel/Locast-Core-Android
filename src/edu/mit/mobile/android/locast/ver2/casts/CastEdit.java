@@ -74,7 +74,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	/////////////////////
 	// stateful
 	private Uri mCast;
-
+	private boolean mIsNewCast;
+	
 	private boolean mIsDraft = true;
 	private boolean mIsEditable = false;
 	
@@ -105,7 +106,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	// location
 	private LocationManager locationManager;
-
+	
 	// details
 	private EditText mDescriptionView;
 	private TagList mTags;
@@ -212,6 +213,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			lm.initLoader(LOADER_CAST, null, this);
 		} else {
 			// XXX put on thread
+			mIsNewCast = true;
 			setEditable(true);
 			mCast = save(); // create a new, blank cast
 		}
@@ -325,7 +327,9 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	@Override
 	protected void onResume() {
 		super.onResume();
-		startUpdatingLocation();
+		if (mIsNewCast) {
+			startUpdatingLocation();
+		}
 	}
 
 	@Override
@@ -595,8 +599,10 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		//mDescriptionView.setText(c.getString(c.getColumnIndexOrThrow(Cast._DESCRIPTION)));
 
 		final Location l = Locatable.toLocation(c);
-		if (l != null){
+		if (l != null) {
 			setLocation(new GeoPoint((int)(l.getLatitude() * 1E6), (int)(l.getLongitude() * 1E6))); // XXX optimize
+		} else {
+			startUpdatingLocation();
 		}
 		
 		mTags.clearAllTags();
