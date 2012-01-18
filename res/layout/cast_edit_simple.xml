@@ -53,19 +53,11 @@
         android:layout_below="@+id/new_photo"
 		style="@style/BodyEntryTitle"
         android:text="@string/location_unknown" />
-
-	<TextView
-	    android:id="@+id/tag_title"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-		android:layout_below="@+id/location_status"
-		android:text="@string/casts_tags"
-		style="@style/BodyEntryTitle"
 		
 	/>
 	<edu.mit.mobile.android.locast.widget.TagList 
 		android:id="@+id/tags"
-		android:layout_below="@+id/tag_title"
+		android:layout_below="@+id/location_status"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content" /> 
     
