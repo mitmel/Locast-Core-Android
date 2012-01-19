@@ -32,6 +32,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.accounts.Account;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -39,7 +40,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
-import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
@@ -56,27 +56,19 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		_PUBLIC_URI      = "uri",
 		_MODIFIED_DATE  = "modified",
 		_SERVER_MODIFIED_DATE  = "server_modified",
-		_CREATED_DATE 	= "created";
+		_CREATED_DATE = "created",
+		_DRAFT = "draft";
 
-	public static final String[] SYNC_PROJECTION = {
-		_ID,
-		_PUBLIC_URI,
-		_MODIFIED_DATE,
-		_SERVER_MODIFIED_DATE,
-		_CREATED_DATE,
-	};
-
-	/**
-	 * @return the complete DB projection for the local object. Really only needs to
-	 * contain all the fields that are used in the sync map.
-	 */
-	public abstract String[] getFullProjection();
 	/**
 	 * @return The URI for a given content directory.
 	 */
 	public abstract Uri getContentUri();
 
 	private static String[] PUB_URI_PROJECTION = {_ID, _PUBLIC_URI};
+
+	public static final String SELECTION_NOT_DRAFT = "(" + TaggableItem._DRAFT + " ISNULL OR "
+			+ TaggableItem._DRAFT + " = 0)";
+
 	/**
 	 * Given a public Uri fragment, finds the local item representing it. If there isn't any such item, null is returned.
 	 *
@@ -385,7 +377,8 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		 */
 		public abstract ContentValues fromJSON(Context context, Uri localItem, JSONObject item, String lProp) throws JSONException, NetworkProtocolException, IOException;
 
-		public void onPostSyncItem(Context context, Uri uri, JSONObject item, boolean updated)
+		public void onPostSyncItem(Context context, Account account, Uri uri, JSONObject item,
+				boolean updated)
 			throws SyncException, IOException {}
 
 	}
@@ -646,7 +639,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		}
 
 		@Override
-		public void onPostSyncItem(Context context, Uri uri, JSONObject item,
+		public void onPostSyncItem(Context context, Account account, Uri uri, JSONObject item,
 				boolean updated) throws SyncException, IOException {
 			if (!mStartChildSync){
 				return;
@@ -655,10 +648,7 @@ public abstract class JsonSyncableItem implements BaseColumns {
 			try {
 				final String childPubUri = item.getString(remoteKey);
 				// TODO optimize so it doesn't need to create a whole new instance
-				// TODO this shouldn't be getting the first account here, it should somehow use the
-				// one that's active for the sync. Perhaps this needs to be revised to allow this
-				// method to get the sync context.
-				final NetworkClient nc = NetworkClient.getInstance(context, Authenticator.getFirstAccount(context));
+				final NetworkClient nc = NetworkClient.getInstance(context, account);
 				final Uri serverUri = nc.getFullUrl(childPubUri);
 
 				LocastSyncService.startSync(context, serverUri, childDir, false);
@@ -753,10 +743,10 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		}
 
 		@Override
-		public void onPostSyncItem(Context context, Uri uri, JSONObject item,
+		public void onPostSyncItem(Context context, Account account, Uri uri, JSONObject item,
 				boolean updated) throws SyncException, IOException {
-			super.onPostSyncItem(context, uri, item, updated);
-			chain.onPostSyncItem(context, uri, item, updated);
+			super.onPostSyncItem(context, account, uri, item, updated);
+			chain.onPostSyncItem(context, account, uri, item, updated);
 		}
 	}
 
@@ -834,11 +824,11 @@ public abstract class JsonSyncableItem implements BaseColumns {
 		}
 
 		@Override
-		public void onPostSyncItem(Context context, Uri uri, JSONObject item,
+		public void onPostSyncItem(Context context, Account account, Uri uri, JSONObject item,
 				boolean updated) throws SyncException, IOException {
-			super.onPostSyncItem(context, uri, item, updated);
+			super.onPostSyncItem(context, account, uri, item, updated);
 			for (final SyncItem child : children){
-				child.onPostSyncItem(context, uri, item, updated);
+				child.onPostSyncItem(context, account, uri, item, updated);
 			}
 		}
 

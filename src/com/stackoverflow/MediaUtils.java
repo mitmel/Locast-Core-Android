@@ -2,12 +2,14 @@ package com.stackoverflow;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Environment;
 import android.util.Log;
 
 public class MediaUtils {
@@ -15,8 +17,21 @@ public class MediaUtils {
 
 	public static final boolean HAS_IMAGE_CAPTURE_BUG = hasImageCaptureBug();
 
-	private static final String TMP_SD_LOCATION = "/sdcard/tmp/locast_new.jpg";
+	private static final String TMP_SD_LOCATION;
 
+	static {
+		String tmp;
+		try {
+			tmp = new File(Environment.getExternalStorageDirectory(),
+					"/tmp/locast_new.jpg").getCanonicalPath();
+
+		} catch (final IOException e) {
+			e.printStackTrace();
+			tmp = "/sdcard/tmp/locast_new.jpg";
+		}
+		TMP_SD_LOCATION = tmp;
+
+	}
 	private static final String devstring = android.os.Build.BRAND + "/" + android.os.Build.PRODUCT + "/"
 	+ android.os.Build.DEVICE;
 
@@ -40,15 +55,15 @@ public class MediaUtils {
 	 * The result of this should be handled by {@link #handleImageCaptureResult(Context, Intent)} to return a URI pointing to the image.
 	 * @return an intent that should be used with {@link Activity#startActivityForResult(Intent, int)}.
 	 */
-	public static Intent getImageCaptureIntent(String filename){
+	public static Intent getImageCaptureIntent(File destination) {
 		final Intent i = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
 		if (HAS_IMAGE_CAPTURE_BUG) {
 			final File tmpfile = new File(TMP_SD_LOCATION);
 			tmpfile.getParentFile().mkdirs();
 		    i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File(TMP_SD_LOCATION)));
 		} else {
-		    //i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-			i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File("/sdcard/locast/" + System.currentTimeMillis() + ".jpg")));
+			i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT,
+					Uri.fromFile(new File(destination, System.currentTimeMillis() + ".jpg")));
 		}
 
 		return i;

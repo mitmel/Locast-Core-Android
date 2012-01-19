@@ -32,6 +32,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.accounts.Account;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -55,8 +56,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 
 	public static final String _PRIVACY = "privacy",
 								_AUTHOR = "author",
-								_AUTHOR_URI = "author_uri",
-								_DRAFT  = "draft";
+			_AUTHOR_URI = "author_uri";
 
 	public static final String  PRIVACY_PUBLIC    = "public",
 								PRIVACY_PROTECTED = "protected",
@@ -143,10 +143,10 @@ public abstract class TaggableItem extends JsonSyncableItem {
 		}
 
 		@Override
-		public void onPostSyncItem(Context context, Uri uri,
-				JSONObject item, boolean updated) throws SyncException,
+		public void onPostSyncItem(Context context, Account account,
+				Uri uri, JSONObject item, boolean updated) throws SyncException,
 				IOException {
-			super.onPostSyncItem(context, uri, item, updated);
+			super.onPostSyncItem(context, account, uri, item, updated);
 			if (updated){
 				// tags need to be loaded here, as they need a valid localUri in order to save.
 				final JSONArray ja = item.optJSONArray(remoteKey);

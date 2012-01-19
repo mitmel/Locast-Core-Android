@@ -84,7 +84,7 @@ public class OrderedList {
 				throws JSONException, NetworkProtocolException, IOException {
 			Log.d(TAG, "main toJSON");
 
-			final Cursor item_c = context.getContentResolver().query(Uri.withAppendedPath(parentItem, mItemPath), mListItem.getFullProjection(), null, null, null);
+			final Cursor item_c = context.getContentResolver().query(Uri.withAppendedPath(parentItem, mItemPath), null, null, null, null);
 			final JSONArray ja = new JSONArray();
 			for (item_c.moveToFirst(); !item_c.isAfterLast(); item_c.moveToNext()){
 				ja.put(JsonSyncableItem.toJSON(context, parentItem, item_c, mListItem.getSyncMap()));
