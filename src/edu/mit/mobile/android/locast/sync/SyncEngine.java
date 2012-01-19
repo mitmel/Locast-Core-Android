@@ -63,6 +63,7 @@ import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.SyncException;
 import edu.mit.mobile.android.locast.data.SyncMap;
+import edu.mit.mobile.android.locast.data.TaggableItem;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.utils.LastUpdatedMap;
@@ -134,7 +135,8 @@ public class SyncEngine {
 
 	};
 
-	private static final String SELECTION_UNPUBLISHED = JsonSyncableItem._PUBLIC_URI + " ISNULL";
+	private static final String SELECTION_UNPUBLISHED = JsonSyncableItem._PUBLIC_URI
+			+ " ISNULL AND " + TaggableItem.SELECTION_NOT_DRAFT;
 
 	final String[] PUB_URI_PROJECTION = new String[] { JsonSyncableItem._ID,
 			JsonSyncableItem._PUBLIC_URI };
@@ -148,6 +150,23 @@ public class SyncEngine {
 		mNetworkClient = networkClient;
 	}
 
+	/**
+	 * @param toSync
+	 * @param account
+	 * @param extras
+	 * @param provider
+	 * @param syncResult
+	 * @return true if the item was sync'd successfully. Soft errors will cause this to return
+	 *         false.
+	 * @throws RemoteException
+	 * @throws SyncException
+	 * @throws JSONException
+	 * @throws IOException
+	 * @throws NetworkProtocolException
+	 * @throws NoPublicPath
+	 * @throws OperationApplicationException
+	 * @throws InterruptedException
+	 */
 	public boolean sync(Uri toSync, Account account, Bundle extras, ContentProviderClient provider,
 			SyncResult syncResult) throws RemoteException, SyncException, JSONException,
 			IOException, NetworkProtocolException, NoPublicPath, OperationApplicationException,
@@ -197,22 +216,34 @@ public class SyncEngine {
 		// uploaded.
 		//
 
-		uploadUnpublished(toSync, provider, syncMap, syncStatuses, syncResult);
-
-		if (Thread.interrupted()) {
-			throw new InterruptedException();
-		}
-
-		// this should ensure that all items have a pubPath when we
-		// query it below.
-
 		try {
+			uploadUnpublished(toSync, account, provider, syncMap, syncStatuses, syncResult);
+
+			if (Thread.interrupted()) {
+				throw new InterruptedException();
+			}
+
+			// this should ensure that all items have a pubPath when we
+			// query it below.
+
+
 			if (pubPath == null) {
 				// we should avoid calling this too much as it
 				// can be expensive
 				pubPath = MediaProvider.getPublicPath(mContext, toSync);
 			}
 		} catch (final NoPublicPath e) {
+			// TODO this is a special case and this is probably not the best place to handle this.
+			// Ideally, this should be done in such a way as to reduce any extra DB queries -
+			// perhaps by doing a join with the parent.
+			if (syncMap.isFlagSet(SyncMap.FLAG_PARENT_MUST_SYNC_FIRST)) {
+				if (DEBUG) {
+					Log.d(TAG, "skipping " + toSync + " whose parent hasn't been sync'd first");
+				}
+				syncResult.stats.numSkippedEntries++;
+				return false;
+			}
+
 			// if it's an item, we can handle it.
 			if (isDir) {
 				throw e;
@@ -510,8 +541,8 @@ public class SyncEngine {
 					Log.e(TAG, "can't get sync status for " + res.uri);
 					continue;
 				}
-				syncMap.onPostSyncItem(mContext, ss.local, ss.remoteJson,
-						res.count != null ? res.count == 1 : true);
+				syncMap.onPostSyncItem(mContext, account, ss.local,
+						ss.remoteJson, res.count != null ? res.count == 1 : true);
 
 				ss.state = SyncState.NOW_UP_TO_DATE;
 			}
@@ -595,8 +626,8 @@ public class SyncEngine {
 					Log.d(TAG, "onPostSyncItem(" + res.uri + ", ...); pubUri: " + pubUri);
 				}
 
-				syncMap.onPostSyncItem(mContext, res.uri, ss.remoteJson,
-						res.count != null ? res.count == 1 : true);
+				syncMap.onPostSyncItem(mContext, account, res.uri,
+						ss.remoteJson, res.count != null ? res.count == 1 : true);
 
 				ss.state = SyncState.NOW_UP_TO_DATE;
 				successful++;
@@ -637,13 +668,9 @@ public class SyncEngine {
 					ss = syncStatuses.get(item.toString());
 				}
 
-
 				if (DEBUG) {
-					Log.d(TAG,
-							item
- + " was not found in the main list of items on the server ("
-							+ pubPath + "), but appears to be a child of "
-							+ toSync);
+					Log.d(TAG, item + " was not found in the main list of items on the server ("
+							+ pubPath + "), but appears to be a child of " + toSync);
 
 					if (ss != null) {
 						Log.d(TAG, "found sync status for " + item + ": " + ss);
@@ -672,7 +699,6 @@ public class SyncEngine {
 				} else {
 					ss = new SyncStatus(pubUri, SyncState.LOCAL_ONLY);
 					ss.local = item;
-
 
 					hr = mNetworkClient.head(pubUri);
 
@@ -717,7 +743,6 @@ public class SyncEngine {
 			c.close();
 		}
 
-
 		syncStatuses.clear();
 
 		mLastUpdated.markUpdated(toSync);
@@ -744,8 +769,8 @@ public class SyncEngine {
 	 * @throws SyncException
 	 * @throws InterruptedException
 	 */
-	private int uploadUnpublished(Uri itemDir, ContentProviderClient provider, SyncMap syncMap,
-			HashMap<String, SyncEngine.SyncStatus> syncStatuses, SyncResult syncResult)
+	private int uploadUnpublished(Uri itemDir, Account account, ContentProviderClient provider,
+			SyncMap syncMap, HashMap<String, SyncEngine.SyncStatus> syncStatuses, SyncResult syncResult)
 			throws JSONException, NetworkProtocolException, IOException, NoPublicPath,
 			RemoteException, OperationApplicationException, SyncException, InterruptedException {
 		int count = 0;
@@ -766,6 +791,7 @@ public class SyncEngine {
 				if (Thread.interrupted()) {
 					throw new InterruptedException();
 				}
+
 				final Uri localUri = ContentUris.withAppendedId(itemDir, uploadMe.getLong(idCol));
 				final String postUri = MediaProvider.getPostPath(mContext, localUri);
 
@@ -775,20 +801,26 @@ public class SyncEngine {
 				if (DEBUG) {
 					Log.d(TAG, "uploading " + localUri + " to " + postUri);
 				}
-				final HttpResponse res = mNetworkClient.post(postUri, jo.toString());
 
-				mNetworkClient.checkStatusCode(res, true);
+				// Upload! Any non-successful responses are handled by exceptions.
+				final HttpResponse res = mNetworkClient.post(postUri, jo.toString());
 
 				long serverTime;
 				try {
 					serverTime = getServerTime(res);
+					// We should never get a corrupted date from the server, but if it does happen,
+					// using the local time is a sane fallback.
 				} catch (final DateParseException e) {
 					serverTime = System.currentTimeMillis();
 				}
 
+				// newly-created items return the JSON serialization of the object as the server
+				// knows it, so the local database needs to be updated to reflect that.
 				final JSONObject newJo = NetworkClient.toJsonObject(res);
 				try {
 					final SyncStatus ss = loadItemFromJsonObject(newJo, syncMap, serverTime);
+					ss.state = SyncState.LOCAL_DIRTY;
+					ss.local = localUri;
 
 					final Builder update = ContentProviderOperation.newUpdate(localUri);
 					update.withValues(ss.remoteCVs);
@@ -824,7 +856,9 @@ public class SyncEngine {
 
 			final SyncStatus ss = syncStatuses.get(localUris[i]);
 
-			syncMap.onPostSyncItem(mContext, itemDir, ss.remoteJson, true);
+			ss.state = SyncState.NOW_UP_TO_DATE;
+
+			syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson, true);
 		}
 
 		return count;
@@ -869,8 +903,8 @@ public class SyncEngine {
 			SyncException, JSONException, NetworkProtocolException, IOException, NoPublicPath,
 			OperationApplicationException, InterruptedException {
 
-		return uploadUnpublished(itemDir, provider, getSyncMap(provider, itemDir),
-				new HashMap<String, SyncEngine.SyncStatus>(), syncResult);
+		return uploadUnpublished(itemDir, account, provider,
+				getSyncMap(provider, itemDir), new HashMap<String, SyncEngine.SyncStatus>(), syncResult);
 	}
 
 	/**

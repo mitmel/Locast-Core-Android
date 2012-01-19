@@ -62,11 +62,6 @@ public class Event extends TaggableItem implements Locatable.Columns {
 		return CONTENT_URI;
 	}
 
-	@Override
-	public String[] getFullProjection() {
-		return PROJECTION;
-	}
-
 	public static final ItemSyncMap SYNC_MAP = new ItemSyncMap();
 
 	public static class ItemSyncMap extends TaggableItem.TaggableItemSyncMap {

@@ -178,10 +178,13 @@ public class LocastSyncService extends Service {
 		}
 
 		if (extras.getBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, false)){
-			if (DEBUG) {
-				Log.d(TAG, "canceling current sync to make room for expedited sync of " + what);
+			if (SYNC_ADAPTER != null) {
+				if (DEBUG) {
+					Log.d(TAG, "canceling current sync to make room for expedited sync of " + what);
+				}
+				// only cancel the ongoing sync, to leave the queue untouched.
+				SYNC_ADAPTER.cancelCurrentSync();
 			}
-			ContentResolver.cancelSync(account, MediaProvider.AUTHORITY);
 		}
 
 		if (DEBUG){
@@ -223,27 +226,45 @@ public class LocastSyncService extends Service {
 
 		}
 
-		@Override
-		public void onSyncCanceled() {
-			if (DEBUG){
-				Log.d(TAG, "onSyncCanceled()");
+		/**
+		 * Cancels the current sync, but does not clear the queue.
+		 */
+		public void cancelCurrentSync() {
+			if (DEBUG) {
+				Log.d(TAG, "cancelCurrentSync()");
 			}
-			super.onSyncCanceled();
 
 			if (mSyncThread != null){
 				final Thread syncThread = mSyncThread.get();
 				if (syncThread != null){
-					Log.d(TAG, "interrupting current sync thread "+syncThread.getId()+"...");
+					if (DEBUG){
+						Log.d(TAG, "interrupting current sync thread "+syncThread.getId()+"...");
+					}
 					syncThread.interrupt();
-					Log.d(TAG, "waiting for previous sync to finish...");
+					if (DEBUG){
+						Log.d(TAG, "waiting for previous sync to finish...");
+					}
+					final long start = System.nanoTime();
 					try {
 						syncThread.join();
+						if (DEBUG){
+							Log.d(TAG, "Sync took " + (System.nanoTime() - start ) / 1000000 + "ms to finish.");
+						}
 					} catch (final InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						Log.w(TAG, e.getLocalizedMessage(), e);
 					}
 				}
 			}
+		}
+
+		@Override
+		public void onSyncCanceled() {
+			if (DEBUG) {
+				Log.d(TAG, "onSyncCanceled()");
+			}
+			super.onSyncCanceled();
+
+			cancelCurrentSync();
 		}
 
 		@Override

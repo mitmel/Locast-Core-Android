@@ -23,6 +23,7 @@ import java.net.URLConnection;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.accounts.Account;
 import android.content.ActivityNotFoundException;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -88,11 +89,6 @@ public class CastMedia extends JsonSyncableItem {
 	@Override
 	public Uri getContentUri() {
 		return null;
-	}
-
-	@Override
-	public String[] getFullProjection() {
-		return PROJECTION;
 	}
 
 	@Override
@@ -223,6 +219,8 @@ public class CastMedia extends JsonSyncableItem {
 		public ItemSyncMap() {
 			super();
 
+			this.addFlag(FLAG_PARENT_MUST_SYNC_FIRST);
+
 			put(_TITLE,			new SyncFieldMap("title", 			SyncFieldMap.STRING, SyncFieldMap.FLAG_OPTIONAL));
 			put(_DESCRIPTION,	new SyncFieldMap("description", 	SyncFieldMap.STRING, SyncFieldMap.FLAG_OPTIONAL));
 			put(_LANGUAGE,		new SyncFieldMap("language", 		SyncFieldMap.STRING));
@@ -316,9 +314,9 @@ public class CastMedia extends JsonSyncableItem {
 		}
 
 		@Override
-		public void onPostSyncItem(Context context, Uri uri, JSONObject item,
-				boolean updated) throws SyncException, IOException {
-			super.onPostSyncItem(context, uri, item, updated);
+		public void onPostSyncItem(Context context, Account account, Uri uri,
+				JSONObject item, boolean updated) throws SyncException, IOException {
+			super.onPostSyncItem(context, account, uri, item, updated);
 			if (uri != null){
 				Log.d(TAG, "Starting media sync for " + uri);
 				context.startService(new Intent(MediaSync.ACTION_SYNC_RESOURCES, uri));

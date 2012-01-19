@@ -68,11 +68,6 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 		return CONTENT_URI;
 	}
 
-	@Override
-	public String[] getFullProjection() {
-		return PROJECTION;
-	}
-
 	public static final ItemSyncMap SYNC_MAP = new ItemSyncMap();
 
 	public static class ItemSyncMap extends TaggableItem.TaggableItemSyncMap {
