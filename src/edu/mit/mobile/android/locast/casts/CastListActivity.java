@@ -56,7 +56,7 @@ public abstract class CastListActivity extends ListActivity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		setContentView(R.layout.cast_list);
+		setContentView(getContentView());
 		super.onCreate(savedInstanceState);
 
 		mImageCache = ImageCache.getInstance(this);
@@ -65,6 +65,10 @@ public abstract class CastListActivity extends ListActivity {
 		if (data == null){
 			data = Cast.CONTENT_URI;
 		}
+	}
+	
+	protected int getContentView() {
+		return R.layout.cast_list;
 	}
 
 	@Override

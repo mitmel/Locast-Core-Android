@@ -18,23 +18,57 @@ package edu.mit.mobile.android.locast.ver2.casts;
  */
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
 import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.TextView;
 import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
+import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.casts.CastListActivity;
 import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.ver2.R;
 
-public class UnsyncedCastsActivity extends CastListActivity {
+public class UnsyncedCastsActivity extends CastListActivity implements AccountManagerCallback<Boolean> {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
+		if (!Authenticator.hasRealAccount(this)) {
+			SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
+			return;
+		}
+		
 		final Account me = Authenticator.getFirstAccount(this);
 		final AccountManager am = AccountManager.get(this);
-
+		
+		TextView username = (TextView) findViewById(R.id.username);
+		username.setText(am.getUserData(me, AuthenticationService.USERDATA_DISPLAY_NAME));
+		
+		Button logout = (Button) findViewById(R.id.logout);
+		logout.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				am.removeAccount(me, UnsyncedCastsActivity.this, null);
+			}
+		});
+		
 		loadList(managedQuery(Cast.CONTENT_URI, Cast.PROJECTION,
 				Cast._AUTHOR_URI + " = ? AND " + Cast._PUBLIC_URI + " is null",
 				new String[]{am.getUserData(me, AuthenticationService.USERDATA_USER_URI)},
 				Cast._MODIFIED_DATE+" DESC"));
+	}
+	
+	@Override
+	protected int getContentView() {
+		return R.layout.unsynced_cast_list;
+	}
+
+	@Override
+	public void run(AccountManagerFuture<Boolean> future) {
+		SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
 	}
 }

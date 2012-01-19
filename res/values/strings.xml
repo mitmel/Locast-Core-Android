@@ -129,6 +129,8 @@
     <string name="login_message_login_empty_username">Please enter your Locast username and password.</string>
      <!-- Placeholder here is for application name -->
     <string name="login_title">%1$s Login</string>
+    <string name="logout">Logout</string>
+    <string name="sync">Sync</string>
 	
 	<!-- Moments -->
    	<string name="moment_description_hint">Briefly describe this moment (optional)</string>
