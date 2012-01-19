@@ -217,7 +217,7 @@ public class SyncEngine {
 		//
 
 		try {
-			uploadUnpublished(toSync, provider, syncMap, syncStatuses, syncResult);
+			uploadUnpublished(toSync, account, provider, syncMap, syncStatuses, syncResult);
 
 			if (Thread.interrupted()) {
 				throw new InterruptedException();
@@ -541,8 +541,8 @@ public class SyncEngine {
 					Log.e(TAG, "can't get sync status for " + res.uri);
 					continue;
 				}
-				syncMap.onPostSyncItem(mContext, ss.local, ss.remoteJson,
-						res.count != null ? res.count == 1 : true);
+				syncMap.onPostSyncItem(mContext, account, ss.local,
+						ss.remoteJson, res.count != null ? res.count == 1 : true);
 
 				ss.state = SyncState.NOW_UP_TO_DATE;
 			}
@@ -626,8 +626,8 @@ public class SyncEngine {
 					Log.d(TAG, "onPostSyncItem(" + res.uri + ", ...); pubUri: " + pubUri);
 				}
 
-				syncMap.onPostSyncItem(mContext, res.uri, ss.remoteJson,
-						res.count != null ? res.count == 1 : true);
+				syncMap.onPostSyncItem(mContext, account, res.uri,
+						ss.remoteJson, res.count != null ? res.count == 1 : true);
 
 				ss.state = SyncState.NOW_UP_TO_DATE;
 				successful++;
@@ -769,8 +769,8 @@ public class SyncEngine {
 	 * @throws SyncException
 	 * @throws InterruptedException
 	 */
-	private int uploadUnpublished(Uri itemDir, ContentProviderClient provider, SyncMap syncMap,
-			HashMap<String, SyncEngine.SyncStatus> syncStatuses, SyncResult syncResult)
+	private int uploadUnpublished(Uri itemDir, Account account, ContentProviderClient provider,
+			SyncMap syncMap, HashMap<String, SyncEngine.SyncStatus> syncStatuses, SyncResult syncResult)
 			throws JSONException, NetworkProtocolException, IOException, NoPublicPath,
 			RemoteException, OperationApplicationException, SyncException, InterruptedException {
 		int count = 0;
@@ -858,7 +858,7 @@ public class SyncEngine {
 
 			ss.state = SyncState.NOW_UP_TO_DATE;
 
-			syncMap.onPostSyncItem(mContext, ss.local, ss.remoteJson, true);
+			syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson, true);
 		}
 
 		return count;
@@ -903,8 +903,8 @@ public class SyncEngine {
 			SyncException, JSONException, NetworkProtocolException, IOException, NoPublicPath,
 			OperationApplicationException, InterruptedException {
 
-		return uploadUnpublished(itemDir, provider, getSyncMap(provider, itemDir),
-				new HashMap<String, SyncEngine.SyncStatus>(), syncResult);
+		return uploadUnpublished(itemDir, account, provider,
+				getSyncMap(provider, itemDir), new HashMap<String, SyncEngine.SyncStatus>(), syncResult);
 	}
 
 	/**

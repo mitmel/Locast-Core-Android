@@ -25,6 +25,7 @@ import java.util.Set;
 
 import org.json.JSONObject;
 
+import android.accounts.Account;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
@@ -87,18 +88,19 @@ public class SyncMap extends HashMap<String, SyncItem> {
 	/**
 	 * Hook called after an item has been synchronized on the server. Called each time the sync
 	 * request is made. Make sure to call through when subclassing.
-	 *
+	 * @param account TODO
 	 * @param uri
 	 *            Local URI pointing to the item.
 	 * @param updated
 	 *            true if the item was updated during the sync.
+	 *
 	 * @throws SyncException
 	 * @throws IOException
 	 */
-	public void onPostSyncItem(Context context, Uri uri, JSONObject item, boolean updated)
+	public void onPostSyncItem(Context context, Account account, Uri uri, JSONObject item, boolean updated)
 			throws SyncException, IOException {
 		for (final SyncItem childItem : this.values()) {
-			childItem.onPostSyncItem(context, uri, item, updated);
+			childItem.onPostSyncItem(context, account, uri, item, updated);
 		}
 	}
 }
