@@ -30,6 +30,7 @@ import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.casts.CastListActivity;
 import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.ver2.R;
 
 public class UnsyncedCastsActivity extends CastListActivity implements AccountManagerCallback<Boolean> {
@@ -53,6 +54,14 @@ public class UnsyncedCastsActivity extends CastListActivity implements AccountMa
 			@Override
 			public void onClick(View view) {
 				am.removeAccount(me, UnsyncedCastsActivity.this, null);
+			}
+		});
+		
+		Button sync = (Button) findViewById(R.id.sync);
+		sync.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				LocastSyncService.startSync(UnsyncedCastsActivity.this, null, true);
 			}
 		});
 		
