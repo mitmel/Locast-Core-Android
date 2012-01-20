@@ -64,6 +64,14 @@ public class UnsyncedCastsActivity extends CastListActivity implements AccountMa
 				LocastSyncService.startSync(UnsyncedCastsActivity.this, null, true);
 			}
 		});
+	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		
+		final Account me = Authenticator.getFirstAccount(this);
+		final AccountManager am = AccountManager.get(this);
 		
 		loadList(managedQuery(Cast.CONTENT_URI, Cast.PROJECTION,
 				Cast._AUTHOR_URI + " = ? AND " + Cast._PUBLIC_URI + " is null",
