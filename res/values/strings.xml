@@ -130,6 +130,7 @@
      <!-- Placeholder here is for application name -->
     <string name="login_title">%1$s Login</string>
     <string name="logout">Logout</string>
+    <string name="are_you_sure_you_want_to_logout">Are you sure you want to logout?\nAll unsynced casts will be lost.</string>
     <string name="sync">Sync</string>
 	
 	<!-- Moments -->

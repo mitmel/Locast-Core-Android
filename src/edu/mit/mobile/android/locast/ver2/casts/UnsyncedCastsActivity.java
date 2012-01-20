@@ -20,6 +20,8 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -34,6 +36,10 @@ import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.ver2.R;
 
 public class UnsyncedCastsActivity extends CastListActivity implements AccountManagerCallback<Boolean> {
+	
+	private Account account;
+	private AccountManager accountManager;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -43,20 +49,40 @@ public class UnsyncedCastsActivity extends CastListActivity implements AccountMa
 			return;
 		}
 		
-		final Account me = Authenticator.getFirstAccount(this);
-		final AccountManager am = AccountManager.get(this);
+		initAccount();
 		
+		loadUsername();
+		hookLogoutButton();
+		hookSyncButton();
+	}
+
+	private void loadUsername() {
 		TextView username = (TextView) findViewById(R.id.username);
-		username.setText(am.getUserData(me, AuthenticationService.USERDATA_DISPLAY_NAME));
-		
+		username.setText(accountManager.getUserData(account, AuthenticationService.USERDATA_DISPLAY_NAME));
+	}
+	
+	private void hookLogoutButton() {
 		Button logout = (Button) findViewById(R.id.logout);
 		logout.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				am.removeAccount(me, UnsyncedCastsActivity.this, null);
+				new AlertDialog.Builder(UnsyncedCastsActivity.this)
+		        .setIcon(android.R.drawable.ic_dialog_alert)
+		        .setTitle(R.string.logout)
+		        .setMessage(R.string.are_you_sure_you_want_to_logout)
+		        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+		            @Override
+		            public void onClick(DialogInterface dialog, int which) {
+		            	accountManager.removeAccount(account, UnsyncedCastsActivity.this, null);
+		            }
+		        })
+		        .setNegativeButton(android.R.string.no, null)
+		        .show();
 			}
 		});
-		
+	}
+	
+	private void hookSyncButton() {
 		Button sync = (Button) findViewById(R.id.sync);
 		sync.setOnClickListener(new OnClickListener() {
 			@Override
@@ -65,17 +91,17 @@ public class UnsyncedCastsActivity extends CastListActivity implements AccountMa
 			}
 		});
 	}
-	
+
+
 	@Override
 	protected void onResume() {
 		super.onResume();
 		
-		final Account me = Authenticator.getFirstAccount(this);
-		final AccountManager am = AccountManager.get(this);
+		initAccount();
 		
 		loadList(managedQuery(Cast.CONTENT_URI, Cast.PROJECTION,
 				Cast._AUTHOR_URI + " = ? AND " + Cast._PUBLIC_URI + " is null",
-				new String[]{am.getUserData(me, AuthenticationService.USERDATA_USER_URI)},
+				new String[]{accountManager.getUserData(account, AuthenticationService.USERDATA_USER_URI)},
 				Cast._MODIFIED_DATE+" DESC"));
 	}
 	
@@ -87,5 +113,10 @@ public class UnsyncedCastsActivity extends CastListActivity implements AccountMa
 	@Override
 	public void run(AccountManagerFuture<Boolean> future) {
 		SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
+	}
+	
+	private void initAccount() {
+		this.account = Authenticator.getFirstAccount(this);
+		this.accountManager = AccountManager.get(this);
 	}
 }
