@@ -38,7 +38,6 @@ import org.json.JSONObject;
 import android.accounts.Account;
 import android.content.ContentProviderClient;
 import android.content.ContentProviderOperation;
-import android.content.ContentProviderOperation.Builder;
 import android.content.ContentProviderResult;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -774,17 +773,10 @@ public class SyncEngine {
 			throws JSONException, NetworkProtocolException, IOException, NoPublicPath,
 			RemoteException, OperationApplicationException, SyncException, InterruptedException {
 		int count = 0;
-		final ArrayList<ContentProviderOperation> cpo = new ArrayList<ContentProviderOperation>();
 
 		final Cursor uploadMe = provider.query(itemDir, null, SELECTION_UNPUBLISHED, null, null);
 
 		final int idCol = uploadMe.getColumnIndex(JsonSyncableItem._ID);
-
-		final int toUpload = uploadMe.getCount();
-
-		final String[] localUris = new String[toUpload];
-
-		int i = 0;
 
 		try {
 			for (uploadMe.moveToFirst(); !uploadMe.isAfterLast(); uploadMe.moveToNext()) {
@@ -819,20 +811,32 @@ public class SyncEngine {
 				final JSONObject newJo = NetworkClient.toJsonObject(res);
 				try {
 					final SyncStatus ss = loadItemFromJsonObject(newJo, syncMap, serverTime);
-					ss.state = SyncState.LOCAL_DIRTY;
-					ss.local = localUri;
 
-					final Builder update = ContentProviderOperation.newUpdate(localUri);
-					update.withValues(ss.remoteCVs);
-					cpo.add(update.build());
-					localUris[i] = localUri.toString();
+					// update immediately, so that any cancellation or interruption of the sync
+					// keeps the local state in sync with what's on the server
+					final int updates = provider.update(localUri, ss.remoteCVs, null, null);
 
-					syncStatuses.put(localUris[i], ss);
+					final String locUriString = localUri.toString();
 
-					i++;
-					count++;
+					if (updates == 1) {
+						ss.state = SyncState.NOW_UP_TO_DATE;
+						ss.local = localUri;
+
+						// ensure that it's findable by local URI too
+						syncStatuses.put(locUriString, ss);
+
+						syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson, true);
+
+						count++;
+						syncResult.stats.numUpdates++;
+
+					} else {
+						Log.e(TAG, "error updating " + locUriString);
+
+						syncResult.stats.numSkippedEntries++;
+					}
+
 					syncResult.stats.numEntries++;
-					syncResult.stats.numUpdates++;
 
 				} catch (final JSONException e) {
 					if (DEBUG) {
@@ -843,22 +847,6 @@ public class SyncEngine {
 			}
 		} finally {
 			uploadMe.close();
-		}
-
-		final ContentProviderResult[] cpr = provider.applyBatch(cpo);
-
-		for (i = 0; i < cpr.length; i++) {
-			if (cpr[i].count != 1) {
-				Log.e(TAG, "error updating " + localUris[i]);
-				syncResult.stats.numSkippedEntries++;
-				continue;
-			}
-
-			final SyncStatus ss = syncStatuses.get(localUris[i]);
-
-			ss.state = SyncState.NOW_UP_TO_DATE;
-
-			syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson, true);
 		}
 
 		return count;
