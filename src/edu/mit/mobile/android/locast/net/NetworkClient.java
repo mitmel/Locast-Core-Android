@@ -948,7 +948,9 @@ public class NetworkClient extends DefaultHttpClient {
 		final InputStreamBody fileBody = new AndroidFileInputStreamBody(context, localFile, isw,
 				contentType);
 
-		Log.d(TAG, "content length: " + fileBody.getContentLength());
+		if (DEBUG) {
+			Log.d(TAG, "uploadContentUsingForm. content length: " + fileBody.getContentLength());
+		}
 
 		reqEntity.addPart("file", fileBody);
 
