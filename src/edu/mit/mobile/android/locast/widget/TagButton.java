@@ -16,7 +16,9 @@ package edu.mit.mobile.android.locast.widget;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import android.R.color;
 import android.content.Context;
+import android.graphics.Color;
 import android.util.AttributeSet;
 import android.widget.Button;
 import edu.mit.mobile.android.locast.ver2.R;
@@ -48,6 +50,7 @@ public class TagButton extends Button {
 	public TagButton(Context context, String text, boolean added, boolean editable){
 		super(context);
 		this.setText(text);
+		this.setTextColor(Color.BLACK);
 		this.setTag(text);
 
 		this.editable = editable;
