@@ -16,8 +16,12 @@ package edu.mit.mobile.android.locast.data;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,6 +32,7 @@ import junit.framework.Assert;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.ContentProvider;
+import android.content.ContentProviderClient;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
@@ -39,6 +44,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.os.RemoteException;
 import edu.mit.mobile.android.content.DBHelper;
 import edu.mit.mobile.android.content.DBHelperMapper;
 import edu.mit.mobile.android.content.GenericDBHelper;
@@ -82,6 +88,130 @@ public class MediaProvider extends ContentProvider {
 		TYPE_EVENT_DIR  =  "vnd.android.cursor.dir/vnd."+NAMESPACE+"."+EVENT_TABLE_NAME,
 		TYPE_EVENT_ITEM = "vnd.android.cursor.item/vnd."+NAMESPACE+"."+EVENT_TABLE_NAME
 		;
+
+	private static final HashMap<String, Class<? extends JsonSyncableItem>> TYPE_MAP = new HashMap<String, Class<? extends JsonSyncableItem>>();
+
+	static {
+		TYPE_MAP.put(MediaProvider.TYPE_CAST_DIR, Cast.class);
+		TYPE_MAP.put(MediaProvider.TYPE_CAST_ITEM, Cast.class);
+
+		TYPE_MAP.put(MediaProvider.TYPE_CASTMEDIA_DIR, CastMedia.class);
+		TYPE_MAP.put(MediaProvider.TYPE_CASTMEDIA_ITEM, CastMedia.class);
+
+		TYPE_MAP.put(MediaProvider.TYPE_COMMENT_DIR, Comment.class);
+		TYPE_MAP.put(MediaProvider.TYPE_COMMENT_ITEM, Comment.class);
+
+		TYPE_MAP.put(MediaProvider.TYPE_ITINERARY_DIR, Itinerary.class);
+		TYPE_MAP.put(MediaProvider.TYPE_ITINERARY_ITEM, Itinerary.class);
+
+		TYPE_MAP.put(MediaProvider.TYPE_EVENT_DIR, Event.class);
+		TYPE_MAP.put(MediaProvider.TYPE_EVENT_ITEM, Event.class);
+	}
+
+	/**
+	 * Retrieves the class which maps to the given type of the specified uri. The map is statically
+	 * defined in this class.
+	 *
+	 * @param provider
+	 *            a provider which can retrieve the type for the given uri
+	 * @param data
+	 *            a uri to a dir or item which the engine knows how to handle
+	 * @return the class which contains the sync map (and other helpers) for the specified uri
+	 * @throws SyncException
+	 *             if the map cannot be found
+	 * @throws RemoteException
+	 *             if there is an error communicating with the provider
+	 */
+	public static Class<? extends JsonSyncableItem> getSyncClass(ContentProviderClient provider,
+			Uri data) throws SyncMapException, RemoteException {
+		final String type = provider.getType(data);
+
+		final Class<? extends JsonSyncableItem> syncable = TYPE_MAP.get(type);
+		if (syncable == null) {
+			throw new SyncMapException("cannot find " + data + ", which has type " + type
+					+ ", in the SyncEngine's sync map");
+		}
+		return syncable;
+	}
+
+	/**
+	 * Retrieves the sync map from the class that maps to the given uri
+	 *
+	 * @param provider
+	 * @param toSync
+	 * @return
+	 * @throws RemoteException
+	 * @throws SyncMapException
+	 */
+	public static SyncMap getSyncMap(ContentProviderClient provider, Uri toSync)
+			throws RemoteException,
+			SyncMapException {
+		final Class<? extends JsonSyncableItem> syncable = MediaProvider.getSyncClass(provider,
+				toSync);
+
+		try {
+			final Field syncMap = syncable.getField("SYNC_MAP");
+			final int modifiers = syncMap.getModifiers();
+			if (!Modifier.isStatic(modifiers)) {
+				throw new SyncMapException("sync map for " + syncable + " is not static");
+			}
+			return (SyncMap) syncMap.get(null);
+
+		} catch (final SecurityException e) {
+			throw new SyncMapException("error extracting sync map", e);
+
+		} catch (final NoSuchFieldException e) {
+			throw new SyncMapException("SYNC_MAP static field missing from " + syncable, e);
+
+		} catch (final IllegalArgumentException e) {
+			throw new SyncMapException("error extracting sync map", e);
+
+		} catch (final IllegalAccessException e) {
+			throw new SyncMapException("error extracting sync map", e);
+
+		}
+	}
+
+	/**
+	 * Creates a new instance of the class mapped to the given type, pointing to the given cursor.
+	 *
+	 * @param provider
+	 * @param itemDir
+	 * @param cursor
+	 * @return
+	 * @throws RemoteException
+	 * @throws SyncMapException
+	 */
+	public static JsonSyncableItem getDataItemInstance(ContentProviderClient provider, Uri itemDir,
+			Cursor cursor)
+			throws RemoteException, SyncMapException {
+		final Class<? extends JsonSyncableItem> sync = MediaProvider
+				.getSyncClass(provider, itemDir);
+		JsonSyncableItem syncableItem;
+		try {
+			syncableItem = sync.getConstructor(Cursor.class).newInstance(cursor);
+
+		} catch (final IllegalArgumentException e1) {
+			throw new SyncMapException("error instantiating data object ", e1);
+
+		} catch (final SecurityException e1) {
+			throw new SyncMapException("error instantiating data object ", e1);
+
+		} catch (final InstantiationException e1) {
+			throw new SyncMapException("error instantiating data object ", e1);
+
+		} catch (final IllegalAccessException e1) {
+			throw new SyncMapException("error instantiating data object ", e1);
+
+		} catch (final InvocationTargetException e1) {
+			throw new SyncMapException("error instantiating data object ", e1);
+
+		} catch (final NoSuchMethodException e1) {
+			throw new SyncMapException("error instantiating data object ", e1);
+		}
+
+		return syncableItem;
+	}
 
 
 	private static final JSONSyncableIdenticalChildFinder mChildFinder = new JSONSyncableIdenticalChildFinder();

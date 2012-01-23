@@ -19,8 +19,6 @@ package edu.mit.mobile.android.locast.sync;
  */
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -52,11 +50,6 @@ import android.os.RemoteException;
 import android.util.Log;
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.CastMedia;
-import edu.mit.mobile.android.locast.data.Comment;
-import edu.mit.mobile.android.locast.data.Event;
-import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
@@ -79,26 +72,7 @@ public class SyncEngine {
 
 	private static final String CONTENT_TYPE_PREFIX_DIR = "vnd.android.cursor.dir";
 
-	private static final HashMap<String, Class<? extends JsonSyncableItem>> TYPE_MAP = new HashMap<String, Class<? extends JsonSyncableItem>>();
-
 	private static final boolean DEBUG = Constants.DEBUG;
-
-	static {
-		TYPE_MAP.put(MediaProvider.TYPE_CAST_DIR, Cast.class);
-		TYPE_MAP.put(MediaProvider.TYPE_CAST_ITEM, Cast.class);
-
-		TYPE_MAP.put(MediaProvider.TYPE_CASTMEDIA_DIR, CastMedia.class);
-		TYPE_MAP.put(MediaProvider.TYPE_CASTMEDIA_ITEM, CastMedia.class);
-
-		TYPE_MAP.put(MediaProvider.TYPE_COMMENT_DIR, Comment.class);
-		TYPE_MAP.put(MediaProvider.TYPE_COMMENT_ITEM, Comment.class);
-
-		TYPE_MAP.put(MediaProvider.TYPE_ITINERARY_DIR, Itinerary.class);
-		TYPE_MAP.put(MediaProvider.TYPE_ITINERARY_ITEM, Itinerary.class);
-
-		TYPE_MAP.put(MediaProvider.TYPE_EVENT_DIR, Event.class);
-		TYPE_MAP.put(MediaProvider.TYPE_EVENT_ITEM, Event.class);
-	}
 
 	private final Context mContext;
 	private final NetworkClient mNetworkClient;
@@ -202,7 +176,7 @@ public class SyncEngine {
 		}
 
 		// the sync map will convert the json data to ContentValues
-		final SyncMap syncMap = getSyncMap(provider, toSync);
+		final SyncMap syncMap = MediaProvider.getSyncMap(provider, toSync);
 
 		final Uri toSyncWithoutQuerystring = toSync.buildUpon().query(null).build();
 
@@ -892,7 +866,8 @@ public class SyncEngine {
 			OperationApplicationException, InterruptedException {
 
 		return uploadUnpublished(itemDir, account, provider,
-				getSyncMap(provider, itemDir), new HashMap<String, SyncEngine.SyncStatus>(), syncResult);
+				MediaProvider.getSyncMap(provider, itemDir),
+				new HashMap<String, SyncEngine.SyncStatus>(), syncResult);
 	}
 
 	/**
@@ -941,72 +916,7 @@ public class SyncEngine {
 		cv.put(destKey, serverModified + localOffset);
 	}
 
-	/**
-	 * Retrieves the class which maps to the given type of the specified uri. The map is statically
-	 * defined in this class.
-	 *
-	 * @param provider
-	 *            a provider which can retrieve the type for the given uri
-	 * @param data
-	 *            a uri to a dir or item which the engine knows how to handle
-	 * @return the class which contains the sync map (and other helpers) for the specified uri
-	 * @throws SyncException
-	 *             if the map cannot be found
-	 * @throws RemoteException
-	 *             if there is an error communicating with the provider
-	 */
-	public Class<? extends JsonSyncableItem> getSyncClass(ContentProviderClient provider, Uri data)
-			throws SyncException, RemoteException {
-		final String type = provider.getType(data);
 
-		final Class<? extends JsonSyncableItem> syncable = TYPE_MAP.get(type);
-		if (syncable == null) {
-			throw new SyncException("cannot find " + data + ", which has type " + type
-					+ ", in the SyncEngine's sync map");
-		}
-		return syncable;
-	}
-
-	/**
-	 * Retrieves the sync map from the class that maps to the given uri
-	 *
-	 * @param provider
-	 * @param toSync
-	 * @return
-	 * @throws RemoteException
-	 * @throws SyncException
-	 */
-	public SyncMap getSyncMap(ContentProviderClient provider, Uri toSync) throws RemoteException,
-			SyncException {
-		final Class<? extends JsonSyncableItem> syncable = getSyncClass(provider, toSync);
-
-		try {
-			final Field syncMap = syncable.getField("SYNC_MAP");
-			final int modifiers = syncMap.getModifiers();
-			if (!Modifier.isStatic(modifiers)) {
-				throw new SyncException("sync map for " + syncable + " is not static");
-			}
-			return (SyncMap) syncMap.get(null);
-
-		} catch (final SecurityException e) {
-			final SyncException se = new SyncException("error extracting sync map");
-			se.initCause(e);
-			throw se;
-		} catch (final NoSuchFieldException e) {
-			final SyncException se = new SyncException("SYNC_MAP static field missing from "
-					+ syncable);
-			se.initCause(e);
-			throw se;
-		} catch (final IllegalArgumentException e) {
-			final SyncException se = new SyncException("error extracting sync map");
-			se.initCause(e);
-			throw se;
-		} catch (final IllegalAccessException e) {
-			final SyncException se = new SyncException("error extracting sync map");
-			se.initCause(e);
-			throw se;
-		}
-	}
 
 	private enum SyncState {
 		/**
