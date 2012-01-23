@@ -16,6 +16,7 @@ package edu.mit.mobile.android.locast.data;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import android.database.Cursor;
 import android.net.Uri;
 
 /**
@@ -51,6 +52,10 @@ public class Comment extends JsonSyncableItem {
 			_PARENT_CLASS,
 			_DESCRIPTION,
 			_COMMENT_NUMBER};
+
+	public Comment(Cursor c) {
+		super(c);
+	}
 
 	@Override
 	public Uri getContentUri() {

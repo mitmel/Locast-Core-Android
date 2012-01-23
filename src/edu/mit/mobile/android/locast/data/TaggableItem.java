@@ -105,6 +105,10 @@ public abstract class TaggableItem extends JsonSyncableItem {
 
 	};
 
+	public TaggableItem(Cursor c) {
+		super(c);
+	}
+
 	@Override
 	public SyncMap getSyncMap() {
 		return SYNC_MAP;

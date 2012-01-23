@@ -38,6 +38,7 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.CursorWrapper;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import edu.mit.mobile.android.locast.net.NetworkClient;
@@ -51,7 +52,7 @@ import edu.mit.mobile.android.utils.ListUtils;
  * @author stevep
  *
  */
-public abstract class JsonSyncableItem implements BaseColumns {
+public abstract class JsonSyncableItem extends CursorWrapper implements BaseColumns {
 	public static final String
 		_PUBLIC_URI      = "uri",
 		_MODIFIED_DATE  = "modified",
@@ -68,6 +69,14 @@ public abstract class JsonSyncableItem implements BaseColumns {
 
 	public static final String SELECTION_NOT_DRAFT = "(" + TaggableItem._DRAFT + " ISNULL OR "
 			+ TaggableItem._DRAFT + " = 0)";
+
+	public JsonSyncableItem(Cursor c) {
+		super(c);
+	}
+
+	public Uri getCanonicalUri() {
+		return ContentUris.withAppendedId(getContentUri(), getLong(getColumnIndex(_ID)));
+	}
 
 	/**
 	 * Given a public Uri fragment, finds the local item representing it. If there isn't any such item, null is returned.
@@ -125,7 +134,6 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 * @param column column number
 	 * @param c cursor pointing to a row
 	 * @return
-	 * @see #getList(int, Cursor)
 	 */
 	public static List<String> getList(int column, Cursor c){
 		final String t = c.getString(column);

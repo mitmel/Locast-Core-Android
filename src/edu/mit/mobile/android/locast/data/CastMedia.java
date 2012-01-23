@@ -86,9 +86,14 @@ public class CastMedia extends JsonSyncableItem {
 		MIMETYPE_3GPP = "video/3gpp",
 		MIMETYPE_MPEG4 = "video/mpeg4";
 
+	public CastMedia(Cursor c) {
+		super(c);
+	}
+
 	@Override
 	public Uri getContentUri() {
-		return null;
+
+		return null; // XXX this is wrong.
 	}
 
 	@Override

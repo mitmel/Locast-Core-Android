@@ -63,6 +63,10 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 	public static final Uri FEATURED = getTagUri(CONTENT_URI, addPrefixToTag(Cast.SYSTEM_PREFIX, "_featured"));
 	public static final Uri FAVORITE = Favoritable.getFavoritedUri(Cast.CONTENT_URI, true);
 
+	public Cast(Cursor c) {
+		super(c);
+	}
+
 	@Override
 	public Uri getContentUri() {
 		return CONTENT_URI;
@@ -137,6 +141,11 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 		final long castId = c.getLong(c.getColumnIndex(Cast._ID));
 		canonical = ContentUris.withAppendedId(CONTENT_URI, castId);
 		return canonical;
+	}
+
+	@Override
+	public Uri getCanonicalUri() {
+		return getCanonicalUri(this);
 	}
 
 	/**
