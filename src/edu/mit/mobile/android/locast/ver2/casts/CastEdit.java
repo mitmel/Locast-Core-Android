@@ -2,6 +2,7 @@ package edu.mit.mobile.android.locast.ver2.casts;
 
 import java.io.File;
 import java.util.HashMap;
+import 	java.io.ByteArrayOutputStream;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -65,6 +66,10 @@ import edu.mit.mobile.android.locast.widget.TagList;
 import edu.mit.mobile.android.locast.widget.TagList.OnTagListChangeListener;
 import edu.mit.mobile.android.utils.ResourceUtils;
 import edu.mit.mobile.android.widget.CheckableTabWidget;
+
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
+import android.graphics.BitmapFactory;
 
 public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		OnTabChangeListener, LocationListener, LoaderCallbacks<Cursor> {
@@ -458,7 +463,12 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			case REQUEST_NEW_PHOTO:
 				addMedia(mCreateMediaUri);
 				mMediaThumbnail = (ImageView) findViewById(R.id.media_thumbnail);
-				mMediaThumbnail.setImageURI(mCreateMediaUri);
+		        Bitmap bMap = BitmapFactory.decodeFile(mCreateMediaUri.getPath());
+		        ByteArrayOutputStream thumbStream = new ByteArrayOutputStream();
+		        bMap.compress(CompressFormat.JPEG, 50, thumbStream);
+		        byte[] thumbByteArray = thumbStream.toByteArray();
+		        Bitmap thumbnail = BitmapFactory.decodeByteArray(thumbByteArray, 0, thumbByteArray.length);
+		        mMediaThumbnail.setImageBitmap(thumbnail);
 				mCreateMediaUri = null;
 				break;
 			case REQUEST_NEW_VIDEO:
