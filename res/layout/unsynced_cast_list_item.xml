@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:minHeight="?android:attr/listPreferredItemHeight"
+>
+	<TextView
+		android:id="@android:id/text1"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		
+		android:paddingLeft="6dip"
+		android:paddingTop="6dip"
+		android:paddingBottom="1dip"
+		android:paddingRight="1dip"
+
+		style="@style/CastListItem.Title" />
+	<TextView
+		android:id="@+id/draft"
+		android:text="@string/syncing"
+		android:background="@color/background_dark"
+		android:textColor="@android:color/white"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignParentRight="true"
+		android:layout_alignBaseline="@android:id/text1"
+		android:visibility="invisible"
+		android:layout_margin="7dip"
+		android:padding="7dip"
+		 />
+</RelativeLayout>

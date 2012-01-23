@@ -131,7 +131,8 @@
     <string name="login_title">%1$s Login</string>
     <string name="logout">Logout</string>
     <string name="are_you_sure_you_want_to_logout">Are you sure you want to logout?\nAll unsynced casts will be lost.</string>
-    <string name="sync">Sync</string>
+    <string name="sync">Synchronize</string>
+    <string name="syncing">Synchronizing…</string>
 	
 	<!-- Moments -->
    	<string name="moment_description_hint">Briefly describe this moment (optional)</string>

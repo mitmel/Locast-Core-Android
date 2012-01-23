@@ -18,6 +18,7 @@ package edu.mit.mobile.android.locast.casts;
  */
 import android.app.ListActivity;
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -28,10 +29,12 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.AdapterView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.ver2.R;
@@ -49,7 +52,7 @@ public abstract class CastListActivity extends ListActivity {
 
 	private static final String TAG = CastListActivity.class.getSimpleName();
 
-	private ListAdapter adapter;
+	protected ListAdapter adapter;
 	private Uri data;
 
 	private ImageCache mImageCache;
@@ -91,9 +94,13 @@ public abstract class CastListActivity extends ListActivity {
 	}
 
 	protected void loadList(Cursor c){
-		adapter = new CastCursorAdapter(this, c);
+		adapter = getAdapter(c);
 
         setListAdapter(adapter);
+	}
+	
+	protected ListAdapter getAdapter(Cursor c) {
+		return new CastCursorAdapter(this, c);
 	}
 
 	protected void setCastsUri(Uri casts){
@@ -175,8 +182,6 @@ public abstract class CastListActivity extends ListActivity {
     	   return super.onContextItemSelected(item);
        }
 	}
-
-
 
 	@Override
 	protected void onListItemClick(ListView l, View v, int position,

@@ -57,9 +57,8 @@ public class CastCursorAdapter extends SimpleThumbnailCursorAdapter {
 	 */
 	public CastCursorAdapter(Context context, Cursor c) {
 		this(context, c, R.layout.browse_content_item, DEFAULT_FROM, DEFAULT_TO);
-
 	}
-
+	
 	@Override
 	public void setViewText(android.widget.TextView v, String text) {
 
