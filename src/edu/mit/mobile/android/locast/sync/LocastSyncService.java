@@ -270,8 +270,11 @@ public class LocastSyncService extends Service {
 		@Override
 		public void onPerformSync(Account account, Bundle extras, String authority,
 				ContentProviderClient provider, SyncResult syncResult) {
-
-
+			
+			Intent intent = new Intent(SyncEngine.SYNC_STATUS_CHANGED);
+			intent.putExtra(SyncEngine.EXTRA_SYNC_STATUS, "begin");
+			mContext.sendStickyBroadcast(intent);
+			
 			mCurrentlySyncing = account;
 			SyncEngine syncEngine = mSyncEngines.get(account);
 			if (syncEngine == null) {
@@ -361,6 +364,10 @@ public class LocastSyncService extends Service {
 				Log.e(TAG, e.toString(), e);
 
 			} finally {
+				intent = new Intent(SyncEngine.SYNC_STATUS_CHANGED);
+				intent.putExtra(SyncEngine.EXTRA_SYNC_STATUS, "end");
+				mContext.sendStickyBroadcast(intent);
+				
 				mCurrentlySyncing = null;
             }
         } // onPerformSync

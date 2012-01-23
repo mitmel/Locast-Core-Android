@@ -43,6 +43,7 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.OperationApplicationException;
 import android.content.SyncResult;
 import android.database.Cursor;
@@ -70,6 +71,10 @@ import edu.mit.mobile.android.utils.StreamUtils;
 
 public class SyncEngine {
 	private static final String TAG = SyncEngine.class.getSimpleName();
+	
+	public final static String SYNC_STATUS_CHANGED = "edu.mit.mobile.android.locast.SYNC_STATUS_CHANGED";
+	public final static String EXTRA_SYNC_STATUS = "edu.mit.mobile.android.locast.EXTRA_SYNC_STATUS";
+	public final static String EXTRA_SYNC_ID = "edu.mit.mobile.android.locast.EXTRA_SYNC_ID";
 
 	/**
 	 * If syncing a server URI that is destined for a specific local URI space, add the destination
@@ -783,66 +788,89 @@ public class SyncEngine {
 				if (Thread.interrupted()) {
 					throw new InterruptedException();
 				}
-
-				final Uri localUri = ContentUris.withAppendedId(itemDir, uploadMe.getLong(idCol));
+				
+				final long id = uploadMe.getLong(idCol);
+				final Uri localUri = ContentUris.withAppendedId(itemDir, id);
 				final String postUri = MediaProvider.getPostPath(mContext, localUri);
-
-				final JSONObject jo = JsonSyncableItem
-						.toJSON(mContext, localUri, uploadMe, syncMap);
-
-				if (DEBUG) {
-					Log.d(TAG, "uploading " + localUri + " to " + postUri);
-				}
-
-				// Upload! Any non-successful responses are handled by exceptions.
-				final HttpResponse res = mNetworkClient.post(postUri, jo.toString());
-
-				long serverTime;
+				
+				Intent intent = new Intent(SYNC_STATUS_CHANGED);
+				intent.putExtra(EXTRA_SYNC_STATUS, "castBegin");
+				intent.putExtra(EXTRA_SYNC_ID, id);
+				mContext.sendStickyBroadcast(intent);
+				
 				try {
-					serverTime = getServerTime(res);
-					// We should never get a corrupted date from the server, but if it does happen,
-					// using the local time is a sane fallback.
-				} catch (final DateParseException e) {
-					serverTime = System.currentTimeMillis();
-				}
+					final JSONObject jo = JsonSyncableItem.toJSON(mContext,
+							localUri, uploadMe, syncMap);
 
-				// newly-created items return the JSON serialization of the object as the server
-				// knows it, so the local database needs to be updated to reflect that.
-				final JSONObject newJo = NetworkClient.toJsonObject(res);
-				try {
-					final SyncStatus ss = loadItemFromJsonObject(newJo, syncMap, serverTime);
-
-					// update immediately, so that any cancellation or interruption of the sync
-					// keeps the local state in sync with what's on the server
-					final int updates = provider.update(localUri, ss.remoteCVs, null, null);
-
-					final String locUriString = localUri.toString();
-
-					if (updates == 1) {
-						ss.state = SyncState.NOW_UP_TO_DATE;
-						ss.local = localUri;
-
-						// ensure that it's findable by local URI too
-						syncStatuses.put(locUriString, ss);
-
-						syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson, true);
-
-						count++;
-						syncResult.stats.numUpdates++;
-
-					} else {
-						Log.e(TAG, "error updating " + locUriString);
-
-						syncResult.stats.numSkippedEntries++;
-					}
-
-					syncResult.stats.numEntries++;
-
-				} catch (final JSONException e) {
 					if (DEBUG) {
-						Log.e(TAG, "result was " + newJo.toString());
+						Log.d(TAG, "uploading " + localUri + " to " + postUri);
 					}
-					throw e;
+
+					// Upload! Any non-successful responses are handled by
+					// exceptions.
+					final HttpResponse res = mNetworkClient.post(postUri,
+							jo.toString());
+
+					long serverTime;
+					try {
+						serverTime = getServerTime(res);
+						// We should never get a corrupted date from the server,
+						// but if it does happen,
+						// using the local time is a sane fallback.
+					} catch (final DateParseException e) {
+						serverTime = System.currentTimeMillis();
+					}
+
+					// newly-created items return the JSON serialization of the
+					// object as the server
+					// knows it, so the local database needs to be updated to
+					// reflect that.
+					final JSONObject newJo = NetworkClient.toJsonObject(res);
+					try {
+						final SyncStatus ss = loadItemFromJsonObject(newJo,
+								syncMap, serverTime);
+
+						// update immediately, so that any cancellation or
+						// interruption of the sync
+						// keeps the local state in sync with what's on the
+						// server
+						final int updates = provider.update(localUri,
+								ss.remoteCVs, null, null);
+
+						final String locUriString = localUri.toString();
+
+						if (updates == 1) {
+							ss.state = SyncState.NOW_UP_TO_DATE;
+							ss.local = localUri;
+
+							// ensure that it's findable by local URI too
+							syncStatuses.put(locUriString, ss);
+
+							syncMap.onPostSyncItem(mContext, account, ss.local,
+									ss.remoteJson, true);
+
+							count++;
+							syncResult.stats.numUpdates++;
+
+						} else {
+							Log.e(TAG, "error updating " + locUriString);
+
+							syncResult.stats.numSkippedEntries++;
+						}
+
+						syncResult.stats.numEntries++;
+
+					} catch (final JSONException e) {
+						if (DEBUG) {
+							Log.e(TAG, "result was " + newJo.toString());
+						}
+						throw e;
+					}
+				} finally {
+					intent = new Intent(SYNC_STATUS_CHANGED);
+					intent.putExtra(EXTRA_SYNC_STATUS, "castEnd");
+					intent.putExtra(EXTRA_SYNC_ID, id);
+					mContext.sendStickyBroadcast(intent);
 				}
 			}
 		} finally {
