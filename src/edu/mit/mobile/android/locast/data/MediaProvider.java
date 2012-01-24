@@ -48,8 +48,8 @@ import android.os.RemoteException;
 import edu.mit.mobile.android.content.DBHelper;
 import edu.mit.mobile.android.content.DBHelperMapper;
 import edu.mit.mobile.android.content.GenericDBHelper;
-import edu.mit.mobile.android.content.ManyToMany;
 import edu.mit.mobile.android.content.ProviderUtils;
+import edu.mit.mobile.android.content.m2m.M2MDBHelper;
 import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
@@ -215,13 +215,12 @@ public class MediaProvider extends ContentProvider {
 
 
 	private static final JSONSyncableIdenticalChildFinder mChildFinder = new JSONSyncableIdenticalChildFinder();
-	private static final ManyToMany.M2MDBHelper
-		// ITINERARY_CASTS_DBHELPER = new ManyToMany.M2MDBHelper(ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder, Cast.CONTENT_URI),
-		ITINERARY_CASTS_DBHELPER = new ManyToMany.M2MDBHelper(ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder),
-		CASTS_CASTMEDIA_DBHELPER = new ManyToMany.M2MDBHelper(CAST_TABLE_NAME, CASTMEDIA_TABLE_NAME, mChildFinder);
+	private static final M2MDBHelper ITINERARY_CASTS_DBHELPER = new M2MDBHelper(
+			ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder);
+	private static final M2MDBHelper CASTS_CASTMEDIA_DBHELPER = new M2MDBHelper(CAST_TABLE_NAME,
+			CASTMEDIA_TABLE_NAME, mChildFinder);
 
-	private static final DBHelper
-		EVENT_DBHELPER = new GenericDBHelper(EVENT_TABLE_NAME, Event.CONTENT_URI);
+	private static final DBHelper EVENT_DBHELPER = new GenericDBHelper(Event.class);
 
 	private final static UriMatcher uriMatcher;
 
@@ -249,7 +248,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 43;
+		private static final int DB_VER = 44;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -364,8 +363,8 @@ public class MediaProvider extends ContentProvider {
 					+ ");"
 					);
 
-			ITINERARY_CASTS_DBHELPER.createJoinTable(db);
-			CASTS_CASTMEDIA_DBHELPER.createJoinTable(db);
+			ITINERARY_CASTS_DBHELPER.createTables(db);
+			CASTS_CASTMEDIA_DBHELPER.createTables(db);
 		}
 
 		@Override
@@ -1274,13 +1273,19 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH,		MATCHER_CHILD_CAST_DIR);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#", MATCHER_CHILD_CAST_ITEM);
 
-		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CAST_DIR, ITINERARY_CASTS_DBHELPER, DBHelperMapper.TYPE_ALL);
-		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CAST_ITEM, ITINERARY_CASTS_DBHELPER, DBHelperMapper.TYPE_ALL);
+		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CAST_DIR, ITINERARY_CASTS_DBHELPER,
+				DBHelperMapper.VERB_ALL, TYPE_CAST_DIR);
+		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CAST_ITEM, ITINERARY_CASTS_DBHELPER,
+				DBHelperMapper.VERB_ALL, TYPE_CAST_ITEM);
 
-		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CASTMEDIA_DIR, CASTS_CASTMEDIA_DBHELPER, DBHelperMapper.TYPE_ALL);
-		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CASTMEDIA_ITEM, CASTS_CASTMEDIA_DBHELPER, DBHelperMapper.TYPE_ALL);
+		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CASTMEDIA_DIR, CASTS_CASTMEDIA_DBHELPER,
+				DBHelperMapper.VERB_ALL, TYPE_CASTMEDIA_DIR);
+		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CASTMEDIA_ITEM, CASTS_CASTMEDIA_DBHELPER,
+				DBHelperMapper.VERB_ALL, TYPE_CASTMEDIA_ITEM);
 
-		mDBHelperMapper.addDirMapping(MATCHER_EVENT_DIR, EVENT_DBHELPER, DBHelperMapper.TYPE_ALL);
-		mDBHelperMapper.addItemMapping(MATCHER_EVENT_ITEM, EVENT_DBHELPER, DBHelperMapper.TYPE_ALL);
+		mDBHelperMapper.addDirMapping(MATCHER_EVENT_DIR, EVENT_DBHELPER, DBHelperMapper.VERB_ALL,
+				TYPE_EVENT_DIR);
+		mDBHelperMapper.addItemMapping(MATCHER_EVENT_ITEM, EVENT_DBHELPER, DBHelperMapper.VERB_ALL,
+				TYPE_EVENT_ITEM);
 	}
 }

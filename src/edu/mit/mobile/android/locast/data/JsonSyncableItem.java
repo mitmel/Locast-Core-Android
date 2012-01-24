@@ -40,7 +40,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.CursorWrapper;
 import android.net.Uri;
-import android.provider.BaseColumns;
+import edu.mit.mobile.android.content.ContentItem;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
@@ -52,7 +52,7 @@ import edu.mit.mobile.android.utils.ListUtils;
  * @author stevep
  *
  */
-public abstract class JsonSyncableItem extends CursorWrapper implements BaseColumns {
+public abstract class JsonSyncableItem extends CursorWrapper implements ContentItem {
 	public static final String
 		_PUBLIC_URI      = "uri",
 		_MODIFIED_DATE  = "modified",
