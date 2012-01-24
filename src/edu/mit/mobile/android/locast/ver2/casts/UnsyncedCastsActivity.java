@@ -144,7 +144,7 @@ public class UnsyncedCastsActivity extends CastListActivity implements AccountMa
 		        })
 		        .setNegativeButton(android.R.string.no, null)
 		        .show();
-			}`
+			}
 		});
 	}
 	
