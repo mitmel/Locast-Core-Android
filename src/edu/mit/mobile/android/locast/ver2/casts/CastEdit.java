@@ -553,6 +553,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			// XXX hack. This is done as the cast is notified that it should reload when cast media is added. Obviously, it shouldn't.
 			if (mFirstLoad && c.moveToFirst()){
 				loadFromCursor(c);
+			} else if (mLocation == null && c.moveToFirst()) {
+				loadLocation(c);
 			}
 			break;
 
@@ -610,12 +612,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		mTitleView.setText(c.getString(c.getColumnIndexOrThrow(Cast._TITLE)));
 		//mDescriptionView.setText(c.getString(c.getColumnIndexOrThrow(Cast._DESCRIPTION)));
 
-		final Location l = Locatable.toLocation(c);
-		if (l != null) {
-			setLocation(new GeoPoint((int)(l.getLatitude() * 1E6), (int)(l.getLongitude() * 1E6))); // XXX optimize
-		} else {
-			startUpdatingLocation();
-		}
+		loadLocation(c);
 		
 		mTags.clearAllTags();
 		mTags.addTags(TaggableItem.getTags(getContentResolver(), mCast));
@@ -631,6 +628,15 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 		setEditable(Cast.canEdit(this, c));
 		updateDetailsTab();
+	}
+	
+	private void loadLocation(Cursor c) {
+		final Location l = Locatable.toLocation(c);
+		if (l != null) {
+			setLocation(new GeoPoint((int)(l.getLatitude() * 1E6), (int)(l.getLongitude() * 1E6))); // XXX optimize
+		} else {
+			startUpdatingLocation();
+		}
 	}
 
 	private void setEditable(boolean isEditable){
