@@ -41,6 +41,10 @@ import android.database.Cursor;
 import android.database.CursorWrapper;
 import android.net.Uri;
 import edu.mit.mobile.android.content.ContentItem;
+import edu.mit.mobile.android.content.column.BooleanColumn;
+import edu.mit.mobile.android.content.column.DBColumn;
+import edu.mit.mobile.android.content.column.IntegerColumn;
+import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
@@ -53,12 +57,21 @@ import edu.mit.mobile.android.utils.ListUtils;
  *
  */
 public abstract class JsonSyncableItem extends CursorWrapper implements ContentItem {
-	public static final String
-		_PUBLIC_URI      = "uri",
-		_MODIFIED_DATE  = "modified",
-		_SERVER_MODIFIED_DATE  = "server_modified",
-		_CREATED_DATE = "created",
-		_DRAFT = "draft";
+
+	@DBColumn(type = TextColumn.class)
+	public static final String _PUBLIC_URI = "uri";
+
+	@DBColumn(type = IntegerColumn.class)
+	public static final String _MODIFIED_DATE = "modified";
+
+	@DBColumn(type = IntegerColumn.class)
+	public static final String _SERVER_MODIFIED_DATE = "server_modified";
+
+	@DBColumn(type = IntegerColumn.class)
+	public static final String _CREATED_DATE = "created";
+
+	@DBColumn(type = BooleanColumn.class)
+	public static final String _DRAFT = "draft";
 
 	/**
 	 * @return The URI for a given content directory.

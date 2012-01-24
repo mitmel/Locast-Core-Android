@@ -47,6 +47,7 @@ import android.net.Uri;
 import android.os.RemoteException;
 import edu.mit.mobile.android.content.DBHelper;
 import edu.mit.mobile.android.content.DBHelperMapper;
+import edu.mit.mobile.android.content.ForeignKeyDBHelper;
 import edu.mit.mobile.android.content.GenericDBHelper;
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.m2m.M2MDBHelper;
@@ -64,7 +65,6 @@ public class MediaProvider extends ContentProvider {
 
 	private static final String
 		CAST_TABLE_NAME       = "casts",
-		CASTMEDIA_TABLE_NAME = "castmedia", // casts with multiple media objects
 		COMMENT_TABLE_NAME    = "comments",
 		TAG_TABLE_NAME        = "tags",
 		ITINERARY_TABLE_NAME  = "itineraries",
@@ -217,8 +217,8 @@ public class MediaProvider extends ContentProvider {
 	private static final JSONSyncableIdenticalChildFinder mChildFinder = new JSONSyncableIdenticalChildFinder();
 	private static final M2MDBHelper ITINERARY_CASTS_DBHELPER = new M2MDBHelper(
 			ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder);
-	private static final M2MDBHelper CASTS_CASTMEDIA_DBHELPER = new M2MDBHelper(CAST_TABLE_NAME,
-			CASTMEDIA_TABLE_NAME, mChildFinder);
+	private static final ForeignKeyDBHelper CASTS_CASTMEDIA_DBHELPER = new ForeignKeyDBHelper(
+			Cast.class, CastMedia.class, CastMedia.CAST);
 
 	private static final DBHelper EVENT_DBHELPER = new GenericDBHelper(Event.class);
 
@@ -248,7 +248,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 44;
+		private static final int DB_VER = 45;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -312,24 +312,6 @@ public class MediaProvider extends ContentProvider {
 					+ ");"
 			);
 
-			db.execSQL("CREATE TABLE "+ CASTMEDIA_TABLE_NAME + " ("
-					+ JSON_SYNCABLE_ITEM_FIELDS
-					+ CastMedia._AUTHOR        + " TEXT,"
-					+ CastMedia._AUTHOR_URI	   + " TEXT,"
-					+ CastMedia._TITLE		   + " TEXT,"
-					+ CastMedia._DESCRIPTION   + " TEXT,"
-					+ CastMedia._LANGUAGE      + " TEXT,"
-
-					+ CastMedia._MEDIA_URL     + " TEXT,"
-					+ CastMedia._LOCAL_URI     + " TEXT,"
-					+ CastMedia._MIME_TYPE     + " TEXT,"
-					+ CastMedia._THUMBNAIL     + " TEXT,"
-					+ CastMedia._THUMB_LOCAL   + " TEXT,"
-					+ CastMedia._KEEP_OFFLINE  + " BOOLEAN,"
-					+ CastMedia._DURATION      + " INTEGER"
-			+ ")"
-			);
-
 			db.execSQL("CREATE TABLE " + ITINERARY_TABLE_NAME + " ("
 					+ JSON_SYNCABLE_ITEM_FIELDS
 					+ Itinerary._TITLE 		+ " TEXT,"
@@ -377,12 +359,12 @@ public class MediaProvider extends ContentProvider {
 			db.execSQL("DROP TABLE IF EXISTS " + CAST_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + COMMENT_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
-			db.execSQL("DROP TABLE IF EXISTS " + CASTMEDIA_TABLE_NAME);
-			db.execSQL("DROP TABLE IF EXISTS " + CASTMEDIA_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + ITINERARY_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + EVENT_TABLE_NAME);
-			ITINERARY_CASTS_DBHELPER.deleteJoinTable(db);
-			CASTS_CASTMEDIA_DBHELPER.deleteJoinTable(db);
+
+			ITINERARY_CASTS_DBHELPER.upgradeTables(db, oldVersion, newVersion);
+			CASTS_CASTMEDIA_DBHELPER.upgradeTables(db, oldVersion, newVersion);
+
 			onCreate(db);
 		}
 	}
@@ -963,10 +945,6 @@ public class MediaProvider extends ContentProvider {
 		switch (code) {
 			case MATCHER_CAST_DIR:
 				count = db.delete(CAST_TABLE_NAME, where, whereArgs);
-				// special case to handle deletion of ALL THE THINGS
-				if (where == null) {
-					db.delete(CASTS_CASTMEDIA_DBHELPER.getJoinTableName(), null, null);
-				}
 
 				break;
 
@@ -1097,9 +1075,7 @@ public class MediaProvider extends ContentProvider {
 		try{
 			if (c.getCount() == 1 && c.moveToFirst()){
 				final String storedPath = c.getString(c.getColumnIndex(field));
-				if (storedPath != null){
-					path = storedPath;
-				}
+				path = storedPath;
 			}else{
 				throw new IllegalArgumentException("could not get path from field '"+field+"' in uri "+uri);
 			}
