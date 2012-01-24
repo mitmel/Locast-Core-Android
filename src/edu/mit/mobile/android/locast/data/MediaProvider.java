@@ -564,7 +564,6 @@ public class MediaProvider extends ContentProvider {
 
 		default:
 			if (mDBHelperMapper.canInsert(code)){
-				// XXX draft should probably be looked at better.
 				if (values.containsKey(JsonSyncableItem._DRAFT)){
 					isDraft = values.getAsBoolean(JsonSyncableItem._DRAFT);
 				}else{
@@ -577,15 +576,10 @@ public class MediaProvider extends ContentProvider {
 		}
 
 		if (newItem != null){
-			context.getContentResolver().notifyChange(uri, null);
+			context.getContentResolver().notifyChange(uri, null, !isDraft /* syncToNetwork */);
 		}else{
-			throw new SQLException("Failed to insert row into "+uri);
+			throw new SQLException("Failed to insert row into " + uri);
 		}
-
-		// XXX figure out sync
-//		if (syncable && !isDraft){
-//			context.startService(new Intent(Intent.ACTION_SYNC, uri));
-//		}
 
 		return newItem;
 	}
@@ -785,7 +779,7 @@ public class MediaProvider extends ContentProvider {
 		}
 		final String lon = m.group(1);
 		final String lat = m.group(2);
-		final String dist = m.group(3);
+		// final String dist = m.group(3);
 
 		//final GeocellQuery gq = new GeocellQuery();
 		//GeocellUtils.compute(new Point(Double.valueOf(lat), Double.valueOf(lon)), resolution);
