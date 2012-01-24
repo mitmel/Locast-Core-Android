@@ -133,6 +133,7 @@
     <string name="are_you_sure_you_want_to_logout">Are you sure you want to logout?\nAll unsynced casts will be lost.</string>
     <string name="sync">Synchronize</string>
     <string name="syncing">Synchronizing…</string>
+    <string name="no_pending_casts_to_sync">No pending casts to synchronize</string>
 	
 	<!-- Moments -->
    	<string name="moment_description_hint">Briefly describe this moment (optional)</string>
@@ -223,4 +224,5 @@ reception, try standing in a clear area outside away from buildings.</string>
 	<string name="location_unknown">Location: Finding...</string>
 	<string name="location_known">Location: Found!</string>
 	<string name="unicef_unsynced_casts">UNICEF Unsynced Casts</string>
+	<string name="no_title">(no title)</string>
 </resources>
