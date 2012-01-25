@@ -2,7 +2,6 @@ package edu.mit.mobile.android.locast.ver2.casts;
 
 import java.io.File;
 import java.util.HashMap;
-import 	java.io.ByteArrayOutputStream;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -451,6 +450,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		finish();
 	}
 
+	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (resultCode == RESULT_CANCELED){
@@ -463,12 +463,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			case REQUEST_NEW_PHOTO:
 				addMedia(mCreateMediaUri);
 				mMediaThumbnail = (ImageView) findViewById(R.id.media_thumbnail);
-		        Bitmap bMap = BitmapFactory.decodeFile(mCreateMediaUri.getPath());
-		        ByteArrayOutputStream thumbStream = new ByteArrayOutputStream();
-		        bMap.compress(CompressFormat.JPEG, 50, thumbStream);
-		        byte[] thumbByteArray = thumbStream.toByteArray();
-		        Bitmap thumbnail = BitmapFactory.decodeByteArray(thumbByteArray, 0, thumbByteArray.length);
-		        mMediaThumbnail.setImageBitmap(thumbnail);
+		        mMediaThumbnail.setImageURI(mCreateMediaUri);
 				mCreateMediaUri = null;
 				break;
 			case REQUEST_NEW_VIDEO:
@@ -727,7 +722,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	public void addMedia(Uri content){
 		final Uri castMedia = Cast.getCastMediaUri(mCast);
 		final ContentValues cv = new ContentValues();
-
+		
 		final long now = System.currentTimeMillis();
 		cv.put(CastMedia._MODIFIED_DATE, now);
 		cv.put(CastMedia._CREATED_DATE, now);

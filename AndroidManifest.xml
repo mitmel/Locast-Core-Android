@@ -98,7 +98,7 @@
                 <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.castmedia" />
             </intent-filter>
         </activity>
-        <activity android:name=".casts.CastEdit">
+        <activity android:name=".casts.CastEdit" android:configChanges="orientation">
             <intent-filter>
                 <action android:name="android.intent.action.EDIT" />
 
