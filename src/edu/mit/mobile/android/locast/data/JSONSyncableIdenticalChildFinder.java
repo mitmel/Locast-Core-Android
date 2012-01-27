@@ -22,9 +22,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import edu.mit.mobile.android.content.DBHelper;
-import edu.mit.mobile.android.content.ManyToMany.M2MDBHelper;
+import edu.mit.mobile.android.content.m2m.IdenticalChildFinder;
 
-public class JSONSyncableIdenticalChildFinder implements M2MDBHelper.IdenticalChildFinder {
+public class JSONSyncableIdenticalChildFinder implements IdenticalChildFinder {
 	@Override
 	public Uri getIdenticalChild(DBHelper m2m, Uri parentChildDir, SQLiteDatabase db, String childTable,
 			ContentValues values) {

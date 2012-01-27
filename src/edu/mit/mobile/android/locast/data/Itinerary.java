@@ -70,6 +70,10 @@ public class Itinerary extends TaggableItem implements Favoritable.Columns {
 		_DRAFT,
 	};
 
+	public Itinerary(Cursor c) {
+		super(c);
+	}
+
 	@Override
 	public Uri getContentUri() {
 		return CONTENT_URI;

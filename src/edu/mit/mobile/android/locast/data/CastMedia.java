@@ -34,31 +34,60 @@ import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
 import edu.mit.mobile.android.content.ProviderUtils;
+import edu.mit.mobile.android.content.UriPath;
+import edu.mit.mobile.android.content.column.BooleanColumn;
+import edu.mit.mobile.android.content.column.DBColumn;
+import edu.mit.mobile.android.content.column.DBForeignKeyColumn;
+import edu.mit.mobile.android.content.column.IntegerColumn;
+import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.ver2.R;
 
+@UriPath(CastMedia.PATH)
 public class CastMedia extends JsonSyncableItem {
 	private static final String TAG = CastMedia.class.getSimpleName();
 
-	public final static String
-		_AUTHOR		  = "author",
-		_AUTHOR_URI	  = "author_uri",
+	@DBColumn(type=TextColumn.class)
+	public final static String _AUTHOR = "author";
 
-		_TITLE		  = "title",
-		_DESCRIPTION  = "description",
-		_LANGUAGE	  = "language",
+	@DBColumn(type=TextColumn.class)
+	public final static String _AUTHOR_URI = "author_uri";
 
-		_MEDIA_URL    = "url",			// the body of the object
-		_LOCAL_URI    = "local_uri",	// any local copy of the main media
-		_MIME_TYPE    = "mimetype",		// type of the media
-		_DURATION	  = "duration",
-		_THUMBNAIL	  = "thumbnail",
-		_KEEP_OFFLINE = "offline",
-		_THUMB_LOCAL  = "local_thumb"   // filename of the local thumbnail
-		;
+	@DBColumn(type=TextColumn.class)
+	public final static String _TITLE = "title";
+
+	@DBColumn(type=TextColumn.class)
+	public final static String _DESCRIPTION = "description";
+
+	@DBColumn(type=TextColumn.class)
+	public final static String _LANGUAGE = "language";
+
+	@DBColumn(type=TextColumn.class)
+	public final static String _MEDIA_URL = "url"; // the body of the object
+
+	@DBColumn(type=TextColumn.class)
+	public final static String _LOCAL_URI = "local_uri"; // any local copy of the main media
+
+	@DBColumn(type=TextColumn.class)
+	public final static String _MIME_TYPE = "mimetype"; // type of the media
+
+	@DBColumn(type=IntegerColumn.class)
+	public final static String _DURATION = "duration";
+
+	@DBColumn(type=TextColumn.class)
+	public final static String _THUMBNAIL = "thumbnail";
+
+	@DBColumn(type=BooleanColumn.class)
+	public final static String _KEEP_OFFLINE = "offline";
+
+	@DBColumn(type=TextColumn.class)
+	public final static String _THUMB_LOCAL = "local_thumb"; // filename of the local thumbnail
+
+	@DBForeignKeyColumn(Cast.class)
+	public final static String CAST = "cast_id";
+
 	public final static String PATH = "media";
 	public final static String SERVER_PATH = "media/";
-	//public final static Uri CONTENT_URI = Uri.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
 
 	public final static String[] PROJECTION = {
 		_ID,
@@ -86,9 +115,14 @@ public class CastMedia extends JsonSyncableItem {
 		MIMETYPE_3GPP = "video/3gpp",
 		MIMETYPE_MPEG4 = "video/mpeg4";
 
+	public CastMedia(Cursor c) {
+		super(c);
+	}
+
 	@Override
 	public Uri getContentUri() {
-		return null;
+
+		return null; // XXX this is wrong.
 	}
 
 	@Override

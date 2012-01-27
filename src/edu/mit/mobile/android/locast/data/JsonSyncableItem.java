@@ -38,8 +38,13 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.CursorWrapper;
 import android.net.Uri;
-import android.provider.BaseColumns;
+import edu.mit.mobile.android.content.ContentItem;
+import edu.mit.mobile.android.content.column.BooleanColumn;
+import edu.mit.mobile.android.content.column.DBColumn;
+import edu.mit.mobile.android.content.column.IntegerColumn;
+import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
@@ -51,13 +56,22 @@ import edu.mit.mobile.android.utils.ListUtils;
  * @author stevep
  *
  */
-public abstract class JsonSyncableItem implements BaseColumns {
-	public static final String
-		_PUBLIC_URI      = "uri",
-		_MODIFIED_DATE  = "modified",
-		_SERVER_MODIFIED_DATE  = "server_modified",
-		_CREATED_DATE = "created",
-		_DRAFT = "draft";
+public abstract class JsonSyncableItem extends CursorWrapper implements ContentItem {
+
+	@DBColumn(type = TextColumn.class)
+	public static final String _PUBLIC_URI = "uri";
+
+	@DBColumn(type = IntegerColumn.class)
+	public static final String _MODIFIED_DATE = "modified";
+
+	@DBColumn(type = IntegerColumn.class)
+	public static final String _SERVER_MODIFIED_DATE = "server_modified";
+
+	@DBColumn(type = IntegerColumn.class)
+	public static final String _CREATED_DATE = "created";
+
+	@DBColumn(type = BooleanColumn.class)
+	public static final String _DRAFT = "draft";
 
 	/**
 	 * @return The URI for a given content directory.
@@ -68,6 +82,14 @@ public abstract class JsonSyncableItem implements BaseColumns {
 
 	public static final String SELECTION_NOT_DRAFT = "(" + TaggableItem._DRAFT + " ISNULL OR "
 			+ TaggableItem._DRAFT + " = 0)";
+
+	public JsonSyncableItem(Cursor c) {
+		super(c);
+	}
+
+	public Uri getCanonicalUri() {
+		return ContentUris.withAppendedId(getContentUri(), getLong(getColumnIndex(_ID)));
+	}
 
 	/**
 	 * Given a public Uri fragment, finds the local item representing it. If there isn't any such item, null is returned.
@@ -125,7 +147,6 @@ public abstract class JsonSyncableItem implements BaseColumns {
 	 * @param column column number
 	 * @param c cursor pointing to a row
 	 * @return
-	 * @see #getList(int, Cursor)
 	 */
 	public static List<String> getList(int column, Cursor c){
 		final String t = c.getString(column);

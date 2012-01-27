@@ -1,6 +1,7 @@
 package edu.mit.mobile.android.locast.data;
+
 /*
- * Copyright (C) 2010  MIT Mobile Experience Lab
+ * Copyright (C) 2010-2012  MIT Mobile Experience Lab
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -16,8 +17,12 @@ package edu.mit.mobile.android.locast.data;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,6 +33,8 @@ import junit.framework.Assert;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.ContentProvider;
+import android.content.ContentProviderClient;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
@@ -39,11 +46,15 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.os.RemoteException;
+import android.util.Log;
 import edu.mit.mobile.android.content.DBHelper;
 import edu.mit.mobile.android.content.DBHelperMapper;
+import edu.mit.mobile.android.content.ForeignKeyDBHelper;
 import edu.mit.mobile.android.content.GenericDBHelper;
-import edu.mit.mobile.android.content.ManyToMany;
 import edu.mit.mobile.android.content.ProviderUtils;
+import edu.mit.mobile.android.content.m2m.M2MDBHelper;
+import edu.mit.mobile.android.content.m2m.M2MReverseHelper;
 import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
@@ -58,7 +69,6 @@ public class MediaProvider extends ContentProvider {
 
 	private static final String
 		CAST_TABLE_NAME       = "casts",
-		CASTMEDIA_TABLE_NAME = "castmedia", // casts with multiple media objects
 		COMMENT_TABLE_NAME    = "comments",
 		TAG_TABLE_NAME        = "tags",
 		ITINERARY_TABLE_NAME  = "itineraries",
@@ -83,15 +93,138 @@ public class MediaProvider extends ContentProvider {
 		TYPE_EVENT_ITEM = "vnd.android.cursor.item/vnd."+NAMESPACE+"."+EVENT_TABLE_NAME
 		;
 
+	private static final HashMap<String, Class<? extends JsonSyncableItem>> TYPE_MAP = new HashMap<String, Class<? extends JsonSyncableItem>>();
+
+	static {
+		TYPE_MAP.put(MediaProvider.TYPE_CAST_DIR, Cast.class);
+		TYPE_MAP.put(MediaProvider.TYPE_CAST_ITEM, Cast.class);
+
+		TYPE_MAP.put(MediaProvider.TYPE_CASTMEDIA_DIR, CastMedia.class);
+		TYPE_MAP.put(MediaProvider.TYPE_CASTMEDIA_ITEM, CastMedia.class);
+
+		TYPE_MAP.put(MediaProvider.TYPE_COMMENT_DIR, Comment.class);
+		TYPE_MAP.put(MediaProvider.TYPE_COMMENT_ITEM, Comment.class);
+
+		TYPE_MAP.put(MediaProvider.TYPE_ITINERARY_DIR, Itinerary.class);
+		TYPE_MAP.put(MediaProvider.TYPE_ITINERARY_ITEM, Itinerary.class);
+
+		TYPE_MAP.put(MediaProvider.TYPE_EVENT_DIR, Event.class);
+		TYPE_MAP.put(MediaProvider.TYPE_EVENT_ITEM, Event.class);
+	}
+
+	/**
+	 * Retrieves the class which maps to the given type of the specified uri. The map is statically
+	 * defined in this class.
+	 *
+	 * @param provider
+	 *            a provider which can retrieve the type for the given uri
+	 * @param data
+	 *            a uri to a dir or item which the engine knows how to handle
+	 * @return the class which contains the sync map (and other helpers) for the specified uri
+	 * @throws SyncException
+	 *             if the map cannot be found
+	 * @throws RemoteException
+	 *             if there is an error communicating with the provider
+	 */
+	public static Class<? extends JsonSyncableItem> getSyncClass(ContentProviderClient provider,
+			Uri data) throws SyncMapException, RemoteException {
+		final String type = provider.getType(data);
+
+		final Class<? extends JsonSyncableItem> syncable = TYPE_MAP.get(type);
+		if (syncable == null) {
+			throw new SyncMapException("cannot find " + data + ", which has type " + type
+					+ ", in the SyncEngine's sync map");
+		}
+		return syncable;
+	}
+
+	/**
+	 * Retrieves the sync map from the class that maps to the given uri
+	 *
+	 * @param provider
+	 * @param toSync
+	 * @return
+	 * @throws RemoteException
+	 * @throws SyncMapException
+	 */
+	public static SyncMap getSyncMap(ContentProviderClient provider, Uri toSync)
+			throws RemoteException,
+			SyncMapException {
+		final Class<? extends JsonSyncableItem> syncable = MediaProvider.getSyncClass(provider,
+				toSync);
+
+		try {
+			final Field syncMap = syncable.getField("SYNC_MAP");
+			final int modifiers = syncMap.getModifiers();
+			if (!Modifier.isStatic(modifiers)) {
+				throw new SyncMapException("sync map for " + syncable + " is not static");
+			}
+			return (SyncMap) syncMap.get(null);
+
+		} catch (final SecurityException e) {
+			throw new SyncMapException("error extracting sync map", e);
+
+		} catch (final NoSuchFieldException e) {
+			throw new SyncMapException("SYNC_MAP static field missing from " + syncable, e);
+
+		} catch (final IllegalArgumentException e) {
+			throw new SyncMapException("error extracting sync map", e);
+
+		} catch (final IllegalAccessException e) {
+			throw new SyncMapException("error extracting sync map", e);
+
+		}
+	}
+
+	/**
+	 * Creates a new instance of the class mapped to the given type, pointing to the given cursor.
+	 *
+	 * @param provider
+	 * @param itemDir
+	 * @param cursor
+	 * @return
+	 * @throws RemoteException
+	 * @throws SyncMapException
+	 */
+	public static JsonSyncableItem getDataItemInstance(ContentProviderClient provider, Uri itemDir,
+			Cursor cursor)
+			throws RemoteException, SyncMapException {
+		final Class<? extends JsonSyncableItem> sync = MediaProvider
+				.getSyncClass(provider, itemDir);
+		JsonSyncableItem syncableItem;
+		try {
+			syncableItem = sync.getConstructor(Cursor.class).newInstance(cursor);
+
+		} catch (final IllegalArgumentException e1) {
+			throw new SyncMapException("error instantiating data object ", e1);
+
+		} catch (final SecurityException e1) {
+			throw new SyncMapException("error instantiating data object ", e1);
+
+		} catch (final InstantiationException e1) {
+			throw new SyncMapException("error instantiating data object ", e1);
+
+		} catch (final IllegalAccessException e1) {
+			throw new SyncMapException("error instantiating data object ", e1);
+
+		} catch (final InvocationTargetException e1) {
+			throw new SyncMapException("error instantiating data object ", e1);
+
+		} catch (final NoSuchMethodException e1) {
+			throw new SyncMapException("error instantiating data object ", e1);
+		}
+
+		return syncableItem;
+	}
+
 
 	private static final JSONSyncableIdenticalChildFinder mChildFinder = new JSONSyncableIdenticalChildFinder();
-	private static final ManyToMany.M2MDBHelper
-		// ITINERARY_CASTS_DBHELPER = new ManyToMany.M2MDBHelper(ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder, Cast.CONTENT_URI),
-		ITINERARY_CASTS_DBHELPER = new ManyToMany.M2MDBHelper(ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder),
-		CASTS_CASTMEDIA_DBHELPER = new ManyToMany.M2MDBHelper(CAST_TABLE_NAME, CASTMEDIA_TABLE_NAME, mChildFinder);
+	private static final M2MDBHelper ITINERARY_CASTS_DBHELPER = new M2MDBHelper(
+			ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder);
+	private static final ForeignKeyDBHelper CASTS_CASTMEDIA_DBHELPER = new ForeignKeyDBHelper(
+			Cast.class, CastMedia.class, CastMedia.CAST);
 
-	private static final DBHelper
-		EVENT_DBHELPER = new GenericDBHelper(EVENT_TABLE_NAME, Event.CONTENT_URI);
+	private static final DBHelper EVENT_DBHELPER = new GenericDBHelper(Event.class);
 
 	private final static UriMatcher uriMatcher;
 
@@ -100,6 +233,7 @@ public class MediaProvider extends ContentProvider {
 	private static final int
 		MATCHER_CAST_DIR             = 1,
 		MATCHER_CAST_ITEM            = 2,
+			MATCHER_CAST_ITINERARY_DIR = 3,
 		MATCHER_COMMENT_DIR          = 5,
 		MATCHER_COMMENT_ITEM         = 6,
 		MATCHER_EVENT_DIR 			 = 7,
@@ -119,7 +253,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 43;
+		private static final int DB_VER = 45;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -183,24 +317,6 @@ public class MediaProvider extends ContentProvider {
 					+ ");"
 			);
 
-			db.execSQL("CREATE TABLE "+ CASTMEDIA_TABLE_NAME + " ("
-					+ JSON_SYNCABLE_ITEM_FIELDS
-					+ CastMedia._AUTHOR        + " TEXT,"
-					+ CastMedia._AUTHOR_URI	   + " TEXT,"
-					+ CastMedia._TITLE		   + " TEXT,"
-					+ CastMedia._DESCRIPTION   + " TEXT,"
-					+ CastMedia._LANGUAGE      + " TEXT,"
-
-					+ CastMedia._MEDIA_URL     + " TEXT,"
-					+ CastMedia._LOCAL_URI     + " TEXT,"
-					+ CastMedia._MIME_TYPE     + " TEXT,"
-					+ CastMedia._THUMBNAIL     + " TEXT,"
-					+ CastMedia._THUMB_LOCAL   + " TEXT,"
-					+ CastMedia._KEEP_OFFLINE  + " BOOLEAN,"
-					+ CastMedia._DURATION      + " INTEGER"
-			+ ")"
-			);
-
 			db.execSQL("CREATE TABLE " + ITINERARY_TABLE_NAME + " ("
 					+ JSON_SYNCABLE_ITEM_FIELDS
 					+ Itinerary._TITLE 		+ " TEXT,"
@@ -234,8 +350,8 @@ public class MediaProvider extends ContentProvider {
 					+ ");"
 					);
 
-			ITINERARY_CASTS_DBHELPER.createJoinTable(db);
-			CASTS_CASTMEDIA_DBHELPER.createJoinTable(db);
+			ITINERARY_CASTS_DBHELPER.createTables(db);
+			CASTS_CASTMEDIA_DBHELPER.createTables(db);
 		}
 
 		@Override
@@ -248,12 +364,12 @@ public class MediaProvider extends ContentProvider {
 			db.execSQL("DROP TABLE IF EXISTS " + CAST_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + COMMENT_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
-			db.execSQL("DROP TABLE IF EXISTS " + CASTMEDIA_TABLE_NAME);
-			db.execSQL("DROP TABLE IF EXISTS " + CASTMEDIA_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + ITINERARY_TABLE_NAME);
 			db.execSQL("DROP TABLE IF EXISTS " + EVENT_TABLE_NAME);
-			ITINERARY_CASTS_DBHELPER.deleteJoinTable(db);
-			CASTS_CASTMEDIA_DBHELPER.deleteJoinTable(db);
+
+			ITINERARY_CASTS_DBHELPER.upgradeTables(db, oldVersion, newVersion);
+			CASTS_CASTMEDIA_DBHELPER.upgradeTables(db, oldVersion, newVersion);
+
 			onCreate(db);
 		}
 	}
@@ -278,6 +394,7 @@ public class MediaProvider extends ContentProvider {
 
 		case MATCHER_COMMENT_ITEM:
 		case MATCHER_CHILD_COMMENT_ITEM:
+			case MATCHER_CAST_ITINERARY_DIR:
 
 			return false;
 
@@ -342,6 +459,7 @@ public class MediaProvider extends ContentProvider {
 			return TYPE_CAST_ITEM;
 
 		case MATCHER_ITINERARY_DIR:
+			case MATCHER_CAST_ITINERARY_DIR:
 			return TYPE_ITINERARY_DIR;
 		case MATCHER_ITINERARY_ITEM:
 			return TYPE_ITINERARY_ITEM;
@@ -453,7 +571,6 @@ public class MediaProvider extends ContentProvider {
 
 		default:
 			if (mDBHelperMapper.canInsert(code)){
-				// XXX draft should probably be looked at better.
 				if (values.containsKey(JsonSyncableItem._DRAFT)){
 					isDraft = values.getAsBoolean(JsonSyncableItem._DRAFT);
 				}else{
@@ -466,15 +583,10 @@ public class MediaProvider extends ContentProvider {
 		}
 
 		if (newItem != null){
-			context.getContentResolver().notifyChange(uri, null);
+			context.getContentResolver().notifyChange(uri, null, !isDraft /* syncToNetwork */);
 		}else{
-			throw new SQLException("Failed to insert row into "+uri);
+			throw new SQLException("Failed to insert row into " + uri);
 		}
-
-		// XXX figure out sync
-//		if (syncable && !isDraft){
-//			context.startService(new Intent(Intent.ACTION_SYNC, uri));
-//		}
 
 		return newItem;
 	}
@@ -674,7 +786,7 @@ public class MediaProvider extends ContentProvider {
 		}
 		final String lon = m.group(1);
 		final String lat = m.group(2);
-		final String dist = m.group(3);
+		// final String dist = m.group(3);
 
 		//final GeocellQuery gq = new GeocellQuery();
 		//GeocellUtils.compute(new Point(Double.valueOf(lat), Double.valueOf(lon)), resolution);
@@ -834,10 +946,6 @@ public class MediaProvider extends ContentProvider {
 		switch (code) {
 			case MATCHER_CAST_DIR:
 				count = db.delete(CAST_TABLE_NAME, where, whereArgs);
-				// special case to handle deletion of ALL THE THINGS
-				if (where == null) {
-					db.delete(CASTS_CASTMEDIA_DBHELPER.getJoinTableName(), null, null);
-				}
 
 				break;
 
@@ -935,11 +1043,11 @@ public class MediaProvider extends ContentProvider {
 	 * @throws NoPublicPath
 	 */
 	public static String getPostPath(Context context, Uri uri) throws NoPublicPath{
-		return getPublicPath(context, uri, null, true);
+		return getPublicPath(context, uri, true);
 	}
 
 	public static String getPublicPath(Context context, Uri uri) throws NoPublicPath{
-		return getPublicPath(context, uri, null, false);
+		return getPublicPath(context, uri, false);
 	}
 
 	/**
@@ -952,7 +1060,7 @@ public class MediaProvider extends ContentProvider {
 	 * @throws NoPublicPath
 	 */
 	public static String getPublicPath(Context context, Uri uri, Long publicId) throws NoPublicPath{
-		return getPublicPath(context, uri, publicId, false);
+		return getPublicPath(context, uri, false);
 	}
 
 	/**
@@ -968,9 +1076,7 @@ public class MediaProvider extends ContentProvider {
 		try{
 			if (c.getCount() == 1 && c.moveToFirst()){
 				final String storedPath = c.getString(c.getColumnIndex(field));
-				if (storedPath != null){
-					path = storedPath;
-				}
+				path = storedPath;
 			}else{
 				throw new IllegalArgumentException("could not get path from field '"+field+"' in uri "+uri);
 			}
@@ -980,7 +1086,7 @@ public class MediaProvider extends ContentProvider {
 		return path;
 	}
 
-	public static String getPublicPath(Context context, Uri uri, Long publicId, boolean parent) throws NoPublicPath{
+	public static String getPublicPath(Context context, Uri uri, boolean parent) throws NoPublicPath{
 		String path;
 
 		final int match = uriMatcher.match(uri);
@@ -1011,14 +1117,55 @@ public class MediaProvider extends ContentProvider {
 			path = getPathFromField(context, ProviderUtils.removeLastPathSegment(uri), Commentable.Columns._COMMENT_DIR_URI);
 			break;
 
-		case MATCHER_CAST_ITEM:
+			case MATCHER_CAST_ITEM: {
+				// when asking for the index of casts, it needs to be known if
+				// they're in an itinerary. /cast/4/ is canonical for a cast, regardless
+				// if it's in an itinerary or not. /itinerary/2/cast/ is canonical for
+				// the location of all casts within an itinerary (but /itinerary/2/cast/4/ is
+				// not valid).
+				if (parent) {
+					final ContentResolver cr = context.getContentResolver();
+					final Cursor c = cr.query(Uri.withAppendedPath(uri, Itinerary.PATH),
+							new String[] { Itinerary._ID }, null, null, null);
+					if (c == null) {
+						throw new NoPublicPath("Could not query " + uri);
+					}
+					try {
+						c.moveToFirst();
+						final int itineraries = c.getCount();
+
+						// if the cast is in any itineraries, the pub path needs to be that of the
+						// itinerary
+						if (itineraries > 0) {
+							final Uri itinerary = ContentUris.withAppendedId(Itinerary.CONTENT_URI,
+									c.getLong(c.getColumnIndex(Itinerary._ID)));
+							path = getPublicPath(context, Itinerary.getCastsUri(itinerary));
+							if (itineraries > 1) {
+								// warn that only the first is being handled
+								Log.w(TAG,
+										"cast is in multiple itineraries. Currently not handled.");
+							}
+						} else { // not in an itinerary
+							path = getPublicPath(context, ProviderUtils.removeLastPathSegment(uri));
+						}
+					} finally {
+						c.close();
+					}
+
+				} else { // !parent
+					path = getPathFromField(context, uri, JsonSyncableItem._PUBLIC_URI);
+				}
+
+			}
+				break;
+
+			case MATCHER_CHILD_CAST_ITEM:
 		case MATCHER_CHILD_COMMENT_ITEM:
-		case MATCHER_CHILD_CAST_ITEM:
 		case MATCHER_COMMENT_ITEM:
 		case MATCHER_ITINERARY_ITEM:
 		case MATCHER_CHILD_CASTMEDIA_ITEM:
 		{
-			if (parent || publicId != null){
+				if (parent) {
 				path = getPublicPath(context, ProviderUtils.removeLastPathSegment(uri));
 			}else{
 				path = getPathFromField(context, uri, JsonSyncableItem._PUBLIC_URI);
@@ -1046,9 +1193,6 @@ public class MediaProvider extends ContentProvider {
 
 		if (path == null){
 			throw new NoPublicPath("got null path for " + uri);
-		}
-		if (publicId != null){
-			path += publicId + "/";
 		}
 
 		path = path.replaceAll("//", "/"); // hack to get around a tedious problem
@@ -1105,6 +1249,9 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Cast.PATH, MATCHER_CAST_DIR);
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#", MATCHER_CAST_ITEM);
 
+		uriMatcher
+				.addURI(AUTHORITY, Cast.PATH + "/#/" + Itinerary.PATH, MATCHER_CAST_ITINERARY_DIR);
+
 		// /cast/1/media
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH, MATCHER_CHILD_CASTMEDIA_DIR);
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH+"/#", MATCHER_CHILD_CASTMEDIA_ITEM);
@@ -1144,13 +1291,23 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH,		MATCHER_CHILD_CAST_DIR);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#", MATCHER_CHILD_CAST_ITEM);
 
-		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CAST_DIR, ITINERARY_CASTS_DBHELPER, DBHelperMapper.TYPE_ALL);
-		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CAST_ITEM, ITINERARY_CASTS_DBHELPER, DBHelperMapper.TYPE_ALL);
+		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CAST_DIR, ITINERARY_CASTS_DBHELPER,
+				DBHelperMapper.VERB_ALL, TYPE_CAST_DIR);
+		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CAST_ITEM, ITINERARY_CASTS_DBHELPER,
+				DBHelperMapper.VERB_ALL, TYPE_CAST_ITEM);
 
-		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CASTMEDIA_DIR, CASTS_CASTMEDIA_DBHELPER, DBHelperMapper.TYPE_ALL);
-		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CASTMEDIA_ITEM, CASTS_CASTMEDIA_DBHELPER, DBHelperMapper.TYPE_ALL);
+		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CASTMEDIA_DIR, CASTS_CASTMEDIA_DBHELPER,
+				DBHelperMapper.VERB_ALL, TYPE_CASTMEDIA_DIR);
+		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CASTMEDIA_ITEM, CASTS_CASTMEDIA_DBHELPER,
+				DBHelperMapper.VERB_ALL, TYPE_CASTMEDIA_ITEM);
 
-		mDBHelperMapper.addDirMapping(MATCHER_EVENT_DIR, EVENT_DBHELPER, DBHelperMapper.TYPE_ALL);
-		mDBHelperMapper.addItemMapping(MATCHER_EVENT_ITEM, EVENT_DBHELPER, DBHelperMapper.TYPE_ALL);
+		mDBHelperMapper.addDirMapping(MATCHER_EVENT_DIR, EVENT_DBHELPER, DBHelperMapper.VERB_ALL,
+				TYPE_EVENT_DIR);
+		mDBHelperMapper.addItemMapping(MATCHER_EVENT_ITEM, EVENT_DBHELPER, DBHelperMapper.VERB_ALL,
+				TYPE_EVENT_ITEM);
+
+		// itinerary reverse lookup
+		mDBHelperMapper.addDirMapping(MATCHER_CAST_ITINERARY_DIR, new M2MReverseHelper(
+				ITINERARY_CASTS_DBHELPER), DBHelperMapper.VERB_QUERY, TYPE_ITINERARY_DIR);
 	}
 }

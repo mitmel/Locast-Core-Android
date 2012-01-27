@@ -57,6 +57,10 @@ public class Event extends TaggableItem implements Locatable.Columns {
 	public static final String
 		SORT_ORDER_DEFAULT = Event._START_DATE+" ASC";
 
+	public Event(Cursor c) {
+		super(c);
+	}
+
 	@Override
 	public Uri getContentUri() {
 		return CONTENT_URI;
