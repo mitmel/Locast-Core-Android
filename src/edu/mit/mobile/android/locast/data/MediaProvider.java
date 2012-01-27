@@ -1,6 +1,7 @@
 package edu.mit.mobile.android.locast.data;
+
 /*
- * Copyright (C) 2010  MIT Mobile Experience Lab
+ * Copyright (C) 2010-2012  MIT Mobile Experience Lab
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -33,6 +34,7 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.ContentProvider;
 import android.content.ContentProviderClient;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
@@ -45,12 +47,14 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.os.RemoteException;
+import android.util.Log;
 import edu.mit.mobile.android.content.DBHelper;
 import edu.mit.mobile.android.content.DBHelperMapper;
 import edu.mit.mobile.android.content.ForeignKeyDBHelper;
 import edu.mit.mobile.android.content.GenericDBHelper;
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.m2m.M2MDBHelper;
+import edu.mit.mobile.android.content.m2m.M2MReverseHelper;
 import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
@@ -229,6 +233,7 @@ public class MediaProvider extends ContentProvider {
 	private static final int
 		MATCHER_CAST_DIR             = 1,
 		MATCHER_CAST_ITEM            = 2,
+			MATCHER_CAST_ITINERARY_DIR = 3,
 		MATCHER_COMMENT_DIR          = 5,
 		MATCHER_COMMENT_ITEM         = 6,
 		MATCHER_EVENT_DIR 			 = 7,
@@ -389,6 +394,7 @@ public class MediaProvider extends ContentProvider {
 
 		case MATCHER_COMMENT_ITEM:
 		case MATCHER_CHILD_COMMENT_ITEM:
+			case MATCHER_CAST_ITINERARY_DIR:
 
 			return false;
 
@@ -453,6 +459,7 @@ public class MediaProvider extends ContentProvider {
 			return TYPE_CAST_ITEM;
 
 		case MATCHER_ITINERARY_DIR:
+			case MATCHER_CAST_ITINERARY_DIR:
 			return TYPE_ITINERARY_DIR;
 		case MATCHER_ITINERARY_ITEM:
 			return TYPE_ITINERARY_ITEM;
@@ -1036,11 +1043,11 @@ public class MediaProvider extends ContentProvider {
 	 * @throws NoPublicPath
 	 */
 	public static String getPostPath(Context context, Uri uri) throws NoPublicPath{
-		return getPublicPath(context, uri, null, true);
+		return getPublicPath(context, uri, true);
 	}
 
 	public static String getPublicPath(Context context, Uri uri) throws NoPublicPath{
-		return getPublicPath(context, uri, null, false);
+		return getPublicPath(context, uri, false);
 	}
 
 	/**
@@ -1053,7 +1060,7 @@ public class MediaProvider extends ContentProvider {
 	 * @throws NoPublicPath
 	 */
 	public static String getPublicPath(Context context, Uri uri, Long publicId) throws NoPublicPath{
-		return getPublicPath(context, uri, publicId, false);
+		return getPublicPath(context, uri, false);
 	}
 
 	/**
@@ -1079,7 +1086,7 @@ public class MediaProvider extends ContentProvider {
 		return path;
 	}
 
-	public static String getPublicPath(Context context, Uri uri, Long publicId, boolean parent) throws NoPublicPath{
+	public static String getPublicPath(Context context, Uri uri, boolean parent) throws NoPublicPath{
 		String path;
 
 		final int match = uriMatcher.match(uri);
@@ -1110,14 +1117,55 @@ public class MediaProvider extends ContentProvider {
 			path = getPathFromField(context, ProviderUtils.removeLastPathSegment(uri), Commentable.Columns._COMMENT_DIR_URI);
 			break;
 
-		case MATCHER_CAST_ITEM:
+			case MATCHER_CAST_ITEM: {
+				// when asking for the index of casts, it needs to be known if
+				// they're in an itinerary. /cast/4/ is canonical for a cast, regardless
+				// if it's in an itinerary or not. /itinerary/2/cast/ is canonical for
+				// the location of all casts within an itinerary (but /itinerary/2/cast/4/ is
+				// not valid).
+				if (parent) {
+					final ContentResolver cr = context.getContentResolver();
+					final Cursor c = cr.query(Uri.withAppendedPath(uri, Itinerary.PATH),
+							new String[] { Itinerary._ID }, null, null, null);
+					if (c == null) {
+						throw new NoPublicPath("Could not query " + uri);
+					}
+					try {
+						c.moveToFirst();
+						final int itineraries = c.getCount();
+
+						// if the cast is in any itineraries, the pub path needs to be that of the
+						// itinerary
+						if (itineraries > 0) {
+							final Uri itinerary = ContentUris.withAppendedId(Itinerary.CONTENT_URI,
+									c.getLong(c.getColumnIndex(Itinerary._ID)));
+							path = getPublicPath(context, Itinerary.getCastsUri(itinerary));
+							if (itineraries > 1) {
+								// warn that only the first is being handled
+								Log.w(TAG,
+										"cast is in multiple itineraries. Currently not handled.");
+							}
+						} else { // not in an itinerary
+							path = getPublicPath(context, ProviderUtils.removeLastPathSegment(uri));
+						}
+					} finally {
+						c.close();
+					}
+
+				} else { // !parent
+					path = getPathFromField(context, uri, JsonSyncableItem._PUBLIC_URI);
+				}
+
+			}
+				break;
+
+			case MATCHER_CHILD_CAST_ITEM:
 		case MATCHER_CHILD_COMMENT_ITEM:
-		case MATCHER_CHILD_CAST_ITEM:
 		case MATCHER_COMMENT_ITEM:
 		case MATCHER_ITINERARY_ITEM:
 		case MATCHER_CHILD_CASTMEDIA_ITEM:
 		{
-			if (parent || publicId != null){
+				if (parent) {
 				path = getPublicPath(context, ProviderUtils.removeLastPathSegment(uri));
 			}else{
 				path = getPathFromField(context, uri, JsonSyncableItem._PUBLIC_URI);
@@ -1145,9 +1193,6 @@ public class MediaProvider extends ContentProvider {
 
 		if (path == null){
 			throw new NoPublicPath("got null path for " + uri);
-		}
-		if (publicId != null){
-			path += publicId + "/";
 		}
 
 		path = path.replaceAll("//", "/"); // hack to get around a tedious problem
@@ -1204,6 +1249,9 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Cast.PATH, MATCHER_CAST_DIR);
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#", MATCHER_CAST_ITEM);
 
+		uriMatcher
+				.addURI(AUTHORITY, Cast.PATH + "/#/" + Itinerary.PATH, MATCHER_CAST_ITINERARY_DIR);
+
 		// /cast/1/media
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH, MATCHER_CHILD_CASTMEDIA_DIR);
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH+"/#", MATCHER_CHILD_CASTMEDIA_ITEM);
@@ -1257,5 +1305,9 @@ public class MediaProvider extends ContentProvider {
 				TYPE_EVENT_DIR);
 		mDBHelperMapper.addItemMapping(MATCHER_EVENT_ITEM, EVENT_DBHELPER, DBHelperMapper.VERB_ALL,
 				TYPE_EVENT_ITEM);
+
+		// itinerary reverse lookup
+		mDBHelperMapper.addDirMapping(MATCHER_CAST_ITINERARY_DIR, new M2MReverseHelper(
+				ITINERARY_CASTS_DBHELPER), DBHelperMapper.VERB_QUERY, TYPE_ITINERARY_DIR);
 	}
 }

@@ -199,7 +199,6 @@ public class SyncEngine {
 			// this should ensure that all items have a pubPath when we
 			// query it below.
 
-
 			if (pubPath == null) {
 				// we should avoid calling this too much as it
 				// can be expensive
@@ -514,8 +513,8 @@ public class SyncEngine {
 					Log.e(TAG, "can't get sync status for " + res.uri);
 					continue;
 				}
-				syncMap.onPostSyncItem(mContext, account, ss.local,
-						ss.remoteJson, res.count != null ? res.count == 1 : true);
+				syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson,
+						res.count != null ? res.count == 1 : true);
 
 				ss.state = SyncState.NOW_UP_TO_DATE;
 			}
@@ -599,8 +598,8 @@ public class SyncEngine {
 					Log.d(TAG, "onPostSyncItem(" + res.uri + ", ...); pubUri: " + pubUri);
 				}
 
-				syncMap.onPostSyncItem(mContext, account, res.uri,
-						ss.remoteJson, res.count != null ? res.count == 1 : true);
+				syncMap.onPostSyncItem(mContext, account, res.uri, ss.remoteJson,
+						res.count != null ? res.count == 1 : true);
 
 				ss.state = SyncState.NOW_UP_TO_DATE;
 				successful++;
@@ -728,7 +727,7 @@ public class SyncEngine {
 	 *
 	 * This is the method that does all the hard work.
 	 *
-	 * @param itemDir
+	 * @param toSync
 	 * @param provider
 	 * @param syncMap
 	 * @param syncResult
@@ -742,13 +741,21 @@ public class SyncEngine {
 	 * @throws SyncException
 	 * @throws InterruptedException
 	 */
-	private int uploadUnpublished(Uri itemDir, Account account, ContentProviderClient provider,
-			SyncMap syncMap, HashMap<String, SyncEngine.SyncStatus> syncStatuses, SyncResult syncResult)
-			throws JSONException, NetworkProtocolException, IOException, NoPublicPath,
-			RemoteException, OperationApplicationException, SyncException, InterruptedException {
+	private int uploadUnpublished(Uri toSync, Account account, ContentProviderClient provider,
+			SyncMap syncMap, HashMap<String, SyncEngine.SyncStatus> syncStatuses,
+			SyncResult syncResult) throws JSONException, NetworkProtocolException, IOException,
+			NoPublicPath, RemoteException, OperationApplicationException, SyncException,
+			InterruptedException {
 		int count = 0;
 
-		final Cursor uploadMe = provider.query(itemDir, null, SELECTION_UNPUBLISHED, null, null);
+		final String type = provider.getType(toSync);
+		final boolean isDir = type.startsWith(CONTENT_TYPE_PREFIX_DIR);
+
+		final Cursor uploadMe = provider.query(toSync, null, SELECTION_UNPUBLISHED, null, null);
+
+		if (uploadMe == null) {
+			throw new SyncException("could not query " + toSync);
+		}
 
 		final int idCol = uploadMe.getColumnIndex(JsonSyncableItem._ID);
 
@@ -758,7 +765,8 @@ public class SyncEngine {
 					throw new InterruptedException();
 				}
 
-				final Uri localUri = ContentUris.withAppendedId(itemDir, uploadMe.getLong(idCol));
+				final Uri localUri = isDir ? ContentUris.withAppendedId(toSync,
+						uploadMe.getLong(idCol)) : toSync;
 				final String postUri = MediaProvider.getPostPath(mContext, localUri);
 
 				final JSONObject jo = JsonSyncableItem
@@ -915,8 +923,6 @@ public class SyncEngine {
 		final long serverModified = cv.getAsLong(fromKey);
 		cv.put(destKey, serverModified + localOffset);
 	}
-
-
 
 	private enum SyncState {
 		/**
