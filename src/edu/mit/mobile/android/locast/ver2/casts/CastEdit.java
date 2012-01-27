@@ -15,6 +15,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -75,15 +76,15 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	// stateful
 	private Uri mCast;
 	private boolean mIsNewCast;
-	
+
 	private boolean mIsDraft = true;
 	private boolean mIsEditable = false;
-	
+
 	private AlertDialog alertDialog = null;
 	private ProgressDialog waitForLocationDialog = null;
 	private GeoPoint mLocation;
 	private Location currentLocation = null;
-	
+
 	private boolean mFirstLoad = true;
 
 	// when creating media (on some devices), you need to first create the filename, save it, and then use it when the camera returns.
@@ -99,6 +100,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	private CheckableTabWidget mTabWidget;
 	private ImageView mMediaThumbnail;
 
+	private final ImageCache mImageCache = ImageCache.getInstance(this);
+
 	// media
 	//private ListView mCastMediaView;
 	private ListView mCastMediaView;
@@ -106,7 +109,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	// location
 	private LocationManager locationManager;
-	
+
 	// details
 	private EditText mDescriptionView;
 	private TagList mTags;
@@ -144,8 +147,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	private static final int[]
 	           CAST_MEDIA_TO = new int[]{R.id.cast_media_title, R.id.media_thumbnail, R.id.media_thumbnail};
-	
-	
+
+
 	private static final int MINIMUM_REQUIRED_ACCURACY = 100;
 	private static final int MAXIMUM_WAIT_TIME_IN_SECONDS = 60;
 
@@ -168,6 +171,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 		configureTagsView();
 
+
 		findViewById(R.id.save).setOnClickListener(this);
 		findViewById(R.id.new_photo).setOnClickListener(this);
 		findViewById(R.id.media_thumbnail).setOnClickListener(this);
@@ -175,7 +179,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		//findViewById(R.id.pick_media).setOnClickListener(this);
 
 		processIntents(savedInstanceState);
-		
+
 		setupLocationRetrieval();
 	}
 
@@ -202,7 +206,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			if (mCast == null){
 				mCast = intent.getData();
 			}
-			
+
 			mCastBase = ProviderUtils.removeLastPathSegment(mCast);
 		} else if (Intent.ACTION_INSERT.equals(action)){
 			setTitleFromIntent(intent);
@@ -273,7 +277,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		});
 
 		mCastMediaView.setOnItemClickListener(mCastMediaOnItemClickListener);
-		
+
 		mCastMediaView.setAdapter(new ImageLoaderAdapter(this, mCastMediaAdapter,
 				ImageCache.getInstance(this),
 				new int[] { R.id.media_thumbnail }, 100, 100,
@@ -282,7 +286,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	private void configureTabs() {
 		// configure tabs
-		
+
 		mTabHost = (TabHost) findViewById(android.R.id.tabhost);
 		mTabWidget = (CheckableTabWidget) findViewById(android.R.id.tabs);
 		mTabHost.setup();
@@ -318,6 +322,9 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	@Override
 	protected void onPause() {
 		super.onPause();
+
+		mImageCache.unregisterOnImageLoadListener(mImageCacheLoadListener);
+
 		if (mCast != null){
 			save();
 		}
@@ -328,6 +335,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	@Override
 	protected void onResume() {
 		super.onResume();
+
+		mImageCache.registerOnImageLoadListener(mImageCacheLoadListener);
 		if (mIsNewCast) {
 			startUpdatingLocation();
 		}
@@ -350,37 +359,38 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		alertDialog = new AlertDialog.Builder(this).create();
 		alertDialog.setTitle(getString(R.string.location_service_not_working));
 		alertDialog.setMessage(getString(R.string.need_more_time_to_retrieve_location));
-		
-		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.continue_res), new android.content.DialogInterface.OnClickListener(){			
+
+		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.continue_res), new android.content.DialogInterface.OnClickListener(){
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
 				alertDialog.dismiss();
 				alertDialog = null;
-				
+
 				showLocationDialog();
 			}
 		});
-		
-		alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.stop), new android.content.DialogInterface.OnClickListener() {			
+
+		alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.stop), new android.content.DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
 				alertDialog.dismiss();
 				alertDialog = null;
 			}
-		});	
-		
+		});
+
 		alertDialog.show();
 	}
-	
+
 	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.save:
 			if (saveButton()){
 				//If we still don't have a location, or if the location we have is not accurate enough, we open a modal dialog and ask the user to wait
-				if (showLocationDialog())
+				if (showLocationDialog()) {
 					return;
-				
+				}
+
 				finishSave();
 			}
 			break;
@@ -410,17 +420,17 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		if (mLocation == null || (currentLocation != null && currentLocation.hasAccuracy() && currentLocation.getAccuracy() > MINIMUM_REQUIRED_ACCURACY))
 		{
 			waitForLocationDialog = ProgressDialog.show(this, "", getString(R.string.wait_location), true);
-			
+
 			scheduleAlertDialog();
-			
+
 			return true;
 		}
-		
+
 		return false;
 	}
 
-	private Handler handler = new Handler();
-	private Runnable showAlertDialog = new Runnable() {
+	private final Handler handler = new Handler();
+	private final Runnable showAlertDialog = new Runnable() {
 		@Override
 		public void run() {
 			if (waitForLocationDialog != null) {
@@ -429,7 +439,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			}
 		}
 	};
-	
+
 	private void scheduleAlertDialog() {
 		handler.removeCallbacks(showAlertDialog);
 		handler.postDelayed(showAlertDialog, MAXIMUM_WAIT_TIME_IN_SECONDS * 1000);
@@ -440,13 +450,13 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			alertDialog.dismiss();
 			alertDialog = null;
 		}
-		
+
 		// this isn't necessary, but could be helpful for integration
 		setResult(RESULT_OK, new Intent().setData(mCast));
 		finish();
 	}
 
-	
+
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (resultCode == RESULT_CANCELED){
@@ -458,8 +468,6 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		switch(requestCode){
 			case REQUEST_NEW_PHOTO:
 				addMedia(mCreateMediaUri);
-				mMediaThumbnail = (ImageView) findViewById(R.id.media_thumbnail);
-		        mMediaThumbnail.setImageURI(mCreateMediaUri);
 				mCreateMediaUri = null;
 				break;
 			case REQUEST_NEW_VIDEO:
@@ -480,8 +488,9 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	@Override
 	public void onLocationChanged(Location location) {
-		if (isBetterLocation(location, currentLocation))
-    		setLocation(location);
+		if (isBetterLocation(location, currentLocation)) {
+			setLocation(location);
+		}
 	}
 
 	@Override
@@ -557,6 +566,23 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 				ProviderUtils.dumpCursorToLog(c, CAST_MEDIA_PROJECTION);
 			}
 			*/
+				if (c.moveToFirst()) {
+					Uri thumb = CastMedia.getThumbnail(c,
+							c.getColumnIndex(CastMedia._THUMBNAIL),
+							c.getColumnIndex(CastMedia._THUMB_LOCAL));
+
+					if (thumb == null) {
+						thumb = CastMedia.getMedia(c,
+
+						c.getColumnIndex(CastMedia._MEDIA_URL),
+								c.getColumnIndex(CastMedia._LOCAL_URI));
+					}
+
+					if (thumb != null) {
+						mImageCache.scheduleLoadImage(0, thumb, 320, 320);
+					}
+
+				}
 			break;
 		}
 	}
@@ -604,7 +630,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		//mDescriptionView.setText(c.getString(c.getColumnIndexOrThrow(Cast._DESCRIPTION)));
 
 		loadLocation(c);
-		
+
 		mTags.clearAllTags();
 		mTags.addTags(TaggableItem.getTags(getContentResolver(), mCast));
 
@@ -620,7 +646,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		setEditable(Cast.canEdit(this, c));
 		updateDetailsTab();
 	}
-	
+
 	private void loadLocation(Cursor c) {
 		final Location l = Locatable.toLocation(c);
 		if (l != null) {
@@ -650,7 +676,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	}
 
 	private void startUpdatingLocation() {
-		for(String provider : locationManager.getProviders(true)) {
+		for(final String provider : locationManager.getProviders(true)) {
 			locationManager.requestLocationUpdates(provider, 0, 0, this);
 		}
 	}
@@ -718,7 +744,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	public void addMedia(Uri content){
 		final Uri castMedia = Cast.getCastMediaUri(mCast);
 		final ContentValues cv = new ContentValues();
-		
+
 		final long now = System.currentTimeMillis();
 		cv.put(CastMedia._MODIFIED_DATE, now);
 		cv.put(CastMedia._CREATED_DATE, now);
@@ -788,9 +814,9 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	private void setLocation(GeoPoint location){
 		mLocation = location;
-		
+
 		updateLocationStatusText();
-		
+
 		if (waitForLocationDialog != null && currentLocation != null && currentLocation.hasAccuracy() && currentLocation.getAccuracy() <= MINIMUM_REQUIRED_ACCURACY) {
 			dismissDialog();
 			finishSave();
@@ -798,12 +824,12 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	}
 
 	private void updateLocationStatusText() {
-		TextView view = (TextView) findViewById(R.id.location_status);
+		final TextView view = (TextView) findViewById(R.id.location_status);
 		if (mLocation == null) {
 			view.setText(R.string.location_unknown);
 		} else {
 			view.setText(R.string.location_known);
-			//view.setText(view.getText() + " (" + (mLocation.getLatitudeE6() / 1.0E6) + ", " + (mLocation.getLongitudeE6() / 1.0E6) + ")");	
+			//view.setText(view.getText() + " (" + (mLocation.getLatitudeE6() / 1.0E6) + ", " + (mLocation.getLongitudeE6() / 1.0E6) + ")");
 		}
 	}
 
@@ -811,13 +837,13 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		waitForLocationDialog.dismiss();
 		waitForLocationDialog = null;
 	}
-	
+
 	private void setLocation(Location location) {
-		int e6lat = (int)(location.getLatitude() * 1E6);
-    	int e6lon = (int)(location.getLongitude() * 1E6);
-    	
+		final int e6lat = (int)(location.getLatitude() * 1E6);
+    	final int e6lon = (int)(location.getLongitude() * 1E6);
+
 		currentLocation = location;
-		
+
 		setLocation(new GeoPoint(e6lat, e6lon));
 	}
 
@@ -943,7 +969,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
+
 	private static final int TWO_MINUTES = 1000 * 60 * 2;
 	/** Determines whether one Location reading is better than the current Location fix
 	 * @param location  The new Location that you want to evaluate
@@ -956,10 +982,10 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	    }
 
 	    // Check whether the new location fix is newer or older
-	    long timeDelta = location.getTime() - currentBestLocation.getTime();
-	    boolean isSignificantlyNewer = timeDelta > TWO_MINUTES;
-	    boolean isSignificantlyOlder = timeDelta < -TWO_MINUTES;
-	    boolean isNewer = timeDelta > 0;
+	    final long timeDelta = location.getTime() - currentBestLocation.getTime();
+	    final boolean isSignificantlyNewer = timeDelta > TWO_MINUTES;
+	    final boolean isSignificantlyOlder = timeDelta < -TWO_MINUTES;
+	    final boolean isNewer = timeDelta > 0;
 
 	    // If it's been more than two minutes since the current location, use the new location
 	    // because the user has likely moved
@@ -971,13 +997,13 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	    }
 
 	    // Check whether the new location fix is more or less accurate
-	    int accuracyDelta = (int) (location.getAccuracy() - currentBestLocation.getAccuracy());
-	    boolean isLessAccurate = accuracyDelta > 0;
-	    boolean isMoreAccurate = accuracyDelta < 0;
-	    boolean isSignificantlyLessAccurate = accuracyDelta > 200;
+	    final int accuracyDelta = (int) (location.getAccuracy() - currentBestLocation.getAccuracy());
+	    final boolean isLessAccurate = accuracyDelta > 0;
+	    final boolean isMoreAccurate = accuracyDelta < 0;
+	    final boolean isSignificantlyLessAccurate = accuracyDelta > 200;
 
 	    // Check if the old and new location are from the same provider
-	    boolean isFromSameProvider = isSameProvider(location.getProvider(),
+	    final boolean isFromSameProvider = isSameProvider(location.getProvider(),
 	            currentBestLocation.getProvider());
 
 	    // Determine location quality using a combination of timeliness and accuracy
@@ -998,4 +1024,13 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	    }
 	    return provider1.equals(provider2);
 	}
+
+	private final ImageCache.OnImageLoadListener mImageCacheLoadListener = new ImageCache.OnImageLoadListener() {
+
+		@Override
+		public void onImageLoaded(long id, Uri imageUri, Drawable image) {
+			final ImageView imv = (ImageView) findViewById(R.id.media_thumbnail);
+			imv.setImageDrawable(image);
+		}
+	};
 }
