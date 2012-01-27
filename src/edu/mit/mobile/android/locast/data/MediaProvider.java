@@ -220,7 +220,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static final JSONSyncableIdenticalChildFinder mChildFinder = new JSONSyncableIdenticalChildFinder();
 	private static final M2MDBHelper ITINERARY_CASTS_DBHELPER = new M2MDBHelper(
-			ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder);
+			ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder, Cast.CONTENT_URI);
 	private static final ForeignKeyDBHelper CASTS_CASTMEDIA_DBHELPER = new ForeignKeyDBHelper(
 			Cast.class, CastMedia.class, CastMedia.CAST);
 
