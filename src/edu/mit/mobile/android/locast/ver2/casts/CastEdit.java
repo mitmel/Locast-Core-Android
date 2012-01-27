@@ -66,10 +66,6 @@ import edu.mit.mobile.android.locast.widget.TagList.OnTagListChangeListener;
 import edu.mit.mobile.android.utils.ResourceUtils;
 import edu.mit.mobile.android.widget.CheckableTabWidget;
 
-import android.graphics.Bitmap;
-import android.graphics.Bitmap.CompressFormat;
-import android.graphics.BitmapFactory;
-
 public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		OnTabChangeListener, LocationListener, LoaderCallbacks<Cursor> {
 

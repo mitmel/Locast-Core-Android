@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     android:installLocation="auto"
     package="edu.mit.mobile.android.locast.ver2"
-    android:versionCode="26"
-    android:versionName="2.1 UNICEF" >
+    android:versionCode="27"
+    android:versionName="2.2 UNICEF" >
 
     <uses-sdk
         android:minSdkVersion="7"
