@@ -29,6 +29,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -69,6 +70,12 @@ public class UnsyncedCastsActivity extends CastListActivity implements AccountMa
 		
 		initAccount();
 		
+		cursor = managedQuery(Cast.CONTENT_URI, Cast.PROJECTION,
+				Cast._AUTHOR_URI + " = ? AND " + Cast._PUBLIC_URI + " is null",
+				new String[]{accountManager.getUserData(account, AuthenticationService.USERDATA_USER_URI)},
+				Cast._MODIFIED_DATE+" DESC");
+		loadList(cursor);
+		
 		loadUsername();
 		hookLogoutButton();
 		hookSyncButton();
@@ -104,13 +111,6 @@ public class UnsyncedCastsActivity extends CastListActivity implements AccountMa
 					refreshList();
 				}
 			}
-			
-			private void refreshList() {
-				if (adapter instanceof CursorAdapter) {
-					((CursorAdapter) adapter).notifyDataSetChanged();
-				}
-			}
-			
 		};
 		registerReceiver(syncBroadcastReceiver, new IntentFilter(SyncEngine.SYNC_STATUS_CHANGED));
 	}
@@ -164,17 +164,15 @@ public class UnsyncedCastsActivity extends CastListActivity implements AccountMa
 	protected void onResume() {
 		super.onResume();
 		
-		initAccount();
-		
-		cursor = managedQuery(Cast.CONTENT_URI, Cast.PROJECTION,
-				Cast._AUTHOR_URI + " = ? AND " + Cast._PUBLIC_URI + " is null",
-				new String[]{accountManager.getUserData(account, AuthenticationService.USERDATA_USER_URI)},
-				Cast._MODIFIED_DATE+" DESC");
-		loadList(cursor);
-		
 		bindToSync();
 	}
 	
+	private void refreshList() {
+		if (adapter instanceof CursorAdapter) {
+			((CursorAdapter) adapter).notifyDataSetChanged();
+		}
+	}
+
 	@Override
 	protected int getContentView() {
 		return R.layout.unsynced_cast_list;
@@ -213,7 +211,9 @@ public class UnsyncedCastsActivity extends CastListActivity implements AccountMa
 			this.getCursor().moveToPosition(pos);
 			
 			TextView title = (TextView) v.findViewById(android.R.id.text1);
-			title.setText(this.getCursor().getString(this.getCursor().getColumnIndex(Cast._TITLE)));
+			String text = this.getCursor().getString(this.getCursor().getColumnIndex(Cast._TITLE));
+			if (TextUtils.isEmpty(text)) text = getBaseContext().getResources().getString(R.string.no_title);
+			title.setText(text);
 			
 			long id = this.getCursor().getLong(this.getCursor().getColumnIndex(JsonSyncableItem._ID));
 			

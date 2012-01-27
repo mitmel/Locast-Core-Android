@@ -2,7 +2,6 @@ package edu.mit.mobile.android.locast.ver2.casts;
 
 import java.io.File;
 import java.util.HashMap;
-import 	java.io.ByteArrayOutputStream;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -451,6 +450,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		finish();
 	}
 
+	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (resultCode == RESULT_CANCELED){
@@ -463,12 +463,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			case REQUEST_NEW_PHOTO:
 				addMedia(mCreateMediaUri);
 				mMediaThumbnail = (ImageView) findViewById(R.id.media_thumbnail);
-		        Bitmap bMap = BitmapFactory.decodeFile(mCreateMediaUri.getPath());
-		        ByteArrayOutputStream thumbStream = new ByteArrayOutputStream();
-		        bMap.compress(CompressFormat.JPEG, 50, thumbStream);
-		        byte[] thumbByteArray = thumbStream.toByteArray();
-		        Bitmap thumbnail = BitmapFactory.decodeByteArray(thumbByteArray, 0, thumbByteArray.length);
-		        mMediaThumbnail.setImageBitmap(thumbnail);
+		        mMediaThumbnail.setImageURI(mCreateMediaUri);
 				mCreateMediaUri = null;
 				break;
 			case REQUEST_NEW_VIDEO:
@@ -553,6 +548,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			// XXX hack. This is done as the cast is notified that it should reload when cast media is added. Obviously, it shouldn't.
 			if (mFirstLoad && c.moveToFirst()){
 				loadFromCursor(c);
+			} else if (mLocation == null && c.moveToFirst()) {
+				loadLocation(c);
 			}
 			break;
 
@@ -610,12 +607,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		mTitleView.setText(c.getString(c.getColumnIndexOrThrow(Cast._TITLE)));
 		//mDescriptionView.setText(c.getString(c.getColumnIndexOrThrow(Cast._DESCRIPTION)));
 
-		final Location l = Locatable.toLocation(c);
-		if (l != null) {
-			setLocation(new GeoPoint((int)(l.getLatitude() * 1E6), (int)(l.getLongitude() * 1E6))); // XXX optimize
-		} else {
-			startUpdatingLocation();
-		}
+		loadLocation(c);
 		
 		mTags.clearAllTags();
 		mTags.addTags(TaggableItem.getTags(getContentResolver(), mCast));
@@ -631,6 +623,15 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 		setEditable(Cast.canEdit(this, c));
 		updateDetailsTab();
+	}
+	
+	private void loadLocation(Cursor c) {
+		final Location l = Locatable.toLocation(c);
+		if (l != null) {
+			setLocation(new GeoPoint((int)(l.getLatitude() * 1E6), (int)(l.getLongitude() * 1E6))); // XXX optimize
+		} else {
+			startUpdatingLocation();
+		}
 	}
 
 	private void setEditable(boolean isEditable){
@@ -721,7 +722,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	public void addMedia(Uri content){
 		final Uri castMedia = Cast.getCastMediaUri(mCast);
 		final ContentValues cv = new ContentValues();
-
+		
 		final long now = System.currentTimeMillis();
 		cv.put(CastMedia._MODIFIED_DATE, now);
 		cv.put(CastMedia._CREATED_DATE, now);
