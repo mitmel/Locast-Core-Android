@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.data;
+package edu.mit.mobile.android.locast.sync;
 /*
  * Copyright (C) 2011  MIT Mobile Experience Lab
  *
@@ -62,6 +62,10 @@ import android.provider.MediaStore.Video;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
+import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.data.CastMedia;
+import edu.mit.mobile.android.locast.data.MediaProvider;
+import edu.mit.mobile.android.locast.data.SyncException;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient.InputStreamWatcher;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;

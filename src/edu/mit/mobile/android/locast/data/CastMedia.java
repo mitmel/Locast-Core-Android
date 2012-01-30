@@ -41,6 +41,7 @@ import edu.mit.mobile.android.content.column.DBForeignKeyColumn;
 import edu.mit.mobile.android.content.column.IntegerColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
+import edu.mit.mobile.android.locast.sync.MediaSync;
 import edu.mit.mobile.android.locast.ver2.R;
 
 @UriPath(CastMedia.PATH)
