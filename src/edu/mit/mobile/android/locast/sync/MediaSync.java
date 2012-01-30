@@ -215,8 +215,6 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	 */
 	private class SyncTask extends AsyncTask<Void, Void, Void> {
 
-
-
 		@Override
 		protected Void doInBackground(Void... params) {
 			int errorCount = 0;
@@ -636,9 +634,17 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 		if (mDigest == null) {
 			throw new RuntimeException("no message digest available");
 		}
-		mDigest.reset();
-		mDigest.update(data.getBytes());
-		return new BigInteger(mDigest.digest()).toString(16);
+		final byte[] ba;
+		synchronized (mDigest) {
+			mDigest.update(data.toString().getBytes());
+			ba = mDigest.digest();
+		}
+		final BigInteger bi = new BigInteger(1, ba);
+		final String result = bi.toString(16);
+		if (result.length() % 2 != 0) {
+			return "0" + result;
+		}
+		return result;
 	}
 
 	private class ThumbnailException extends Exception {
