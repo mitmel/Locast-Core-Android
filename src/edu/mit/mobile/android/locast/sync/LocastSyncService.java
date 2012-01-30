@@ -270,11 +270,11 @@ public class LocastSyncService extends Service {
 		@Override
 		public void onPerformSync(Account account, Bundle extras, String authority,
 				ContentProviderClient provider, SyncResult syncResult) {
-			
+
 			Intent intent = new Intent(SyncEngine.SYNC_STATUS_CHANGED);
 			intent.putExtra(SyncEngine.EXTRA_SYNC_STATUS, "begin");
 			mContext.sendStickyBroadcast(intent);
-			
+
 			mCurrentlySyncing = account;
 			SyncEngine syncEngine = mSyncEngines.get(account);
 			if (syncEngine == null) {
@@ -302,13 +302,15 @@ public class LocastSyncService extends Service {
 			}
 
 			try {
-				if (uri != null) {
-					syncEngine.sync(uri, account, extras, provider, syncResult);
+				if (uploadOnly) {
+					// default to only uploading casts
+					syncEngine.uploadUnpublished(uri != null ? uri : Cast.CONTENT_URI, account,
+							extras, provider, syncResult);
 				} else {
-					if (uploadOnly){
-						syncEngine.uploadUnpublished(Cast.CONTENT_URI, account, extras, provider,
-								syncResult);
+					if (uri != null) {
+						syncEngine.sync(uri, account, extras, provider, syncResult);
 					}else{
+						// the default items to sync, if an unspecified sync occurs.
 						syncEngine.sync(Cast.FEATURED, account, extras, provider, syncResult);
 						syncEngine.sync(Itinerary.CONTENT_URI, account, extras, provider,
 								syncResult);
@@ -367,7 +369,7 @@ public class LocastSyncService extends Service {
 				intent = new Intent(SyncEngine.SYNC_STATUS_CHANGED);
 				intent.putExtra(SyncEngine.EXTRA_SYNC_STATUS, "end");
 				mContext.sendStickyBroadcast(intent);
-				
+
 				mCurrentlySyncing = null;
             }
         } // onPerformSync
