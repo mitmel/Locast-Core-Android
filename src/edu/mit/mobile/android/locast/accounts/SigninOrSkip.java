@@ -106,6 +106,13 @@ public class SigninOrSkip extends Activity implements OnClickListener {
 		return Authenticator.getAccounts(context).length == 0;
 	}
 
+	/**
+	 *
+	 * Calls context.startActivityForResult() with the appropriate intent
+	 * 
+	 * @param context
+	 * @param requestCode
+	 */
 	public static final void startSignin(Activity context, int requestCode){
 		if (Constants.REQUIRE_LOGIN) {
 			context.startActivityForResult(new Intent(context, AuthenticatorActivity.class),
