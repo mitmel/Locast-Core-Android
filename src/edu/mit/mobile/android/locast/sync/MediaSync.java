@@ -462,12 +462,15 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 					Authenticator.getFirstAccount(this));
 
 			final JSONObject updatedCastMedia = nc.uploadContentWithNotification(this,
-					CastMedia.getCast(castMediaUri), uploadPath, locMedia,
-					contentType, NetworkClient.UploadType.FORM_POST);
+					CastMedia.getCast(castMediaUri), uploadPath, locMedia, contentType,
+					NetworkClient.UploadType.FORM_POST);
 
-			mCr.update(castMediaUri,
-					CastMedia.fromJSON(this, castMediaUri, updatedCastMedia, CastMedia.SYNC_MAP),
-					null, null);
+			final ContentValues cv = CastMedia.fromJSON(this, castMediaUri, updatedCastMedia,
+					CastMedia.SYNC_MAP);
+
+			cv.put(MediaProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
+
+			mCr.update(castMediaUri, cv, null, null);
 		} catch (final Exception e) {
 			final SyncException se = new SyncException(
 					getString(R.string.error_uploading_cast_video));
