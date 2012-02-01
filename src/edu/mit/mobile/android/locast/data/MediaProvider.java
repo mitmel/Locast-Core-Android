@@ -48,10 +48,8 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.os.RemoteException;
 import android.util.Log;
-import edu.mit.mobile.android.content.DBHelper;
 import edu.mit.mobile.android.content.DBHelperMapper;
 import edu.mit.mobile.android.content.ForeignKeyDBHelper;
-import edu.mit.mobile.android.content.GenericDBHelper;
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.m2m.M2MDBHelper;
 import edu.mit.mobile.android.content.m2m.M2MReverseHelper;
@@ -223,8 +221,6 @@ public class MediaProvider extends ContentProvider {
 			ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder, Cast.CONTENT_URI);
 	private static final ForeignKeyDBHelper CASTS_CASTMEDIA_DBHELPER = new ForeignKeyDBHelper(
 			Cast.class, CastMedia.class, CastMedia.CAST);
-
-	private static final DBHelper EVENT_DBHELPER = new GenericDBHelper(Event.class);
 
 	private final static UriMatcher uriMatcher;
 
@@ -1303,11 +1299,6 @@ public class MediaProvider extends ContentProvider {
 				DBHelperMapper.VERB_ALL, TYPE_CASTMEDIA_DIR);
 		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CASTMEDIA_ITEM, CASTS_CASTMEDIA_DBHELPER,
 				DBHelperMapper.VERB_ALL, TYPE_CASTMEDIA_ITEM);
-
-		mDBHelperMapper.addDirMapping(MATCHER_EVENT_DIR, EVENT_DBHELPER, DBHelperMapper.VERB_ALL,
-				TYPE_EVENT_DIR);
-		mDBHelperMapper.addItemMapping(MATCHER_EVENT_ITEM, EVENT_DBHELPER, DBHelperMapper.VERB_ALL,
-				TYPE_EVENT_ITEM);
 
 		// castmedia wildcard lookup
 		mDBHelperMapper.addDirMapping(MATCHER_CASTMEDIA_DIR, CASTS_CASTMEDIA_DBHELPER,
