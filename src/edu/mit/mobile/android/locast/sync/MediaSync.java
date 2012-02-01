@@ -35,6 +35,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.cookie.DateUtils;
+import org.json.JSONObject;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -200,7 +201,8 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	public void enqueueUnpublishedMedia() {
 
 		final CastMedia c = new CastMedia(mCr.query(CastMedia.CONTENT_URI, CASTMEDIA_PROJECTION,
-				CastMedia._PUBLIC_URI + " ISNULL OR " + CastMedia._MEDIA_URL + " ISNULL", null,
+				CastMedia._MEDIA_URL + " ISNULL AND " + CastMedia._PUBLIC_URI + " NOT NULL AND "
+						+ CastMedia._LOCAL_URI + " NOT NULL", null,
 				null));
 
 		try {
@@ -383,6 +385,10 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 			if (hasLocMedia && !hasPubMedia) {
 				final String uploadPath = castMedia.getString(castMedia.getColumnIndex(CastMedia._PUBLIC_URI));
+				if (uploadPath == null) {
+					Log.w(TAG, "attempted to sync " + castMediaUri + " which has a null uploadPath");
+					return;
+				}
 				uploadMedia(uploadPath, castMediaUri, mimeType, locMedia);
 
 			} else if (!hasLocMedia && hasPubMedia) {
@@ -417,6 +423,16 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 		}
 	}
 
+	/**
+	 * updates the metadata stored at castMediaUri with information about the local file.
+	 *
+	 * @param castMediaUri
+	 *            a castMedia item pointing to the metadata for the media
+	 * @param localFile
+	 *            the local copy of the media file
+	 * @param localThumbnail
+	 *            an image file representing media stored at localFile or null if there is none
+	 */
 	private void updateLocalFile(Uri castMediaUri, File localFile, File localThumbnail) {
 		final ContentValues cv = new ContentValues();
 		cv.put(CastMedia._LOCAL_URI, Uri.fromFile(localFile).toString());
@@ -429,6 +445,16 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 	}
 
+	/**
+	 * Uploads the media to the server and shows a notification in the system toolbar.
+	 *
+	 * @param uploadPath
+	 *            the relative path to upload
+	 * @param castMediaUri
+	 * @param contentType
+	 * @param locMedia
+	 * @throws SyncException
+	 */
 	private void uploadMedia(String uploadPath, Uri castMediaUri,
 			String contentType, final Uri locMedia) throws SyncException {
 		// upload
@@ -436,9 +462,14 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 			// TODO this should get the account info from something else.
 			final NetworkClient nc = NetworkClient.getInstance(this,
 					Authenticator.getFirstAccount(this));
-			nc.uploadContentWithNotification(this,
+
+			final JSONObject updatedCastMedia = nc.uploadContentWithNotification(this,
 					CastMedia.getCast(castMediaUri), uploadPath, locMedia,
 					contentType, NetworkClient.UploadType.FORM_POST);
+
+			mCr.update(castMediaUri,
+					CastMedia.fromJSON(this, castMediaUri, updatedCastMedia, CastMedia.SYNC_MAP),
+					null, null);
 		} catch (final Exception e) {
 			final SyncException se = new SyncException(
 					getString(R.string.error_uploading_cast_video));
