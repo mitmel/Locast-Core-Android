@@ -21,6 +21,7 @@ import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -49,7 +50,8 @@ import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.SyncEngine;
 import edu.mit.mobile.android.locast.ver2.R;
 
-public class UnsyncedCastsActivity extends CastListActivity implements AccountManagerCallback<Boolean> {
+public class UnsyncedCastsActivity extends CastListActivity implements
+		AccountManagerCallback<Boolean>, OnClickListener {
 
 	private Account account;
 	private AccountManager accountManager;
@@ -63,8 +65,9 @@ public class UnsyncedCastsActivity extends CastListActivity implements AccountMa
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		hookLogoutButton();
-		hookSyncButton();
+		findViewById(R.id.logout).setOnClickListener(this);
+		syncButton = (Button) findViewById(R.id.sync);
+		syncButton.setOnClickListener(this);
 
 		if (!Authenticator.hasRealAccount(this)) {
 			SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
@@ -132,45 +135,35 @@ public class UnsyncedCastsActivity extends CastListActivity implements AccountMa
 		username.setText(accountManager.getUserData(account, AuthenticationService.USERDATA_DISPLAY_NAME));
 	}
 
-	private void hookLogoutButton() {
-		final Button logout = (Button) findViewById(R.id.logout);
-		logout.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				new AlertDialog.Builder(UnsyncedCastsActivity.this)
-		        .setIcon(android.R.drawable.ic_dialog_alert)
-		        .setTitle(R.string.logout)
-		        .setMessage(R.string.are_you_sure_you_want_to_logout)
-		        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-		            @Override
-		            public void onClick(DialogInterface dialog, int which) {
-		            	accountManager.removeAccount(account, UnsyncedCastsActivity.this, null);
-		            }
-		        })
-		        .setNegativeButton(android.R.string.no, null)
-		        .show();
-			}
-		});
-	}
-
-	private void hookSyncButton() {
-		syncButton = (Button) findViewById(R.id.sync);
-		syncButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				final Bundle extras = new Bundle();
-				extras.putBoolean(ContentResolver.SYNC_EXTRAS_UPLOAD, true);
-				LocastSyncService.startSync(UnsyncedCastsActivity.this, Cast.CONTENT_URI, true, extras);
-			}
-		});
-	}
-
 	@Override
 	protected void onResume() {
 		super.onResume();
 
 		if (cursor != null) {
 			bindToSync();
+		}
+	}
+
+	private static final int DIALOG_CONFIRM = 100;
+
+	@Override
+	protected Dialog onCreateDialog(int id) {
+		switch (id) {
+			case DIALOG_CONFIRM:
+				return new AlertDialog.Builder(UnsyncedCastsActivity.this)
+						.setIcon(android.R.drawable.ic_dialog_alert)
+						.setTitle(R.string.logout)
+						.setMessage(R.string.are_you_sure_you_want_to_logout)
+						.setPositiveButton(android.R.string.yes,
+								new DialogInterface.OnClickListener() {
+									@Override
+									public void onClick(DialogInterface dialog, int which) {
+										accountManager.removeAccount(account,
+												UnsyncedCastsActivity.this, null);
+									}
+								}).setNegativeButton(android.R.string.no, null).create();
+			default:
+				return super.onCreateDialog(id);
 		}
 	}
 
@@ -231,6 +224,22 @@ public class UnsyncedCastsActivity extends CastListActivity implements AccountMa
 
 			return v;
 
+		}
+	}
+
+	@Override
+	public void onClick(View v) {
+		switch (v.getId()){
+			case R.id.sync: {
+				final Bundle extras = new Bundle();
+				extras.putBoolean(ContentResolver.SYNC_EXTRAS_UPLOAD, true);
+				LocastSyncService.startSync(UnsyncedCastsActivity.this, Cast.CONTENT_URI, true, extras);
+			}
+				break;
+
+			case R.id.logout:
+				showDialog(DIALOG_CONFIRM);
+				break;
 		}
 
 	}
