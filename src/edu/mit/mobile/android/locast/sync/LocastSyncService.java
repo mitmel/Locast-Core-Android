@@ -302,6 +302,8 @@ public class LocastSyncService extends Service {
 			}
 
 			try {
+				mContext.startService(new Intent(MediaSync.ACTION_SYNC_RESOURCES));
+
 				if (uploadOnly) {
 					// default to only uploading casts
 					syncEngine.uploadUnpublished(uri != null ? uri : Cast.CONTENT_URI, account,

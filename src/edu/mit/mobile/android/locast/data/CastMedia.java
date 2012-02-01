@@ -33,6 +33,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
+import edu.mit.mobile.android.content.ForeignKeyDBHelper;
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.UriPath;
 import edu.mit.mobile.android.content.column.BooleanColumn;
@@ -116,14 +117,22 @@ public class CastMedia extends JsonSyncableItem {
 		MIMETYPE_3GPP = "video/3gpp",
 		MIMETYPE_MPEG4 = "video/mpeg4";
 
+	public static final Uri CONTENT_URI = ProviderUtils.toContentUri(MediaProvider.AUTHORITY,
+			Cast.PATH + "/" + ForeignKeyDBHelper.WILDCARD_PATH_SEGMENT + "/" + PATH);
+
 	public CastMedia(Cursor c) {
 		super(c);
 	}
 
 	@Override
-	public Uri getContentUri() {
+	public Uri getCanonicalUri() {
+		return ProviderUtils.toContentUri(MediaProvider.AUTHORITY, Cast.PATH + "/"
+				+ getLong(getColumnIndex(CAST)) + "/" + PATH + "/" + getLong(getColumnIndex(_ID)));
+	}
 
-		return null; // XXX this is wrong.
+	@Override
+	public Uri getContentUri() {
+		return CONTENT_URI;
 	}
 
 	@Override

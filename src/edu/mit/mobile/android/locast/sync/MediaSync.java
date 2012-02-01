@@ -82,7 +82,8 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	 */
 
 	/**
-	 * Syncs the media resources of the item specified by the data uri.
+	 * Syncs the media resources of the item specified by the data uri. If data is null, then all
+	 * unpublished media will be sync'd.
 	 */
 	public static final String ACTION_SYNC_RESOURCES = "edu.mit.mobile.android.locast.ACTION_SYNC_RESOURCES";
 
@@ -181,24 +182,58 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		final Uri data = intent.getData();
-		final SyncQueueItem syncQueueItem = new SyncQueueItem(data,
-				intent.getExtras());
-		if (!mSyncQueue.contains(syncQueueItem) && !checkRecentlySyncd(data)) {
+		if (ACTION_SYNC_RESOURCES.equals(intent.getAction())) {
+			final Uri data = intent.getData();
+			if (data == null) {
+				enqueueUnpublishedMedia();
+
+			} else {
+				enqueueItem(data, intent.getExtras());
+			}
+		} else {
+			Log.e(TAG, "Media Sync was told to start with an unhandled intent: " + intent);
+		}
+
+		return START_REDELIVER_INTENT;
+	}
+
+	public void enqueueUnpublishedMedia() {
+
+		final CastMedia c = new CastMedia(mCr.query(CastMedia.CONTENT_URI, CASTMEDIA_PROJECTION,
+				CastMedia._PUBLIC_URI + " ISNULL OR " + CastMedia._MEDIA_URL + " ISNULL", null,
+				null));
+
+		try {
+			c.moveToFirst();
+
+			if (Constants.DEBUG) {
+				Log.d(TAG, "enqueue unpublished media");
+				Log.d(TAG, "there are " + c.getCount() + " unpublished media");
+			}
+
+			for (; !c.isAfterLast(); c.moveToNext()) {
+				final Uri item = c.getCanonicalUri();
+				enqueueItem(item, null);
+			}
+		} finally {
+			c.close();
+		}
+	}
+
+	private void enqueueItem(Uri item, Bundle extras){
+		final SyncQueueItem syncQueueItem = new SyncQueueItem(item, extras);
+		if (!mSyncQueue.contains(syncQueueItem) && !checkRecentlySyncd(item)) {
 			if (DEBUG) {
 				Log.d(TAG, "enqueueing " + syncQueueItem);
 			}
 			mSyncQueue.add(syncQueueItem);
 		} else {
 			if (DEBUG) {
-				Log.d(TAG, syncQueueItem.toString()
-						+ " already in the queue. Skipping.");
+				Log.d(TAG, syncQueueItem.toString() + " already in the queue. Skipping.");
 			}
 		}
 
 		maybeStartSyncTask();
-
-		return START_REDELIVER_INTENT;
 	}
 
 	/**
@@ -281,10 +316,9 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 		}
 	}
 
-	final static String[] PROJECTION = { CastMedia._ID, CastMedia._MIME_TYPE,
+	final static String[] CASTMEDIA_PROJECTION = { CastMedia._ID, CastMedia._MIME_TYPE,
 			CastMedia._LOCAL_URI, CastMedia._MEDIA_URL, CastMedia._KEEP_OFFLINE,
-			CastMedia._PUBLIC_URI,
-			CastMedia._THUMB_LOCAL};
+			CastMedia._PUBLIC_URI, CastMedia.CAST, CastMedia._THUMB_LOCAL };
 
 	final static String[] CAST_PROJECTION = {Cast._ID, Cast._FAVORITED };
 
@@ -299,7 +333,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	 */
 	public void syncItemMedia(Uri castMediaUri) throws SyncException {
 
-		final Cursor castMedia = mCr.query(castMediaUri, PROJECTION, null, null,
+		final Cursor castMedia = mCr.query(castMediaUri, CASTMEDIA_PROJECTION, null, null,
 				null);
 
 		final Uri castUri = CastMedia.getCast(castMediaUri);

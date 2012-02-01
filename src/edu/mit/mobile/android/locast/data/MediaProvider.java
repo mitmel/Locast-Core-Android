@@ -248,7 +248,8 @@ public class MediaProvider extends ContentProvider {
 		MATCHER_CHILD_CAST_ITEM  	 = 24,
 		MATCHER_ITINERARY_BY_TAGS    = 27,
 		MATCHER_CHILD_CASTMEDIA_DIR  = 28,
-		MATCHER_CHILD_CASTMEDIA_ITEM = 29;
+ MATCHER_CHILD_CASTMEDIA_ITEM = 29,
+			MATCHER_CASTMEDIA_DIR = 30;
 		;
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
@@ -1256,6 +1257,8 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH, MATCHER_CHILD_CASTMEDIA_DIR);
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH+"/#", MATCHER_CHILD_CASTMEDIA_ITEM);
 
+		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/*/" + CastMedia.PATH, MATCHER_CASTMEDIA_DIR);
+
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH, MATCHER_CHILD_CASTMEDIA_DIR);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH + "/#/", MATCHER_CHILD_CASTMEDIA_ITEM);
 
@@ -1305,6 +1308,10 @@ public class MediaProvider extends ContentProvider {
 				TYPE_EVENT_DIR);
 		mDBHelperMapper.addItemMapping(MATCHER_EVENT_ITEM, EVENT_DBHELPER, DBHelperMapper.VERB_ALL,
 				TYPE_EVENT_ITEM);
+
+		// castmedia wildcard lookup
+		mDBHelperMapper.addDirMapping(MATCHER_CASTMEDIA_DIR, CASTS_CASTMEDIA_DBHELPER,
+				DBHelperMapper.VERB_QUERY, TYPE_CASTMEDIA_DIR);
 
 		// itinerary reverse lookup
 		mDBHelperMapper.addDirMapping(MATCHER_CAST_ITINERARY_DIR, new M2MReverseHelper(
