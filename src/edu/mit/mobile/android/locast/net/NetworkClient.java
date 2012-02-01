@@ -467,6 +467,8 @@ public class NetworkClient extends DefaultHttpClient {
 	 * Given a HttpResponse, checks that the return types are all correct and returns a JSONObject
 	 * from the response.
 	 *
+	 * Fully consumes the content.
+	 *
 	 * @param res
 	 * @return the full response body as a JSONObject
 	 * @throws IllegalStateException
@@ -901,9 +903,26 @@ public class NetworkClient extends DefaultHttpClient {
 
 	}
 
-	public void uploadContent(Context context, TransferProgressListener progressListener,
+	/**
+	 * Uploads content using HTTP PUT.
+	 *
+	 * @param context
+	 * @param progressListener
+	 * @param serverPath
+	 *            the URL fragment to which the content should be PUT
+	 * @param localFile
+	 *            the local file that should be stored on the server
+	 * @param contentType
+	 *            MIME type of the file to be uploaded
+	 * @return
+	 * @throws NetworkProtocolException
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws IllegalStateException
+	 */
+	public JSONObject uploadContent(Context context, TransferProgressListener progressListener,
 			String serverPath, Uri localFile, String contentType) throws NetworkProtocolException,
-			IOException {
+			IOException, IllegalStateException, JSONException {
 
 		if (localFile == null) {
 			throw new IOException("Cannot send. Content item does not reference a local file.");
@@ -912,7 +931,13 @@ public class NetworkClient extends DefaultHttpClient {
 		final InputStream is = getFileStream(context, localFile);
 
 		// next step is to send the file contents.
-		final HttpPut r = new HttpPut(getFullUrlAsString(serverPath));
+		final String putUrl = getFullUrlAsString(serverPath);
+		final HttpPut r = new HttpPut(putUrl);
+
+		if (DEBUG) {
+			Log.d(TAG, "HTTP PUTting " + localFile + " (mimetype: " + contentType + ") to "
+					+ putUrl);
+		}
 
 		r.setHeader("Content-Type", contentType);
 
@@ -925,12 +950,27 @@ public class NetworkClient extends DefaultHttpClient {
 
 		final HttpResponse c = this.execute(r);
 		checkStatusCode(c, true);
-		c.getEntity().consumeContent();
+		return toJsonObject(c);
 	}
 
-	public void uploadContentUsingForm(Context context, TransferProgressListener progressListener,
-			String serverPath, Uri localFile, String contentType) throws NetworkProtocolException,
-			IOException {
+	/**
+	 * Uploads the content using HTTP POST of a multipart MIME document.
+	 *
+	 * @param context
+	 * @param progressListener
+	 * @param serverPath
+	 * @param localFile
+	 * @param contentType
+	 * @return
+	 * @throws NetworkProtocolException
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws IllegalStateException
+	 */
+	public JSONObject uploadContentUsingForm(Context context,
+			TransferProgressListener progressListener, String serverPath, Uri localFile,
+			String contentType) throws NetworkProtocolException, IOException,
+			IllegalStateException, JSONException {
 
 		if (localFile == null) {
 			throw new IOException("Cannot send. Content item does not reference a local file.");
@@ -939,7 +979,13 @@ public class NetworkClient extends DefaultHttpClient {
 		final InputStream is = getFileStream(context, localFile);
 
 		// next step is to send the file contents.
-		final HttpPost r = new HttpPost(getFullUrlAsString(serverPath));
+		final String postUrl = getFullUrlAsString(serverPath);
+		final HttpPost r = new HttpPost(postUrl);
+
+		if (DEBUG){
+			Log.d(TAG, "Multipart-MIME POSTing " + localFile + " (mimetype: " + contentType
+					+ ") to " + postUrl);
+		}
 
 		final InputStreamWatcher isw = new InputStreamWatcher(is, progressListener);
 
@@ -958,9 +1004,14 @@ public class NetworkClient extends DefaultHttpClient {
 
 		final HttpResponse c = this.execute(r);
 		checkStatusCode(c, true);
-		c.getEntity().consumeContent();
+
+		return toJsonObject(c);
 	}
 
+	/**
+	 * An extension of {@link InputStreamBody} which can retrieve the length / size of a local file
+	 * using its {@link AssetFileDescriptor}.
+	 */
 	private static class AndroidFileInputStreamBody extends InputStreamBody {
 		private final Uri mLocalFile;
 		private final Context mContext;
@@ -1126,13 +1177,31 @@ public class NetworkClient extends DefaultHttpClient {
 		RAW_PUT, FORM_POST
 	}
 
-	public void uploadContentWithNotification(Context context, Uri cast, String serverPath,
+	/**
+	 * Uploads the content, displaying a notification in the system tray. The notification will show
+	 * a progress bar as the upload goes on and will show a message when finished indicating whether
+	 * or not it was successful.
+	 *
+	 * @param context
+	 * @param cast
+	 *            cast item
+	 * @param serverPath
+	 *            the path on which
+	 * @param localFile
+	 * @param contentType
+	 * @param uploadType
+	 * @throws NetworkProtocolException
+	 * @throws IOException
+	 * @throws JSONException
+	 */
+	public JSONObject uploadContentWithNotification(Context context, Uri cast, String serverPath,
 			Uri localFile, String contentType, UploadType uploadType)
-			throws NetworkProtocolException, IOException {
+			throws NetworkProtocolException, IOException, JSONException {
 		String castTitle = Cast.getTitle(context, cast);
 		if (castTitle == null) {
 			castTitle = "untitled (cast #" + cast.getLastPathSegment() + ")";
 		}
+		JSONObject updatedCastMedia;
 		final ProgressNotification notification = new ProgressNotification(context,
 				context.getString(R.string.sync_uploading_cast, castTitle),
 				ProgressNotification.TYPE_UPLOAD, PendingIntent.getActivity(context, 0, new Intent(
@@ -1160,17 +1229,24 @@ public class NetworkClient extends DefaultHttpClient {
 
 			switch (uploadType) {
 				case RAW_PUT:
-					uploadContent(context, tpl, serverPath, localFile, contentType);
+					updatedCastMedia = uploadContent(context, tpl, serverPath, localFile,
+							contentType);
 					break;
 				case FORM_POST:
-					uploadContentUsingForm(context, tpl, serverPath, localFile, contentType);
+					updatedCastMedia = uploadContentUsingForm(context, tpl, serverPath, localFile,
+							contentType);
 					break;
+
+				default:
+					throw new IllegalArgumentException("unhandled upload type: " + uploadType);
 			}
 
 			notification.doneTitle = context.getString(R.string.sync_upload_success);
 			notification.doneText = context.getString(R.string.sync_upload_success_message,
 					castTitle);
 			notification.successful = true;
+
+
 		} catch (final NetworkProtocolException e) {
 			notification.setUnsuccessful(e.getLocalizedMessage());
 			throw e;
@@ -1180,6 +1256,7 @@ public class NetworkClient extends DefaultHttpClient {
 		} finally {
 			tpl.done();
 		}
+		return updatedCastMedia;
 	}
 
 	/**

@@ -259,12 +259,16 @@
 
         <!-- this has its own process so it can have more memory for thumbnail generation -->
         <service
-            android:name="edu.mit.mobile.android.locast.data.MediaSync"
+            android:name="edu.mit.mobile.android.locast.sync.MediaSync"
             android:process="edu.mit.mobile.android.locast.SyncMedia" >
             <intent-filter>
                 <action android:name="edu.mit.mobile.android.locast.ACTION_SYNC_RESOURCES" />
 
                 <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.castmedia" />
+            </intent-filter>
+            
+            <intent-filter>
+                <action android:name="edu.mit.mobile.android.locast.ACTION_SYNC_RESOURCES" />
             </intent-filter>
         </service>
 

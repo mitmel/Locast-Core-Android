@@ -1,6 +1,7 @@
-package edu.mit.mobile.android.locast.data;
+package edu.mit.mobile.android.locast.sync;
+
 /*
- * Copyright (C) 2011  MIT Mobile Experience Lab
+ * Copyright (C) 2011-2012  MIT Mobile Experience Lab
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,6 +35,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.cookie.DateUtils;
+import org.json.JSONObject;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -62,6 +64,10 @@ import android.provider.MediaStore.Video;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
+import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.data.CastMedia;
+import edu.mit.mobile.android.locast.data.MediaProvider;
+import edu.mit.mobile.android.locast.data.SyncException;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient.InputStreamWatcher;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;
@@ -72,35 +78,60 @@ import edu.mit.mobile.android.utils.StreamUtils;
 public class MediaSync extends Service implements MediaScannerConnectionClient {
 	private final static String TAG = MediaSync.class.getSimpleName();
 
+	/*
+	 * public interface
+	 */
+
+	/**
+	 * Syncs the media resources of the item specified by the data uri. If data is null, then all
+	 * unpublished media will be sync'd.
+	 */
+	public static final String ACTION_SYNC_RESOURCES = "edu.mit.mobile.android.locast.ACTION_SYNC_RESOURCES";
+
+	/*
+	 * Constants that control this class.
+	 */
+
 	private final boolean DEBUG = Constants.DEBUG;
 
+	public static final long TIMEOUT_LAST_SYNC = 10 * 1000 * 1000; // nanoseconds
+
+	private static final long SELF_DESTRUCT_TIMEOUT = 5000;
+
+	/**
+	 * The location to store media on the device. This will be hidden from being indexed for the
+	 * gallery.
+	 */
+	public final static String DEVICE_EXTERNAL_MEDIA_PATH = "/locast/";
+
+	public final static String NO_MEDIA = ".nomedia";
 
 	/**
 	 * If this many errors are encountered, media sync gives up.
 	 */
 	private static final int TOO_MANY_ERRORS = 5;
 
-	private final Map<String, ScanQueueItem> scanMap = new TreeMap<String, ScanQueueItem>();
-	private MediaScannerConnection msc;
-	private final Queue<String> toScan = new LinkedList<String>();
+	/*
+	 * Private state
+	 */
 
-	public static final String ACTION_SYNC_RESOURCES = "edu.mit.mobile.android.locast.ACTION_SYNC_RESOURCES";
+	private final Map<String, ScanQueueItem> mScanMap = new TreeMap<String, ScanQueueItem>();
+	private MediaScannerConnection mMsc;
+	private final Queue<String> mToScan = new LinkedList<String>();
 
 	private final IBinder mBinder = new LocalBinder();
 
-	public static final long TIMEOUT_LAST_SYNC = 10 * 1000 * 1000; // nanoseconds
-
-	public final static String DEVICE_EXTERNAL_MEDIA_PATH = "/locast/",
-			NO_MEDIA = ".nomedia";
-
-	protected final ConcurrentLinkedQueue<SyncQueueItem> mSyncQueue = new ConcurrentLinkedQueue<SyncQueueItem>();
+	private final ConcurrentLinkedQueue<SyncQueueItem> mSyncQueue = new ConcurrentLinkedQueue<SyncQueueItem>();
 
 	private MessageDigest mDigest;
 
 	private final HashMap<Uri, Long> mRecentlySyncd = new HashMap<Uri, Long>();
 
-	private ContentResolver cr;
+	private ContentResolver mCr;
 
+	/**
+	 * Creates a new Media Sync engine.
+	 */
 	public MediaSync() {
 		super();
 
@@ -113,12 +144,31 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	}
 
 	@Override
-	public IBinder onBind(Intent arg0) {
+	public void onCreate() {
+		super.onCreate();
+
+		mCr = getContentResolver();
+	}
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+
+		if (mSyncTask != null) {
+			mSyncTask.cancel(true);
+		}
+
+		if (mMsc != null) {
+			mMsc.disconnect();
+		}
+	}
+
+	@Override
+	public IBinder onBind(Intent intent) {
 		return mBinder;
 	}
 
 	private static final int MSG_DONE = 0;
-
 
 	private final Handler mDoneTimeout = new Handler() {
 		@Override
@@ -133,53 +183,59 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		final Uri data = intent.getData();
-		final SyncQueueItem syncQueueItem = new SyncQueueItem(data,
-				intent.getExtras());
-		if (!mSyncQueue.contains(syncQueueItem) && !checkRecentlySyncd(data)) {
+		if (ACTION_SYNC_RESOURCES.equals(intent.getAction())) {
+			final Uri data = intent.getData();
+			if (data == null) {
+				enqueueUnpublishedMedia();
+
+			} else {
+				enqueueItem(data, intent.getExtras());
+			}
+		} else {
+			Log.e(TAG, "Media Sync was told to start with an unhandled intent: " + intent);
+		}
+
+		return START_REDELIVER_INTENT;
+	}
+
+	public void enqueueUnpublishedMedia() {
+
+		final CastMedia c = new CastMedia(mCr.query(CastMedia.CONTENT_URI, CASTMEDIA_PROJECTION,
+				CastMedia._MEDIA_URL + " ISNULL AND " + CastMedia._PUBLIC_URI + " NOT NULL AND "
+						+ CastMedia._LOCAL_URI + " NOT NULL", null,
+				null));
+
+		try {
+			c.moveToFirst();
+
+			if (Constants.DEBUG) {
+				Log.d(TAG, "enqueue unpublished media");
+				Log.d(TAG, "there are " + c.getCount() + " unpublished media");
+			}
+
+			for (; !c.isAfterLast(); c.moveToNext()) {
+				final Uri item = c.getCanonicalUri();
+				enqueueItem(item, null);
+			}
+		} finally {
+			c.close();
+		}
+	}
+
+	private void enqueueItem(Uri item, Bundle extras){
+		final SyncQueueItem syncQueueItem = new SyncQueueItem(item, extras);
+		if (!mSyncQueue.contains(syncQueueItem) && !checkRecentlySyncd(item)) {
 			if (DEBUG) {
 				Log.d(TAG, "enqueueing " + syncQueueItem);
 			}
 			mSyncQueue.add(syncQueueItem);
 		} else {
 			if (DEBUG) {
-				Log.d(TAG, syncQueueItem.toString()
-						+ " already in the queue. Skipping.");
+				Log.d(TAG, syncQueueItem.toString() + " already in the queue. Skipping.");
 			}
 		}
 
-		maybeStartTask();
-
-		return START_REDELIVER_INTENT;
-	}
-
-	private SyncTask mSyncTask;
-
-	private synchronized void maybeStartTask() {
-		if (mSyncTask == null) {
-			mSyncTask = new SyncTask();
-			mSyncTask.execute();
-		}
-	}
-
-	@Override
-	public void onCreate() {
-		super.onCreate();
-
-		cr = getContentResolver();
-	}
-
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-
-		if (mSyncTask != null) {
-			mSyncTask.cancel(true);
-		}
-
-		if (msc != null) {
-			msc.disconnect();
-		}
+		maybeStartSyncTask();
 	}
 
 	/**
@@ -203,6 +259,18 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 		}
 	}
 
+	private SyncTask mSyncTask;
+
+	/**
+	 * Starts a sync task if there isn't one already going.
+	 */
+	private synchronized void maybeStartSyncTask() {
+		if (mSyncTask == null) {
+			mSyncTask = new SyncTask();
+			mSyncTask.execute();
+		}
+	}
+
 	/**
 	 * Goes through the queue and syncs all the items in it.
 	 *
@@ -211,34 +279,36 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	 */
 	private class SyncTask extends AsyncTask<Void, Void, Void> {
 
-
-
 		@Override
 		protected Void doInBackground(Void... params) {
 			int errorCount = 0;
-			while (!mSyncQueue.isEmpty()) {
-				try {
-					final SyncQueueItem qi = mSyncQueue.remove();
+			try {
+				while (!mSyncQueue.isEmpty()) {
+					try {
+						final SyncQueueItem qi = mSyncQueue.remove();
 
-					syncItemMedia(qi.uri);
-					addUriToRecentlySyncd(qi.uri);
+						syncItemMedia(qi.uri);
+						addUriToRecentlySyncd(qi.uri);
 
-				} catch (final SyncException se) {
-					Log.e(TAG, se.getLocalizedMessage(), se);
-					errorCount++;
+					} catch (final SyncException se) {
+						Log.e(TAG, se.getLocalizedMessage(), se);
+						errorCount++;
 
-				} catch (final IllegalArgumentException e){
-					Log.e(TAG, e.getLocalizedMessage(), e);
-					errorCount++;
+					} catch (final IllegalArgumentException e) {
+						Log.e(TAG, e.getLocalizedMessage(), e);
+						errorCount++;
+					}
+
+					if (errorCount >= TOO_MANY_ERRORS) {
+						Log.e(TAG, "Too many errors. Stopping sync.");
+						break;
+					}
 				}
-				if (errorCount >= TOO_MANY_ERRORS){
-					Log.e(TAG, "Too many errors. Stopping sync.");
-					break;
-				}
+
+			} finally {
+				scheduleSelfDestruct();
+				mSyncTask = null;
 			}
-			scheduleSelfDestruct();
-			mSyncTask = null;
-
 			return null;
 		}
 
@@ -246,56 +316,30 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 		protected void onCancelled() {
 			mSyncTask = null;
 		}
-
 	}
 
-	private class SyncQueueItem {
-		public SyncQueueItem(Uri uri, Bundle extras) {
-			this.uri = uri;
-			this.extras = extras;
-		}
-
-		Uri uri;
-		Bundle extras;
-
-		@Override
-		public boolean equals(Object o) {
-
-			final SyncQueueItem o2 = (SyncQueueItem) o;
-			return o == null ? false : (this.uri == null ? false : this.uri
-					.equals(o2.uri)
-					&& ((this.extras == null && o2.extras == null)
-							|| this.extras == null ? false : this.extras
-							.equals(o2.extras)));
-		}
-
-		@Override
-		public String toString() {
-			return SyncQueueItem.class.getSimpleName() + ": " + uri.toString()
-					+ ((extras != null) ? " with extras " + extras : "");
-		}
-	}
-
-	final static String[] PROJECTION = { CastMedia._ID, CastMedia._MIME_TYPE,
+	final static String[] CASTMEDIA_PROJECTION = { CastMedia._ID, CastMedia._MIME_TYPE,
 			CastMedia._LOCAL_URI, CastMedia._MEDIA_URL, CastMedia._KEEP_OFFLINE,
-			CastMedia._PUBLIC_URI,
-			CastMedia._THUMB_LOCAL};
+			CastMedia._PUBLIC_URI, CastMedia.CAST, CastMedia._THUMB_LOCAL };
 
 	final static String[] CAST_PROJECTION = {Cast._ID, Cast._FAVORITED };
+
 	/**
-	 * Synchronize the media of the given castMedia. It will download or upload
-	 * as needed.
+	 * Synchronize the media of the given castMedia. It will download or upload as needed.
+	 *
+	 * Blocks until the sync is complete.
 	 *
 	 * @param castMediaUri
+	 *            a {@link CastMedia} item uri
 	 * @throws SyncException
 	 */
 	public void syncItemMedia(Uri castMediaUri) throws SyncException {
 
-		final Cursor castMedia = cr.query(castMediaUri, PROJECTION, null, null,
+		final Cursor castMedia = mCr.query(castMediaUri, CASTMEDIA_PROJECTION, null, null,
 				null);
 
 		final Uri castUri = CastMedia.getCast(castMediaUri);
-		final Cursor cast = cr.query(castUri, CAST_PROJECTION, null, null,
+		final Cursor cast = mCr.query(castUri, CAST_PROJECTION, null, null,
 				null);
 
 		try {
@@ -336,12 +380,15 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 			final boolean hasPubMedia = pubMedia != null
 					&& pubMedia.length() > 0;
 
-			final String localThumb  = castMedia.getString(castMedia.getColumnIndex(CastMedia._THUMB_LOCAL));
-
-
+			final String localThumb = castMedia.getString(castMedia
+					.getColumnIndex(CastMedia._THUMB_LOCAL));
 
 			if (hasLocMedia && !hasPubMedia) {
 				final String uploadPath = castMedia.getString(castMedia.getColumnIndex(CastMedia._PUBLIC_URI));
+				if (uploadPath == null) {
+					Log.w(TAG, "attempted to sync " + castMediaUri + " which has a null uploadPath");
+					return;
+				}
 				uploadMedia(uploadPath, castMediaUri, mimeType, locMedia);
 
 			} else if (!hasLocMedia && hasPubMedia) {
@@ -376,6 +423,16 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 		}
 	}
 
+	/**
+	 * updates the metadata stored at castMediaUri with information about the local file.
+	 *
+	 * @param castMediaUri
+	 *            a castMedia item pointing to the metadata for the media
+	 * @param localFile
+	 *            the local copy of the media file
+	 * @param localThumbnail
+	 *            an image file representing media stored at localFile or null if there is none
+	 */
 	private void updateLocalFile(Uri castMediaUri, File localFile, File localThumbnail) {
 		final ContentValues cv = new ContentValues();
 		cv.put(CastMedia._LOCAL_URI, Uri.fromFile(localFile).toString());
@@ -388,6 +445,16 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 	}
 
+	/**
+	 * Uploads the media to the server and shows a notification in the system toolbar.
+	 *
+	 * @param uploadPath
+	 *            the relative path to upload
+	 * @param castMediaUri
+	 * @param contentType
+	 * @param locMedia
+	 * @throws SyncException
+	 */
 	private void uploadMedia(String uploadPath, Uri castMediaUri,
 			String contentType, final Uri locMedia) throws SyncException {
 		// upload
@@ -395,9 +462,14 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 			// TODO this should get the account info from something else.
 			final NetworkClient nc = NetworkClient.getInstance(this,
 					Authenticator.getFirstAccount(this));
-			nc.uploadContentWithNotification(this,
+
+			final JSONObject updatedCastMedia = nc.uploadContentWithNotification(this,
 					CastMedia.getCast(castMediaUri), uploadPath, locMedia,
 					contentType, NetworkClient.UploadType.FORM_POST);
+
+			mCr.update(castMediaUri,
+					CastMedia.fromJSON(this, castMediaUri, updatedCastMedia, CastMedia.SYNC_MAP),
+					null, null);
 		} catch (final Exception e) {
 			final SyncException se = new SyncException(
 					getString(R.string.error_uploading_cast_video));
@@ -593,21 +665,21 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	 */
 	public void scanMediaItem(Uri castMediaUri, String filePath,
 			String contentType) {
-		scanMap.put(filePath, new ScanQueueItem(castMediaUri, contentType));
+		mScanMap.put(filePath, new ScanQueueItem(castMediaUri, contentType));
 
-		if (msc == null) {
-			toScan.add(filePath);
-			this.msc = new MediaScannerConnection(this, this);
-			this.msc.connect();
+		if (mMsc == null) {
+			mToScan.add(filePath);
+			this.mMsc = new MediaScannerConnection(this, this);
+			this.mMsc.connect();
 
-		} else if (msc.isConnected()) {
-			msc.scanFile(filePath, contentType);
+		} else if (mMsc.isConnected()) {
+			mMsc.scanFile(filePath, contentType);
 
 			// if we're not connected yet, we need to remember what we want
 			// scanned,
 			// so that we can queue it up once connected.
 		} else {
-			toScan.add(filePath);
+			mToScan.add(filePath);
 		}
 	}
 
@@ -617,7 +689,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 			return;
 		}
 
-		final ScanQueueItem item = scanMap.get(path);
+		final ScanQueueItem item = mScanMap.get(path);
 		if (item == null) {
 			Log.e(TAG, "Couldn't find media item (" + path
 					+ ") in scan map, so we couldn't update any casts.");
@@ -632,9 +704,17 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 		if (mDigest == null) {
 			throw new RuntimeException("no message digest available");
 		}
-		mDigest.reset();
-		mDigest.update(data.getBytes());
-		return new BigInteger(mDigest.digest()).toString(16);
+		final byte[] ba;
+		synchronized (mDigest) {
+			mDigest.update(data.toString().getBytes());
+			ba = mDigest.digest();
+		}
+		final BigInteger bi = new BigInteger(1, ba);
+		final String result = bi.toString(16);
+		if (result.length() % 2 != 0) {
+			return "0" + result;
+		}
+		return result;
 	}
 
 	private class ThumbnailException extends Exception {
@@ -738,32 +818,22 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 	// TODO should this be on a separate thread?
 	public void onMediaScannerConnected() {
-		while (!toScan.isEmpty()) {
-			final String scanme = toScan.remove();
-			final ScanQueueItem item = scanMap.get(scanme);
-			this.msc.scanFile(scanme, item.contentType);
+		while (!mToScan.isEmpty()) {
+			final String scanme = mToScan.remove();
+			final ScanQueueItem item = mScanMap.get(scanme);
+			this.mMsc.scanFile(scanme, item.contentType);
 		}
 		scheduleSelfDestruct();
 	}
 
 	private void scheduleSelfDestruct() {
 		mDoneTimeout.removeMessages(MSG_DONE);
-		mDoneTimeout.sendEmptyMessageDelayed(MSG_DONE, 5000);
+		mDoneTimeout.sendEmptyMessageDelayed(MSG_DONE, SELF_DESTRUCT_TIMEOUT);
 	}
 
 	private void stopIfQueuesEmpty() {
-		if (mSyncQueue.isEmpty() && toScan.isEmpty()) {
+		if (mSyncQueue.isEmpty() && mToScan.isEmpty()) {
 			this.stopSelf();
-		}
-	}
-
-	private class ScanQueueItem {
-		public Uri castMediaUri;
-		public String contentType;
-
-		public ScanQueueItem(Uri castMediaUri, String contentType) {
-			this.castMediaUri = castMediaUri;
-			this.contentType = contentType;
 		}
 	}
 
@@ -836,6 +906,49 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	public class LocalBinder extends Binder {
 		MediaSync getService() {
 			return MediaSync.this;
+		}
+	}
+
+	/**
+	 * Represents an item waiting to be scanned by the media scanner.
+	 *
+	 */
+	private class ScanQueueItem {
+		public Uri castMediaUri;
+		public String contentType;
+
+		public ScanQueueItem(Uri castMediaUri, String contentType) {
+			this.castMediaUri = castMediaUri;
+			this.contentType = contentType;
+		}
+	}
+
+	/**
+	 * Represents an item in the sync queue. Equality is checked by comparing both URI and extras.
+	 *
+	 */
+	private class SyncQueueItem {
+		public SyncQueueItem(Uri uri, Bundle extras) {
+			this.uri = uri;
+			this.extras = extras;
+		}
+
+		Uri uri;
+		Bundle extras;
+
+		@Override
+		public boolean equals(Object o) {
+
+			final SyncQueueItem o2 = (SyncQueueItem) o;
+			return o == null ? false : (this.uri == null ? false : this.uri.equals(o2.uri)
+					&& ((this.extras == null && o2.extras == null) || this.extras == null ? false
+							: this.extras.equals(o2.extras)));
+		}
+
+		@Override
+		public String toString() {
+			return SyncQueueItem.class.getSimpleName() + ": " + uri.toString()
+					+ ((extras != null) ? " with extras " + extras : "");
 		}
 	}
 }

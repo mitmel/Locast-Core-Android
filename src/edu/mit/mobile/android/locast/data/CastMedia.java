@@ -33,6 +33,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
+import edu.mit.mobile.android.content.ForeignKeyDBHelper;
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.UriPath;
 import edu.mit.mobile.android.content.column.BooleanColumn;
@@ -41,6 +42,7 @@ import edu.mit.mobile.android.content.column.DBForeignKeyColumn;
 import edu.mit.mobile.android.content.column.IntegerColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
+import edu.mit.mobile.android.locast.sync.MediaSync;
 import edu.mit.mobile.android.locast.ver2.R;
 
 @UriPath(CastMedia.PATH)
@@ -115,14 +117,22 @@ public class CastMedia extends JsonSyncableItem {
 		MIMETYPE_3GPP = "video/3gpp",
 		MIMETYPE_MPEG4 = "video/mpeg4";
 
+	public static final Uri CONTENT_URI = ProviderUtils.toContentUri(MediaProvider.AUTHORITY,
+			Cast.PATH + "/" + ForeignKeyDBHelper.WILDCARD_PATH_SEGMENT + "/" + PATH);
+
 	public CastMedia(Cursor c) {
 		super(c);
 	}
 
 	@Override
-	public Uri getContentUri() {
+	public Uri getCanonicalUri() {
+		return ProviderUtils.toContentUri(MediaProvider.AUTHORITY, Cast.PATH + "/"
+				+ getLong(getColumnIndex(CAST)) + "/" + PATH + "/" + getLong(getColumnIndex(_ID)));
+	}
 
-		return null; // XXX this is wrong.
+	@Override
+	public Uri getContentUri() {
+		return CONTENT_URI;
 	}
 
 	@Override
@@ -342,7 +352,7 @@ public class CastMedia extends JsonSyncableItem {
 			// the media URL can come from either the flattened "url" attribute or the expanded "resources" structure above.
 			put(_MEDIA_URL, 	new SyncFieldMap("url", 			SyncFieldMap.STRING,         SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
 			put(_MIME_TYPE, 	new SyncFieldMap("mime_type",		SyncFieldMap.STRING,         SyncItem.FLAG_OPTIONAL));
-			put(_DURATION,		new SyncFieldMap("duration", 		SyncFieldMap.DURATION, 		 SyncItem.FLAG_OPTIONAL));
+			put(_DURATION,		new SyncFieldMap("duration", 		SyncFieldMap.DURATION, 		 SyncFieldMap.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 
 			put(_THUMBNAIL, 	new SyncFieldMap("preview_image",   SyncFieldMap.STRING,		 SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
 		}
