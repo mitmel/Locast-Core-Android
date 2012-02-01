@@ -1019,6 +1019,11 @@ public class MediaProvider extends ContentProvider {
 			}
 				break;
 
+			case MATCHER_EVENT_DIR:
+				count = db.delete(EVENT_TABLE_NAME, where, whereArgs);
+
+				break;
+
 			default:
 				if (mDBHelperMapper.canDelete(code)) {
 					count = mDBHelperMapper.delete(code, this, db, uri, where, whereArgs);
