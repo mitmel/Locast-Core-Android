@@ -156,6 +156,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 
 		if (mSyncTask != null) {
 			mSyncTask.cancel(true);
+			mSyncTask = null;
 		}
 
 		if (mMsc != null) {
@@ -265,7 +266,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 	 * Starts a sync task if there isn't one already going.
 	 */
 	private synchronized void maybeStartSyncTask() {
-		if (mSyncTask == null) {
+		if (mSyncTask == null || mSyncTask.isCancelled()) {
 			mSyncTask = new SyncTask();
 			mSyncTask.execute();
 		}
@@ -284,19 +285,22 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
 			int errorCount = 0;
 			try {
 				while (!mSyncQueue.isEmpty()) {
+					final SyncQueueItem qi = mSyncQueue.remove();
 					try {
-						final SyncQueueItem qi = mSyncQueue.remove();
-
 						syncItemMedia(qi.uri);
 						addUriToRecentlySyncd(qi.uri);
 
 					} catch (final SyncException se) {
 						Log.e(TAG, se.getLocalizedMessage(), se);
 						errorCount++;
+						// re-add failed items to retry
+						mSyncQueue.add(qi);
 
 					} catch (final IllegalArgumentException e) {
 						Log.e(TAG, e.getLocalizedMessage(), e);
 						errorCount++;
+						// re-add failed items to retry
+						mSyncQueue.add(qi);
 					}
 
 					if (errorCount >= TOO_MANY_ERRORS) {
