@@ -225,4 +225,5 @@ reception, try standing in a clear area outside away from buildings.</string>
 	<string name="location_known">Location: Found!</string>
 	<string name="unicef_unsynced_casts">UNICEF Unsynced Casts</string>
 	<string name="no_title">(no title)</string>
+	<string name="home">home</string>
 </resources>
