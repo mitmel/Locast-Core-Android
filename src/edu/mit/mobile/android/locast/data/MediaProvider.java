@@ -274,6 +274,13 @@ public class MediaProvider extends ContentProvider {
 		@Override
 		public void onCreate(SQLiteDatabase db) {
 
+			createTables(db);
+			ITINERARY_CASTS_DBHELPER.createTables(db);
+			CASTS_CASTMEDIA_DBHELPER.createTables(db);
+		}
+
+		private void createTables(SQLiteDatabase db) {
+
 			db.execSQL("CREATE TABLE "  + CAST_TABLE_NAME + " ("
 					+ JSON_SYNCABLE_ITEM_FIELDS
 					+ JSON_COMMENTABLE_FIELDS
@@ -345,9 +352,6 @@ public class MediaProvider extends ContentProvider {
 					+ Event._THUMBNAIL_URI+ " TEXT"
 					+ ");"
 					);
-
-			ITINERARY_CASTS_DBHELPER.createTables(db);
-			CASTS_CASTMEDIA_DBHELPER.createTables(db);
 		}
 
 		@Override
@@ -357,16 +361,26 @@ public class MediaProvider extends ContentProvider {
 				onUpgrade(db, oldVersion, oldVersion + 1);
 			}
 
-			db.execSQL("DROP TABLE IF EXISTS " + CAST_TABLE_NAME);
-			db.execSQL("DROP TABLE IF EXISTS " + COMMENT_TABLE_NAME);
-			db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
-			db.execSQL("DROP TABLE IF EXISTS " + ITINERARY_TABLE_NAME);
-			db.execSQL("DROP TABLE IF EXISTS " + EVENT_TABLE_NAME);
+			db.beginTransaction();
 
-			ITINERARY_CASTS_DBHELPER.upgradeTables(db, oldVersion, newVersion);
-			CASTS_CASTMEDIA_DBHELPER.upgradeTables(db, oldVersion, newVersion);
+			try {
 
-			onCreate(db);
+				db.execSQL("DROP TABLE IF EXISTS " + CAST_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + COMMENT_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + ITINERARY_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + EVENT_TABLE_NAME);
+
+				ITINERARY_CASTS_DBHELPER.upgradeTables(db, oldVersion, newVersion);
+				CASTS_CASTMEDIA_DBHELPER.upgradeTables(db, oldVersion, newVersion);
+
+				createTables(db);
+
+				db.setTransactionSuccessful();
+
+			} finally {
+				db.endTransaction();
+			}
 		}
 	}
 
@@ -375,6 +389,11 @@ public class MediaProvider extends ContentProvider {
 	@Override
 	public boolean onCreate() {
 		dbHelper = new DatabaseHelper(getContext());
+
+		// this is done here in order to have any onUpgrade() run immediately.
+		// otherwise, onUpgrade may run during a query when it's called using getReadableDatabase()
+		// and fail.
+		dbHelper.getWritableDatabase().close();
 		return true;
 	}
 
