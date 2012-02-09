@@ -45,6 +45,7 @@ import android.widget.TextView;
 import com.stackoverflow.ArrayUtils;
 
 import edu.mit.mobile.android.appupdater.AppUpdateChecker;
+import edu.mit.mobile.android.appupdater.OnUpdateDialog;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
@@ -137,7 +138,7 @@ public class ItineraryList extends FragmentActivity implements
 		mRefresh.setOnClickListener(this);
 		if (Constants.USE_APPUPDATE_CHECKER) {
 			mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url),
-					new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
+					new OnUpdateDialog(this, getString(R.string.app_name)));
 			mAppUpdateChecker.checkForUpdates();
 		}
 

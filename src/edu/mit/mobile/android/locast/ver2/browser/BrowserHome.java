@@ -39,6 +39,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Gallery;
 import android.widget.Toast;
 import edu.mit.mobile.android.appupdater.AppUpdateChecker;
+import edu.mit.mobile.android.appupdater.OnUpdateDialog;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.Constants;
@@ -113,7 +114,7 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
 		if (Constants.USE_APPUPDATE_CHECKER) {
 			mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url),
-					new AppUpdateChecker.OnUpdateDialog(this, getString(R.string.app_name)));
+					new OnUpdateDialog(this, getString(R.string.app_name)));
 			mAppUpdateChecker.checkForUpdates();
 		}
 
