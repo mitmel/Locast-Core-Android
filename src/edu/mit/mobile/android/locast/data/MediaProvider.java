@@ -59,7 +59,6 @@ import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.utils.ListUtils;
 
 public class MediaProvider extends ContentProvider {
-	@SuppressWarnings("unused")
 	private final static String TAG = MediaProvider.class.getSimpleName();
 	public final static String NAMESPACE = "edu.mit.mobile.android.locast.ver2";
 	public final static String AUTHORITY = NAMESPACE + ".provider";
