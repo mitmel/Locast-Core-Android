@@ -69,8 +69,7 @@ public class UnsyncedCastsActivity extends CastListActivity implements
 		syncButton = (Button) findViewById(R.id.sync);
 		syncButton.setOnClickListener(this);
 
-		if (!Authenticator.hasRealAccount(this)) {
-			SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
+		if (SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN)) {
 			return;
 		}
 

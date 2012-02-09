@@ -141,7 +141,9 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		final boolean isFirstTime = SigninOrSkip.checkFirstTime(this);
 		shouldRefresh = !isFirstTime;
 		if (isFirstTime) {
-			SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
+			if (SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN)) {
+				return;
+			}
 		}
 	}
 

@@ -109,16 +109,29 @@ public class SigninOrSkip extends Activity implements OnClickListener {
 	/**
 	 *
 	 * Calls context.startActivityForResult() with the appropriate intent
-	 * 
+	 *
 	 * @param context
 	 * @param requestCode
 	 */
-	public static final void startSignin(Activity context, int requestCode){
+	public static final boolean startSignin(Activity context, int requestCode) {
 		if (Constants.REQUIRE_LOGIN) {
-			context.startActivityForResult(new Intent(context, AuthenticatorActivity.class),
-					requestCode);
+			if (!Authenticator.hasRealAccount(context)) {
+				context.startActivityForResult(new Intent(context, AuthenticatorActivity.class),
+						requestCode);
+				return true;
+			}
+			// login isn't required, but accounts can be created.
+		} else if (Constants.CAN_CREATE_CASTS) {
+			if (!Authenticator.isDemoMode(context) && !Authenticator.hasRealAccount(context)) {
+				context.startActivityForResult(new Intent(context, SigninOrSkip.class), requestCode);
+				return true;
+			}
 		} else {
-			context.startActivityForResult(new Intent(context, SigninOrSkip.class), requestCode);
+			// we shouldn't do anything if there's no possibility of creating casts.
+			if (checkFirstTime(context)) {
+				Authenticator.addDemoAccount(context);
+			}
 		}
+		return false;
 	}
 }

@@ -50,7 +50,6 @@ import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.data.MediaProvider;
@@ -155,9 +154,7 @@ public class ItineraryList extends FragmentActivity implements
 		}
 
 		if (CHECK_FOR_ACCOUNT) {
-
-			if (!Authenticator.hasRealAccount(this)) {
-				SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
+			if (SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN)) {
 				return;
 			}
 		}
