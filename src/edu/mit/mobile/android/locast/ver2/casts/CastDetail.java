@@ -1,7 +1,7 @@
 package edu.mit.mobile.android.locast.ver2.casts;
 
 /*
- * Copyright (C) 2011  MIT Mobile Experience Lab
+ * Copyright (C) 2011-2012  MIT Mobile Experience Lab
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -42,8 +42,6 @@ import android.widget.CheckBox;
 import android.widget.Gallery;
 import android.widget.TextView;
 
-import com.google.android.maps.MapController;
-import com.google.android.maps.MapView;
 import com.stackoverflow.ArrayUtils;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
@@ -67,9 +65,14 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		OnItemClickListener, OnClickListener {
 	private static final String TAG = CastDetail.class.getSimpleName();
 
+	/**
+	 * Enable/disable the use of a map in this activity. If the map is disabled, the layout can
+	 * fully remove the map or simply let this activity hide it.
+	 */
+	private static final boolean USE_MAP = false;
+
 	private LoaderManager mLoaderManager;
 	private CastsOverlay mCastsOverlay;
-	private MapController mMapController;
 	private SimpleCursorAdapter mCastMedia;
 
 	private ValidatingCheckBox vcb;
@@ -121,13 +124,22 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.cast_detail);
 
-		//initOverlays();
+
 		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
 		final Uri data = getIntent().getData();
 
 		mCastMediaUri = Cast.getCastMediaUri(data);
 
-		//mMapController = ((MapView) findViewById(R.id.map)).getController();
+		if (USE_MAP) {
+			initOverlays();
+			// mMapController = ((MapView) findViewById(R.id.map)).getController();
+		} else {
+			final View mapContainer = findViewById(R.id.pointer_shadow);
+			if (mapContainer != null) {
+				mapContainer.setVisibility(View.GONE);
+			}
+		}
+
 		mLoaderManager = getSupportLoaderManager();
 		mLoaderManager.initLoader(LOADER_CAST, null, this);
 		mLoaderManager.initLoader(LOADER_CAST_MEDIA, null, this);
@@ -217,7 +229,9 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
 		switch (loader.getId()) {
 			case LOADER_CAST:
-				//mCastsOverlay.swapCursor(c);
+				if (mCastsOverlay != null) {
+					mCastsOverlay.swapCursor(c);
+				}
 				if (c.moveToFirst()) {
 					// MediaProvider.dumpCursorToLog(c, Cast.PROJECTION);
 					((TextView) findViewById(R.id.title)).setText(c.getString(c
@@ -229,8 +243,10 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 					((CheckBox) findViewById(R.id.favorite)).setChecked(c.getInt(c
 							.getColumnIndex(Cast._FAVORITED)) != 0);
 
-					//setPointerFromCursor(c);
-					
+					if (USE_MAP) {
+						setPointerFromCursor(c);
+					}
+
 				}
 				break;
 
@@ -253,7 +269,9 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 	public void onLoaderReset(Loader<Cursor> loader) {
 		switch (loader.getId()) {
 			case LOADER_CAST:
-				//mCastsOverlay.swapCursor(null);
+				if (mCastsOverlay != null) {
+					mCastsOverlay.swapCursor(null);
+				}
 				break;
 
 			case LOADER_CAST_MEDIA:

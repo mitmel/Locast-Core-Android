@@ -72,7 +72,10 @@ import edu.mit.mobile.android.widget.RefreshButton;
 public class ItineraryDetail extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener, DialogInterface.OnClickListener {
 	private static final String TAG = ItineraryDetail.class.getSimpleName();
 
-	// if the layout for this doesn't need a map, set this to false.
+	/**
+	 * If the layout for this activity doesn't need / use a map, set this to false. This activity
+	 * will attempt to hide the map if it's disabled.
+	 */
 	private static final boolean USE_MAP = false;
 	private static final int DIALOG_CASTS = 0;
 
@@ -168,6 +171,11 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		if (USE_MAP){
 			mMapView = (MapView)findViewById(R.id.map);
 			mMapController = mMapView.getController();
+		} else {
+			final View map = findViewById(R.id.map_container);
+			if (map != null) {
+				map.setVisibility(View.GONE);
+			}
 		}
 
 		final Intent intent = getIntent();

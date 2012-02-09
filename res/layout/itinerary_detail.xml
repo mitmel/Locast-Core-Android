@@ -34,8 +34,9 @@
             android:layout_alignWithParentIfMissing="true"
             android:layout_toRightOf="@id/follow" />
     </RelativeLayout>
-<!-- 
+
     <FrameLayout
+        android:id="@+id/map_container"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_weight="3" >
@@ -44,7 +45,6 @@
             android:id="@+id/map"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:layout_weight="3"
             android:apiKey=""
             android:clickable="true"
             android:visibility="invisible" />
@@ -55,7 +55,7 @@
             android:background="@drawable/shadow_top_bottom"
             android:clickable="false" />
     </FrameLayout>
- -->
+ 
 	<include
         android:id="@+id/empty2"
         android:layout_weight="2"
