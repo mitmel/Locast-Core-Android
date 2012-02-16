@@ -233,11 +233,12 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 					mCastsOverlay.swapCursor(c);
 				}
 				if (c.moveToFirst()) {
-					// MediaProvider.dumpCursorToLog(c, Cast.PROJECTION);
-					((TextView) findViewById(R.id.title)).setText(c.getString(c
-							.getColumnIndex(Cast._TITLE)));
-					((TextView) findViewById(R.id.author)).setText(c.getString(c
-							.getColumnIndex(Cast._AUTHOR)));
+					setTitle(c.getString(c.getColumnIndex(Cast._TITLE)));
+					final TextView author = ((TextView) findViewById(R.id.author));
+					if (author != null) {
+						author.setText(c.getString(c.getColumnIndex(Cast._AUTHOR)));
+					}
+
 					((TextView) findViewById(R.id.description)).setText(c.getString(c
 							.getColumnIndex(Cast._DESCRIPTION)));
 					((CheckBox) findViewById(R.id.favorite)).setChecked(c.getInt(c
@@ -376,6 +377,12 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 			default:
 				return super.onCreateDialog(id);
 		}
+	}
+
+	@Override
+	public void setTitle(CharSequence title) {
+		super.setTitle(title);
+		((TextView) findViewById(R.id.title)).setText(title);
 	}
 
 	@Override

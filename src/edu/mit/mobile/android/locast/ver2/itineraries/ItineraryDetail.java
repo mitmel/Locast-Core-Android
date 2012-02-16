@@ -381,7 +381,8 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 				((TextView)findViewById(R.id.description)).setText(description);
 				((TextView)findViewById(R.id.description_empty)).setText(description);
 
-				((TextView)findViewById(R.id.title)).setText(c.getString(c.getColumnIndex(Itinerary._TITLE)));
+					((TextView) findViewById(android.R.id.title)).setText(c.getString(c
+							.getColumnIndex(Itinerary._TITLE)));
 
 				if (USE_MAP){
 					final List<GeoPoint> path = Itinerary.getPath(c);
