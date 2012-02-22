@@ -141,6 +141,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 		super.onCreate(icicle);
 		setContentView(R.layout.itinerary_detail);
+
 		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
 
 		mImageCache = ImageCache.getInstance(this);
@@ -361,7 +362,8 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 			break;
 
 		case LOADER_CASTS:
-			cl = new CursorLoader(this, uri, Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
+				cl = new CursorLoader(this, uri, CastCursorAdapter.DEFAULT_PROJECTION, null, null,
+						Cast.SORT_ORDER_DEFAULT);
 			break;
 
 		}

@@ -26,6 +26,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.BaseColumns;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -73,14 +74,18 @@ public class ItineraryList extends FragmentActivity implements
 	 * If true, checks to ensure that there's an account before showing activity.
 	 */
 	private static final boolean CHECK_FOR_ACCOUNT = true;
-	private static final boolean SHOW_DESCRIPTION = false;
+
+	/**
+	 * If true, uses an alternate layout itinerary_item_with_description and loads the itinerary
+	 * description in it.
+	 */
+	private static final boolean SHOW_DESCRIPTION = true;
 
 	private final String[] ITINERARY_DISPLAY = SHOW_DESCRIPTION ? new String[] { Itinerary._TITLE,
 			Itinerary._THUMBNAIL, Itinerary._DESCRIPTION } : new String[] { Itinerary._TITLE,
 			Itinerary._THUMBNAIL, Itinerary._CASTS_COUNT, Itinerary._FAVORITES_COUNT };
 
-	private final String[] ITINERARY_PROJECTION = ArrayUtils.concat(new String[] { Itinerary._ID },
-			ITINERARY_DISPLAY);
+	private String[] ITINERARY_PROJECTION;
 
 	private final int[] ITINERARY_LAYOUT_IDS = SHOW_DESCRIPTION ? new int[] { android.R.id.text1,
 			R.id.media_thumbnail, android.R.id.text2 } : new int[] { android.R.id.text1,
@@ -184,16 +189,48 @@ public class ItineraryList extends FragmentActivity implements
 		super.onCreateContextMenu(menu, v, menuInfo);
 	}
 
+	/**
+	 * Override this if you wish to show alternate columns.
+	 *
+	 * @return the list of Itinerary columns to display
+	 */
+	public String[] getItineraryDisplay() {
+		return ITINERARY_DISPLAY;
+	}
+
+	/**
+	 * Override this if you wish to use IDs other than {@link #ITINERARY_LAYOUT_IDS}.
+	 * 
+	 * @return the list of view ids to map the {@link #getItineraryDisplay()} to
+	 */
+	public int[] getItineraryLayoutIds() {
+		return ITINERARY_LAYOUT_IDS;
+	}
+
+	/**
+	 * By default, returns {@link #getItineraryDisplay()} with {@link BaseColumns#_ID} added.
+	 *
+	 * @return the projection to use to select the items in the display.
+	 */
+	public String[] getItineraryProjection() {
+		return ArrayUtils.concat(new String[] { Itinerary._ID }, getItineraryDisplay());
+	}
+
+	public int getItineraryItemLayout() {
+		return SHOW_DESCRIPTION ? R.layout.itinerary_item_with_description
+				: R.layout.itinerary_item;
+	}
+
 	private void loadData(Uri data) {
 		final String type = getContentResolver().getType(data);
 
 		if (!MediaProvider.TYPE_ITINERARY_DIR.equals(type)) {
 			throw new IllegalArgumentException("cannot load type: " + type);
 		}
-		mAdapter = new SimpleThumbnailCursorAdapter(this,
-				SHOW_DESCRIPTION ? R.layout.itinerary_item_with_description
-						: R.layout.itinerary_item, null, ITINERARY_DISPLAY, ITINERARY_LAYOUT_IDS,
+		mAdapter = new SimpleThumbnailCursorAdapter(this, getItineraryItemLayout(), null,
+				getItineraryDisplay(), getItineraryLayoutIds(),
 				new int[] { R.id.media_thumbnail }, 0);
+
 		mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache,
 				new int[] { R.id.media_thumbnail }, 48, 48, ImageLoaderAdapter.UNIT_DIP));
 
@@ -226,7 +263,7 @@ public class ItineraryList extends FragmentActivity implements
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		final Uri data = args.getParcelable(LOADER_DATA);
 
-		final CursorLoader cl = new CursorLoader(this, data, ITINERARY_PROJECTION, null, null,
+		final CursorLoader cl = new CursorLoader(this, data, getItineraryProjection(), null, null,
 				Itinerary.SORT_DEFAULT);
 		cl.setUpdateThrottle(Constants.UPDATE_THROTTLE);
 		return cl;

@@ -18,7 +18,6 @@ package edu.mit.mobile.android.locast.casts;
  */
 import android.app.ListActivity;
 import android.content.ContentUris;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -29,16 +28,14 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.AdapterView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.SimpleCursorAdapter;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
-import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.ver2.R;
 
 /**
  * A list of casts.
@@ -69,7 +66,7 @@ public abstract class CastListActivity extends ListActivity {
 			data = Cast.CONTENT_URI;
 		}
 	}
-	
+
 	protected int getContentView() {
 		return R.layout.cast_list;
 	}

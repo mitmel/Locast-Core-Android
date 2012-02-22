@@ -206,7 +206,6 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 			title = getString(favorited ? R.string.title_favorited : R.string.title_unfavorited, title);
 		}
 
-
 		setTitle(title);
 		if (actionSearchNearby) {
 			updateLocation();

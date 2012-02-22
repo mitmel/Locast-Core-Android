@@ -124,7 +124,6 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.cast_detail);
 
-
 		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
 		final Uri data = getIntent().getData();
 

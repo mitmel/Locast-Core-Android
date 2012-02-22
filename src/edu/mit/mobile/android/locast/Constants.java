@@ -43,5 +43,8 @@ public class Constants {
 	 */
 	public static final long UPDATE_THROTTLE = 500;
 
+	/**
+	 * If Google Maps is used, set to false. This enables various workarounds and API differences.
+	 */
 	public static final boolean USES_OSMDROID = false;
 }
