@@ -166,7 +166,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 			mAdapter = new CastCursorAdapter(this, null);
 
 			mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP));
-			initMapOverlays(new CastsOverlay(this));
+			initMapOverlays(new CastsOverlay(this, mMapView));
 
 			title = getString(R.string.title_casts);
 

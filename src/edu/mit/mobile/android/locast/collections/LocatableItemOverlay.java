@@ -24,14 +24,17 @@ import android.os.Handler;
 
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.ItemizedOverlay;
+import com.google.android.maps.MapView;
 import com.google.android.maps.OverlayItem;
+import com.readystatesoftware.mapviewballoons.BalloonItemizedOverlay;
 
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.maps.MapsUtils;
 
-abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> {
+abstract public class LocatableItemOverlay extends BalloonItemizedOverlay<OverlayItem> {
 	protected Cursor mLocatableItems;
 	private int mLatCol, mLonCol;
+	private boolean mShowBalloon = true;
 
 	public static final String[] LOCATABLE_ITEM_PROJECTION = {Locatable.Columns._LATITUDE, Locatable.Columns._LONGITUDE};
 
@@ -43,12 +46,12 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 		}
 	};
 
-	public LocatableItemOverlay(Drawable marker) {
-		this(marker, null);
+	public LocatableItemOverlay(Drawable marker, MapView mapview) {
+		this(marker, mapview, null);
 	}
 
-	public LocatableItemOverlay(Drawable marker, Cursor items) {
-		super(marker);
+	public LocatableItemOverlay(Drawable marker, MapView mapview, Cursor items) {
+		super(marker, mapview);
 
 		mLocatableItems = items;
 
@@ -65,6 +68,19 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 		updateCursorCols();
 
 		populate();
+	}
+
+	public void setShowBalloon(boolean showBalloon) {
+		mShowBalloon = showBalloon;
+	}
+
+	@Override
+	public boolean onTap(GeoPoint p, MapView mapView) {
+		if (mShowBalloon) {
+			return super.onTap(p, mapView);
+		} else {
+			return false;
+		}
 	}
 
 	public void onPause(){
@@ -100,6 +116,7 @@ abstract public class LocatableItemOverlay extends ItemizedOverlay<OverlayItem> 
 	protected GeoPoint getItemLocation(Cursor item){
 		return MapsUtils.getGeoPoint(item, mLatCol, mLonCol);
 	}
+
 
 	/**
 	 * this does not work properly when crossing -180/180 boundaries.

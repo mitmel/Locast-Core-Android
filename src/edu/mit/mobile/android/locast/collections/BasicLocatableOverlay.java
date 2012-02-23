@@ -20,16 +20,17 @@ package edu.mit.mobile.android.locast.collections;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 
+import com.google.android.maps.MapView;
 import com.google.android.maps.OverlayItem;
 
 public class BasicLocatableOverlay extends LocatableItemOverlay {
 
-	public BasicLocatableOverlay(Drawable marker) {
-		super(marker);
+	public BasicLocatableOverlay(Drawable marker, MapView mapview) {
+		super(marker, mapview);
 	}
 
-	public BasicLocatableOverlay(Drawable marker, Cursor c) {
-		super(marker, c);
+	public BasicLocatableOverlay(Drawable marker, MapView mapview, Cursor c) {
+		super(marker, mapview, c);
 	}
 
 	@Override

@@ -290,7 +290,7 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
 
 		if (USE_MAP){
 
-			mCastsOverlay = new CastsOverlay(CollectionDetail.this);
+			mCastsOverlay = new CastsOverlay(CollectionDetail.this, mMapView);
 
 			final List<Overlay> overlays = mMapView.getOverlays();
 			overlays.add(mCastsOverlay);

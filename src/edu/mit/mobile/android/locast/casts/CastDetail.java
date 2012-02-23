@@ -42,6 +42,7 @@ import android.widget.CheckBox;
 import android.widget.Gallery;
 import android.widget.TextView;
 
+import com.google.android.maps.MapView;
 import com.stackoverflow.ArrayUtils;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
@@ -283,7 +284,8 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 
 	@Override
 	protected LocatableItemOverlay createItemOverlay() {
-		mCastsOverlay = new CastsOverlay(this);
+		mCastsOverlay = new CastsOverlay(this, (MapView) findViewById(R.id.map));
+		mCastsOverlay.setShowBalloon(false);
 		return mCastsOverlay;
 	}
 
