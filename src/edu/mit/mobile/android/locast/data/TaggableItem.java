@@ -42,6 +42,7 @@ import android.net.Uri;
 import com.stackoverflow.CollectionUtils;
 import com.stackoverflow.Predicate;
 
+import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 
 /**
@@ -317,7 +318,38 @@ public abstract class TaggableItem extends JsonSyncableItem {
 			return baseUri;
 		}
 
-		return baseUri.buildUpon().appendQueryParameter(SERVER_QUERY_PARAMETER, Tag.toTagQuery(tags))  .build();
+		final List<String> path = baseUri.getPathSegments();
+		// AUTHORITY/casts/tags
+		if (path.size() >= 2 && Tag.PATH.equals(path.get(path.size() - 1))) {
+			baseUri = ProviderUtils.removeLastPathSegment(baseUri);
+		}
+
+		return baseUri.buildUpon()
+				.appendQueryParameter(SERVER_QUERY_PARAMETER, Tag.toTagQuery(tags)).build();
+	}
+
+	/**
+	 * @param baseUri
+	 * @return the URI of the list of all tags for the given item
+	 */
+	public static Uri getTagListUri(Uri baseUri) {
+		return Uri.withAppendedPath(baseUri, Tag.PATH);
+	}
+
+	/**
+	 * Given a URI that includes a set of tags, parses them out and returns them as a set.
+	 * 
+	 * @param contentUri
+	 * @return the set of tags encoded in the URI
+	 * @throws IllegalArgumentException
+	 *             if the URI doesn't contain a tag query string
+	 */
+	public static Set<String> getTagsFromUri(Uri contentUri) throws IllegalArgumentException {
+		final String query = contentUri.getQueryParameter(SERVER_QUERY_PARAMETER);
+		if (query == null) {
+			throw new IllegalArgumentException("uri doesn't contain any tags");
+		}
+		return Tag.toSet(query);
 	}
 
 	private final static char PREFIX_SEPARATOR = ':';

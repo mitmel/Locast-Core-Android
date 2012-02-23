@@ -236,6 +236,7 @@ public class MediaProvider extends ContentProvider {
 		MATCHER_EVENT_ITEM			 = 8,
 		MATCHER_CHILD_COMMENT_DIR    = 9,
 		MATCHER_CHILD_COMMENT_ITEM   = 10,
+ MATCHER_CHILD_TAG_DIR = 12,
 		MATCHER_TAG_DIR              = 13,
 		MATCHER_ITEM_TAGS    		 = 14,
 		MATCHER_ITINERARY_DIR        = 21,
@@ -408,6 +409,7 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_ITEM_TAGS:
 		case MATCHER_TAG_DIR:
 
+		case MATCHER_CHILD_TAG_DIR:
 		case MATCHER_COMMENT_ITEM:
 		case MATCHER_CHILD_COMMENT_ITEM:
 			case MATCHER_CAST_ITINERARY_DIR:
@@ -465,6 +467,7 @@ public class MediaProvider extends ContentProvider {
 	// tags
 		case MATCHER_TAG_DIR:
 		case MATCHER_ITEM_TAGS:
+		case MATCHER_CHILD_TAG_DIR:
 			return TYPE_TAG_DIR;
 
 			//////////////// itineraries
@@ -727,13 +730,23 @@ public class MediaProvider extends ContentProvider {
 			final List<String> pathSegments = uri.getPathSegments();
 			qb.appendWhere(Tag._REF_CLASS+"=\'"+pathSegments.get(pathSegments.size() - 3)+"\'");
 			qb.appendWhere(" AND " + Tag._REF_ID+"="+pathSegments.get(pathSegments.size() - 2));
-			c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
+
+				c = qb.query(db, projection, selection, selectionArgs, Tag._NAME, null, sortOrder);
+			break;
+		}
+
+		case MATCHER_CHILD_TAG_DIR:{
+			qb.setTables(TAG_TABLE_NAME);
+			final List<String> pathSegments = uri.getPathSegments();
+			qb.appendWhere(Tag._REF_CLASS+"=\'"+pathSegments.get(pathSegments.size() - 2)+"\'");
+
+				c = qb.query(db, projection, selection, selectionArgs, Tag._NAME, null, sortOrder);
 			break;
 		}
 
 		case MATCHER_TAG_DIR:{
 			qb.setTables(TAG_TABLE_NAME);
-			c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
+				c = qb.query(db, projection, selection, selectionArgs, Tag._NAME, null, sortOrder);
 			break;
 		}
 
@@ -1301,6 +1314,9 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Event.PATH, MATCHER_EVENT_DIR);
 		uriMatcher.addURI(AUTHORITY, Event.PATH + "/#", MATCHER_EVENT_ITEM);
 
+		// /content/tags
+		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/" + Tag.PATH, MATCHER_CHILD_TAG_DIR);
+
 		// /content/1/tags
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 		uriMatcher.addURI(AUTHORITY, Event.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
@@ -1308,7 +1324,10 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/"+Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 
 		// /content/tags?tag1,tag2
+		// XXX is this used?
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH +'/'+Tag.PATH, MATCHER_ITINERARY_BY_TAGS);
+
+
 
 		// tag list
 		uriMatcher.addURI(AUTHORITY, Tag.PATH, MATCHER_TAG_DIR);
