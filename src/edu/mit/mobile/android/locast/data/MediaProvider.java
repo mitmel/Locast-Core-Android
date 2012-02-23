@@ -1276,7 +1276,7 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH, MATCHER_CHILD_CASTMEDIA_DIR);
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH+"/#", MATCHER_CHILD_CASTMEDIA_ITEM);
 
-		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/*/" + CastMedia.PATH, MATCHER_CASTMEDIA_DIR);
+		uriMatcher.addURI(AUTHORITY, CastMedia.CASTS_CASTMEDIA_PATH, MATCHER_CASTMEDIA_DIR);
 
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH, MATCHER_CHILD_CASTMEDIA_DIR);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH + "/#/", MATCHER_CHILD_CASTMEDIA_ITEM);

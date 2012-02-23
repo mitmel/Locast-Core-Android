@@ -89,6 +89,8 @@ public class CastMedia extends JsonSyncableItem {
 	public final static String CAST = "cast_id";
 
 	public final static String PATH = "media";
+	public final static String CASTS_CASTMEDIA_PATH = Cast.PATH + "/"
+			+ ForeignKeyDBHelper.WILDCARD_PATH_SEGMENT + "/" + PATH;
 	public final static String SERVER_PATH = "media/";
 
 	public final static String[] PROJECTION = {
@@ -118,7 +120,7 @@ public class CastMedia extends JsonSyncableItem {
 		MIMETYPE_MPEG4 = "video/mpeg4";
 
 	public static final Uri CONTENT_URI = ProviderUtils.toContentUri(MediaProvider.AUTHORITY,
-			Cast.PATH + "/" + ForeignKeyDBHelper.WILDCARD_PATH_SEGMENT + "/" + PATH);
+			CASTS_CASTMEDIA_PATH);
 
 	public CastMedia(Cursor c) {
 		super(c);
