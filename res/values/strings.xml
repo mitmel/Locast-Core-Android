@@ -47,11 +47,11 @@
     <string name="add_cast">Add Cast</string>
     <string name="description">Description</string>
     <string name="cast_play">Play Cast</string>
-    <string name="notice_cast_saved_uploading">Cast saved. Uploading to server...</string>
+    <string name="notice_cast_saved_uploading">Cast saved. Uploading to server…</string>
     <string name="notice_cast_saved_no_network">Cast has been saved and will be uploaded when a network connection is established and the synchronization is started.</string>
     <string name="error_cast_saving">Error saving cast.</string>
     <string name="cast_recording_canceled">Recording canceled</string>
-    <string name="cast_synchronizing">Synchronizing cast...</string>
+    <string name="cast_synchronizing">Synchronizing cast…</string>
     <string name="notice_cast_video_has_not_been_uploaded_yet">Cast video has not been uploaded yet.</string>
     <string name="error_cast_could_not_play_video">Could not play video.</string>
 	<string name="error_cast_no_videos">Sorry, there aren\'t any videos for this cast yet.</string>
@@ -194,12 +194,12 @@
 	<string name="featured_casts">Featured Casts</string>
 	<string name="follow">Follow</string>
 	<string name="unfollow">Unfollow</string>
-	<string name="notice_finding_your_location">Finding your location...</string>
+	<string name="notice_finding_your_location">Finding your location…</string>
 	<string name="auth_error_could_not_contact_server">Could not contact server.</string>
 	<string name="auth_error_server_returned_invalid_data">Server returned invalid data.</string>
 	<string name="auth_error_network_protocol_error">Network protocol error: %1$s</string>
 	<string name="itinerary_detail_itinerary_by">Map by %1$s</string>
-	<string name="videoplayer_notice_loading_video">Loading video...</string>
+	<string name="videoplayer_notice_loading_video">Loading video…</string>
 	<string name="reset_database">Reset Database</string>
 	<string name="cast_description_hint">Briefly describe the cast</string>
 	<string name="tab_location">Location</string>
@@ -214,14 +214,14 @@
 		<string name="auth_set_site">Set Locast Site</string>
 		<string name="cast_edit_error_camera_did_not_return_image">Error: camera did not return an image. Please try again.</string>
 		<string name="cast_edit_media_empty">Tap the buttons below to add photos and videos</string>
-	<string name="loading_data">Loading data...</string>
+	<string name="loading_data">Loading data…</string>
 	<string name="wait_location">Please wait while we add your current location to the cast you are creating. To improve GPS
 reception, try standing in a clear area outside away from buildings.</string>
 	<string name="need_more_time_to_retrieve_location">We need more time to retrieve your location. Press \'Continue\' to keep waiting or \'Stop\' to cancel the cast creation and try again later.</string>
 	<string name="location_service_not_working">Location service not working</string>
 	<string name="continue_res">Continue</string>
 	<string name="stop">Stop</string>
-	<string name="location_unknown">Location: Finding...</string>
+	<string name="location_unknown">Location: Finding…</string>
 	<string name="location_known">Location: Found!</string>
 	<string name="unicef_unsynced_casts">UNICEF Unsynced Casts</string>
 	<string name="no_title">(no title)</string>
