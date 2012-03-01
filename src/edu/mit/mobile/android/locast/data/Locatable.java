@@ -97,9 +97,28 @@ public abstract class Locatable {
 	}
 
 	/**
+	 * Makes a URI that queries the locatable item by distance.
+	 *
+	 * @param contentUri
+	 *            the GeoPoint content URI to build upon. Must be a dir, not an item.
+	 * @param location
+	 *            center point
+	 * @param distance
+	 *            distance in meters
+	 * @return
+	 */
+	public static Uri toDistanceSearchUri(Uri contentUri, GeoPoint location, double distance) {
+		return contentUri
+				.buildUpon()
+				.appendQueryParameter(
+						SERVER_QUERY_PARAMETER,
+						location.getLongitudeE6() / 1E6f + "," + location.getLatitudeE6() / 1E6f
+								+ "," + distance).build();
+	}
+
+	/**
 	 * Get the latitude/longitude from the row currently selected in the cursor. Requires
 	 * Locatable.Columns._LATITUDE and Locatable.Columns._LONGITUDE to be selected.
-	 *
 	 * @param c
 	 * @return
 	 */
