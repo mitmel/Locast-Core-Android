@@ -4,9 +4,4 @@
     <item>Público</item>
     <item>Privado</item>
   </string-array>
-  <string-array name="locast_sites">
-    <item>Abruzzo</item>
-    <item>Abruzzo Dev</item>
-    <item>Lucca</item>
-  </string-array>
 </resources>
