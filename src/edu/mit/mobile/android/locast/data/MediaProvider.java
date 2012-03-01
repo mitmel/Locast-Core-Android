@@ -50,6 +50,10 @@ import android.net.Uri;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
+
+import com.beoui.geocell.GeocellUtils;
+import com.beoui.geocell.model.Point;
+
 import edu.mit.mobile.android.content.DBHelperMapper;
 import edu.mit.mobile.android.content.ForeignKeyDBHelper;
 import edu.mit.mobile.android.content.GenericDBHelper;
@@ -725,7 +729,8 @@ public class MediaProvider extends ContentProvider {
 				sortOrder);
 	}
 
-	private static final Pattern LOC_STRING_REGEX =  Pattern.compile("^([\\d\\.-]+),([\\d\\.-]+),([\\d\\.]+)");
+	private static final Pattern LOC_STRING_REGEX = Pattern
+			.compile("^([\\d\\.-]+),([\\d\\.-]+)(?:,([\\d\\.]+))?");
 	private Cursor queryByLocation(SQLiteQueryBuilder qb, SQLiteDatabase db, String locString, String locatableItemTable, String[] projection, String selection, String[] selectionArgs, String sortOrder){
 
 		qb.setTables(locatableItemTable);
@@ -735,13 +740,46 @@ public class MediaProvider extends ContentProvider {
 		}
 		final String lon = m.group(1);
 		final String lat = m.group(2);
-		// final String dist = m.group(3);
+		String dist = "1500";
+		if (m.groupCount() == 3) {
+			dist = m.group(3);
+		}
 
-		//final GeocellQuery gq = new GeocellQuery();
-		//GeocellUtils.compute(new Point(Double.valueOf(lat), Double.valueOf(lon)), resolution);
+		final String cell = GeocellUtils.compute(
+				new Point(Double.valueOf(lat), Double.valueOf(lon)), 8);
+
+		final List<String> adjacent = GeocellUtils.allAdjacents(cell);
+
+		adjacent.add(cell);
+
+		final StringBuilder selSb = new StringBuilder();
+
+		boolean join = false;
+		for (final String adj : adjacent) {
+			if (join) {
+				selSb.append(" OR ");
+			} else {
+				join = true;
+			}
+
+			selSb.append(Locatable.Columns._GEOCELL);
+			selSb.append(" LIKE ? || '%'");
+
+		}
+
+		final String selectionExtra = selSb.toString();
+
+		return qb.query(db, projection,
+ ProviderUtils.addExtraWhere(selection, selectionExtra),
+				ProviderUtils.addExtraWhereArgs(selectionArgs, adjacent.toArray(new String[] {})),
+				null, null, sortOrder);
+
 		//String extraWhere = "(lat - 2) > ? AND (lon - 2) > ? AND (lat + 2) < ? AND (lat + 2) < ?";
-		final String[] extraArgs = {lat, lon};
-		return qb.query(db, projection, ProviderUtils.addExtraWhere(selection, Locatable.SELECTION_LAT_LON), ProviderUtils.addExtraWhereArgs(selectionArgs, extraArgs), null, null, sortOrder);
+
+		// final String[] extraArgs = {lat, lon};
+		// return qb.query(db, projection, ProviderUtils.addExtraWhere(selection,
+		// Locatable.SELECTION_LAT_LON), ProviderUtils.addExtraWhereArgs(selectionArgs, extraArgs),
+		// null, null, sortOrder);
 	}
 
 	/**

@@ -214,7 +214,7 @@ public abstract class Locatable {
 				final double lat = ja.getDouble(1);
 				cv.put(Columns._LONGITUDE, lon);
 				cv.put(Columns._LATITUDE, lat);
-				cv.put(Columns._GEOCELL, GeocellUtils.compute(new Point(lat, lon), 6));
+				cv.put(Columns._GEOCELL, GeocellUtils.compute(new Point(lat, lon), 13));
 				return cv;
 			}
 		});
