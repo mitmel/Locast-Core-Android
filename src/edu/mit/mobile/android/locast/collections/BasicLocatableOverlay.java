@@ -19,6 +19,7 @@ package edu.mit.mobile.android.locast.collections;
 
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
+import android.provider.BaseColumns;
 
 import com.google.android.maps.MapView;
 import com.google.android.maps.OverlayItem;
@@ -36,6 +37,12 @@ public class BasicLocatableOverlay extends LocatableItemOverlay {
 	@Override
 	protected OverlayItem createItem(int i) {
 		this.mLocatableItems.moveToPosition(i);
-		return new OverlayItem(getItemLocation(mLocatableItems), "", "");
+		final ComparableOverlayItem item = new ComparableOverlayItem(
+				getItemLocation(mLocatableItems), "", "",
+				mLocatableItems.getLong(mLocatableItems.getColumnIndex(BaseColumns._ID)));
+
+		onCreateItem(item);
+
+		return item;
 	}
 }

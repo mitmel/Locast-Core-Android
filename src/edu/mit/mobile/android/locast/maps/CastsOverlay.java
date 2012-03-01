@@ -34,9 +34,10 @@ public class CastsOverlay extends LocatableItemOverlay {
 	private int mTitleCol, mDescriptionCol;
 	private final Drawable mCastDrawable;
 	private final Context mContext;
+	private int mIdCol;
 
 	public static final String[] CASTS_OVERLAY_PROJECTION = ArrayUtils.concat(LOCATABLE_ITEM_PROJECTION,
- new String[] { Cast._TITLE, Cast._DESCRIPTION });
+ new String[] { Cast._ID, Cast._TITLE, Cast._DESCRIPTION });
 
 	public CastsOverlay(Context context, MapView mapview) {
 		super(boundCenter(context.getResources().getDrawable(R.drawable.ic_map_community)),
@@ -50,6 +51,7 @@ public class CastsOverlay extends LocatableItemOverlay {
 	protected void updateCursorCols() {
 		super.updateCursorCols();
 		if (mLocatableItems != null){
+			mIdCol = mLocatableItems.getColumnIndex(Cast._ID);
 			mTitleCol = mLocatableItems.getColumnIndex(Cast._TITLE);
 			mDescriptionCol = mLocatableItems.getColumnIndex(Cast._DESCRIPTION);
 		}
@@ -68,10 +70,13 @@ public class CastsOverlay extends LocatableItemOverlay {
 	protected OverlayItem createItem(int i){
 		mLocatableItems.moveToPosition(i);
 
-		final OverlayItem item = new OverlayItem(getItemLocation(mLocatableItems),
-				mLocatableItems.getString(mTitleCol), mLocatableItems.getString(mDescriptionCol));
+		final ComparableOverlayItem item = new ComparableOverlayItem(
+				getItemLocation(mLocatableItems),
+				mLocatableItems.getString(mTitleCol), mLocatableItems.getString(mDescriptionCol),
+				mLocatableItems.getLong(mIdCol));
 
 		item.setMarker(mCastDrawable);
+		onCreateItem(item);
 		return item;
 	}
 }
