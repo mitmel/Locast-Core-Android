@@ -39,6 +39,7 @@ import edu.mit.mobile.android.content.UriPath;
 import edu.mit.mobile.android.content.column.BooleanColumn;
 import edu.mit.mobile.android.content.column.DBColumn;
 import edu.mit.mobile.android.content.column.DBForeignKeyColumn;
+import edu.mit.mobile.android.content.column.DatetimeColumn;
 import edu.mit.mobile.android.content.column.IntegerColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
@@ -60,6 +61,9 @@ public class CastMedia extends JsonSyncableItem {
 
 	@DBColumn(type=TextColumn.class)
 	public final static String _DESCRIPTION = "description";
+	
+	@DBColumn(type=DatetimeColumn.class)
+	public final static String _EXIF_DATETIME = "exif_datetime";
 
 	@DBColumn(type=TextColumn.class)
 	public final static String _LANGUAGE = "language";
@@ -107,6 +111,7 @@ public class CastMedia extends JsonSyncableItem {
 
 		_MEDIA_URL,
 		_LOCAL_URI,
+		_EXIF_DATETIME,
 		_MIME_TYPE,
 		_DURATION,
 		_THUMBNAIL,
@@ -355,8 +360,8 @@ public class CastMedia extends JsonSyncableItem {
 			put(_MEDIA_URL, 	new SyncFieldMap("url", 			SyncFieldMap.STRING,         SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
 			put(_MIME_TYPE, 	new SyncFieldMap("mime_type",		SyncFieldMap.STRING,         SyncItem.FLAG_OPTIONAL));
 			put(_DURATION,		new SyncFieldMap("duration", 		SyncFieldMap.DURATION, 		 SyncFieldMap.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
-
 			put(_THUMBNAIL, 	new SyncFieldMap("preview_image",   SyncFieldMap.STRING,		 SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
+			put(_EXIF_DATETIME, new SyncFieldMap("exif_datetime",	SyncFieldMap.DATE,			SyncFieldMap.SYNC_FROM|SyncItem.FLAG_OPTIONAL));
 		}
 
 		@Override

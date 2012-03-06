@@ -1,6 +1,7 @@
 package edu.mit.mobile.android.locast.ver2.casts;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 
 import android.accounts.Account;
@@ -47,6 +48,7 @@ import android.widget.ListView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TextView;
+import android.media.ExifInterface;
 
 import com.google.android.maps.GeoPoint;
 import com.stackoverflow.ArrayUtils;
@@ -746,9 +748,23 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		final ContentValues cv = new ContentValues();
 
 		final long now = System.currentTimeMillis();
+
+		String exifDateTime = "";
+		try
+		{
+			ExifInterface exif = new ExifInterface(mCreateMediaUri.getPath());
+			exifDateTime = exif.getAttribute(ExifInterface.TAG_DATETIME);
+		}
+		catch (IOException ioex)
+		{
+			Log.e(TAG, "EXIF: Couldn't find media: " + mCreateMediaUri.getPath());
+		}
+		
+		
 		cv.put(CastMedia._MODIFIED_DATE, now);
 		cv.put(CastMedia._CREATED_DATE, now);
 		cv.put(CastMedia._TITLE, content.getLastPathSegment());
+		cv.put(CastMedia._EXIF_DATETIME, exifDateTime);
 
 		String mimeType = getContentResolver().getType(content);
 		if (mimeType == null){
