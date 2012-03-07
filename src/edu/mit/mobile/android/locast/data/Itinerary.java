@@ -43,7 +43,7 @@ public class Itinerary extends TaggableItem implements Favoritable.Columns {
 			.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
 
 
-	public final static String SERVER_PATH = "itinerary/";
+	public final static String SERVER_PATH = "collection/";
 
 	public static final String
 		_PATH = "path",
