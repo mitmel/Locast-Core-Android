@@ -1,6 +1,7 @@
 package edu.mit.mobile.android.locast.ver2.casts;
+
 /*
- * Copyright (C) 2010  MIT Mobile Experience Lab
+ * Copyright (C) 2010-2012  MIT Mobile Experience Lab
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,40 +31,45 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.text.TextUtils;
-import android.view.LayoutInflater;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.CursorAdapter;
-import android.widget.ListAdapter;
-import android.widget.SimpleCursorAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
+import edu.mit.mobile.android.content.ProviderUtils;
+import edu.mit.mobile.android.imagecache.ImageCache;
+import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
-import edu.mit.mobile.android.locast.casts.CastListActivity;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.JsonSyncableItem;
+import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.SyncEngine;
 import edu.mit.mobile.android.locast.ver2.R;
 
-public class UnsyncedCastsActivity extends CastListActivity implements
-		AccountManagerCallback<Boolean>, OnClickListener {
+public class UnsyncedCastsActivity extends FragmentActivity implements
+		AccountManagerCallback<Boolean>, OnClickListener, LoaderCallbacks<Cursor> {
 
 	private Account account;
 	private AccountManager accountManager;
 
 	private BroadcastReceiver syncBroadcastReceiver;
 	private Button syncButton;
-	private long currentlySyncing;
-	private Cursor cursor;
+	private long mCurrentlySyncing;
+	// private Cursor cursor;
+	private UnsyncedCastsCursorAdapter mAdapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		setContentView(R.layout.unsynced_cast_list);
 
 		findViewById(R.id.logout).setOnClickListener(this);
 		syncButton = (Button) findViewById(R.id.sync);
@@ -75,11 +81,16 @@ public class UnsyncedCastsActivity extends CastListActivity implements
 
 		initAccount();
 
-		cursor = managedQuery(Cast.CONTENT_URI, Cast.PROJECTION,
-				Cast._AUTHOR_URI + " = ? AND " + Cast._PUBLIC_URI + " is null",
-				new String[]{accountManager.getUserData(account, AuthenticationService.USERDATA_USER_URI)},
-				Cast._MODIFIED_DATE+" DESC");
-		loadList(cursor);
+		mAdapter = new UnsyncedCastsCursorAdapter(this, R.layout.unsynced_cast_list_item, null,
+				new String[] { CastMedia._TITLE, CastMedia._THUMB_LOCAL }, new int[] { R.id.title,
+						R.id.media_thumbnail }, new int[] { R.id.media_thumbnail }, 0);
+
+		final ListView lv = ((ListView) findViewById(android.R.id.list));
+		lv.setEmptyView(findViewById(android.R.id.empty));
+		lv.setAdapter(new ImageLoaderAdapter(this, mAdapter, ImageCache.getInstance(this),
+				new int[] { R.id.media_thumbnail }, 48, 48, ImageLoaderAdapter.UNIT_DIP));
+
+		getSupportLoaderManager().initLoader(0, null, this);
 
 		loadUsername();
 	}
@@ -101,20 +112,19 @@ public class UnsyncedCastsActivity extends CastListActivity implements
 			public void onReceive(Context context, Intent intent) {
 				final String status = intent.getExtras().getString(SyncEngine.EXTRA_SYNC_STATUS);
 				if ("begin".equals(status)) {
-					syncButton.setText(R.string.syncing);
 					syncButton.setEnabled(false);
 				} else if ("end".equals(status)) {
-					syncButton.setText(R.string.sync);
 					syncButton.setEnabled(true);
 
-					cursor.requery();
+					// cursor.requery();
 				} else if ("castBegin".equals(status)) {
-					currentlySyncing = intent.getExtras().getLong(SyncEngine.EXTRA_SYNC_ID);
-					refreshList();
+					mCurrentlySyncing = intent.getExtras().getLong(SyncEngine.EXTRA_SYNC_ID);
+					// refreshList();
 				} else if ("castEnd".equals(status)) {
-					currentlySyncing = -1;
-					refreshList();
+					mCurrentlySyncing = -1;
+					// refreshList();
 				}
+				getSupportLoaderManager().restartLoader(0, null, UnsyncedCastsActivity.this);
 			}
 		};
 		registerReceiver(syncBroadcastReceiver, new IntentFilter(SyncEngine.SYNC_STATUS_CHANGED));
@@ -131,14 +141,15 @@ public class UnsyncedCastsActivity extends CastListActivity implements
 
 	private void loadUsername() {
 		final TextView username = (TextView) findViewById(R.id.username);
-		username.setText(accountManager.getUserData(account, AuthenticationService.USERDATA_DISPLAY_NAME));
+		username.setText(accountManager.getUserData(account,
+				AuthenticationService.USERDATA_DISPLAY_NAME));
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
 
-		if (cursor != null) {
+		if (mAdapter.getCursor() != null) {
 			bindToSync();
 		}
 	}
@@ -166,17 +177,6 @@ public class UnsyncedCastsActivity extends CastListActivity implements
 		}
 	}
 
-	private void refreshList() {
-		if (adapter instanceof CursorAdapter) {
-			((CursorAdapter) adapter).notifyDataSetChanged();
-		}
-	}
-
-	@Override
-	protected int getContentView() {
-		return R.layout.unsynced_cast_list;
-	}
-
 	@Override
 	public void run(AccountManagerFuture<Boolean> future) {
 		SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN);
@@ -187,52 +187,36 @@ public class UnsyncedCastsActivity extends CastListActivity implements
 		this.accountManager = AccountManager.get(this);
 	}
 
-	@Override
-	protected ListAdapter getAdapter(Cursor c) {
-		return new UnsyncedCastsCursorAdapter(this, R.layout.unsynced_cast_list_item, c, new String[]{}, new int[]{});
-	}
+	private class UnsyncedCastsCursorAdapter extends CastMediaAdapter {
 
-	private class UnsyncedCastsCursorAdapter extends SimpleCursorAdapter {
-
-		public UnsyncedCastsCursorAdapter(Context context, int layout,
-				Cursor c, String[] from, int[] to) {
-			super(context, layout, c, from, to);
+		public UnsyncedCastsCursorAdapter(Context context, int layout, Cursor c, String[] from,
+				int[] to, int[] imageIDs, int flags) {
+			super(context, layout, c, from, to, imageIDs, flags);
 		}
 
 		@Override
-		public View getView(int pos, View inView, ViewGroup parent) {
-			View v = inView;
-			if (v == null) {
-				final LayoutInflater inflater = (LayoutInflater) getBaseContext()
-						.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-				v = inflater.inflate(R.layout.unsynced_cast_list_item, null);
+		public View getView(int pos, View convertView, ViewGroup parent) {
+			final View v = super.getView(pos, convertView, parent);
+
+			final long id = getItemId(pos);
+
+			final View syncing = v.findViewById(R.id.syncing);
+			if (syncing != null) {
+				syncing.setVisibility(id == mCurrentlySyncing ? View.VISIBLE : View.GONE);
 			}
-			this.getCursor().moveToPosition(pos);
-
-			final TextView title = (TextView) v.findViewById(android.R.id.text1);
-			String text = this.getCursor().getString(this.getCursor().getColumnIndex(Cast._TITLE));
-			if (TextUtils.isEmpty(text)) {
-				text = getBaseContext().getResources().getString(R.string.no_title);
-			}
-			title.setText(text);
-
-			final long id = this.getCursor().getLong(this.getCursor().getColumnIndex(JsonSyncableItem._ID));
-
-			final TextView draft = (TextView) v.findViewById(R.id.draft);
-			draft.setVisibility(id == currentlySyncing ? View.VISIBLE : View.INVISIBLE);
 
 			return v;
-
 		}
 	}
 
 	@Override
 	public void onClick(View v) {
-		switch (v.getId()){
+		switch (v.getId()) {
 			case R.id.sync: {
 				final Bundle extras = new Bundle();
 				extras.putBoolean(ContentResolver.SYNC_EXTRAS_UPLOAD, true);
-				LocastSyncService.startSync(UnsyncedCastsActivity.this, Cast.CONTENT_URI, true, extras);
+				LocastSyncService.startSync(UnsyncedCastsActivity.this, Cast.CONTENT_URI, true,
+						extras);
 			}
 				break;
 
@@ -240,6 +224,25 @@ public class UnsyncedCastsActivity extends CastListActivity implements
 				showDialog(DIALOG_CONFIRM);
 				break;
 		}
+	}
+
+	@Override
+	public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
+		return new CursorLoader(this, CastMedia.CONTENT_URI, CastMedia.PROJECTION,
+				CastMedia._PUBLIC_URI + " is null", null, CastMedia._MODIFIED_DATE + " DESC");
+	}
+
+	@Override
+	public void onLoadFinished(Loader<Cursor> arg0, Cursor c) {
+		mAdapter.swapCursor(c);
+		if (c.moveToFirst()) {
+			ProviderUtils.dumpCursorToLog(c, CastMedia.PROJECTION);
+		}
+	}
+
+	@Override
+	public void onLoaderReset(Loader<Cursor> arg0) {
+		mAdapter.swapCursor(null);
 
 	}
 }

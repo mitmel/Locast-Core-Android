@@ -1,33 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<RelativeLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="fill_parent"
-	android:layout_height="wrap_content"
-	android:minHeight="?android:attr/listPreferredItemHeight"
->
-	<TextView
-		android:id="@android:id/text1"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		
-		android:paddingLeft="6dip"
-		android:paddingTop="6dip"
-		android:paddingBottom="1dip"
-		android:paddingRight="1dip"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/CastMediaItem"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:minHeight="?android:attr/listPreferredItemHeight" 
+    >
 
-		style="@style/CastListItem.Title" />
-	<TextView
-		android:id="@+id/draft"
-		android:text="@string/syncing"
-		android:background="@color/background_dark"
-		android:textColor="@android:color/white"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:layout_alignParentRight="true"
-		android:layout_alignBaseline="@android:id/text1"
-		android:visibility="invisible"
-		android:layout_margin="7dip"
-		android:padding="7dip"
-		 />
+    <!--
+         The layout size below is hard-coded because there doesn't seem to be 
+		a way to make it so that the ImageView adjusts its width based on a pre-defined 
+		height. Ideally, this ImageView's parent's height should fill the parent, 
+		the ImageView should match that and stretch its width accordingly. Unfortunately, 
+		after extensive testing, there doesn't seem to be a scaleType that works 
+		to accomplish that.
+    -->
+
+    <ImageView
+        android:id="@+id/media_thumbnail"
+        style="@style/Thumbnail"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:adjustViewBounds="false" />
+
+    <ImageView
+        android:id="@+id/thumbnail_overlay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@id/media_thumbnail"
+        android:layout_alignLeft="@id/media_thumbnail"
+        android:layout_alignRight="@id/media_thumbnail"
+        android:layout_alignTop="@id/media_thumbnail"
+        android:scaleType="center"
+        android:src="@drawable/ic_overlay_play" />
+
+    	<ImageView
+    	    android:id="@+id/syncing"
+    	    android:layout_width="wrap_content"
+    	    android:layout_height="wrap_content"
+    	    android:layout_alignParentRight="true"
+    	    android:layout_centerVertical="true"
+    	    android:visibility="gone"
+    	    android:src="@drawable/ic_menu_refresh" />
+
+		<TextView
+		    android:id="@+id/title"
+		    style="@style/CastListItem.Title"
+		    android:layout_width="fill_parent"
+		    android:layout_height="wrap_content"
+		    android:layout_centerVertical="true"
+		    android:layout_toRightOf="@+id/media_thumbnail"
+		    android:paddingBottom="1dip"
+		    android:paddingLeft="6dip"
+		    android:paddingRight="1dip"
+		    android:paddingTop="6dip" />
+
 </RelativeLayout>
