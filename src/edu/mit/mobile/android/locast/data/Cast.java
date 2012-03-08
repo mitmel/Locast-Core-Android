@@ -32,8 +32,7 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 
 	public static final String
 		_TITLE 			= "title",
-		_DESCRIPTION 	= "description",
-		_OFFICIAL		= "official";
+ _DESCRIPTION = "description";
 
 	public static final String
 		_MEDIA_PUBLIC_URI = "public_uri",
@@ -54,7 +53,6 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 		_FAVORITED,
 		_LATITUDE,
 		_LONGITUDE,
-		_OFFICIAL,
 		_DRAFT };
 
 	public static final String
@@ -91,7 +89,6 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 
 			put(_THUMBNAIL_URI, 	new SyncFieldMap("preview_image", SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 			//put(_MEDIA_PUBLIC_URI,  new SyncFieldMap("file_url",   SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
-			put(_OFFICIAL,			new SyncFieldMap("official", SyncFieldMap.BOOLEAN, SyncItem.SYNC_FROM));
 			put(_MEDIA_PUBLIC_URI,  new SyncChildRelation("media", new JsonSyncableItem.SyncChildRelation.SimpleRelationship(CastMedia.PATH), SyncItem.SYNC_FROM));
 
 			//put("_contents", new OrderedList.SyncMapItem("media", new CastVideo(), CastVideo.PATH));

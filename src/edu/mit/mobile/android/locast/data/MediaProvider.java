@@ -296,7 +296,6 @@ public class MediaProvider extends ContentProvider {
 					+ Cast._PRIVACY 	+ " TEXT,"
 
 					+ Cast._FAVORITED   + " BOOLEAN,"
-					+ Cast._OFFICIAL    + " BOOLEAN,"
 
 					+ Cast._THUMBNAIL_URI+ " TEXT"
 					+ ");"
