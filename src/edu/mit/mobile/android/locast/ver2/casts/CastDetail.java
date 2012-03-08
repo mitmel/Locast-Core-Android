@@ -69,7 +69,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 	 * Enable/disable the use of a map in this activity. If the map is disabled, the layout can
 	 * fully remove the map or simply let this activity hide it.
 	 */
-	private static final boolean USE_MAP = false;
+	private static final boolean USE_MAP = true;
 
 	private LoaderManager mLoaderManager;
 	private CastsOverlay mCastsOverlay;

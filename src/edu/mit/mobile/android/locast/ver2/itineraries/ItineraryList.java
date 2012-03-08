@@ -200,7 +200,7 @@ public class ItineraryList extends FragmentActivity implements
 
 	/**
 	 * Override this if you wish to use IDs other than {@link #ITINERARY_LAYOUT_IDS}.
-	 * 
+	 *
 	 * @return the list of view ids to map the {@link #getItineraryDisplay()} to
 	 */
 	public int[] getItineraryLayoutIds() {
@@ -290,7 +290,7 @@ public class ItineraryList extends FragmentActivity implements
 
 	@Override
 	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
-		startActivity(new Intent(Intent.ACTION_INSERT, Itinerary.getCastsUri(ContentUris.withAppendedId(mUri, id))));
+		startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mUri, id)));
 	}
 
 	@Override
