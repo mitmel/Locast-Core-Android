@@ -20,6 +20,7 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import edu.mit.mobile.android.content.ForeignKeyManager;
 
 public class Cast extends TaggableItem implements Favoritable.Columns, Locatable.Columns, Commentable.Columns {
 	public final static String TAG = "LocastSyncCast";
@@ -161,5 +162,6 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 		return castTitle;
 	}
 
+	public static final ForeignKeyManager CAST_MEDIA = new ForeignKeyManager(CastMedia.class);
 
 }
