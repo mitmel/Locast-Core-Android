@@ -64,7 +64,7 @@ import edu.mit.mobile.android.utils.StreamUtils;
 
 public class SyncEngine {
 	private static final String TAG = SyncEngine.class.getSimpleName();
-	
+
 	public final static String SYNC_STATUS_CHANGED = "edu.mit.mobile.android.locast.SYNC_STATUS_CHANGED";
 	public final static String EXTRA_SYNC_STATUS = "edu.mit.mobile.android.locast.EXTRA_SYNC_STATUS";
 	public final static String EXTRA_SYNC_ID = "edu.mit.mobile.android.locast.EXTRA_SYNC_ID";
@@ -485,8 +485,14 @@ public class SyncEngine {
 					}
 					itemStatus.state = SyncState.LOCAL_DIRTY;
 
-					mNetworkClient.putJson(pubPath,
-							JsonSyncableItem.toJSON(mContext, localUri, c, syncMap));
+					// requeries to ensure that when it converts it to JSON, it has all the columns.
+					final Cursor uploadCursor = provider.query(localUri, null, null, null, null);
+					try {
+						mNetworkClient.putJson(pubPath,
+								JsonSyncableItem.toJSON(mContext, localUri, uploadCursor, syncMap));
+					} finally {
+						uploadCursor.close();
+					}
 				}
 
 				mLastUpdated.markUpdated(localUri);
@@ -769,18 +775,18 @@ public class SyncEngine {
 				if (Thread.interrupted()) {
 					throw new InterruptedException();
 				}
-				
+
 				final long id = uploadMe.getLong(idCol);
 
 				final Uri localUri = isDir ? ContentUris.withAppendedId(toSync,
 						id) : toSync;
 				final String postUri = MediaProvider.getPostPath(mContext, localUri);
-				
+
 				Intent intent = new Intent(SYNC_STATUS_CHANGED);
 				intent.putExtra(EXTRA_SYNC_STATUS, "castBegin");
 				intent.putExtra(EXTRA_SYNC_ID, id);
 				mContext.sendStickyBroadcast(intent);
-				
+
 				try {
 					final JSONObject jo = JsonSyncableItem.toJSON(mContext,
 							localUri, uploadMe, syncMap);
