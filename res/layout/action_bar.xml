@@ -25,7 +25,7 @@
         android:layout_centerVertical="true"
         android:layout_marginLeft="10dip"
         android:contentDescription="@string/home"
-        android:src="@drawable/title" />
+        android:src="@drawable/powered_by_locast_white" />
 
 <!--     <edu.mit.mobile.android.widget.RefreshButton
         android:id="@+id/refresh"
