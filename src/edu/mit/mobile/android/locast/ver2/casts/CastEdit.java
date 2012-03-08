@@ -774,10 +774,20 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 		String mediaPath = null;
 
+		// only add in credentials on inserts
+		final Account me = Authenticator.getFirstAccount(this);
+		final AccountManager am = AccountManager.get(this);
+
+		final String displayName = am.getUserData(me, AuthenticationService.USERDATA_DISPLAY_NAME);
+		final String authorUri = am.getUserData(me, AuthenticationService.USERDATA_USER_URI);
+
 		if ("content".equals(content.getScheme())){
 			final Cursor c = getContentResolver().query(content, new String[]{MediaColumns._ID, MediaColumns.DATA, MediaColumns.TITLE, Media.LATITUDE, Media.LONGITUDE}, null, null, null);
 			try {
 				if (c.moveToFirst()){
+					cv.put(Cast._AUTHOR, displayName);
+					cv.put(Cast._AUTHOR_URI, authorUri);
+
 					cv.put(CastMedia._TITLE, c.getString(c.getColumnIndexOrThrow(MediaColumns.TITLE)));
 					mediaPath = "file://" + c.getString(c.getColumnIndexOrThrow(MediaColumns.DATA));
 
