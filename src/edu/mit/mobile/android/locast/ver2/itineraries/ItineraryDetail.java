@@ -61,7 +61,7 @@ import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Itinerary;
-import edu.mit.mobile.android.locast.maps.CastsIconOverlay;
+import edu.mit.mobile.android.locast.maps.CastsOverlay;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
@@ -90,7 +90,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	private Uri mUri;
 	private Uri mCastsUri;
 
-	private CastsIconOverlay mCastsOverlay;
+	private CastsOverlay mCastsOverlay;
 	private PathOverlay mPathOverlay;
 	private static final int UNKNOWN_COUNT = -1;
 	private int mItineraryCastCount = UNKNOWN_COUNT;
@@ -289,7 +289,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 		if (USE_MAP){
 
-			mCastsOverlay = new CastsIconOverlay(ItineraryDetail.this);
+			mCastsOverlay = new CastsOverlay(ItineraryDetail.this);
 			mPathOverlay = new PathOverlay(this);
 
 			final List<Overlay> overlays = mMapView.getOverlays();
