@@ -1,7 +1,7 @@
 package edu.mit.mobile.android.locast.sync;
 
 /*
- * Copyright (C) 2011  MIT Mobile Experience Lab
+ * Copyright (C) 2011-2012  MIT Mobile Experience Lab
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -664,14 +664,19 @@ public class SyncEngine {
 					switch (ss.state) {
 						case ALREADY_UP_TO_DATE:
 						case NOW_UP_TO_DATE:
-							Log.d(TAG, item
-									+ " is already up to date. No need to see if it was deleted.");
+							if (DEBUG) {
+								Log.d(TAG,
+										item
+												+ " is already up to date. No need to see if it was deleted.");
+							}
 							continue;
 
 						case BOTH_UNKNOWN:
-							Log.d(TAG,
-									item
-											+ " was found on both sides, but has an unknown sync status. Skipping...");
+							if (DEBUG) {
+								Log.d(TAG,
+										item
+												+ " was found on both sides, but has an unknown sync status. Skipping...");
+							}
 							continue;
 
 						default:
@@ -687,12 +692,16 @@ public class SyncEngine {
 
 					switch (hr.getStatusLine().getStatusCode()) {
 						case 200:
-							Log.d(TAG, "HEAD " + pubUri + " returned 200");
+							if (DEBUG) {
+								Log.d(TAG, "HEAD " + pubUri + " returned 200");
+							}
 							ss.state = SyncState.BOTH_UNKNOWN;
 							break;
 
 						case 404:
-							Log.d(TAG, "HEAD " + pubUri + " returned 404. Deleting locally...");
+							if (DEBUG) {
+								Log.d(TAG, "HEAD " + pubUri + " returned 404. Deleting locally...");
+							}
 							ss.state = SyncState.DELETED_REMOTELY;
 							final ContentProviderOperation deleteOp = ContentProviderOperation
 									.newDelete(
