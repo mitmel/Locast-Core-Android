@@ -176,10 +176,10 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 
 		findViewById(R.id.save).setOnClickListener(this);
-		findViewById(R.id.new_photo).setOnClickListener(this);
+		// findViewById(R.id.new_photo).setOnClickListener(this);
 		findViewById(R.id.media_thumbnail).setOnClickListener(this);
-		//findViewById(R.id.new_video).setOnClickListener(this);
-		//findViewById(R.id.pick_media).setOnClickListener(this);
+		findViewById(R.id.new_video).setOnClickListener(this);
+		// findViewById(R.id.pick_media).setOnClickListener(this);
 
 		processIntents(savedInstanceState);
 
@@ -671,8 +671,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		//mSetLocation.setEnabled(isEditable);
 
 		// media
-		findViewById(R.id.new_photo).setEnabled(isEditable);
-		//findViewById(R.id.new_video).setEnabled(isEditable);
+		// findViewById(R.id.new_photo).setEnabled(isEditable);
+		findViewById(R.id.new_video).setEnabled(isEditable);
 		//findViewById(R.id.pick_media).setEnabled(isEditable);
 
 		// details

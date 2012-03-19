@@ -48,8 +48,8 @@
 	        android:clickable="true"
 	        />    
 	                
-	    <ImageButton android:id="@+id/new_photo"
-			android:src="@drawable/ic_camera"
+	    <ImageButton android:id="@+id/new_video"
+			android:src="@drawable/ic_video"
 	        android:layout_below="@+id/media_thumbnail"        
 			android:layout_width="100dp"
 			android:layout_height="48dp"
@@ -60,7 +60,7 @@
 	        android:id="@+id/location_status"
 	        android:layout_width="fill_parent"
 	        android:layout_height="wrap_content"
-	        android:layout_below="@+id/new_photo"
+	        android:layout_below="@+id/new_video"
 			style="@style/BodyEntryTitle"
 	        android:text="@string/location_unknown" />
 			
