@@ -48,6 +48,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.os.RemoteException;
+import android.text.TextUtils;
 import android.util.Log;
 import edu.mit.mobile.android.content.DBHelperMapper;
 import edu.mit.mobile.android.content.ForeignKeyDBHelper;
@@ -57,7 +58,6 @@ import edu.mit.mobile.android.content.m2m.M2MReverseHelper;
 import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
-import edu.mit.mobile.android.utils.ListUtils;
 
 public class MediaProvider extends ContentProvider {
 	private final static String TAG = MediaProvider.class.getSimpleName();
@@ -792,7 +792,7 @@ public class MediaProvider extends ContentProvider {
 		for (final String tag : tags){
 			tagFilterList.add(DatabaseUtils.sqlEscapeString(tag));
 		}
-		qb.appendWhere(" AND (t."+Tag._NAME+" IN ("+ListUtils.join(tagFilterList, ",")+"))");
+		qb.appendWhere(" AND (t." + Tag._NAME + " IN (" + TextUtils.join(",", tagFilterList) + "))");
 
 		// limit to only items of the given object class
 		qb.appendWhere(" AND t."+Tag._REF_CLASS + "=\'"+taggableItemTable+"\'");
@@ -927,7 +927,7 @@ public class MediaProvider extends ContentProvider {
 				toDeleteWhere.set(i, Tag._NAME + "=\'" + toDeleteWhere.get(i) + "'");
 			}
 			if (toDeleteWhere.size() > 0){
-				final String delWhere = ListUtils.join(toDeleteWhere, " OR ");
+					final String delWhere = TextUtils.join(" OR ", toDeleteWhere);
 				delete(uri, delWhere, null);
 			}
 
@@ -1220,7 +1220,8 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_ITINERARY_BY_TAGS:{
 			final Set<String> tags = TaggableItem.removePrefixesFromTags(Tag.toSet(uri.getQuery()));
 
-			path = getPublicPath(context, ProviderUtils.removeLastPathSegment(uri)) + "?tags=" + ListUtils.join(tags, ",");
+				path = getPublicPath(context, ProviderUtils.removeLastPathSegment(uri)) + "?tags="
+						+ TextUtils.join(",", tags);
 		}break;
 
 		default:
@@ -1250,7 +1251,7 @@ public class MediaProvider extends ContentProvider {
 			for (final String tag : tagSet) {
 				urlEncodedTags.add(URLEncoder.encode(tag));
 			}
-			query = TaggableItem.SERVER_QUERY_PARAMETER + "=" + ListUtils.join(urlEncodedTags, ",");
+			query = TaggableItem.SERVER_QUERY_PARAMETER + "=" + TextUtils.join(",", urlEncodedTags);
 		}
 
 		if (dist != null){
