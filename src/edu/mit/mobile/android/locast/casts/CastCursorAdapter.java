@@ -34,6 +34,8 @@ public class CastCursorAdapter extends SimpleThumbnailCursorAdapter {
 			Cast._TITLE,
 			Cast._DESCRIPTION,
  Cast._DRAFT,
+ Cast._PRIVACY,
+ Cast._AUTHOR_URI,
 			Cast._THUMBNAIL_URI
 		};
 

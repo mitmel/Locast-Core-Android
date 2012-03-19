@@ -104,7 +104,8 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 	private boolean mFirstLoadSync = true;
 
-	private static final String[] ITINERARY_PROJECTION = new String[]{Itinerary._ID, Itinerary._DESCRIPTION, Itinerary._TITLE, Itinerary._CASTS_COUNT, Itinerary._PATH};
+	private static final String[] ITINERARY_PROJECTION = new String[] { Itinerary._ID,
+			Itinerary._DESCRIPTION, Itinerary._TITLE, Itinerary._CASTS_COUNT, Itinerary._PATH };
 
 	private RefreshButton mRefresh;
 
