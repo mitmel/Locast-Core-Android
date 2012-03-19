@@ -212,44 +212,6 @@
             </intent-filter>
         </activity>
 
-        <!--
-		*****************************************************************************************************
-		*                                              Sync                                                 *
-		*****************************************************************************************************
-        -->
-        <!--
-		<service android:name="edu.mit.mobile.android.locast.data.Sync"
-		android:process="edu.mit.mobile.android.locast.Sync"
-		>
-			<intent-filter>
-				<action android:name="edu.mit.mobile.android.locast.ACTION_CANCEL_SYNC" />
-				<data android:mimeType="*/*" />
-			</intent-filter>
-			
-			<intent-filter>
-				<action android:name="android.intent.action.SYNC" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.casts" />
-				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.casts" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.castmedia" />
-				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.castmedia" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.comments" />
-				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.comments" />
-				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.itineraries" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.itineraries" />
-				<data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.events" />
-				<data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.events" />
-			</intent-filter>
-			<intent-filter>
-				<action android:name="android.intent.action.SYNC" />
-				<data android:scheme="http" android:host="locast.mit.edu" />
-				<data android:scheme="https" android:host="locast.mit.edu" />
-				<data android:scheme="http" android:host="mel-pydev.mit.edu" />
-				<data android:scheme="https" android:host="mel-pydev.mit.edu" />
-				</intent-filter>
-		</service>
-        -->
-
-
         <!-- this has its own process so it can have more memory for thumbnail generation -->
         <service
             android:name="edu.mit.mobile.android.locast.sync.MediaSync"
