@@ -155,7 +155,7 @@
 	<string name="pref_locast_site_summary">Choose another Locast site.</string>
 	<string name="pref_locast_site_message">This will only affect any newly added accounts. To change this for the active instance you must first remove any existing accounts.</string>
 	
-	<string name="welcome_message">Welcome! Rai Local Abruzzo is a location-based tourism application for visiting Abruzzo.</string>
+	<string name="welcome_message">Welcome to Open Locast.</string>
 	
 	<string name="auth_signin_or_skip_notice">You\'ll need an account to upload photos and videos to Rai Local Abruzzo</string>
 	<string name="auth_signin_for_favorites">In order to save your favorite casts, you\'ll need a Rai Local account.</string>

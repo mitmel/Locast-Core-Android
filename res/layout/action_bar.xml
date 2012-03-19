@@ -14,18 +14,19 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
         android:padding="10dip"
-        mel:refreshingDrawable="@drawable/title"
-        android:src="@drawable/title" />
+        mel:refreshingDrawable="@drawable/ic_refresh_refreshing"
+        android:src="@drawable/ic_refresh" />
 
-    <ImageView
+    <TextView
         android:id="@+id/home"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
         android:layout_marginLeft="10dip"
-        android:contentDescription="@string/home"
-        android:src="@drawable/powered_by_locast_white" />
+        android:textAppearance="@android:style/TextAppearance.Large"
+        android:textColor="@color/foreground_dark"
+        android:text="@string/app_name" />
 
 <!--     <edu.mit.mobile.android.widget.RefreshButton
         android:id="@+id/refresh"
