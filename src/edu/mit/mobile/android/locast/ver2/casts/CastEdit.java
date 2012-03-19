@@ -20,6 +20,7 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -48,10 +49,10 @@ import android.widget.ListView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TextView;
-import android.media.ExifInterface;
 
 import com.google.android.maps.GeoPoint;
 import com.stackoverflow.ArrayUtils;
+import com.stackoverflow.MediaUtils;
 
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.imagecache.ImageCache;
@@ -405,12 +406,13 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			startActivityForResult(i, REQUEST_NEW_PHOTO);
 			break;
 
-		case R.id.new_video:
-			final Intent i2 = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-			mCreateMediaUri = createNewMedia("mp4");
-			i2.putExtra(MediaStore.EXTRA_OUTPUT, mCreateMediaUri);
+			case R.id.new_video: {
+
+				final Intent i2 = MediaUtils.getVideoCaptureIntent(new File(createNewMedia("mp4")
+						.getPath()));
 			startActivityForResult(i2, REQUEST_NEW_VIDEO);
-			break;
+			}
+				break;
 
 		case R.id.pick_media:
 			showDialog(DIALOG_PICK_MEDIA);
@@ -473,6 +475,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 				mCreateMediaUri = null;
 				break;
 			case REQUEST_NEW_VIDEO:
+				mCreateMediaUri = MediaUtils.handleVideoCaptureResult(this, data);
 				addMedia(mCreateMediaUri);
 				mCreateMediaUri = null;
 				break;
@@ -752,15 +755,15 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		String exifDateTime = "";
 		try
 		{
-			ExifInterface exif = new ExifInterface(mCreateMediaUri.getPath());
+			final ExifInterface exif = new ExifInterface(mCreateMediaUri.getPath());
 			exifDateTime = exif.getAttribute(ExifInterface.TAG_DATETIME);
 		}
-		catch (IOException ioex)
+		catch (final IOException ioex)
 		{
 			Log.e(TAG, "EXIF: Couldn't find media: " + mCreateMediaUri.getPath());
 		}
-		
-		
+
+
 		cv.put(CastMedia._MODIFIED_DATE, now);
 		cv.put(CastMedia._CREATED_DATE, now);
 		cv.put(CastMedia._TITLE, content.getLastPathSegment());
