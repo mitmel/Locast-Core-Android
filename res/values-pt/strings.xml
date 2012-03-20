@@ -108,14 +108,12 @@
   <string name="auth_signin_or_skip_notice">É preciso ter uma conta para carregar fotos e vídeos a UNICEF GIS</string>
   <string name="auth_signin_register">Entrar/Cadastrar-se</string>
   <string name="auth_skip">Pular</string>
-  <string name="title_upcoming_events">Eventos</string>
   <string name="title_casts">Informes</string>
   <string name="title_nearby">%1$s Perto de aqui</string>
   <string name="title_favorited">%1$s Favorito</string>
   <string name="title_unfavorited">%1$s Não-favorito</string>
   <string name="itinerary_no_casts">Este mapa não tem nenhum informe.</string>
   <string name="list_empty">0 itens nesta lista.</string>
-  <string name="error_loading_event">Erro no carregamento de evento.</string>
   <string name="auth_username_hint">alice\@example.org</string>
   <string name="auth_password_hint">senha</string>
   <string name="auth_login">Iniciar sessão</string>
@@ -124,7 +122,6 @@
   <string name="itineraries">Mapas</string>
   <string name="nearby">Perto de aqui</string>
   <string name="favorites">Favoritos</string>
-  <string name="events">Eventos</string>
   <string name="error_no_featured_casts">Não tem informes destacados.</string>
   <string name="error_no_items_in_this_list">Esta lista não tem itens.</string>
   <string name="featured_casts">Informes destacados</string>

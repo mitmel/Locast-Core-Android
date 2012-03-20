@@ -163,8 +163,7 @@
 	<string name="auth_signin_register">Sign In / Register</string>
 	
 	<string name="auth_skip">Skip</string>
-	
-	<string name="title_upcoming_events">Upcoming Events</string>
+
 	
 	<string name="title_casts">Casts</string>
 	
@@ -173,7 +172,7 @@
 	<string name="title_unfavorited">Non-favorite %1$s</string>
 	<string name="itinerary_no_casts">There are no casts in this collection.</string>
 	<string name="list_empty">No items in this list.</string>
-	<string name="error_loading_event">Error loading event.</string>
+
 	<string name="auth_username_hint">alice@example.org</string>
 	<string name="auth_password_hint">password</string>
 	<string name="auth_login">Login</string>
@@ -188,7 +187,6 @@
 	<string name="itineraries">Collections</string>
 	<string name="nearby">Nearby</string>
 	<string name="favorites">Favorites</string>
-	<string name="events">Events</string>
 	<string name="error_no_featured_casts">There are no featured casts.</string>
 	<string name="error_no_items_in_this_list">No items in this list.</string>
 	<string name="featured_casts">Featured Casts</string>

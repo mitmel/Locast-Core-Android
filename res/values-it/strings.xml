@@ -100,13 +100,11 @@
   <string name="auth_signin_or_skip_notice">Per caricare foto e video sulla piattaforma Rai Local Abruzzo devi registrare un account</string>
   <string name="auth_signin_register">Entra / Registrati</string>
   <string name="auth_skip">Salta</string>
-  <string name="title_upcoming_events">Prossimi eventi</string>
   <string name="title_casts">Casts</string>
   <string name="title_nearby">%1$s Vicini</string>
   <string name="title_favorited">Preferiti %1$s</string>
   <string name="title_unfavorited">Non preferiti %1$s</string>
   <string name="list_empty">Non ci sono oggetti in questa lista.</string>
-  <string name="error_loading_event">Errore nel caricare l\'evento.</string>
   <string name="auth_username_hint">alice\@example.org</string>
   <string name="auth_password_hint">password</string>
   <string name="auth_login">Login</string>
@@ -114,7 +112,6 @@
   <string name="error_cast_media_no_activities">Ci dispiace, ma non è possibile visionare questo media sul tuo cellulare.</string>
   <string name="nearby">Vicino</string>
   <string name="favorites">Preferiti</string>
-  <string name="events">Eventi</string>
   <string name="error_no_featured_casts">Non ci sono cast suggeriti.</string>
   <string name="error_no_items_in_this_list">Non ci sono oggetti in questa lista.</string>
   <string name="featured_casts">Cast consigliati</string>

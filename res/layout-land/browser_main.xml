@@ -61,17 +61,6 @@
                 android:gravity="center_vertical|left"
                 android:text="@string/favorites" >
             </Button>
-
-            <Button
-                android:id="@+id/events"
-                style="@style/BrowserMainIcon"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:drawableLeft="@drawable/ic_event"
-                android:gravity="center_vertical|left"
-                android:text="@string/events" >
-            </Button>
         </LinearLayout>
 
         <RelativeLayout

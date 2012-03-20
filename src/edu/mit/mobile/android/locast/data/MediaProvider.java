@@ -69,8 +69,7 @@ public class MediaProvider extends ContentProvider {
 	private static final String
 		COMMENT_TABLE_NAME    = "comments",
 		TAG_TABLE_NAME        = "tags",
-		ITINERARY_TABLE_NAME  = "itineraries",
-		EVENT_TABLE_NAME      = "events";
+			ITINERARY_TABLE_NAME = "itineraries";
 
 	public final static String
 		TYPE_CAST_ITEM = "vnd.android.cursor.item/vnd."+NAMESPACE+".casts",
@@ -85,11 +84,7 @@ public class MediaProvider extends ContentProvider {
 		TYPE_TAG_DIR      = "vnd.android.cursor.dir/vnd."+NAMESPACE+".tags",
 
 		TYPE_ITINERARY_DIR  =  "vnd.android.cursor.dir/vnd."+NAMESPACE+".itineraries",
-		TYPE_ITINERARY_ITEM = "vnd.android.cursor.item/vnd."+NAMESPACE+".itineraries",
-
-		TYPE_EVENT_DIR  =  "vnd.android.cursor.dir/vnd."+NAMESPACE+"."+EVENT_TABLE_NAME,
-		TYPE_EVENT_ITEM = "vnd.android.cursor.item/vnd."+NAMESPACE+"."+EVENT_TABLE_NAME
-		;
+			TYPE_ITINERARY_ITEM = "vnd.android.cursor.item/vnd." + NAMESPACE + ".itineraries";
 
 	private static final HashMap<String, Class<? extends JsonSyncableItem>> TYPE_MAP = new HashMap<String, Class<? extends JsonSyncableItem>>();
 
@@ -105,9 +100,6 @@ public class MediaProvider extends ContentProvider {
 
 		TYPE_MAP.put(MediaProvider.TYPE_ITINERARY_DIR, Itinerary.class);
 		TYPE_MAP.put(MediaProvider.TYPE_ITINERARY_ITEM, Itinerary.class);
-
-		TYPE_MAP.put(MediaProvider.TYPE_EVENT_DIR, Event.class);
-		TYPE_MAP.put(MediaProvider.TYPE_EVENT_ITEM, Event.class);
 	}
 
 	/**
@@ -237,8 +229,6 @@ public class MediaProvider extends ContentProvider {
 			MATCHER_CAST_ITINERARY_DIR = 3,
 		MATCHER_COMMENT_DIR          = 5,
 		MATCHER_COMMENT_ITEM         = 6,
-		MATCHER_EVENT_DIR 			 = 7,
-		MATCHER_EVENT_ITEM			 = 8,
 		MATCHER_CHILD_COMMENT_DIR    = 9,
 		MATCHER_CHILD_COMMENT_ITEM   = 10,
  MATCHER_CHILD_TAG_DIR = 12,
@@ -256,7 +246,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 47;
+		private static final int DB_VER = 48;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -324,20 +314,6 @@ public class MediaProvider extends ContentProvider {
 
 					+ ");"
 			);
-
-			db.execSQL("CREATE TABLE "  + EVENT_TABLE_NAME + " ("
-					+ JSON_SYNCABLE_ITEM_FIELDS
-					+ LOCATABLE_FIELDS
-					+ Event._TITLE 		 + " TEXT,"
-					+ Event._AUTHOR 	 + " TEXT,"
-					+ Event._AUTHOR_URI	 + " TEXT,"
-					+ Event._DESCRIPTION + " TEXT,"
-					+ Event._START_DATE  + " INTEGER,"
-					+ Event._END_DATE    + " INTEGER,"
-
-					+ Event._THUMBNAIL_URI+ " TEXT"
-					+ ");"
-					);
 		}
 
 		@Override
@@ -354,7 +330,6 @@ public class MediaProvider extends ContentProvider {
 				db.execSQL("DROP TABLE IF EXISTS " + COMMENT_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + ITINERARY_TABLE_NAME);
-				db.execSQL("DROP TABLE IF EXISTS " + EVENT_TABLE_NAME);
 
 				ITINERARY_CASTS_DBHELPER.upgradeTables(db, oldVersion, newVersion);
 				CASTS_CASTMEDIA_DBHELPER.upgradeTables(db, oldVersion, newVersion);
@@ -419,8 +394,6 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_ITINERARY_DIR:
 		case MATCHER_ITINERARY_ITEM:
 
-		case MATCHER_EVENT_DIR:
-		case MATCHER_EVENT_ITEM:
 			return true;
 
 		default:
@@ -469,11 +442,6 @@ public class MediaProvider extends ContentProvider {
 			return TYPE_ITINERARY_DIR;
 		case MATCHER_ITINERARY_ITEM:
 			return TYPE_ITINERARY_ITEM;
-
-		case MATCHER_EVENT_DIR:
-			return TYPE_EVENT_DIR;
-		case MATCHER_EVENT_ITEM:
-			return TYPE_EVENT_ITEM;
 
 		default:
 			throw new IllegalArgumentException("Cannot get type for URI "+uri);
@@ -651,21 +619,6 @@ public class MediaProvider extends ContentProvider {
 				c = queryByTags(qb, db, tags, CAST_TABLE_NAME, projection, selection, selectionArgs, sortOrder);
 			}else if (dist != null){
 				c = queryByLocation(qb, db, dist, CAST_TABLE_NAME, projection, selection, selectionArgs, sortOrder);
-			}else{
-				c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
-			}
-		}break;
-
-
-		case MATCHER_EVENT_DIR:{
-			qb.setTables(EVENT_TABLE_NAME);
-			final String tags = uri.getQueryParameter(TaggableItem.SERVER_QUERY_PARAMETER);
-			final String dist = uri.getQueryParameter(Locatable.SERVER_QUERY_PARAMETER);
-
-			if (tags != null){
-				c = queryByTags(qb, db, tags, EVENT_TABLE_NAME, projection, selection, selectionArgs, sortOrder);
-			}else if (dist != null){
-				c = queryByLocation(qb, db, dist, EVENT_TABLE_NAME, projection, selection, selectionArgs, sortOrder);
 			}else{
 				c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
 			}
@@ -1015,11 +968,6 @@ public class MediaProvider extends ContentProvider {
 			}
 				break;
 
-			case MATCHER_EVENT_DIR:
-				count = db.delete(EVENT_TABLE_NAME, where, whereArgs);
-
-				break;
-
 			default:
 				if (mDBHelperMapper.canDelete(code)) {
 					count = mDBHelperMapper.delete(code, this, db, uri, where, whereArgs);
@@ -1093,10 +1041,6 @@ public class MediaProvider extends ContentProvider {
 		switch (match){
 
 		// these should be the only hard-coded paths in the system.
-
-		case MATCHER_EVENT_DIR:
-			path = internalToPublicQueryMap(context, Event.SERVER_PATH, uri);
-			break;
 
 		case MATCHER_CAST_DIR:{
 			path = internalToPublicQueryMap(context, Cast.SERVER_PATH, uri);
@@ -1281,16 +1225,11 @@ public class MediaProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Comment.PATH, MATCHER_CHILD_COMMENT_DIR);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Comment.PATH + "/#", MATCHER_CHILD_COMMENT_ITEM);
 
-		// /event
-		uriMatcher.addURI(AUTHORITY, Event.PATH, MATCHER_EVENT_DIR);
-		uriMatcher.addURI(AUTHORITY, Event.PATH + "/#", MATCHER_EVENT_ITEM);
-
 		// /content/tags
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/" + Tag.PATH, MATCHER_CHILD_TAG_DIR);
 
 		// /content/1/tags
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
-		uriMatcher.addURI(AUTHORITY, Event.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/"+Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 

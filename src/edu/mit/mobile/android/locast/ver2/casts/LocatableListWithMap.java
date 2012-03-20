@@ -55,7 +55,6 @@ import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.Event;
 import edu.mit.mobile.android.locast.data.Favoritable;
 import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.data.MediaProvider;
@@ -63,8 +62,6 @@ import edu.mit.mobile.android.locast.maps.CastsOverlay;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.locast.ver2.events.EventCursorAdapter;
-import edu.mit.mobile.android.locast.ver2.itineraries.BasicLocatableOverlay;
 import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
 import edu.mit.mobile.android.widget.RefreshButton;
@@ -176,20 +173,6 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 
 			searchRadius = 1500;
 
-		}else if (MediaProvider.TYPE_EVENT_DIR.equals(type)){
-
-			title = getString(R.string.title_upcoming_events);
-			searchRadius = 10000;
-
-			mAdapter = new EventCursorAdapter(this,
-					R.layout.browse_content_item,
-					null,
-					new String[]{Event._TITLE, Event._START_DATE},
-					new int[]{android.R.id.text1, android.R.id.text2},
-					new int[]{}, 0);
-
-			mListView.setAdapter(mAdapter);
-			initMapOverlays(new BasicLocatableOverlay(LocatableItemOverlay.boundCenterBottom(getResources().getDrawable(R.drawable.ic_map_event))));
 		}else{
 			throw new IllegalArgumentException("Unhandled content type " + type);
 		}
@@ -280,10 +263,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		final Bundle args = new Bundle();
 		args.putParcelable(LOADER_ARG_DATA, data);
 		final String type = getContentResolver().getType(data);
-		if (MediaProvider.TYPE_EVENT_DIR.equals(type)){
-			mLoaderManager.restartLoader(LOADER_ID_EVENT, args, this);
-
-		}else if (MediaProvider.TYPE_CAST_DIR.equals(type)){
+		if (MediaProvider.TYPE_CAST_DIR.equals(type)) {
 			mLoaderManager.restartLoader(LOADER_ID_CAST, args, this);
 		}
 
@@ -376,19 +356,13 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 
 	private static String LOADER_ARG_DATA = "edu.mit.mobile.android.locast.LOADER_ARG_DATA";
 	private final static int
-		LOADER_ID_CAST = 0,
-		LOADER_ID_EVENT = 1;
+ LOADER_ID_CAST = 0;
 
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		switch (id){
 		case LOADER_ID_CAST:
 			return new CursorLoader(this, (Uri) args.getParcelable(LOADER_ARG_DATA), Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
-		case LOADER_ID_EVENT:
-			// only show events that aren't already over
-			return new CursorLoader(this, (Uri) args.getParcelable(LOADER_ARG_DATA), Event.PROJECTION,
-					Event._END_DATE + " >= ?",
-					new String[]{String.valueOf(System.currentTimeMillis())}, Event.SORT_ORDER_DEFAULT);
 
 			default:
 				return null;

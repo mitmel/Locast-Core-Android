@@ -49,7 +49,6 @@ import edu.mit.mobile.android.locast.accounts.AuthenticatorActivity.LogoutHandle
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.Event;
 import edu.mit.mobile.android.locast.data.Favoritable;
 import edu.mit.mobile.android.locast.data.Itinerary;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
@@ -134,7 +133,6 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		mRefresh = (RefreshButton) findViewById(R.id.refresh);
 		mRefresh.setOnClickListener(this);
 		findViewById(R.id.itineraries).setOnClickListener(this);
-		findViewById(R.id.events).setOnClickListener(this);
 		findViewById(R.id.nearby).setOnClickListener(this);
 		findViewById(R.id.favorites).setOnClickListener(this);
 
@@ -207,10 +205,6 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		switch (v.getId()) {
 			case R.id.itineraries:
 				startActivity(new Intent(Intent.ACTION_VIEW, Itinerary.CONTENT_URI));
-				break;
-
-			case R.id.events:
-				startActivity(new Intent(Intent.ACTION_VIEW, Event.CONTENT_URI));
 				break;
 
 			case R.id.nearby:

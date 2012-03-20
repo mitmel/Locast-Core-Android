@@ -49,15 +49,6 @@
             android:layout_weight="1"
             android:drawableTop="@drawable/ic_favorites"
             android:text="@string/favorites" />
-
-        <Button
-            android:id="@+id/events"
-            style="@style/BrowserMainIcon"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:drawableTop="@drawable/ic_event"
-            android:text="@string/events" />
     </LinearLayout>
 
 	<edu.mit.mobile.android.widget.NotificationProgressBar
