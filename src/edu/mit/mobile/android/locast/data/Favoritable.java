@@ -20,13 +20,15 @@ package edu.mit.mobile.android.locast.data;
 
 
 import android.net.Uri;
+import edu.mit.mobile.android.content.column.BooleanColumn;
+import edu.mit.mobile.android.content.column.DBColumn;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncFieldMap;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncItem;
 
 public class Favoritable {
 	public interface Columns {
-		public static final String
-			_FAVORITED = "favorited";
+		@DBColumn(type = BooleanColumn.class)
+		public static final String _FAVORITED = "favorited";
 	}
 
 	public static final String QUERY_PARAM = "favorited";

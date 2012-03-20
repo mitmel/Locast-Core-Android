@@ -21,23 +21,28 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import edu.mit.mobile.android.content.ForeignKeyManager;
+import edu.mit.mobile.android.content.column.DBColumn;
+import edu.mit.mobile.android.content.column.TextColumn;
 
 public class Cast extends TaggableItem implements Favoritable.Columns, Locatable.Columns, Commentable.Columns {
-	public final static String TAG = "LocastSyncCast";
+	public final static String TAG = Cast.class.getSimpleName();
+
 	public final static String PATH = "casts";
-	public final static Uri
-		CONTENT_URI = Uri.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
+	public final static Uri CONTENT_URI = Uri.parse("content://" + MediaProvider.AUTHORITY + "/"
+			+ PATH);
 
 	public final static String SERVER_PATH = "cast/";
 
+	@DBColumn(type = TextColumn.class)
+	public static final String _TITLE = "title";
+	@DBColumn(type = TextColumn.class)
+	public static final String _DESCRIPTION = "description";
 
-	public static final String
-		_TITLE 			= "title",
- _DESCRIPTION = "description";
+	@DBColumn(type = TextColumn.class)
+	public static final String _MEDIA_PUBLIC_URI = "public_uri";
 
-	public static final String
-		_MEDIA_PUBLIC_URI = "public_uri",
-		_THUMBNAIL_URI = "thumbnail_uri";
+	@DBColumn(type = TextColumn.class)
+	public static final String _THUMBNAIL_URI = "thumbnail_uri";
 
 	public static final String[] PROJECTION =
 	{   _ID,

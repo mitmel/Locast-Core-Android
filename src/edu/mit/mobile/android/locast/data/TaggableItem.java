@@ -43,6 +43,8 @@ import com.stackoverflow.CollectionUtils;
 import com.stackoverflow.Predicate;
 
 import edu.mit.mobile.android.content.ProviderUtils;
+import edu.mit.mobile.android.content.column.DBColumn;
+import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 
 /**
@@ -55,9 +57,14 @@ public abstract class TaggableItem extends JsonSyncableItem {
 	@SuppressWarnings("unused")
 	private static final String TAG = TaggableItem.class.getSimpleName();
 
-	public static final String _PRIVACY = "privacy",
-								_AUTHOR = "author",
-			_AUTHOR_URI = "author_uri";
+	@DBColumn(type = TextColumn.class)
+	public static final String _PRIVACY = "privacy";
+
+	@DBColumn(type = TextColumn.class)
+	public static final String _AUTHOR = "author";
+
+	@DBColumn(type = TextColumn.class)
+	public static final String _AUTHOR_URI = "author_uri";
 
 	public static final String  PRIVACY_PUBLIC    = "public",
 								PRIVACY_PROTECTED = "protected",
@@ -338,7 +345,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
 
 	/**
 	 * Given a URI that includes a set of tags, parses them out and returns them as a set.
-	 * 
+	 *
 	 * @param contentUri
 	 * @return the set of tags encoded in the URI
 	 * @throws IllegalArgumentException

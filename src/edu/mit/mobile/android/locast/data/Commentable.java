@@ -1,4 +1,5 @@
 package edu.mit.mobile.android.locast.data;
+
 /*
  * Copyright (C) 2011  MIT Mobile Experience Lab
  *
@@ -17,18 +18,21 @@ package edu.mit.mobile.android.locast.data;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import edu.mit.mobile.android.content.column.DBColumn;
+import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncFieldMap;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncItem;
 
 public class Commentable {
 	public interface Columns {
-		public static final String
-			_COMMENT_DIR_URI = "comment_dir_uri";
+		@DBColumn(type = TextColumn.class)
+		public static final String _COMMENT_DIR_URI = "comment_dir_uri";
 	}
 
 	public static final SyncMap SYNC_MAP = new SyncMap();
 
 	static {
-		SYNC_MAP.put(Columns._COMMENT_DIR_URI, new JsonSyncableItem.SyncFieldMap("comments_uri", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));
+		SYNC_MAP.put(Columns._COMMENT_DIR_URI, new JsonSyncableItem.SyncFieldMap("comments_uri",
+				SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));
 	}
 }

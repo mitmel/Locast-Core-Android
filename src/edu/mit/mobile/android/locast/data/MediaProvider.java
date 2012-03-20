@@ -52,6 +52,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import edu.mit.mobile.android.content.DBHelperMapper;
 import edu.mit.mobile.android.content.ForeignKeyDBHelper;
+import edu.mit.mobile.android.content.GenericDBHelper;
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.m2m.M2MDBHelper;
 import edu.mit.mobile.android.content.m2m.M2MReverseHelper;
@@ -66,7 +67,6 @@ public class MediaProvider extends ContentProvider {
 
 
 	private static final String
-		CAST_TABLE_NAME       = "casts",
 		COMMENT_TABLE_NAME    = "comments",
 		TAG_TABLE_NAME        = "tags",
 		ITINERARY_TABLE_NAME  = "itineraries",
@@ -216,9 +216,14 @@ public class MediaProvider extends ContentProvider {
 	}
 
 
+	private static final GenericDBHelper CASTS_DBHELPER = new GenericDBHelper(Cast.class);
+	private static final String CAST_TABLE_NAME = CASTS_DBHELPER.getTable();
+
 	private static final JSONSyncableIdenticalChildFinder mChildFinder = new JSONSyncableIdenticalChildFinder();
+
 	private static final M2MDBHelper ITINERARY_CASTS_DBHELPER = new M2MDBHelper(
 			ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder, Cast.CONTENT_URI);
+
 	private static final ForeignKeyDBHelper CASTS_CASTMEDIA_DBHELPER = new ForeignKeyDBHelper(
 			Cast.class, CastMedia.class, CastMedia.CAST);
 
@@ -251,7 +256,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static class DatabaseHelper extends SQLiteOpenHelper {
 		private static final String DB_NAME = "content.db";
-		private static final int DB_VER = 46;
+		private static final int DB_VER = 47;
 
 		public DatabaseHelper(Context context) {
 			super(context, DB_NAME, null, DB_VER);
@@ -265,9 +270,6 @@ public class MediaProvider extends ContentProvider {
 			+ JsonSyncableItem._SERVER_MODIFIED_DATE+ " INTEGER,"
 			+ JsonSyncableItem._CREATED_DATE + " INTEGER,";
 
-		private static final String JSON_COMMENTABLE_FIELDS =
-			Commentable.Columns._COMMENT_DIR_URI  + " TEXT,";
-
 		private static final String LOCATABLE_FIELDS =
 			Locatable.Columns._GEOCELL + " TEXT,"
 			+ Locatable.Columns._LATITUDE 	+ " REAL,"
@@ -279,27 +281,10 @@ public class MediaProvider extends ContentProvider {
 			createTables(db);
 			ITINERARY_CASTS_DBHELPER.createTables(db);
 			CASTS_CASTMEDIA_DBHELPER.createTables(db);
+			CASTS_DBHELPER.createTables(db);
 		}
 
 		private void createTables(SQLiteDatabase db) {
-
-			db.execSQL("CREATE TABLE "  + CAST_TABLE_NAME + " ("
-					+ JSON_SYNCABLE_ITEM_FIELDS
-					+ JSON_COMMENTABLE_FIELDS
-					+ LOCATABLE_FIELDS
-					+ Cast._TITLE 		+ " TEXT,"
-					+ Cast._AUTHOR 		+ " TEXT,"
-					+ Cast._AUTHOR_URI	+ " TEXT,"
-					+ Cast._DESCRIPTION + " TEXT,"
-					+ Cast._MEDIA_PUBLIC_URI 	+ " TEXT,"
-
-					+ Cast._PRIVACY 	+ " TEXT,"
-
-					+ Cast._FAVORITED   + " BOOLEAN,"
-
-					+ Cast._THUMBNAIL_URI+ " TEXT"
-					+ ");"
-					);
 
 			db.execSQL("CREATE TABLE " + COMMENT_TABLE_NAME + " ("
 					+ JSON_SYNCABLE_ITEM_FIELDS
@@ -366,7 +351,6 @@ public class MediaProvider extends ContentProvider {
 
 			try {
 
-				db.execSQL("DROP TABLE IF EXISTS " + CAST_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + COMMENT_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + ITINERARY_TABLE_NAME);
@@ -374,6 +358,7 @@ public class MediaProvider extends ContentProvider {
 
 				ITINERARY_CASTS_DBHELPER.upgradeTables(db, oldVersion, newVersion);
 				CASTS_CASTMEDIA_DBHELPER.upgradeTables(db, oldVersion, newVersion);
+				CASTS_DBHELPER.upgradeTables(db, oldVersion, newVersion);
 
 				createTables(db);
 
@@ -498,7 +483,7 @@ public class MediaProvider extends ContentProvider {
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
 		final SQLiteDatabase db = dbHelper.getWritableDatabase();
-		final Context context = getContext();
+
 		long rowid;
 		final boolean syncable = canSync(uri);
 		if (syncable && !values.containsKey(JsonSyncableItem._MODIFIED_DATE)){
@@ -671,13 +656,6 @@ public class MediaProvider extends ContentProvider {
 			}
 		}break;
 
-		case MATCHER_CAST_ITEM:
-			qb.setTables(CAST_TABLE_NAME);
-			id = ContentUris.parseId(uri);
-			qb.appendWhere(Cast._ID + "="+id);
-			c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
-			break;
-
 
 		case MATCHER_EVENT_DIR:{
 			qb.setTables(EVENT_TABLE_NAME);
@@ -847,17 +825,16 @@ public class MediaProvider extends ContentProvider {
 		}
 		values.remove(CV_FLAG_DO_NOT_MARK_DIRTY);
 
+		// special case for favorited to not mark dirty. TODO put above and use flag?
+		if (values.size() == 2 && values.containsKey(Favoritable.Columns._FAVORITED)) {
+			values.put(JsonSyncableItem._MODIFIED_DATE, 0);
+		}
+
 		final int code = uriMatcher.match(uri);
 		switch (code){
-		case MATCHER_CAST_DIR:
-			count = db.update(CAST_TABLE_NAME, values, where, whereArgs);
-			break;
-		case MATCHER_CHILD_CAST_ITEM:
-		case MATCHER_CAST_ITEM:{
+			case MATCHER_CHILD_CAST_ITEM: {
 			id = ContentUris.parseId(uri);
-			if ( values.size() == 2 && values.containsKey(Favoritable.Columns._FAVORITED)){
-				values.put(JsonSyncableItem._MODIFIED_DATE, 0);
-			}
+
 			count = db.update(CAST_TABLE_NAME, values,
 					Cast._ID+"="+id+ (where != null && where.length() > 0 ? " AND ("+where+")":""),
 					whereArgs);
@@ -975,21 +952,6 @@ public class MediaProvider extends ContentProvider {
 		int count;
 		final int code = uriMatcher.match(uri);
 		switch (code) {
-			case MATCHER_CAST_DIR:
-				count = db.delete(CAST_TABLE_NAME, where, whereArgs);
-
-				break;
-
-			case MATCHER_CAST_ITEM:
-				id = ContentUris.parseId(uri);
-				count = db.delete(CAST_TABLE_NAME,
-						Cast._ID
-								+ "="
-								+ id
-								+ (where != null && where.length() > 0 ? " AND (" + where + ")"
-										: ""), whereArgs);
-				break;
-
 			case MATCHER_COMMENT_DIR:
 				count = db.delete(COMMENT_TABLE_NAME, where, whereArgs);
 				break;
@@ -1288,8 +1250,14 @@ public class MediaProvider extends ContentProvider {
 
 	static {
 		uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+
 		uriMatcher.addURI(AUTHORITY, Cast.PATH, MATCHER_CAST_DIR);
-		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#", MATCHER_CAST_ITEM);
+		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#", MATCHER_CAST_ITEM);
+
+		mDBHelperMapper.addDirMapping(MATCHER_CAST_DIR, CASTS_DBHELPER, DBHelperMapper.VERB_ALL,
+				TYPE_CAST_DIR);
+		mDBHelperMapper.addItemMapping(MATCHER_CAST_ITEM, CASTS_DBHELPER, DBHelperMapper.VERB_ALL,
+				TYPE_CAST_ITEM);
 
 		uriMatcher
 				.addURI(AUTHORITY, Cast.PATH + "/#/" + Itinerary.PATH, MATCHER_CAST_ITINERARY_DIR);
@@ -1329,8 +1297,6 @@ public class MediaProvider extends ContentProvider {
 		// /content/tags?tag1,tag2
 		// XXX is this used?
 		uriMatcher.addURI(AUTHORITY, Itinerary.PATH +'/'+Tag.PATH, MATCHER_ITINERARY_BY_TAGS);
-
-
 
 		// tag list
 		uriMatcher.addURI(AUTHORITY, Tag.PATH, MATCHER_TAG_DIR);

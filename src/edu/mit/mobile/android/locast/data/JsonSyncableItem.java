@@ -43,7 +43,7 @@ import android.net.Uri;
 import edu.mit.mobile.android.content.ContentItem;
 import edu.mit.mobile.android.content.column.BooleanColumn;
 import edu.mit.mobile.android.content.column.DBColumn;
-import edu.mit.mobile.android.content.column.IntegerColumn;
+import edu.mit.mobile.android.content.column.DatetimeColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
@@ -61,13 +61,13 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
 	@DBColumn(type = TextColumn.class)
 	public static final String _PUBLIC_URI = "uri";
 
-	@DBColumn(type = IntegerColumn.class)
+	@DBColumn(type = DatetimeColumn.class)
 	public static final String _MODIFIED_DATE = "modified";
 
-	@DBColumn(type = IntegerColumn.class)
+	@DBColumn(type = DatetimeColumn.class)
 	public static final String _SERVER_MODIFIED_DATE = "server_modified";
 
-	@DBColumn(type = IntegerColumn.class)
+	@DBColumn(type = DatetimeColumn.class)
 	public static final String _CREATED_DATE = "created";
 
 	@DBColumn(type = BooleanColumn.class)
