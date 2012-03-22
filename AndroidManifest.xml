@@ -54,7 +54,7 @@
 		*****************************************************************************************************
         -->
         <activity
-            android:name=".casts.CastDetail"
+            android:name="edu.mit.mobile.android.locast.casts.CastDetail"
             android:process="edu.mit.mobile.android.locast.Detail" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -74,7 +74,7 @@
                 <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.casts" />
             </intent-filter>
         </activity>
-        <activity android:name=".casts.LocatableListWithMap" >
+        <activity android:name="edu.mit.mobile.android.locast.casts.LocatableListWithMap" >
             <intent-filter>
                 <category android:name="android.intent.category.DEFAULT" />
 
@@ -86,7 +86,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".casts.VideoPlayer"
+            android:name="edu.mit.mobile.android.locast.casts.VideoPlayer"
             android:configChanges="orientation"
             android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" >
             <intent-filter>
@@ -98,7 +98,7 @@
                 <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.castmedia" />
             </intent-filter>
         </activity>
-        <activity android:name=".casts.CastEdit" android:configChanges="orientation">
+        <activity android:name="edu.mit.mobile.android.locast.casts.CastEdit" android:configChanges="orientation">
             <intent-filter>
                 <action android:name="android.intent.action.EDIT" />
 
@@ -175,7 +175,7 @@
         -->
 
         <activity
-            android:name=".browser.BrowserHome"
+            android:name="edu.mit.mobile.android.locast.home.BrowserHome"
             android:label="@string/app_name" >
                         <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -194,7 +194,7 @@
 
         </activity>
         <activity
-            android:name=".casts.UnsyncedCastsActivity"
+            android:name="edu.mit.mobile.android.locast.casts.UnsyncedCastsActivity"
             android:label="@string/unicef_unsynced_casts"
             android:taskAffinity="edu.mit.mobile.android.locast.ver2.casts.UnsyncedCastsActivity" >
             <intent-filter>

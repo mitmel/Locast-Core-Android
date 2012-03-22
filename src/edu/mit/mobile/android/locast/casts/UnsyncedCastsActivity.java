@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.ver2.casts;
+package edu.mit.mobile.android.locast.casts;
 
 /*
  * Copyright (C) 2010-2012  MIT Mobile Experience Lab

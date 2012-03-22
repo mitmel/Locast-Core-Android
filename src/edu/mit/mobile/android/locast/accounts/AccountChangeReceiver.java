@@ -27,7 +27,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.ver2.browser.ResetActivity;
+import edu.mit.mobile.android.locast.home.ResetActivity;
 
 public class AccountChangeReceiver extends BroadcastReceiver {
 	private static final String TAG = AccountChangeReceiver.class.getSimpleName();
