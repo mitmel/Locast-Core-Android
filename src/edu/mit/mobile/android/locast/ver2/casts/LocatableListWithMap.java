@@ -54,6 +54,7 @@ import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
+import edu.mit.mobile.android.locast.collections.LocatableItemOverlay;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Favoritable;
 import edu.mit.mobile.android.locast.data.Locatable;
@@ -62,7 +63,6 @@ import edu.mit.mobile.android.locast.maps.CastsOverlay;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
 import edu.mit.mobile.android.widget.RefreshButton;
 

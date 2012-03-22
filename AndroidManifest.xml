@@ -183,7 +183,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".itineraries.CollectionList" >
+        <activity android:name="edu.mit.mobile.android.locast.collections.CollectionList" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -203,7 +203,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".itineraries.CollectionDetail" >
+        <activity android:name="edu.mit.mobile.android.locast.collections.CollectionDetail" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 

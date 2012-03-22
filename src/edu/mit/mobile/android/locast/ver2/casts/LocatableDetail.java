@@ -29,9 +29,9 @@ import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
 
+import edu.mit.mobile.android.locast.collections.LocatableItemOverlay;
 import edu.mit.mobile.android.locast.maps.MapsUtils;
 import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.locast.ver2.itineraries.LocatableItemOverlay;
 import edu.mit.mobile.android.maps.PointerShadow;
 import edu.mit.mobile.android.maps.PointerShadowOverlay;
 

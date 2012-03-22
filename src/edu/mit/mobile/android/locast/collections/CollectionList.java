@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.ver2.itineraries;
+package edu.mit.mobile.android.locast.collections;
 
 /*
  * Copyright (C) 2011  MIT Mobile Experience Lab
