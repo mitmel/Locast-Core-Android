@@ -78,6 +78,11 @@ public class Collection extends TaggableItem implements Favoritable.Columns {
 
 	public static final M2MManager CASTS = new M2MManager(Cast.class);
 
+	/**
+	 * @param collection
+	 * @return
+	 * @deprecated use {@link #CASTS}.{@link M2MManager#getUri(Uri)} instead.
+	 */
 	@Deprecated
 	public static Uri getCastsUri(Uri collection) {
 		if (ContentUris.parseId(collection) == -1) {
@@ -119,7 +124,7 @@ public class Collection extends TaggableItem implements Favoritable.Columns {
 
 	public Uri getChildDirUri(Uri parent, String relation) {
 		if("casts".equals(relation)){
-			return getCastsUri(parent);
+			return CASTS.getUri(parent);
 		}
 		return null;
 	}

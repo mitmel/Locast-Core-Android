@@ -1069,7 +1069,7 @@ public class MediaProvider extends ContentProvider {
 							final Uri collection = ContentUris.withAppendedId(
 									Collection.CONTENT_URI,
 									c.getLong(c.getColumnIndex(Collection._ID)));
-							path = getPublicPath(context, Collection.getCastsUri(collection));
+							path = getPublicPath(context, Collection.CASTS.getUri(collection));
 							if (collections > 1) {
 								// warn that only the first is being handled
 								Log.w(TAG,

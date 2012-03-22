@@ -186,7 +186,7 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
 		if (Intent.ACTION_VIEW.equals(action)){
 			mUri = intent.getData();
 
-			mCastsUri = Collection.getCastsUri(mUri);
+			mCastsUri = Collection.CASTS.getUri(mUri);
 
 			final LoaderManager lm = getSupportLoaderManager();
 			Bundle args = new Bundle();
@@ -339,7 +339,8 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
             break;
 
 		case R.id.add_cast:
-			startActivity(new Intent(Intent.ACTION_INSERT, Collection.getCastsUri(getIntent().getData())));
+				startActivity(new Intent(Intent.ACTION_INSERT, Collection.CASTS.getUri(getIntent()
+						.getData())));
 			break;
 		}
 	}
@@ -440,7 +441,8 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch(item.getItemId()){
 		case R.id.add_cast:
-			startActivity(new Intent(Intent.ACTION_INSERT, Collection.getCastsUri(getIntent().getData())));
+				startActivity(new Intent(Intent.ACTION_INSERT, Collection.CASTS.getUri(getIntent()
+						.getData())));
 			return true;
 
 		case R.id.refresh:

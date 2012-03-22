@@ -21,9 +21,11 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import edu.mit.mobile.android.content.ForeignKeyManager;
+import edu.mit.mobile.android.content.UriPath;
 import edu.mit.mobile.android.content.column.DBColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
 
+@UriPath(Cast.PATH)
 public class Cast extends TaggableItem implements Favoritable.Columns, Locatable.Columns, Commentable.Columns {
 	public final static String TAG = Cast.class.getSimpleName();
 
