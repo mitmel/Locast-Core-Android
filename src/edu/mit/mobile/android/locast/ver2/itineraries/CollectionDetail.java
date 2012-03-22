@@ -49,7 +49,6 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
@@ -60,17 +59,16 @@ import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.Itinerary;
+import edu.mit.mobile.android.locast.data.Collection;
 import edu.mit.mobile.android.locast.maps.CastsOverlay;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
-import edu.mit.mobile.android.maps.PathOverlay;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
 import edu.mit.mobile.android.widget.RefreshButton;
 
-public class ItineraryDetail extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener, DialogInterface.OnClickListener {
-	private static final String TAG = ItineraryDetail.class.getSimpleName();
+public class CollectionDetail extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener, DialogInterface.OnClickListener {
+	private static final String TAG = CollectionDetail.class.getSimpleName();
 
 	/**
 	 * If the layout for this activity doesn't need / use a map, set this to false. This activity
@@ -91,9 +89,9 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	private Uri mCastsUri;
 
 	private CastsOverlay mCastsOverlay;
-	private PathOverlay mPathOverlay;
+
 	private static final int UNKNOWN_COUNT = -1;
-	private int mItineraryCastCount = UNKNOWN_COUNT;
+	private int mCollectionCastCount = UNKNOWN_COUNT;
 
 	private Timer clickTimer;
 	private final boolean markerClicked = false;
@@ -104,8 +102,8 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 	private boolean mFirstLoadSync = true;
 
-	private static final String[] ITINERARY_PROJECTION = new String[] { Itinerary._ID,
-			Itinerary._DESCRIPTION, Itinerary._TITLE, Itinerary._CASTS_COUNT, Itinerary._PATH };
+	private static final String[] COLLECTION_PROJECTION = new String[] { Collection._ID,
+			Collection._DESCRIPTION, Collection._TITLE, Collection._CASTS_COUNT };
 
 	private RefreshButton mRefresh;
 
@@ -141,7 +139,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 
 		super.onCreate(icicle);
-		setContentView(R.layout.itinerary_detail);
+		setContentView(R.layout.collection_detail);
 
 		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
 
@@ -154,7 +152,9 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 		final LayoutInflater layoutInflater = getLayoutInflater();
 
-		mCastView.addHeaderView(layoutInflater.inflate(R.layout.itinerary_detail_list_header, mCastView, false), null, false);
+		mCastView.addHeaderView(
+				layoutInflater.inflate(R.layout.collection_detail_list_header, mCastView, false),
+				null, false);
 		mCastView.addFooterView(layoutInflater.inflate(R.layout.list_footer, null), null, false);
 		mCastView.setEmptyView(findViewById(R.id.empty2));
 		mRefresh = (RefreshButton) findViewById(R.id.refresh);
@@ -186,12 +186,12 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		if (Intent.ACTION_VIEW.equals(action)){
 			mUri = intent.getData();
 
-			mCastsUri = Itinerary.getCastsUri(mUri);
+			mCastsUri = Collection.getCastsUri(mUri);
 
 			final LoaderManager lm = getSupportLoaderManager();
 			Bundle args = new Bundle();
 			args.putParcelable(LOADER_ARG_DATA, mUri);
-			lm.initLoader(LOADER_ITINERARY, args, this);
+			lm.initLoader(LOADER_COLLECTION, args, this);
 
 			args = new Bundle();
 			args.putParcelable(LOADER_ARG_DATA, mCastsUri);
@@ -285,23 +285,22 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 
 	private void initCastList(){
 
-		mCastAdapter = new CastCursorAdapter(ItineraryDetail.this, null);
+		mCastAdapter = new CastCursorAdapter(CollectionDetail.this, null);
 		mCastView.setAdapter(new ImageLoaderAdapter(this, mCastAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP ));
 
 		if (USE_MAP){
 
-			mCastsOverlay = new CastsOverlay(ItineraryDetail.this);
-			mPathOverlay = new PathOverlay(this);
+			mCastsOverlay = new CastsOverlay(CollectionDetail.this);
 
 			final List<Overlay> overlays = mMapView.getOverlays();
-			overlays.add(mPathOverlay);
 			overlays.add(mCastsOverlay);
 		}
 	}
 
 	private void refresh(boolean explicitSync){
 		final Bundle extras = new Bundle();
-		if (mItineraryCastCount == UNKNOWN_COUNT || (mItineraryCastCount != mCastAdapter.getCount())){
+		if (mCollectionCastCount == UNKNOWN_COUNT
+				|| (mCollectionCastCount != mCastAdapter.getCount())) {
 			extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
 		}
 
@@ -340,13 +339,13 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
             break;
 
 		case R.id.add_cast:
-			startActivity(new Intent(Intent.ACTION_INSERT, Itinerary.getCastsUri(getIntent().getData())));
+			startActivity(new Intent(Intent.ACTION_INSERT, Collection.getCastsUri(getIntent().getData())));
 			break;
 		}
 	}
 
 	private static final int
-		LOADER_ITINERARY = 0,
+ LOADER_COLLECTION = 0,
 		LOADER_CASTS = 1;
 	private static final String
 		LOADER_ARG_DATA = "edu.mit.mobile.android.locast.LOADER_ARG_DATA";
@@ -358,8 +357,8 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 		CursorLoader cl = null;
 
 		switch (id){
-		case LOADER_ITINERARY:
-			cl = new CursorLoader(this, uri, ITINERARY_PROJECTION, null, null, null);
+			case LOADER_COLLECTION:
+				cl = new CursorLoader(this, uri, COLLECTION_PROJECTION, null, null, null);
 			break;
 
 		case LOADER_CASTS:
@@ -377,45 +376,22 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	@Override
 	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
 		switch (loader.getId()){
-		case LOADER_ITINERARY:{
+			case LOADER_COLLECTION: {
 			if (c.moveToFirst()){
-				mItineraryCastCount = c.getInt(c.getColumnIndex(Itinerary._CASTS_COUNT));
-				final String description = c.getString(c.getColumnIndex(Itinerary._DESCRIPTION));
+					mCollectionCastCount = c.getInt(c.getColumnIndex(Collection._CASTS_COUNT));
+				final String description = c.getString(c.getColumnIndex(Collection._DESCRIPTION));
 				((TextView)findViewById(R.id.description)).setText(description);
 				((TextView)findViewById(R.id.description_empty)).setText(description);
 
 					((TextView) findViewById(android.R.id.title)).setText(c.getString(c
-							.getColumnIndex(Itinerary._TITLE)));
+							.getColumnIndex(Collection._TITLE)));
 
 				if (USE_MAP){
-					final List<GeoPoint> path = Itinerary.getPath(c);
-					mPathOverlay.setPath(path);
-
-						if (!path.isEmpty()) {
-							mMapController.setCenter(mPathOverlay.getCenter());
-						}
-
-					if (Constants.USES_OSMDROID){
-						// this needs to be run after the MapView has been first sized due to a bug in zoomToSpan()
-						mMapView.post(new Runnable() {
-
-							@Override
-							public void run() {
-								if (mMapView.getHeight() > 0){
-									mMapController.zoomToSpan(mPathOverlay.getLatSpanE6(), mPathOverlay.getLonSpanE6());
-								}else{
-									mMapView.post(this);
-								}
-							}
-						});
-					}else{
-						mMapController.zoomToSpan(mPathOverlay.getLatSpanE6(), mPathOverlay.getLonSpanE6());
-					}
 
 					mMapView.setVisibility(View.VISIBLE);
 				}
 			}else{
-				Log.e(TAG, "error loading itinerary");
+					Log.e(TAG, "error loading collection");
 			}
 
 		}break;
@@ -444,7 +420,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 			}
 			break;
 
-		case LOADER_ITINERARY:
+			case LOADER_COLLECTION:
 
 			break;
 		}
@@ -453,7 +429,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
-		getMenuInflater().inflate(R.menu.itinerary_detail, menu);
+		getMenuInflater().inflate(R.menu.collection_detail, menu);
 		if (Constants.CAN_CREATE_CASTS){
 			menu.findItem(R.id.add_cast).setVisible(true);
 		}
@@ -464,7 +440,7 @@ public class ItineraryDetail extends MapFragmentActivity implements LoaderManage
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch(item.getItemId()){
 		case R.id.add_cast:
-			startActivity(new Intent(Intent.ACTION_INSERT, Itinerary.getCastsUri(getIntent().getData())));
+			startActivity(new Intent(Intent.ACTION_INSERT, Collection.getCastsUri(getIntent().getData())));
 			return true;
 
 		case R.id.refresh:

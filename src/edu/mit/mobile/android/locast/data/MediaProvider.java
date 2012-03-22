@@ -68,8 +68,7 @@ public class MediaProvider extends ContentProvider {
 
 	private static final String
 		COMMENT_TABLE_NAME    = "comments",
-		TAG_TABLE_NAME        = "tags",
-			ITINERARY_TABLE_NAME = "itineraries";
+ TAG_TABLE_NAME = "tags";
 
 	public final static String
 		TYPE_CAST_ITEM = "vnd.android.cursor.item/vnd."+NAMESPACE+".casts",
@@ -83,8 +82,8 @@ public class MediaProvider extends ContentProvider {
 
 		TYPE_TAG_DIR      = "vnd.android.cursor.dir/vnd."+NAMESPACE+".tags",
 
-		TYPE_ITINERARY_DIR  =  "vnd.android.cursor.dir/vnd."+NAMESPACE+".itineraries",
-			TYPE_ITINERARY_ITEM = "vnd.android.cursor.item/vnd." + NAMESPACE + ".itineraries";
+			TYPE_COLLECTION_DIR = "vnd.android.cursor.dir/vnd." + NAMESPACE + ".collections",
+			TYPE_COLLECTION_ITEM = "vnd.android.cursor.item/vnd." + NAMESPACE + ".collections";
 
 	private static final HashMap<String, Class<? extends JsonSyncableItem>> TYPE_MAP = new HashMap<String, Class<? extends JsonSyncableItem>>();
 
@@ -98,8 +97,8 @@ public class MediaProvider extends ContentProvider {
 		TYPE_MAP.put(MediaProvider.TYPE_COMMENT_DIR, Comment.class);
 		TYPE_MAP.put(MediaProvider.TYPE_COMMENT_ITEM, Comment.class);
 
-		TYPE_MAP.put(MediaProvider.TYPE_ITINERARY_DIR, Itinerary.class);
-		TYPE_MAP.put(MediaProvider.TYPE_ITINERARY_ITEM, Itinerary.class);
+		TYPE_MAP.put(MediaProvider.TYPE_COLLECTION_DIR, Collection.class);
+		TYPE_MAP.put(MediaProvider.TYPE_COLLECTION_ITEM, Collection.class);
 	}
 
 	/**
@@ -213,11 +212,15 @@ public class MediaProvider extends ContentProvider {
 
 	private static final JSONSyncableIdenticalChildFinder mChildFinder = new JSONSyncableIdenticalChildFinder();
 
-	private static final M2MDBHelper ITINERARY_CASTS_DBHELPER = new M2MDBHelper(
-			ITINERARY_TABLE_NAME, CAST_TABLE_NAME, mChildFinder, Cast.CONTENT_URI);
-
 	private static final ForeignKeyDBHelper CASTS_CASTMEDIA_DBHELPER = new ForeignKeyDBHelper(
 			Cast.class, CastMedia.class, CastMedia.CAST);
+
+	private static final GenericDBHelper COLLECTIONS_DBHELPER = new GenericDBHelper(
+			Collection.class);
+	private static final String COLLECTION_TABLE_NAME = COLLECTIONS_DBHELPER.getTable();
+
+	private static final M2MDBHelper COLLECTION_CASTS_DBHELPER = new M2MDBHelper(
+			COLLECTIONS_DBHELPER, CASTS_DBHELPER, mChildFinder);
 
 	private final static UriMatcher uriMatcher;
 
@@ -226,7 +229,7 @@ public class MediaProvider extends ContentProvider {
 	private static final int
 		MATCHER_CAST_DIR             = 1,
 		MATCHER_CAST_ITEM            = 2,
-			MATCHER_CAST_ITINERARY_DIR = 3,
+			MATCHER_CAST_COLLECTION_DIR = 3,
 		MATCHER_COMMENT_DIR          = 5,
 		MATCHER_COMMENT_ITEM         = 6,
 		MATCHER_CHILD_COMMENT_DIR    = 9,
@@ -234,11 +237,10 @@ public class MediaProvider extends ContentProvider {
  MATCHER_CHILD_TAG_DIR = 12,
 		MATCHER_TAG_DIR              = 13,
 		MATCHER_ITEM_TAGS    		 = 14,
-		MATCHER_ITINERARY_DIR        = 21,
-		MATCHER_ITINERARY_ITEM       = 22,
+			MATCHER_COLLECTION_DIR = 21, MATCHER_COLLECTION_ITEM = 22,
 		MATCHER_CHILD_CAST_DIR   	 = 23,
 		MATCHER_CHILD_CAST_ITEM  	 = 24,
-		MATCHER_ITINERARY_BY_TAGS    = 27,
+ MATCHER_COLLECTION_BY_TAGS = 27,
 		MATCHER_CHILD_CASTMEDIA_DIR  = 28,
  MATCHER_CHILD_CASTMEDIA_ITEM = 29,
 			MATCHER_CASTMEDIA_DIR = 30;
@@ -269,9 +271,10 @@ public class MediaProvider extends ContentProvider {
 		public void onCreate(SQLiteDatabase db) {
 
 			createTables(db);
-			ITINERARY_CASTS_DBHELPER.createTables(db);
-			CASTS_CASTMEDIA_DBHELPER.createTables(db);
+			COLLECTIONS_DBHELPER.createTables(db);
 			CASTS_DBHELPER.createTables(db);
+			COLLECTION_CASTS_DBHELPER.createTables(db);
+			CASTS_CASTMEDIA_DBHELPER.createTables(db);
 		}
 
 		private void createTables(SQLiteDatabase db) {
@@ -296,24 +299,6 @@ public class MediaProvider extends ContentProvider {
 					+ ");"
 			);
 
-			db.execSQL("CREATE TABLE " + ITINERARY_TABLE_NAME + " ("
-					+ JSON_SYNCABLE_ITEM_FIELDS
-					+ Itinerary._TITLE 		+ " TEXT,"
-					+ Itinerary._AUTHOR		+ " TEXT,"
-					+ Itinerary._AUTHOR_URI		+ " TEXT,"
-					+ Itinerary._DESCRIPTION 	+ " TEXT,"
-					+ Itinerary._PRIVACY 		+ " TEXT,"
-					+ Itinerary._CASTS_URI	+ " TEXT,"
-
-					+ Itinerary._PATH 		+ " TEXT,"
-					+ Itinerary._CASTS_COUNT + " INTEGER,"
-					+ Itinerary._FAVORITES_COUNT + " INTEGER,"
-					+ Itinerary._FAVORITED   + " BOOLEAN,"
-
-					+ Itinerary._THUMBNAIL     + " TEXT"
-
-					+ ");"
-			);
 		}
 
 		@Override
@@ -329,9 +314,10 @@ public class MediaProvider extends ContentProvider {
 
 				db.execSQL("DROP TABLE IF EXISTS " + COMMENT_TABLE_NAME);
 				db.execSQL("DROP TABLE IF EXISTS " + TAG_TABLE_NAME);
-				db.execSQL("DROP TABLE IF EXISTS " + ITINERARY_TABLE_NAME);
+				db.execSQL("DROP TABLE IF EXISTS " + COLLECTION_TABLE_NAME);
 
-				ITINERARY_CASTS_DBHELPER.upgradeTables(db, oldVersion, newVersion);
+				COLLECTIONS_DBHELPER.upgradeTables(db, oldVersion, newVersion);
+				COLLECTION_CASTS_DBHELPER.upgradeTables(db, oldVersion, newVersion);
 				CASTS_CASTMEDIA_DBHELPER.upgradeTables(db, oldVersion, newVersion);
 				CASTS_DBHELPER.upgradeTables(db, oldVersion, newVersion);
 
@@ -374,7 +360,7 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CHILD_TAG_DIR:
 		case MATCHER_COMMENT_ITEM:
 		case MATCHER_CHILD_COMMENT_ITEM:
-			case MATCHER_CAST_ITINERARY_DIR:
+			case MATCHER_CAST_COLLECTION_DIR:
 
 			return false;
 
@@ -391,8 +377,8 @@ public class MediaProvider extends ContentProvider {
 
 		case MATCHER_CHILD_CAST_DIR:
 		case MATCHER_CHILD_CAST_ITEM:
-		case MATCHER_ITINERARY_DIR:
-		case MATCHER_ITINERARY_ITEM:
+			case MATCHER_COLLECTION_DIR:
+			case MATCHER_COLLECTION_ITEM:
 
 			return true;
 
@@ -430,18 +416,18 @@ public class MediaProvider extends ContentProvider {
 		case MATCHER_CHILD_TAG_DIR:
 			return TYPE_TAG_DIR;
 
-			//////////////// itineraries
+				// ////////////// collections
 
 		case MATCHER_CHILD_CAST_DIR:
 			return TYPE_CAST_DIR;
 		case MATCHER_CHILD_CAST_ITEM:
 			return TYPE_CAST_ITEM;
 
-		case MATCHER_ITINERARY_DIR:
-			case MATCHER_CAST_ITINERARY_DIR:
-			return TYPE_ITINERARY_DIR;
-		case MATCHER_ITINERARY_ITEM:
-			return TYPE_ITINERARY_ITEM;
+			case MATCHER_COLLECTION_DIR:
+			case MATCHER_CAST_COLLECTION_DIR:
+				return TYPE_COLLECTION_DIR;
+			case MATCHER_COLLECTION_ITEM:
+				return TYPE_COLLECTION_ITEM;
 
 		default:
 			throw new IllegalArgumentException("Cannot get type for URI "+uri);
@@ -528,12 +514,12 @@ public class MediaProvider extends ContentProvider {
 		}
 
 		//////////////////////////////////////////////////////////////////////////////////
-		case MATCHER_ITINERARY_BY_TAGS:
-		case MATCHER_ITINERARY_DIR:{
-			newItem = insertWithTags(values, db, ITINERARY_TABLE_NAME, Itinerary.CONTENT_URI);
+			case MATCHER_COLLECTION_BY_TAGS:
+			case MATCHER_COLLECTION_DIR: {
+				newItem = insertWithTags(values, db, COLLECTION_TABLE_NAME, Collection.CONTENT_URI);
 			if (newItem != null){
-				if (values.containsKey(Itinerary._DRAFT)){
-					isDraft = values.getAsBoolean(Itinerary._DRAFT);
+				if (values.containsKey(Collection._DRAFT)){
+					isDraft = values.getAsBoolean(Collection._DRAFT);
 				}else{
 					isDraft = false;
 				}
@@ -683,19 +669,20 @@ public class MediaProvider extends ContentProvider {
 			break;
 		}
 
-		case MATCHER_ITINERARY_DIR:{
+			case MATCHER_COLLECTION_DIR: {
 			if (sortOrder == null){
-				sortOrder = Itinerary.SORT_DEFAULT;
+				sortOrder = Collection.SORT_DEFAULT;
 			}
-			c = db.query(ITINERARY_TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+				c = db.query(COLLECTION_TABLE_NAME, projection, selection, selectionArgs, null,
+						null, sortOrder);
 
 		}break;
 
-		case MATCHER_ITINERARY_ITEM:{
+			case MATCHER_COLLECTION_ITEM: {
 			final String itemId = uri.getLastPathSegment();
-			c = db.query(ITINERARY_TABLE_NAME,
+				c = db.query(COLLECTION_TABLE_NAME,
 					projection,
-					ProviderUtils.addExtraWhere(selection, Itinerary._ID+"=?"),
+					ProviderUtils.addExtraWhere(selection, Collection._ID+"=?"),
 					ProviderUtils.addExtraWhereArgs(selectionArgs, itemId),
 					null, null, sortOrder);
 		}break;
@@ -870,14 +857,14 @@ public class MediaProvider extends ContentProvider {
 
 		}
 
-		case MATCHER_ITINERARY_DIR:{
-			count = db.update(ITINERARY_TABLE_NAME, values, where, whereArgs);
+			case MATCHER_COLLECTION_DIR: {
+				count = db.update(COLLECTION_TABLE_NAME, values, where, whereArgs);
 		}break;
 
-		case MATCHER_ITINERARY_ITEM:{
+			case MATCHER_COLLECTION_ITEM: {
 			final String itemId = uri.getLastPathSegment();
-			count = db.update(ITINERARY_TABLE_NAME, values,
-					ProviderUtils.addExtraWhere(where, Itinerary._ID+"=?"),
+				count = db.update(COLLECTION_TABLE_NAME, values,
+					ProviderUtils.addExtraWhere(where, Collection._ID+"=?"),
 					ProviderUtils.addExtraWhereArgs(whereArgs, itemId));
 		}break;
 
@@ -951,19 +938,19 @@ public class MediaProvider extends ContentProvider {
 				break;
 			}
 
-			case MATCHER_ITINERARY_DIR: {
-				count = db.delete(ITINERARY_TABLE_NAME, where, whereArgs);
+			case MATCHER_COLLECTION_DIR: {
+				count = db.delete(COLLECTION_TABLE_NAME, where, whereArgs);
 				// special case to handle deletion of ALL THE THINGS
 				if (where == null) {
-					db.delete(ITINERARY_CASTS_DBHELPER.getJoinTableName(), null, null);
+					db.delete(COLLECTION_CASTS_DBHELPER.getJoinTableName(), null, null);
 				}
 			}
 				break;
 
-			case MATCHER_ITINERARY_ITEM: {
+			case MATCHER_COLLECTION_ITEM: {
 				final String itemId = uri.getLastPathSegment();
-				count = db.delete(ITINERARY_TABLE_NAME,
-						ProviderUtils.addExtraWhere(where, Itinerary._ID + "=?"),
+				count = db.delete(COLLECTION_TABLE_NAME,
+						ProviderUtils.addExtraWhere(where, Collection._ID + "=?"),
 						ProviderUtils.addExtraWhereArgs(whereArgs, itemId));
 			}
 				break;
@@ -1047,8 +1034,8 @@ public class MediaProvider extends ContentProvider {
 
 		}break;
 
-		case MATCHER_ITINERARY_DIR:{
-			path = Itinerary.SERVER_PATH;
+			case MATCHER_COLLECTION_DIR: {
+			path = Collection.SERVER_PATH;
 		}break;
 
 		case MATCHER_COMMENT_DIR:
@@ -1061,33 +1048,34 @@ public class MediaProvider extends ContentProvider {
 
 			case MATCHER_CAST_ITEM: {
 				// when asking for the index of casts, it needs to be known if
-				// they're in an itinerary. /cast/4/ is canonical for a cast, regardless
-				// if it's in an itinerary or not. /itinerary/2/cast/ is canonical for
-				// the location of all casts within an itinerary (but /itinerary/2/cast/4/ is
+				// they're in an collection. /cast/4/ is canonical for a cast, regardless
+				// if it's in an collection or not. /collection/2/cast/ is canonical for
+				// the location of all casts within an collection (but /collection/2/cast/4/ is
 				// not valid).
 				if (parent) {
 					final ContentResolver cr = context.getContentResolver();
-					final Cursor c = cr.query(Uri.withAppendedPath(uri, Itinerary.PATH),
-							new String[] { Itinerary._ID }, null, null, null);
+					final Cursor c = cr.query(Uri.withAppendedPath(uri, Collection.PATH),
+							new String[] { Collection._ID }, null, null, null);
 					if (c == null) {
 						throw new NoPublicPath("Could not query " + uri);
 					}
 					try {
 						c.moveToFirst();
-						final int itineraries = c.getCount();
+						final int collections = c.getCount();
 
-						// if the cast is in any itineraries, the pub path needs to be that of the
-						// itinerary
-						if (itineraries > 0) {
-							final Uri itinerary = ContentUris.withAppendedId(Itinerary.CONTENT_URI,
-									c.getLong(c.getColumnIndex(Itinerary._ID)));
-							path = getPublicPath(context, Itinerary.getCastsUri(itinerary));
-							if (itineraries > 1) {
+						// if the cast is in any collections, the pub path needs to be that of the
+						// collection
+						if (collections > 0) {
+							final Uri collection = ContentUris.withAppendedId(
+									Collection.CONTENT_URI,
+									c.getLong(c.getColumnIndex(Collection._ID)));
+							path = getPublicPath(context, Collection.getCastsUri(collection));
+							if (collections > 1) {
 								// warn that only the first is being handled
 								Log.w(TAG,
-										"cast is in multiple itineraries. Currently not handled.");
+										"cast is in multiple collections. Currently not handled.");
 							}
-						} else { // not in an itinerary
+						} else { // not in an collection
 							path = getPublicPath(context, ProviderUtils.removeLastPathSegment(uri));
 						}
 					} finally {
@@ -1104,7 +1092,7 @@ public class MediaProvider extends ContentProvider {
 			case MATCHER_CHILD_CAST_ITEM:
 		case MATCHER_CHILD_COMMENT_ITEM:
 		case MATCHER_COMMENT_ITEM:
-		case MATCHER_ITINERARY_ITEM:
+			case MATCHER_COLLECTION_ITEM:
 		case MATCHER_CHILD_CASTMEDIA_ITEM:
 		{
 				if (parent) {
@@ -1116,14 +1104,14 @@ public class MediaProvider extends ContentProvider {
 			}break;
 
 		case MATCHER_CHILD_CAST_DIR:
-			path = getPathFromField(context, ProviderUtils.removeLastPathSegment(uri), Itinerary._CASTS_URI);
+			path = getPathFromField(context, ProviderUtils.removeLastPathSegment(uri), Collection._CASTS_URI);
 			break;
 
 		case MATCHER_CHILD_CASTMEDIA_DIR:
 			path = getPathFromField(context, ProviderUtils.removeLastPathSegment(uri), Cast._MEDIA_PUBLIC_URI);
 			break;
 
-		case MATCHER_ITINERARY_BY_TAGS:{
+			case MATCHER_COLLECTION_BY_TAGS: {
 			final Set<String> tags = TaggableItem.removePrefixesFromTags(Tag.toSet(uri.getQuery()));
 
 				path = getPublicPath(context, ProviderUtils.removeLastPathSegment(uri)) + "?tags="
@@ -1204,7 +1192,8 @@ public class MediaProvider extends ContentProvider {
 				TYPE_CAST_ITEM);
 
 		uriMatcher
-				.addURI(AUTHORITY, Cast.PATH + "/#/" + Itinerary.PATH, MATCHER_CAST_ITINERARY_DIR);
+.addURI(AUTHORITY, Cast.PATH + "/#/" + Collection.PATH,
+				MATCHER_CAST_COLLECTION_DIR);
 
 		// /cast/1/media
 		uriMatcher.addURI(AUTHORITY, Cast.PATH+"/#/"+CastMedia.PATH, MATCHER_CHILD_CASTMEDIA_DIR);
@@ -1212,8 +1201,8 @@ public class MediaProvider extends ContentProvider {
 
 		uriMatcher.addURI(AUTHORITY, CastMedia.CASTS_CASTMEDIA_PATH, MATCHER_CASTMEDIA_DIR);
 
-		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH, MATCHER_CHILD_CASTMEDIA_DIR);
-		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH + "/#/", MATCHER_CHILD_CASTMEDIA_ITEM);
+		uriMatcher.addURI(AUTHORITY, Collection.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH, MATCHER_CHILD_CASTMEDIA_DIR);
+		uriMatcher.addURI(AUTHORITY, Collection.PATH + "/#/" + Cast.PATH + "/#/" + CastMedia.PATH + "/#/", MATCHER_CHILD_CASTMEDIA_ITEM);
 
 		// /comments/1, etc.
 		uriMatcher.addURI(AUTHORITY, Comment.PATH, MATCHER_COMMENT_DIR);
@@ -1222,33 +1211,39 @@ public class MediaProvider extends ContentProvider {
 		// project/1/comments, etc.
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#/" + Comment.PATH, MATCHER_CHILD_COMMENT_DIR);
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#/" + Comment.PATH + "/#", MATCHER_CHILD_COMMENT_ITEM);
-		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Comment.PATH, MATCHER_CHILD_COMMENT_DIR);
-		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Comment.PATH + "/#", MATCHER_CHILD_COMMENT_ITEM);
+		uriMatcher.addURI(AUTHORITY, Collection.PATH + "/#/" + Comment.PATH, MATCHER_CHILD_COMMENT_DIR);
+		uriMatcher.addURI(AUTHORITY, Collection.PATH + "/#/" + Comment.PATH + "/#", MATCHER_CHILD_COMMENT_ITEM);
 
 		// /content/tags
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/" + Tag.PATH, MATCHER_CHILD_TAG_DIR);
 
 		// /content/1/tags
 		uriMatcher.addURI(AUTHORITY, Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
-		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
-		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/"+Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
+		uriMatcher.addURI(AUTHORITY, Collection.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
+		uriMatcher.addURI(AUTHORITY, Collection.PATH + "/#/"+Cast.PATH + "/#/"+Tag.PATH, MATCHER_ITEM_TAGS);
 
 		// /content/tags?tag1,tag2
 		// XXX is this used?
-		uriMatcher.addURI(AUTHORITY, Itinerary.PATH +'/'+Tag.PATH, MATCHER_ITINERARY_BY_TAGS);
+		uriMatcher.addURI(AUTHORITY, Collection.PATH + '/' + Tag.PATH, MATCHER_COLLECTION_BY_TAGS);
 
 		// tag list
 		uriMatcher.addURI(AUTHORITY, Tag.PATH, MATCHER_TAG_DIR);
 
-		// Itineraries
-		uriMatcher.addURI(AUTHORITY, Itinerary.PATH, 							MATCHER_ITINERARY_DIR);
-		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#", 					MATCHER_ITINERARY_ITEM);
-		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH,		MATCHER_CHILD_CAST_DIR);
-		uriMatcher.addURI(AUTHORITY, Itinerary.PATH + "/#/" + Cast.PATH + "/#", MATCHER_CHILD_CAST_ITEM);
+		// collections
+		uriMatcher.addURI(AUTHORITY, Collection.PATH, MATCHER_COLLECTION_DIR);
+		uriMatcher.addURI(AUTHORITY, Collection.PATH + "/#", MATCHER_COLLECTION_ITEM);
+		uriMatcher.addURI(AUTHORITY, Collection.PATH + "/#/" + Cast.PATH,		MATCHER_CHILD_CAST_DIR);
+		uriMatcher.addURI(AUTHORITY, Collection.PATH + "/#/" + Cast.PATH + "/#", MATCHER_CHILD_CAST_ITEM);
 
-		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CAST_DIR, ITINERARY_CASTS_DBHELPER,
+		mDBHelperMapper.addDirMapping(MATCHER_COLLECTION_DIR, COLLECTIONS_DBHELPER,
+				DBHelperMapper.VERB_ALL, TYPE_COLLECTION_DIR);
+
+		mDBHelperMapper.addItemMapping(MATCHER_COLLECTION_ITEM, COLLECTIONS_DBHELPER,
+				DBHelperMapper.VERB_ALL, TYPE_COLLECTION_ITEM);
+
+		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CAST_DIR, COLLECTION_CASTS_DBHELPER,
 				DBHelperMapper.VERB_ALL, TYPE_CAST_DIR);
-		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CAST_ITEM, ITINERARY_CASTS_DBHELPER,
+		mDBHelperMapper.addItemMapping(MATCHER_CHILD_CAST_ITEM, COLLECTION_CASTS_DBHELPER,
 				DBHelperMapper.VERB_ALL, TYPE_CAST_ITEM);
 
 		mDBHelperMapper.addDirMapping(MATCHER_CHILD_CASTMEDIA_DIR, CASTS_CASTMEDIA_DBHELPER,
@@ -1260,8 +1255,10 @@ public class MediaProvider extends ContentProvider {
 		mDBHelperMapper.addDirMapping(MATCHER_CASTMEDIA_DIR, CASTS_CASTMEDIA_DBHELPER,
 				DBHelperMapper.VERB_QUERY, TYPE_CASTMEDIA_DIR);
 
-		// itinerary reverse lookup
-		mDBHelperMapper.addDirMapping(MATCHER_CAST_ITINERARY_DIR, new M2MReverseHelper(
-				ITINERARY_CASTS_DBHELPER), DBHelperMapper.VERB_QUERY, TYPE_ITINERARY_DIR);
+		// collection reverse lookup
+		mDBHelperMapper.addDirMapping(MATCHER_CAST_COLLECTION_DIR, new M2MReverseHelper(
+				COLLECTION_CASTS_DBHELPER), DBHelperMapper.VERB_QUERY, TYPE_COLLECTION_DIR);
+
+
 	}
 }

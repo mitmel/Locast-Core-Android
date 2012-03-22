@@ -26,7 +26,7 @@
 
         <TextView
             android:id="@android:id/title"
-            style="@style/ItineraryTitle"
+            style="@style/CollectionTitle"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
@@ -59,7 +59,7 @@
 	<include
         android:id="@+id/empty2"
         android:layout_weight="2"
-        layout="@layout/itinerary_detail_list_empty" />
+        layout="@layout/collection_detail_list_empty" />
 
     <ListView
         android:id="@+id/casts"

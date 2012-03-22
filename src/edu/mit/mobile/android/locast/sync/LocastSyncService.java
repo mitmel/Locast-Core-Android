@@ -45,7 +45,7 @@ import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.Itinerary;
+import edu.mit.mobile.android.locast.data.Collection;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.SyncException;
@@ -314,7 +314,7 @@ public class LocastSyncService extends Service {
 					}else{
 						// the default items to sync, if an unspecified sync occurs.
 						syncEngine.sync(Cast.FEATURED, account, extras, provider, syncResult);
-						syncEngine.sync(Itinerary.CONTENT_URI, account, extras, provider,
+						syncEngine.sync(Collection.CONTENT_URI, account, extras, provider,
 								syncResult);
 						if (!Authenticator.isDemoMode(mContext)){
 							syncEngine.sync(Cast.FAVORITE, account, extras, provider, syncResult);

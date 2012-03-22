@@ -705,7 +705,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		final String parentType = getContentResolver().getType(
 				ProviderUtils.removeLastPathSegment(data));
 
-		if (MediaProvider.TYPE_ITINERARY_ITEM.equals(parentType)) {
+		if (MediaProvider.TYPE_COLLECTION_ITEM.equals(parentType)) {
 			setTitle(ResourceUtils.getText(this, R.string.add_cast_to_x,
 					parentType));
 

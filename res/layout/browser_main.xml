@@ -21,13 +21,13 @@
         android:orientation="horizontal" >
 
         <Button
-            android:id="@+id/itineraries"
+            android:id="@+id/collections"
             style="@style/BrowserMainIcon"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:drawableTop="@drawable/ic_itinerary"
-            android:text="@string/itineraries" >
+            android:drawableTop="@drawable/ic_collection"
+            android:text="@string/collections" >
 
             <requestFocus />
         </Button>

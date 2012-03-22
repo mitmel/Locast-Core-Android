@@ -170,7 +170,7 @@
 	<string name="title_nearby">%1$s Nearby</string>
 	<string name="title_favorited">Favorite %1$s</string>
 	<string name="title_unfavorited">Non-favorite %1$s</string>
-	<string name="itinerary_no_casts">There are no casts in this collection.</string>
+	<string name="collection_no_casts">There are no casts in this collection.</string>
 	<string name="list_empty">No items in this list.</string>
 
 	<string name="auth_username_hint">alice@example.org</string>
@@ -184,7 +184,7 @@
 	<string name="auth_logout_error">There was an error logging you out.</string>
 	<string name="empty_castmedia">There are no media in this cast.</string>
 	<string name="error_cast_media_no_activities">We\'re sorry, but there doesn\'t seem to be a way to play this media on your device.</string>
-	<string name="itineraries">Collections</string>
+	<string name="collections">Collections</string>
 	<string name="nearby">Nearby</string>
 	<string name="favorites">Favorites</string>
 	<string name="error_no_featured_casts">There are no featured casts.</string>
@@ -196,7 +196,7 @@
 	<string name="auth_error_could_not_contact_server">Could not contact server.</string>
 	<string name="auth_error_server_returned_invalid_data">Server returned invalid data.</string>
 	<string name="auth_error_network_protocol_error">Network protocol error: %1$s</string>
-	<string name="itinerary_detail_itinerary_by">Collection by %1$s</string>
+	<string name="collection_detail_collection_by">Collection by %1$s</string>
 	<string name="videoplayer_notice_loading_video">Loading video…</string>
 	<string name="reset_database">Reset Database</string>
 	<string name="cast_description_hint">Briefly describe the cast</string>

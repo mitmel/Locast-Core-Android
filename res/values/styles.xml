@@ -137,7 +137,7 @@
 		<item name="android:background">@drawable/bg_message</item>
 	</style>
 	
-	<style name="ItineraryTitle">
+	<style name="CollectionTitle">
 		<item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
 		<item name="android:textStyle">bold</item>
 		<item name="android:maxLines">2</item>

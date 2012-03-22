@@ -112,14 +112,14 @@
   <string name="title_nearby">%1$s Perto de aqui</string>
   <string name="title_favorited">%1$s Favorito</string>
   <string name="title_unfavorited">%1$s Não-favorito</string>
-  <string name="itinerary_no_casts">Este mapa não tem nenhum informe.</string>
+  <string name="collection_no_casts">Este mapa não tem nenhum informe.</string>
   <string name="list_empty">0 itens nesta lista.</string>
   <string name="auth_username_hint">alice\@example.org</string>
   <string name="auth_password_hint">senha</string>
   <string name="auth_login">Iniciar sessão</string>
   <string name="empty_castmedia">Este informe não tem mídia.</string>
   <string name="error_cast_media_no_activities">Desculpe, o seu aparelho não pode ler esta mídia.</string>
-  <string name="itineraries">Mapas</string>
+  <string name="collections">Mapas</string>
   <string name="nearby">Perto de aqui</string>
   <string name="favorites">Favoritos</string>
   <string name="error_no_featured_casts">Não tem informes destacados.</string>
@@ -131,7 +131,7 @@
   <string name="auth_error_could_not_contact_server">Não foi possível conectar ao servidor.</string>
   <string name="auth_error_server_returned_invalid_data">O servidor deu dados inválidos.</string>
   <string name="auth_error_network_protocol_error">Erro no protocolo da rede: %1$s</string>
-  <string name="itinerary_detail_itinerary_by">Mapa por %1$s</string>
+  <string name="collection_detail_collection_by">Mapa por %1$s</string>
   <string name="videoplayer_notice_loading_video">Carregando vídeo…</string>
   <string name="reset_database">Limpar banco de dados</string>
   <string name="cast_description_hint">Dê uma breve descrição do informe</string>

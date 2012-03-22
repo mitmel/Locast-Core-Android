@@ -20,7 +20,7 @@
 		 android:layout_width="fill_parent"
 		 android:layout_height="fill_parent"
 		 style="@style/EmptyList"
-		 android:text="@string/itinerary_no_casts"
+		 android:text="@string/collection_no_casts"
 		 >		 
 	</edu.mit.mobile.android.widget.NotificationProgressBar>
     </LinearLayout>

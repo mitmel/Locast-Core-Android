@@ -28,14 +28,14 @@
             android:orientation="vertical" >
 
             <Button
-                android:id="@+id/itineraries"
+                android:id="@+id/collections"
                 style="@style/BrowserMainIcon"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:drawableLeft="@drawable/ic_itinerary"
+                android:drawableLeft="@drawable/ic_collection"
                 android:gravity="center_vertical|left"
-                android:text="@string/itineraries" >
+                android:text="@string/collections" >
 
                 <requestFocus />
             </Button>

@@ -52,7 +52,7 @@ import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.imagecache.SimpleThumbnailCursorAdapter;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
-import edu.mit.mobile.android.locast.data.Itinerary;
+import edu.mit.mobile.android.locast.data.Collection;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
@@ -60,10 +60,10 @@ import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
 import edu.mit.mobile.android.widget.RefreshButton;
 
-public class ItineraryList extends FragmentActivity implements
+public class CollectionList extends FragmentActivity implements
 		LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
 
-	private static final String TAG = ItineraryList.class.getSimpleName();
+	private static final String TAG = CollectionList.class.getSimpleName();
 	private CursorAdapter mAdapter;
 	private ListView mListView;
 	private Uri mUri;
@@ -76,18 +76,19 @@ public class ItineraryList extends FragmentActivity implements
 	private static final boolean CHECK_FOR_ACCOUNT = true;
 
 	/**
-	 * If true, uses an alternate layout itinerary_item_with_description and loads the itinerary
+	 * If true, uses an alternate layout collection_item_with_description and loads the collection
 	 * description in it.
 	 */
 	private static final boolean SHOW_DESCRIPTION = true;
 
-	private final String[] ITINERARY_DISPLAY = SHOW_DESCRIPTION ? new String[] { Itinerary._TITLE,
-			Itinerary._THUMBNAIL, Itinerary._DESCRIPTION } : new String[] { Itinerary._TITLE,
-			Itinerary._THUMBNAIL, Itinerary._CASTS_COUNT, Itinerary._FAVORITES_COUNT };
+	private final String[] COLLECTION_DISPLAY = SHOW_DESCRIPTION ? new String[] {
+			Collection._TITLE,
+			Collection._THUMBNAIL, Collection._DESCRIPTION } : new String[] { Collection._TITLE,
+			Collection._THUMBNAIL, Collection._CASTS_COUNT, Collection._FAVORITES_COUNT };
 
-	private String[] ITINERARY_PROJECTION;
+	private String[] COLLECTION_PROJECTION;
 
-	private final int[] ITINERARY_LAYOUT_IDS = SHOW_DESCRIPTION ? new int[] { android.R.id.text1,
+	private final int[] COLLECTION_LAYOUT_IDS = SHOW_DESCRIPTION ? new int[] { android.R.id.text1,
 			R.id.media_thumbnail, android.R.id.text2 } : new int[] { android.R.id.text1,
 			R.id.media_thumbnail, R.id.casts, R.id.favorites };
 
@@ -155,7 +156,7 @@ public class ItineraryList extends FragmentActivity implements
 			loadData(intent.getData());
 
 		} else if (Intent.ACTION_MAIN.equals(action)) {
-			loadData(Itinerary.CONTENT_URI);
+			loadData(Collection.CONTENT_URI);
 		}
 
 		if (CHECK_FOR_ACCOUNT) {
@@ -192,43 +193,43 @@ public class ItineraryList extends FragmentActivity implements
 	/**
 	 * Override this if you wish to show alternate columns.
 	 *
-	 * @return the list of Itinerary columns to display
+	 * @return the list of Collection columns to display
 	 */
-	public String[] getItineraryDisplay() {
-		return ITINERARY_DISPLAY;
+	public String[] getCollectionDisplay() {
+		return COLLECTION_DISPLAY;
 	}
 
 	/**
-	 * Override this if you wish to use IDs other than {@link #ITINERARY_LAYOUT_IDS}.
+	 * Override this if you wish to use IDs other than {@link #COLLECTION_LAYOUT_IDS}.
 	 *
-	 * @return the list of view ids to map the {@link #getItineraryDisplay()} to
+	 * @return the list of view ids to map the {@link #getCollectionDisplay()} to
 	 */
-	public int[] getItineraryLayoutIds() {
-		return ITINERARY_LAYOUT_IDS;
+	public int[] getCollectionLayoutIds() {
+		return COLLECTION_LAYOUT_IDS;
 	}
 
 	/**
-	 * By default, returns {@link #getItineraryDisplay()} with {@link BaseColumns#_ID} added.
+	 * By default, returns {@link #getCollectionDisplay()} with {@link BaseColumns#_ID} added.
 	 *
 	 * @return the projection to use to select the items in the display.
 	 */
-	public String[] getItineraryProjection() {
-		return ArrayUtils.concat(new String[] { Itinerary._ID }, getItineraryDisplay());
+	public String[] getCollectionProjection() {
+		return ArrayUtils.concat(new String[] { Collection._ID }, getCollectionDisplay());
 	}
 
-	public int getItineraryItemLayout() {
-		return SHOW_DESCRIPTION ? R.layout.itinerary_item_with_description
-				: R.layout.itinerary_item;
+	public int getCollectionItemLayout() {
+		return SHOW_DESCRIPTION ? R.layout.collection_item_with_description
+				: R.layout.collection_item;
 	}
 
 	private void loadData(Uri data) {
 		final String type = getContentResolver().getType(data);
 
-		if (!MediaProvider.TYPE_ITINERARY_DIR.equals(type)) {
+		if (!MediaProvider.TYPE_COLLECTION_DIR.equals(type)) {
 			throw new IllegalArgumentException("cannot load type: " + type);
 		}
-		mAdapter = new SimpleThumbnailCursorAdapter(this, getItineraryItemLayout(), null,
-				getItineraryDisplay(), getItineraryLayoutIds(),
+		mAdapter = new SimpleThumbnailCursorAdapter(this, getCollectionItemLayout(), null,
+				getCollectionDisplay(), getCollectionLayoutIds(),
 				new int[] { R.id.media_thumbnail }, 0);
 
 		mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache,
@@ -238,7 +239,7 @@ public class ItineraryList extends FragmentActivity implements
 		final Bundle loaderArgs = new Bundle();
 		loaderArgs.putParcelable(LOADER_DATA, data);
 		lm.initLoader(0, loaderArgs, this);
-		setTitle(R.string.itineraries);
+		setTitle(R.string.collections);
 		mUri = data;
 
 	}
@@ -263,8 +264,8 @@ public class ItineraryList extends FragmentActivity implements
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		final Uri data = args.getParcelable(LOADER_DATA);
 
-		final CursorLoader cl = new CursorLoader(this, data, getItineraryProjection(), null, null,
-				Itinerary.SORT_DEFAULT);
+		final CursorLoader cl = new CursorLoader(this, data, getCollectionProjection(), null, null,
+				Collection.SORT_DEFAULT);
 		cl.setUpdateThrottle(Constants.UPDATE_THROTTLE);
 		return cl;
 	}

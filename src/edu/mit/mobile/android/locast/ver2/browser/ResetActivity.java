@@ -33,7 +33,7 @@ import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Comment;
-import edu.mit.mobile.android.locast.data.Itinerary;
+import edu.mit.mobile.android.locast.data.Collection;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.ver2.R;
 
@@ -89,7 +89,7 @@ public class ResetActivity extends Activity implements OnClickListener {
 
 		cr.delete(Cast.CONTENT_URI, null, null);
 		cr.delete(Comment.CONTENT_URI, null, null);
-		cr.delete(Itinerary.CONTENT_URI, null, null);
+		cr.delete(Collection.CONTENT_URI, null, null);
 
 		if (showNotice) {
 			Toast.makeText(context.getApplicationContext(), R.string.notice_databases_reset,
