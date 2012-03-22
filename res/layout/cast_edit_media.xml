@@ -1,72 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:orientation="vertical"
-	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	android:id="@+id/cast_edit_media"
->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cast_edit_media"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
 
-	<RelativeLayout
-		android:id="@android:id/empty"
-		android:visibility="gone"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:layout_above="@+id/button_bar"
-	>
+    <RelativeLayout
+        android:id="@android:id/empty"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_above="@+id/button_bar"
+        android:visibility="gone" >
 
-		<TextView
-			android:layout_width="160sp"
-			android:layout_height="wrap_content"
-			android:text="@string/cast_edit_media_empty"
-	android:layout_alignParentBottom="true"
-	android:layout_alignParentLeft="true"
-	android:layout_marginLeft="15dip"
-	android:layout_marginBottom="5dip"
-	android:background="@android:color/black"
-	android:textColor="@android:color/white"
-	android:padding="10sp"
-	android:textStyle="bold"
-	
-	 />
-	</RelativeLayout>
+        <TextView
+            android:layout_width="160sp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_marginBottom="5dip"
+            android:layout_marginLeft="15dip"
+            android:background="@android:color/black"
+            android:padding="10sp"
+            android:text="@string/cast_edit_media_empty"
+            android:textColor="@android:color/white"
+            android:textStyle="bold" />
+    </RelativeLayout>
 
-	<ListView
-		android:id="@android:id/list"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:descendantFocusability="beforeDescendants"
-		
-		 android:layout_above="@+id/button_bar"/>
-		
-	<LinearLayout android:id="@+id/button_bar"
-		
-		android:orientation="horizontal"
-		android:layout_height="wrap_content"
-		android:layout_width="fill_parent"
-		android:layout_alignParentBottom="true"
-	>
-		<ImageButton
-			android:id="@+id/new_photo"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:src="@drawable/ic_photo"
-			android:layout_margin="5dip"
-			android:layout_weight="1" />
-		<ImageButton
-			android:id="@+id/new_video"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:src="@drawable/ic_video"
-			android:layout_margin="5dip"
-			android:layout_weight="1" />
+    <ListView
+        android:id="@android:id/list"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_above="@+id/button_bar"
+        android:descendantFocusability="beforeDescendants" />
 
-		<ImageButton
-			android:id="@+id/pick_media"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:src="@drawable/ic_gallery"
-			android:layout_margin="5dip"
-			android:layout_weight="1" />
-	</LinearLayout>
+    <LinearLayout
+        android:id="@+id/button_bar"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal" >
+
+        <ImageButton
+            android:id="@+id/new_photo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dip"
+            android:layout_weight="1"
+            android:contentDescription="@string/new_photo"
+            android:src="@drawable/ic_photo" />
+
+        <ImageButton
+            android:id="@+id/new_video"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dip"
+            android:layout_weight="1"
+            android:contentDescription="@string/new_video"
+            android:src="@drawable/ic_video" />
+
+        <ImageButton
+            android:id="@+id/pick_media"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dip"
+            android:layout_weight="1"
+            android:contentDescription="@string/pick_media_from_gallery"
+            android:src="@drawable/ic_gallery" />
+    </LinearLayout>
+
 </RelativeLayout>

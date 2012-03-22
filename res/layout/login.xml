@@ -73,7 +73,7 @@
                 android:text="@android:string/cancel" />
 
             <View
-                android:layout_width="wrap_content"
+                android:layout_width="0dip"
                 android:layout_height="20dip"
                 android:layout_weight="1"
                 android:minWidth="5dip" />

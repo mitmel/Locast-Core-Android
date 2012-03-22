@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    android:installLocation="auto"
     package="edu.mit.mobile.android.locast.ver2"
+    android:installLocation="auto"
     android:versionCode="35"
     android:versionName="Open Locast 0.3" >
 
@@ -28,7 +28,17 @@
     <uses-permission android:name="android.permission.READ_SYNC_STATS" />
     <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
-    <uses-permission android:name="android.permission.BROADCAST_STICKY"/>
+    <uses-permission android:name="android.permission.BROADCAST_STICKY" />
+    <uses-permission android:name="edu.mit.mobile.android.locast.SYNC_MEDIA" />
+
+    <permission
+        android:name="edu.mit.mobile.android.locast.SYNC_MEDIA"
+        android:label="@string/sync_locast_media"
+        android:permissionGroup="edu.mit.mobile.android.locast" />
+
+    <permission-group
+        android:name="edu.mit.mobile.android.locast"
+        android:label="@string/app_name" />
 
     <!--
     <uses-feature android:name="android.hardware.camera" />
@@ -98,7 +108,9 @@
                 <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.castmedia" />
             </intent-filter>
         </activity>
-        <activity android:name="edu.mit.mobile.android.locast.casts.CastEdit" android:configChanges="orientation">
+        <activity
+            android:name="edu.mit.mobile.android.locast.casts.CastEdit"
+            android:configChanges="orientation" >
             <intent-filter>
                 <action android:name="android.intent.action.EDIT" />
 
@@ -122,7 +134,6 @@
                 <data android:mimeType="video/*" />
                 <data android:mimeType="audio/*" />
             </intent-filter>
-            
         </activity>
         <activity
             android:name=".events.EventDetail"
@@ -177,7 +188,7 @@
         <activity
             android:name="edu.mit.mobile.android.locast.home.BrowserHome"
             android:label="@string/app_name" >
-                        <intent-filter>
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -191,7 +202,6 @@
 
                 <data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.collections" />
             </intent-filter>
-
         </activity>
         <activity
             android:name="edu.mit.mobile.android.locast.casts.UnsyncedCastsActivity"
@@ -216,13 +226,13 @@
         <!-- this has its own process so it can have more memory for thumbnail generation -->
         <service
             android:name="edu.mit.mobile.android.locast.sync.MediaSync"
+            android:permission="edu.mit.mobile.android.locast.SYNC_MEDIA"
             android:process="edu.mit.mobile.android.locast.SyncMedia" >
             <intent-filter>
                 <action android:name="edu.mit.mobile.android.locast.ACTION_SYNC_RESOURCES" />
 
                 <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.castmedia" />
             </intent-filter>
-            
             <intent-filter>
                 <action android:name="edu.mit.mobile.android.locast.ACTION_SYNC_RESOURCES" />
             </intent-filter>
@@ -234,7 +244,8 @@
 
         <service
             android:name="edu.mit.mobile.android.locast.accounts.AuthenticationService"
-            android:exported="true" >
+            android:exported="true"
+            android:permission="android.permission.AUTHENTICATE_ACCOUNTS" >
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
             </intent-filter>

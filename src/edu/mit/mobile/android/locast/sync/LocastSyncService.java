@@ -28,6 +28,7 @@ import org.json.JSONException;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.OnAccountsUpdateListener;
+import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
@@ -257,6 +258,7 @@ public class LocastSyncService extends Service {
 			}
 		}
 
+		@TargetApi(8)
 		@Override
 		public void onSyncCanceled() {
 			if (DEBUG) {

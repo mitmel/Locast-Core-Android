@@ -23,6 +23,7 @@ import android.location.LocationManager;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images.Media;
@@ -624,7 +625,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	// non-handlers
 
 	private Uri createNewMedia(String extension){
-		final File outfile = new File("/sdcard/locast/", System.currentTimeMillis() + "." + extension);
+		final File outfile = new File(Environment.getExternalStorageDirectory() + "locast/",
+				System.currentTimeMillis() + "." + extension);
 		outfile.getParentFile().mkdirs();
 
 		return Uri.fromFile(outfile);

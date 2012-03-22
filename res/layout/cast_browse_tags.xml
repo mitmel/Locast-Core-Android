@@ -1,24 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-  xmlns:android="http://schemas.android.com/apk/res/android"
-  xmlns:mel="http://mobile.mit.edu/schemas/android"
-  android:layout_width="fill_parent"
-  android:layout_height="fill_parent"
-  android:orientation="vertical"
-  >
-	
-  <edu.mit.mobile.android.locast.widget.TagList
-	 android:id="@+id/tag_list"
-	 android:layout_width="fill_parent"
-	 android:layout_height="wrap_content"
-	 mel:taglist_style="selector"
-	/>
- 
-	<ListView android:id="@android:id/list"
-	android:layout_width="fill_parent"
-	android:layout_height="fill_parent"
-    android:drawSelectorOnTop="false"
-    android:layout_weight="1"
-	  />
-	  
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:mel="http://mobile.mit.edu/schemas/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <edu.mit.mobile.android.locast.widget.TagList
+        android:id="@+id/tag_list"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        mel:taglist_style="selector" />
+
+    <ListView
+        android:id="@android:id/list"
+        android:layout_width="fill_parent"
+        android:layout_height="0dip"
+        android:layout_weight="1"
+        android:drawSelectorOnTop="false" />
+
 </LinearLayout>

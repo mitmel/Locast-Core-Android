@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     style="@style/CastMediaItem"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:minHeight="?android:attr/listPreferredItemHeight" 
-    >
+    android:minHeight="?android:attr/listPreferredItemHeight" >
 
     <!--
          The layout size below is hard-coded because there doesn't seem to be 
@@ -21,7 +19,8 @@
         style="@style/Thumbnail"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:adjustViewBounds="false" />
+        android:adjustViewBounds="false"
+        android:contentDescription="@string/thumbnail_content_description" />
 
     <ImageView
         android:id="@+id/thumbnail_overlay"
@@ -31,28 +30,30 @@
         android:layout_alignLeft="@id/media_thumbnail"
         android:layout_alignRight="@id/media_thumbnail"
         android:layout_alignTop="@id/media_thumbnail"
+        android:contentDescription="@null"
         android:scaleType="center"
         android:src="@drawable/ic_overlay_play" />
 
-    	<ImageView
-    	    android:id="@+id/syncing"
-    	    android:layout_width="wrap_content"
-    	    android:layout_height="wrap_content"
-    	    android:layout_alignParentRight="true"
-    	    android:layout_centerVertical="true"
-    	    android:visibility="gone"
-    	    android:src="@drawable/ic_menu_refresh" />
+    <ImageView
+        android:id="@+id/syncing"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:contentDescription="@string/syncing"
+        android:src="@drawable/ic_menu_refresh"
+        android:visibility="gone" />
 
-		<TextView
-		    android:id="@+id/title"
-		    style="@style/CastListItem.Title"
-		    android:layout_width="fill_parent"
-		    android:layout_height="wrap_content"
-		    android:layout_centerVertical="true"
-		    android:layout_toRightOf="@+id/media_thumbnail"
-		    android:paddingBottom="1dip"
-		    android:paddingLeft="6dip"
-		    android:paddingRight="1dip"
-		    android:paddingTop="6dip" />
+    <TextView
+        android:id="@+id/title"
+        style="@style/CastListItem.Title"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toRightOf="@+id/media_thumbnail"
+        android:paddingBottom="1dip"
+        android:paddingLeft="6dip"
+        android:paddingRight="1dip"
+        android:paddingTop="6dip" />
 
 </RelativeLayout>

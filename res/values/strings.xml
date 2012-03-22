@@ -224,4 +224,13 @@ reception, try standing in a clear area outside away from buildings.</string>
 	<string name="unicef_unsynced_casts">UNICEF Unsynced Casts</string>
 	<string name="no_title">(no title)</string>
 	<string name="home">home</string>
+	<string name="draft">draft</string>
+	<string name="thumbnail_content_description">thumbnail of item</string>
+	<string name="location_center_on_current_location">center on current location</string>
+	<string name="new_photo">New Photo</string>
+	<string name="new_video">New Video</string>
+	<string name="pick_media_from_gallery">Pick Media from Gallery</string>
+	<string name="remove_media">remove media from cast</string>
+	<string name="media_title_hint">media title</string>
+	<string name="sync_locast_media">Sync Locast Media</string>
 </resources>

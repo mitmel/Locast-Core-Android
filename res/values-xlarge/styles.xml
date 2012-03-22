@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    	<style name="BrowserMainIcon" parent="@style/BrowserMainIcon">
+    	<style name="BrowserMainIcon">
 		<item name="android:gravity">center_horizontal</item>
 		<item name="android:layout_weight">1</item>
 		<item name="android:textAppearance">?android:attr/textAppearanceMedium</item>

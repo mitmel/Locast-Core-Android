@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:mel="http://mobile.mit.edu/schemas/android"
-    android:id="@+id/action_bar"
     style="@style/ActionBar"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content" >
@@ -14,8 +13,8 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
         android:padding="10dip"
-        mel:refreshingDrawable="@drawable/ic_refresh_refreshing"
-        android:src="@drawable/ic_refresh" />
+        android:src="@drawable/ic_refresh"
+        mel:refreshingDrawable="@drawable/ic_refresh_refreshing" />
 
     <TextView
         android:id="@+id/home"
@@ -24,11 +23,12 @@
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
         android:layout_marginLeft="10dip"
+        android:text="@string/app_name"
         android:textAppearance="@android:style/TextAppearance.Large"
-        android:textColor="@color/foreground_dark"
-        android:text="@string/app_name" />
+        android:textColor="@color/foreground_dark" />
 
-<!--     <edu.mit.mobile.android.widget.RefreshButton
+    <!--
+         <edu.mit.mobile.android.widget.RefreshButton
         android:id="@+id/refresh"
         style="@style/ActionBar.Button"
         android:layout_width="48dip"
@@ -37,6 +37,7 @@
         android:layout_alignParentRight="true"
         android:layout_alignTop="@+id/title"
         mel:refreshingDrawable="@drawable/ic_refresh_refreshing"
-        android:src="@drawable/ic_refresh" /> -->
+        android:src="@drawable/ic_refresh" />
+    -->
 
 </RelativeLayout>

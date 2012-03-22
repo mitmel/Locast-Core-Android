@@ -1,45 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:orientation="vertical"
-	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	android:id="@+id/cast_edit_location"
->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cast_edit_location"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
 
-	<com.google.android.maps.MapView
-		android:id="@+id/map"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:clickable="true"
-		
-		android:apiKey="" />
-	<View
-		android:background="@drawable/shadow_top"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:clickable="false"
-		android:longClickable="false"
-		android:focusable="false"
-		
-		 />
+    <com.google.android.maps.MapView
+        android:id="@+id/map"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:apiKey=""
+        android:clickable="true" />
 
-	<ImageButton
-		android:id="@+id/center_on_current_location"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:src="@drawable/ic_my_location"
-		android:layout_alignParentTop="true"
-		android:layout_alignParentRight="true"
-		android:layout_margin="15dip" />
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="@drawable/shadow_top"
+        android:clickable="false"
+        android:focusable="false"
+        android:longClickable="false" />
 
-	<ImageButton
-		android:id="@+id/set_current_location"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-	
-		android:background="@null"
-		android:src="@drawable/ic_map_set_location"
-		android:layout_centerInParent="true" />
+    <ImageButton
+        android:id="@+id/center_on_current_location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_margin="15dip"
+        android:contentDescription="@string/location_center_on_current_location"
+        android:src="@drawable/ic_my_location" />
+
+    <ImageButton
+        android:id="@+id/set_current_location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:background="@null"
+        android:contentDescription="@string/set_location"
+        android:src="@drawable/ic_map_set_location" />
 
 </RelativeLayout>

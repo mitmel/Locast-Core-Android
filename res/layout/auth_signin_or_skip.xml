@@ -2,10 +2,11 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@color/solid_version_of_stripes"
     android:orientation="vertical" >
 
-    <include layout="@layout/action_bar" />
+    <include
+        android:id="@+id/action_bar"
+        layout="@layout/action_bar" />
 
     <TextView
         android:id="@+id/sign_in_or_skip_notice"

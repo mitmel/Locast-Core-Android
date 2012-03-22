@@ -6,7 +6,7 @@
 
     <LinearLayout
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical" >
 
         <TextView
@@ -16,13 +16,12 @@
             android:padding="10dip" />
 
         <edu.mit.mobile.android.widget.NotificationProgressBar
-		 android:id="@+id/progressNotification"
-		 android:layout_width="fill_parent"
-		 android:layout_height="fill_parent"
-		 style="@style/EmptyList"
-		 android:text="@string/collection_no_casts"
-		 >		 
-	</edu.mit.mobile.android.widget.NotificationProgressBar>
+            android:id="@+id/progressNotification"
+            style="@style/EmptyList"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:text="@string/collection_no_casts" >
+        </edu.mit.mobile.android.widget.NotificationProgressBar>
     </LinearLayout>
 
 </ScrollView>

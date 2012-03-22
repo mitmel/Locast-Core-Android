@@ -3,7 +3,9 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent" >
 
-    <include layout="@layout/action_bar" />
+    <include
+        android:id="@+id/action_bar"
+        layout="@layout/action_bar" />
 
     <TextView
         android:id="@android:id/title"
@@ -27,7 +29,7 @@
 
         <requestFocus />
     </EditText>
-    
+
     <Button
         android:id="@+id/save"
         android:layout_width="wrap_content"
@@ -36,13 +38,13 @@
         android:layout_alignParentRight="true"
         android:layout_alignTop="@+id/cast_title"
         android:text="@string/save" />
-    
+
     <TextView
         android:id="@+id/location_status"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:textStyle="normal"
-        android:text="@string/location_unknown" />
+        android:text="@string/location_unknown"
+        android:textStyle="normal" />
 
     <TabHost
         android:id="@android:id/tabhost"
@@ -70,7 +72,9 @@
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:padding="0dip" >
+
                 <include layout="@layout/cast_edit_media" />
+
                 <include layout="@layout/cast_edit_details" />
             </FrameLayout>
         </LinearLayout>

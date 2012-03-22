@@ -18,7 +18,8 @@
         style="@style/Thumbnail"
         android:layout_width="240dp"
         android:layout_height="180dp"
-        android:adjustViewBounds="false" />
+        android:adjustViewBounds="false"
+        android:contentDescription="@string/thumbnail_content_description" />
 
     <TextView
         android:id="@+id/author"
