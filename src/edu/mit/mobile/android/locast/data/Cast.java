@@ -1,6 +1,7 @@
 package edu.mit.mobile.android.locast.data;
+
 /*
- * Copyright (C) 2010  MIT Mobile Experience Lab
+ * Copyright (C) 2010-2012  MIT Mobile Experience Lab
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,7 +26,9 @@ import edu.mit.mobile.android.content.column.DBColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
 
 @UriPath(Cast.PATH)
-public class Cast extends TaggableItem implements Favoritable.Columns, Locatable.Columns, Commentable.Columns {
+public class Cast extends TaggableItem implements Favoritable.Columns, Locatable.Columns,
+		Commentable.Columns, PrivatelyAuthorable.Columns {
+
 	public final static String TAG = Cast.class.getSimpleName();
 
 	public final static String PATH = "casts";
@@ -45,6 +48,7 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 	@DBColumn(type = TextColumn.class)
 	public static final String _THUMBNAIL_URI = "thumbnail_uri";
 
+	// @formatter:off
 	public static final String[] PROJECTION =
 	{   _ID,
 		_PUBLIC_URI,
@@ -61,11 +65,13 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 		_LATITUDE,
 		_LONGITUDE,
 		_DRAFT };
+	// @formatter:on
 
-	public static final String
-		SORT_ORDER_DEFAULT = Cast._DRAFT + " DESC," + Cast._FAVORITED + " DESC," + Cast._MODIFIED_DATE+" DESC";
+	public static final String SORT_ORDER_DEFAULT = Cast._DRAFT + " DESC," + Cast._FAVORITED
+			+ " DESC," + Cast._MODIFIED_DATE + " DESC";
 
-	public static final Uri FEATURED = getTagUri(CONTENT_URI, addPrefixToTag(Cast.SYSTEM_PREFIX, "_featured"));
+	public static final Uri FEATURED = getTagUri(CONTENT_URI,
+			addPrefixToTag(Cast.SYSTEM_PREFIX, "_featured"));
 	public static final Uri FAVORITE = Favoritable.getFavoritedUri(Cast.CONTENT_URI, true);
 
 	public Cast(Cursor c) {
@@ -91,14 +97,16 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 			putAll(Locatable.SYNC_MAP);
 			putAll(Commentable.SYNC_MAP);
 
-			put(_DESCRIPTION, 		new SyncFieldMap("description", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL));
-			put(_TITLE, 			new SyncFieldMap("title", SyncFieldMap.STRING));
+			put(_DESCRIPTION, new SyncFieldMap("description", SyncFieldMap.STRING,
+					SyncItem.FLAG_OPTIONAL));
+			put(_TITLE, new SyncFieldMap("title", SyncFieldMap.STRING));
 
-			put(_THUMBNAIL_URI, 	new SyncFieldMap("preview_image", SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
-			//put(_MEDIA_PUBLIC_URI,  new SyncFieldMap("file_url",   SyncFieldMap.STRING, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
-			put(_MEDIA_PUBLIC_URI,  new SyncChildRelation("media", new JsonSyncableItem.SyncChildRelation.SimpleRelationship(CastMedia.PATH), SyncItem.SYNC_FROM));
+			put(_THUMBNAIL_URI, new SyncFieldMap("preview_image", SyncFieldMap.STRING,
+					SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 
-			//put("_contents", new OrderedList.SyncMapItem("media", new CastVideo(), CastVideo.PATH));
+			put(_MEDIA_PUBLIC_URI, new SyncChildRelation("media",
+					new JsonSyncableItem.SyncChildRelation.SimpleRelationship(CastMedia.PATH),
+					SyncItem.SYNC_FROM));
 		}
 	}
 
@@ -108,16 +116,17 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 	}
 
 	/**
-	 * @param castUri uri for the cast.
+	 * @param castUri
+	 *            uri for the cast.
 	 * @return The CastMedia URI of the given cast.
 	 */
-	public static final Uri getCastMediaUri(Uri castUri){
+	public static final Uri getCastMediaUri(Uri castUri) {
 		return Uri.withAppendedPath(castUri, CastMedia.PATH);
 	}
 
 	/**
-	 * Gets the preferred full URI of the given cast. If it's a cast that's in a project,
-	 * returns that uri.
+	 * Gets the preferred full URI of the given cast. If it's a cast that's in a project, returns
+	 * that uri.
 	 *
 	 * Makes a single query.
 	 *
@@ -125,21 +134,27 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 	 * @param cast
 	 * @return the canonical URI for the given cast.
 	 */
-	public static Uri getCanonicalUri(Context context, Uri cast){
+	public static Uri getCanonicalUri(Context context, Uri cast) {
 
 		return cast;
 	}
 
+	public boolean canEdit(String userUri) {
+		return PrivatelyAuthorable.canEdit(userUri, this);
+	}
+
 	/**
-	 * Gets the preferred full URI of the given cast. If it's a cast that's in a project,
-	 * returns that uri.
+	 * Gets the preferred full URI of the given cast. If it's a cast that's in a project, returns
+	 * that uri.
 	 *
 	 * Makes a single query.
 	 *
-	 * @param c a cursor pointing to a cast. Ensure the cursor has selected the Cast._PROJECT_ID field.
+	 * @param c
+	 *            a cursor pointing to a cast. Ensure the cursor has selected the Cast._PROJECT_ID
+	 *            field.
 	 * @return the canonical URI for the given cast.
 	 */
-	public static Uri getCanonicalUri(Cursor c){
+	public static Uri getCanonicalUri(Cursor c) {
 		Uri canonical = null;
 
 		final long castId = c.getLong(c.getColumnIndex(Cast._ID));
@@ -157,11 +172,11 @@ public class Cast extends TaggableItem implements Favoritable.Columns, Locatable
 	 * @param cast
 	 * @return the title of the cast or null if there's an error.
 	 */
-	public static String getTitle(Context context, Uri cast){
-		final String[] projection = {Cast._ID, Cast._TITLE};
+	public static String getTitle(Context context, Uri cast) {
+		final String[] projection = { Cast._ID, Cast._TITLE };
 		final Cursor c = context.getContentResolver().query(cast, projection, null, null, null);
 		String castTitle = null;
-		if (c.moveToFirst()){
+		if (c.moveToFirst()) {
 			castTitle = c.getString(c.getColumnIndex(Cast._TITLE));
 		}
 		c.close();

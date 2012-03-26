@@ -1,6 +1,7 @@
 package edu.mit.mobile.android.locast.data;
+
 /*
- * Copyright (C) 2010  MIT Mobile Experience Lab
+ * Copyright (C) 2010-2012  MIT Mobile Experience Lab
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -51,9 +52,9 @@ import edu.mit.mobile.android.locast.sync.LocastSync;
 
 /**
  * This type of object row can be serialized to/from JSON and synchronized to a server.
- *
- * @author stevep
- *
+ * 
+ * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
+ * 
  */
 public abstract class JsonSyncableItem extends CursorWrapper implements ContentItem {
 

@@ -645,7 +645,9 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		return Uri.fromFile(outfile);
 	}
 
-	private void loadFromCursor(Cursor c){
+	private void loadFromCursor(Cursor c1) {
+		final Cast c = new Cast(c1);
+
 		mTitleView.setText(c.getString(c.getColumnIndexOrThrow(Cast._TITLE)));
 		//mDescriptionView.setText(c.getString(c.getColumnIndexOrThrow(Cast._DESCRIPTION)));
 
@@ -663,7 +665,7 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 		mIsDraft = !c.isNull(draftCol) && c.getInt(draftCol) != 0;
 
-		setEditable(Cast.canEdit(this, c));
+		setEditable(c.canEdit(Authenticator.getUserUri(this)));
 		updateDetailsTab();
 	}
 

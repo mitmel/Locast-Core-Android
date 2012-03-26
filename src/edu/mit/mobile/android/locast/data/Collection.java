@@ -27,7 +27,8 @@ import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.content.m2m.M2MManager;
 
 @UriPath(Collection.PATH)
-public class Collection extends TaggableItem implements Favoritable.Columns {
+public class Collection extends TaggableItem implements Favoritable.Columns,
+		PrivatelyAuthorable.Columns {
 	public final static String PATH = "collections";
 	public final static Uri CONTENT_URI = ProviderUtils.toContentUri(MediaProvider.AUTHORITY, PATH);
 

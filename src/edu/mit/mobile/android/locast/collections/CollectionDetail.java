@@ -57,6 +57,7 @@ import com.markupartist.android.widget.ActionBar;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
 import edu.mit.mobile.android.locast.Constants;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Collection;
@@ -226,10 +227,11 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
        }
 
        // XXX the "- 1" below is due to having a header. I'm not sure where this is supposed to be handled.
-       final Cursor c = (Cursor) mCastAdapter.getItem(info.position - 1);
-       if (c == null){
-    	   return;
-       }
+		final Cursor c1 = (Cursor) mCastAdapter.getItem(info.position - 1);
+		if (c1 == null) {
+			return;
+		}
+		final Cast c = new Cast(c1);
 
        // load the base menus.
 		final MenuInflater menuInflater = getMenuInflater();
@@ -238,7 +240,7 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
 
        menu.setHeaderTitle(c.getString(c.getColumnIndex(Cast._TITLE)));
 
-       final boolean canEdit = Cast.canEdit(this, c);
+		final boolean canEdit = c.canEdit(Authenticator.getUserUri(this));
        menu.findItem(R.id.cast_edit).setVisible(canEdit);
        menu.findItem(R.id.cast_delete).setVisible(canEdit);
 

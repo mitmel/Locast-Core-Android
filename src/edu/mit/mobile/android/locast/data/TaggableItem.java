@@ -42,9 +42,6 @@ import com.stackoverflow.CollectionUtils;
 import com.stackoverflow.Predicate;
 
 import edu.mit.mobile.android.content.ProviderUtils;
-import edu.mit.mobile.android.content.column.DBColumn;
-import edu.mit.mobile.android.content.column.TextColumn;
-import edu.mit.mobile.android.locast.accounts.Authenticator;
 
 /**
  * DB entry for an item that can be tagged.
@@ -55,22 +52,6 @@ import edu.mit.mobile.android.locast.accounts.Authenticator;
 public abstract class TaggableItem extends JsonSyncableItem {
 	@SuppressWarnings("unused")
 	private static final String TAG = TaggableItem.class.getSimpleName();
-
-	@DBColumn(type = TextColumn.class)
-	public static final String _PRIVACY = "privacy";
-
-	@DBColumn(type = TextColumn.class)
-	public static final String _AUTHOR = "author";
-
-	@DBColumn(type = TextColumn.class)
-	public static final String _AUTHOR_URI = "author_uri";
-
-	public static final String  PRIVACY_PUBLIC    = "public",
-								PRIVACY_PROTECTED = "protected",
-								PRIVACY_PRIVATE   = "private";
-
-	// the ordering of this must match the arrays.xml
-	public static final String[] PRIVACY_LIST = {PRIVACY_PUBLIC, PRIVACY_PRIVATE};
 
 	public static final TaggableItemSyncMap SYNC_MAP = new TaggableItemSyncMap();
 
@@ -96,14 +77,6 @@ public abstract class TaggableItem extends JsonSyncableItem {
 					return null;
 				}
 			});
-
-			final SyncMap authorSync = new SyncMap();
-			authorSync.put(_AUTHOR, new SyncFieldMap("display_name", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL));
-			authorSync.put(_AUTHOR_URI,		new SyncFieldMap("uri", SyncFieldMap.STRING));
-			put("_author", 			new SyncMapChain("author", authorSync, SyncItem.SYNC_FROM));
-
-
-			put(_PRIVACY,          	new SyncFieldMap("privacy", SyncFieldMap.STRING));
 		}
 		/**
 		 *
@@ -169,28 +142,6 @@ public abstract class TaggableItem extends JsonSyncableItem {
 				TaggableItem.putTags(context.getContentResolver(), uri, tags, prefix);
 			}
 		}
-	}
-
-
-
-	/**
-	 * @param c a cursor pointing at an item's row
-	 * @return true if the item is editable by the logged-in user.
-	 */
-	public static boolean canEdit(Context context, Cursor c){
-		final String privacy = c.getString(c.getColumnIndex(_PRIVACY));
-		final String useruri = Authenticator.getUserUri(context);
-		return privacy == null || useruri == null || useruri.length() == 0 ||
-			useruri.equals(c.getString(c.getColumnIndex(_AUTHOR_URI)));
-	}
-
-	/**
-	 * @param c
-	 * @return true if the authenticated user can change the item's privacy level.
-	 */
-	public static boolean canChangePrivacyLevel(Context context, Cursor c){
-		final String useruri = Authenticator.getUserUri(context);
-		return useruri == null || useruri.equals(c.getString(c.getColumnIndex(_AUTHOR_URI)));
 	}
 
 	/**

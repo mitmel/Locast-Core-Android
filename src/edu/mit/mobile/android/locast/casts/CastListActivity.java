@@ -33,6 +33,7 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
+import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.ver2.R;
 
@@ -94,7 +95,7 @@ public abstract class CastListActivity extends ListActivity {
 
         setListAdapter(adapter);
 	}
-	
+
 	protected ListAdapter getAdapter(Cursor c) {
 		return new CastCursorAdapter(this, c);
 	}
@@ -127,10 +128,11 @@ public abstract class CastListActivity extends ListActivity {
            return;
        }
 
-       final Cursor c = (Cursor) getListAdapter().getItem(info.position);
-       if (c == null){
+		final Cursor c1 = (Cursor) getListAdapter().getItem(info.position);
+		if (c1 == null) {
     	   return;
        }
+		final Cast c = new Cast(c1);
 
        // load the base menus.
 		final MenuInflater menuInflater = getMenuInflater();
@@ -139,7 +141,7 @@ public abstract class CastListActivity extends ListActivity {
 
        menu.setHeaderTitle(c.getString(c.getColumnIndex(Cast._TITLE)));
 
-       final boolean canEdit = Cast.canEdit(this, c);
+		final boolean canEdit = c.canEdit(Authenticator.getUserUri(this));
        menu.findItem(R.id.cast_edit).setVisible(canEdit);
        menu.findItem(R.id.cast_delete).setVisible(canEdit);
 
