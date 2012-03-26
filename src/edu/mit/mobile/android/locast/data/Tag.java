@@ -24,7 +24,7 @@ import java.util.Vector;
 
 import android.net.Uri;
 import android.provider.BaseColumns;
-import edu.mit.mobile.android.utils.ListUtils;
+import android.text.TextUtils;
 
 public class Tag implements BaseColumns {
 	public final static String _REF_ID   = "ref_id",
@@ -64,6 +64,6 @@ public class Tag implements BaseColumns {
 			// escape all of the delimiters in the individual strings
 			tempList.add(Uri.encode(s));
 		}
-		return ListUtils.join(tags, TAG_DELIM);
+		return TextUtils.join(TAG_DELIM, tags);
 	}
 }

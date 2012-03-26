@@ -39,6 +39,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.CursorWrapper;
 import android.net.Uri;
+import android.text.TextUtils;
 import edu.mit.mobile.android.content.ContentItem;
 import edu.mit.mobile.android.content.column.BooleanColumn;
 import edu.mit.mobile.android.content.column.DBColumn;
@@ -47,7 +48,6 @@ import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.sync.LocastSync;
-import edu.mit.mobile.android.utils.ListUtils;
 
 /**
  * This type of object row can be serialized to/from JSON and synchronized to a server.
@@ -200,7 +200,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
 			tempList.add(s);
 		}
 
-		return ListUtils.join(tempList, LIST_DELIM);
+		return TextUtils.join(LIST_DELIM, tempList);
 	}
 
 	private static Pattern durationPattern = Pattern.compile("(\\d{1,2}):(\\d{1,2}):(\\d{1,2})");
@@ -494,7 +494,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
 						break;
 					}
 				}
-				cv.put(lProp, ListUtils.join(l, LIST_DELIM));
+					cv.put(lProp, TextUtils.join(LIST_DELIM, l));
 			}
 				break;
 
