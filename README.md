@@ -38,7 +38,7 @@ Dependencies
 *   [CWAC Adapter Wrapper][] (included)
 *   [android-support-v4][] (included)
 *   [Apache HTTP MIME][] (included)
-
+*   [markdownj][](included)
 Publishing
 ----------
 
@@ -83,3 +83,4 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 [MelAUtils]: https://github.com/mitmel/MelAUtils
 [AppUpdateChecker]: https://github.com/mitmel/AppUpdateChecker
 [Apache HTTP MIME]: http://hc.apache.org/httpcomponents-client-ga/httpmime/
+[markdownj]: http://code.google.com/p/markdownj/
