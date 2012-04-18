@@ -57,6 +57,7 @@ import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.widget.FavoriteClickHandler;
+import edu.mit.mobile.android.widget.MarkDown;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
 import edu.mit.mobile.android.widget.RefreshButton;
 import edu.mit.mobile.android.widget.ValidatingCheckBox;
@@ -238,8 +239,8 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 						author.setText(c.getString(c.getColumnIndex(Cast._AUTHOR)));
 					}
 
-					((TextView) findViewById(R.id.description)).setText(c.getString(c
-							.getColumnIndex(Cast._DESCRIPTION)));
+					((TextView) findViewById(R.id.description)).setText(MarkDown.convertText(c.getString(c
+							.getColumnIndex(Cast._DESCRIPTION))));
 					((CheckBox) findViewById(R.id.favorite)).setChecked(c.getInt(c
 							.getColumnIndex(Cast._FAVORITED)) != 0);
 

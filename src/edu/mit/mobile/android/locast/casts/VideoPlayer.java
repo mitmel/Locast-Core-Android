@@ -45,6 +45,7 @@ import edu.mit.mobile.android.imagecache.ImageCache.OnImageLoadListener;
 import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.widget.MarkDown;
 
 /**
  * @author steve
@@ -204,7 +205,7 @@ public class VideoPlayer extends FragmentActivity implements
 
 			final String description = c.getString(c.getColumnIndex(CastMedia._DESCRIPTION));
 			if (description != null){
-				mDescriptionView.setText(description);
+				mDescriptionView.setText(MarkDown.convertText(description));
 			}
 
 			// TODO figure out how to put this on a non-UI thread. Unfortunately,
