@@ -5,6 +5,7 @@
 		<item name="android:layout_weight">1</item>
 		<item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
 		<item name="android:background">@drawable/btn_main</item>
+		<item name="android:textColor">@android:color/primary_text_light</item>
 	</style>
 	
 	<style name="Notice" parent="@style/Notice_common">
