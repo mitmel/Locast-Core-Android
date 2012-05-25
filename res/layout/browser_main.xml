@@ -82,6 +82,7 @@
         android:layout_gravity="right"
         android:layout_marginBottom="6sp"
         android:layout_marginRight="6dip"
+        android:contentDescription="@string/powered_by_locast"
         android:src="@drawable/powered_by_locast" />
 
 </LinearLayout>

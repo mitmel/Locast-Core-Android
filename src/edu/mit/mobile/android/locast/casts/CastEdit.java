@@ -1,7 +1,6 @@
 package edu.mit.mobile.android.locast.casts;
 
 import java.io.File;
-import java.util.HashMap;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -33,6 +32,7 @@ import android.support.v4_map.app.MapFragmentActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -901,8 +901,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	};
 
 	private class EditableCastMediaAdapter extends CastMediaAdapter{
-		private final HashMap<Integer, OnClickListener> mClickListeners = new HashMap<Integer, AdapterView.OnClickListener>();
-		private final HashMap<Integer, OnFocusChangeListener> mFocusChangeListeners = new HashMap<Integer, OnFocusChangeListener>();
+		private final SparseArray<OnClickListener> mClickListeners = new SparseArray<AdapterView.OnClickListener>();
+		private final SparseArray<OnFocusChangeListener> mFocusChangeListeners = new SparseArray<OnFocusChangeListener>();
 
 		public EditableCastMediaAdapter(Context context, int layout, Cursor c,
 				String[] from, int[] to, int[] imageIDs, int flags) {
@@ -918,7 +918,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 		public View getView(int position, View convertView, ViewGroup parent) {
 			final View v = super.getView(position, convertView, parent);
 
-			for (final int viewID : mClickListeners.keySet()){
+			for (int i = 0; i < mClickListeners.size(); i++) {
+				final int viewID = mClickListeners.keyAt(i);
 				final View targetView = v.findViewById(viewID);
 				if (targetView == null){
 					continue;
@@ -929,7 +930,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 				targetView.setTag(R.id.viewtag_item_adapter, this);
 			}
 			// TODO inefficient, but works
-			for (final int viewID : mFocusChangeListeners.keySet()){
+			for (int i = 0; i < mFocusChangeListeners.size(); i++) {
+				final int viewID = mFocusChangeListeners.keyAt(i);
 				final View targetView = v.findViewById(viewID);
 				if (targetView == null){
 					continue;

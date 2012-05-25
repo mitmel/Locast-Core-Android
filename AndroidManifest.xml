@@ -3,7 +3,7 @@
     package="edu.mit.mobile.android.locast.ver2"
     android:installLocation="auto"
     android:versionCode="35"
-    android:versionName="Open Locast 0.3" >
+    android:versionName="Open Locast 0.3" xmlns:tools="http://schemas.android.com/tools">
 
     <uses-sdk
         android:minSdkVersion="7"
@@ -254,7 +254,7 @@
                 android:name="android.accounts.AccountAuthenticator"
                 android:resource="@xml/authenticator" />
         </service>
-        <service
+        <service tools:ignore="ExportedService"
             android:name="edu.mit.mobile.android.locast.sync.LocastSyncService"
             android:exported="true" >
             <intent-filter>

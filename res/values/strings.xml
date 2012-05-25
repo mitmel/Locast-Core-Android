@@ -233,4 +233,5 @@ reception, try standing in a clear area outside away from buildings.</string>
 	<string name="remove_media">remove media from cast</string>
 	<string name="media_title_hint">media title</string>
 	<string name="sync_locast_media">Sync Locast Media</string>
+	<string name="powered_by_locast">powered by Locast</string>
 </resources>

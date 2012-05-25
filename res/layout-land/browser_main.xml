@@ -70,17 +70,15 @@
             android:orientation="vertical" >
 
             <edu.mit.mobile.android.widget.NotificationProgressBar
-				 android:id="@+id/progressNotification"
-				 android:layout_width="fill_parent"
-				 android:layout_height="fill_parent"
-				 android:visibility="gone"
-				 android:layout_weight="1"
-				 android:gravity="center"
-				 android:text="@string/error_no_featured_casts"
-				 android:textAppearance="?android:attr/textAppearanceLarge"
-				 android:textStyle="italic"
-				 >		 
-			</edu.mit.mobile.android.widget.NotificationProgressBar>
+                android:id="@+id/progressNotification"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:gravity="center"
+                android:text="@string/error_no_featured_casts"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textStyle="italic"
+                android:visibility="gone" >
+            </edu.mit.mobile.android.widget.NotificationProgressBar>
 
             <Gallery
                 android:id="@+id/casts"
@@ -88,7 +86,6 @@
                 android:layout_height="fill_parent"
                 android:layout_above="@+id/powered_by_locast"
                 android:layout_below="@+id/text_featured"
-                android:layout_weight="1"
                 android:spacing="0dip" >
             </Gallery>
 
@@ -112,6 +109,7 @@
                 android:layout_alignParentBottom="true"
                 android:layout_alignParentRight="true"
                 android:layout_gravity="right"
+                android:contentDescription="@string/powered_by_locast"
                 android:paddingBottom="7sp"
                 android:paddingRight="4dip"
                 android:src="@drawable/powered_by_locast" />

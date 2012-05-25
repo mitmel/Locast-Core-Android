@@ -8,6 +8,7 @@
         android:id="@+id/userthumb"
         style="@style/DiscussionUserIcon"
         android:layout_width="wrap_content"
+        android:contentDescription="@null"
         android:layout_height="80dip"
         android:layout_gravity="left" />
 

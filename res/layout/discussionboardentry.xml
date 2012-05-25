@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical" >
@@ -37,14 +38,15 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical" >
+            android:orientation="vertical"
+            tools:ignore="UseCompoundDrawables" >
 
             <ImageView
                 android:id="@+id/userthumb"
                 style="@style/DiscussionUserIcon"
                 android:layout_width="wrap_content"
                 android:layout_height="80dip"
-                android:layout_gravity="left" />
+                android:layout_gravity="left" android:contentDescription="@null"/>
 
             <TextView
                 android:id="@+id/commentnumber"

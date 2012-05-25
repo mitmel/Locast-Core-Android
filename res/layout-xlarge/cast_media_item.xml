@@ -18,7 +18,8 @@
         style="@style/Thumbnail"
         android:layout_width="480dp"
         android:layout_height="360dp"
-        android:adjustViewBounds="false" />
+        android:adjustViewBounds="false"
+        android:contentDescription="@null" />
 
     <ImageView
         android:id="@+id/thumbnail_overlay"
@@ -28,6 +29,7 @@
         android:layout_alignLeft="@id/media_thumbnail"
         android:layout_alignRight="@id/media_thumbnail"
         android:layout_alignTop="@id/media_thumbnail"
+        android:contentDescription="@null"
         android:scaleType="center"
         android:src="@drawable/ic_overlay_play" />
     <!-- android:layout_height="100dp" -->
