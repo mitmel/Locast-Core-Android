@@ -22,23 +22,22 @@ public class MediaUtils {
 	static {
 		String tmp;
 		try {
-			tmp = new File(Environment.getExternalStorageDirectory(), "/tmp/locast_new")
-					.getCanonicalPath();
+			final File tmpfile = new File(Environment.getExternalStorageDirectory(),
+					"/tmp/locast_new");
+			tmpfile.mkdirs();
+			tmp = tmpfile.getCanonicalPath();
 
 		} catch (final IOException e) {
 			e.printStackTrace();
 			tmp = Environment.getExternalStorageDirectory() + "/tmp/locast_new";
 		}
 		TMP_SD_LOCATION = tmp;
-
 	}
 
 	private static final String TMP_SD_LOCATION_JPG = TMP_SD_LOCATION + ".jpg";
 	private static final String TMP_SD_LOCATION_MP4 = TMP_SD_LOCATION + ".mp4";
 
-	// private static final String devstring = android.os.Build.BRAND + "/" +
-	// android.os.Build.PRODUCT
-	// + "/" + android.os.Build.DEVICE;
+
 
 	private static boolean hasImageCaptureBug() {
 		final ArrayList<String> devices = new ArrayList<String>();
@@ -50,6 +49,7 @@ public class MediaUtils {
 		devices.add("tmobile/kila/dream");
 		devices.add("verizon/voles/sholes");
 		devices.add("google_ion/google_ion/sapphire");
+
 		final String devstring = android.os.Build.BRAND + "/" + android.os.Build.PRODUCT + "/"
 				+ android.os.Build.DEVICE;
 		Log.d(TAG, "device string: " + devstring);
@@ -89,55 +89,6 @@ public class MediaUtils {
 		Uri u;
 		if (HAS_IMAGE_CAPTURE_BUG) {
 			final File fi = new File(TMP_SD_LOCATION_JPG);
-			try {
-				u = Uri.parse(android.provider.MediaStore.Images.Media.insertImage(
-						context.getContentResolver(), fi.getAbsolutePath(), null, null));
-				if (!fi.delete()) {
-					Log.i(TAG, "Failed to delete " + fi);
-				}
-			} catch (final FileNotFoundException e) {
-				u = null;
-				e.printStackTrace();
-			}
-		} else {
-			u = intent.getData();
-		}
-		return u;
-	}
-
-	/**
-	 * The result of this should be handled by {@link #handleImageCaptureResult(Context, Intent)} to
-	 * return a URI pointing to the image.
-	 *
-	 * @return an intent that should be used with
-	 *         {@link Activity#startActivityForResult(Intent, int)}.
-	 */
-	public static Intent getVideoCaptureIntent(File destination) {
-		final Intent i = new Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE);
-		if (HAS_IMAGE_CAPTURE_BUG) {
-			final File tmpfile = new File(TMP_SD_LOCATION_MP4);
-			tmpfile.getParentFile().mkdirs();
-			i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT,
-					Uri.fromFile(new File(TMP_SD_LOCATION_MP4)));
-		} else {
-			i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT,
-					Uri.fromFile(new File(destination, System.currentTimeMillis() + ".mp4")));
-		}
-
-		return i;
-	}
-
-	/**
-	 * @param context
-	 * @param intent
-	 *            the onActivityResult intent
-	 * @return a URI pointing to the image or null if there was an error. Unfortunately, if the
-	 *         device is amongst those with the bug, the image size will be fairly small.
-	 */
-	public static Uri handleVideoCaptureResult(Context context, Intent intent) {
-		Uri u;
-		if (HAS_IMAGE_CAPTURE_BUG) {
-			final File fi = new File(TMP_SD_LOCATION_MP4);
 			try {
 				u = Uri.parse(android.provider.MediaStore.Images.Media.insertImage(
 						context.getContentResolver(), fi.getAbsolutePath(), null, null));

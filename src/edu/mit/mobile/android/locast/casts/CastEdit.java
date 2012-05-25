@@ -1,7 +1,6 @@
 package edu.mit.mobile.android.locast.casts;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 
 import android.accounts.Account;
@@ -20,14 +19,11 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
-import android.provider.MediaStore.Images.Media;
-import android.provider.MediaStore.MediaColumns;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
@@ -50,6 +46,7 @@ import android.widget.ListView;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.maps.GeoPoint;
 import com.stackoverflow.ArrayUtils;
@@ -62,7 +59,9 @@ import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.CastMedia;
+import edu.mit.mobile.android.locast.data.CastMedia.CastMediaInfo;
 import edu.mit.mobile.android.locast.data.Locatable;
+import edu.mit.mobile.android.locast.data.MediaProcessingException;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.TaggableItem;
 import edu.mit.mobile.android.locast.ver2.R;
@@ -400,18 +399,20 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 			break;
 
 		case R.id.new_photo:
-		case R.id.media_thumbnail:
-			final Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-			mCreateMediaUri = createNewMedia("jpg");
-			i.putExtra(MediaStore.EXTRA_OUTPUT, mCreateMediaUri);
-			startActivityForResult(i, REQUEST_NEW_PHOTO);
+			case R.id.media_thumbnail: {
+				final Intent i2 = MediaUtils.getImageCaptureIntent(new File(createNewMedia("jpeg")
+						.getPath()));
+				startActivityForResult(i2, REQUEST_NEW_PHOTO);
 			break;
+			}
 
 			case R.id.new_video: {
+				final Intent i = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+				mCreateMediaUri = createNewMedia("mp4");
+				i.putExtra(MediaStore.EXTRA_OUTPUT, mCreateMediaUri.getPath());
+				i.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1); // high quality
 
-				final Intent i2 = MediaUtils.getVideoCaptureIntent(new File(createNewMedia("mp4")
-						.getPath()));
-			startActivityForResult(i2, REQUEST_NEW_VIDEO);
+				startActivityForResult(i, REQUEST_NEW_VIDEO);
 			}
 				break;
 
@@ -472,12 +473,23 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 		switch(requestCode){
 			case REQUEST_NEW_PHOTO:
+				final Uri imageCaptureResult = MediaUtils.handleImageCaptureResult(this, data);
+				if (imageCaptureResult != null) {
+					mCreateMediaUri = imageCaptureResult;
+				}
 				addMedia(mCreateMediaUri);
 				mCreateMediaUri = null;
 				break;
 			case REQUEST_NEW_VIDEO:
-				mCreateMediaUri = MediaUtils.handleVideoCaptureResult(this, data);
+				if (data.getData() != null) {
+					mCreateMediaUri = data.getData();
+					Log.d(TAG,
+							"got a URL from the onActivityResult from adding a video: "
+									+ data.getDataString());
+				}
+
 				addMedia(mCreateMediaUri);
+
 				mCreateMediaUri = null;
 				break;
 			case REQUEST_PICK_MEDIA:
@@ -625,7 +637,8 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 	// non-handlers
 
 	private Uri createNewMedia(String extension){
-		final File outfile = new File(Environment.getExternalStorageDirectory() + "locast/",
+		final File outfile = new File(
+				new File(Environment.getExternalStorageDirectory(), "locast"),
 				System.currentTimeMillis() + "." + extension);
 		outfile.getParentFile().mkdirs();
 
@@ -750,83 +763,19 @@ public class CastEdit extends MapFragmentActivity implements OnClickListener,
 
 	public void addMedia(Uri content){
 		final Uri castMedia = Cast.getCastMediaUri(mCast);
-		final ContentValues cv = new ContentValues();
 
-		final long now = System.currentTimeMillis();
-
-		String exifDateTime = "";
-		try
-		{
-			final ExifInterface exif = new ExifInterface(mCreateMediaUri.getPath());
-			exifDateTime = exif.getAttribute(ExifInterface.TAG_DATETIME);
-		}
-		catch (final IOException ioex)
-		{
-			Log.e(TAG, "EXIF: Couldn't find media: " + mCreateMediaUri.getPath());
-		}
-
-
-		cv.put(CastMedia._MODIFIED_DATE, now);
-		cv.put(CastMedia._CREATED_DATE, now);
-		cv.put(CastMedia._TITLE, content.getLastPathSegment());
-		cv.put(CastMedia._EXIF_DATETIME, exifDateTime);
-
-		String mimeType = getContentResolver().getType(content);
-		if (mimeType == null){
-			mimeType = CastMedia.guessMimeTypeFromUrl(content.toString());
-		}
-		cv.put(CastMedia._MIME_TYPE, mimeType);
-
-		String mediaPath = null;
-
-		// only add in credentials on inserts
-		final Account me = Authenticator.getFirstAccount(this);
-		final AccountManager am = AccountManager.get(this);
-
-		final String displayName = am.getUserData(me, AuthenticationService.USERDATA_DISPLAY_NAME);
-		final String authorUri = am.getUserData(me, AuthenticationService.USERDATA_USER_URI);
-
-		if ("content".equals(content.getScheme())){
-			final Cursor c = getContentResolver().query(content, new String[]{MediaColumns._ID, MediaColumns.DATA, MediaColumns.TITLE, Media.LATITUDE, Media.LONGITUDE}, null, null, null);
-			try {
-				if (c.moveToFirst()){
-					cv.put(Cast._AUTHOR, displayName);
-					cv.put(Cast._AUTHOR_URI, authorUri);
-
-					cv.put(CastMedia._TITLE, c.getString(c.getColumnIndexOrThrow(MediaColumns.TITLE)));
-					mediaPath = "file://" + c.getString(c.getColumnIndexOrThrow(MediaColumns.DATA));
-
-					// if the current location is null, infer it from the first media that's added.
-					if (mLocation == null){
-						final int latCol = c.getColumnIndex(Media.LATITUDE);
-						final int lonCol = c.getColumnIndex(Media.LONGITUDE);
-						final double lat = c.getDouble(latCol);
-						final double lon = c.getDouble(lonCol);
-
-						final boolean isInArmpit = lat == 0 && lon == 0; // Sorry, people in boats off the coast of Ghana, but you're an unfortunate edge case...
-						if (!c.isNull(latCol) && !c.isNull(lonCol) && ! isInArmpit){
-							setLocation(new GeoPoint((int)(c.getDouble(latCol) * 1E6), (int)(c.getDouble(lonCol) * 1E6)));
-						}
-					}
-				}
-			} finally{
-				c.close();
+		CastMediaInfo cmi;
+		try {
+			cmi = CastMedia.addMedia(this, castMedia, content);
+			// if the current location is null, infer it from the first media that's added.
+			if (mLocation == null && cmi.location != null) {
+				setLocation(cmi.location);
 			}
-		} else {
-			mediaPath = content.toString();
+		} catch (final MediaProcessingException e) {
+			Log.e(TAG, "could not add media", e);
+			Toast.makeText(this, "Unable to add media: " + e.getLocalizedMessage(),
+					Toast.LENGTH_LONG).show();
 		}
-
-		if (mediaPath == null){
-			Log.e(TAG, "couldn't add media from uri "+content);
-			return;
-		}
-
-		cv.put(CastMedia._THUMB_LOCAL, mediaPath);
-		cv.put(CastMedia._LOCAL_URI, mediaPath);
-
-		Log.d(TAG, "addMedia("+castMedia+", "+cv+")");
-		getContentResolver().insert(castMedia, cv);
-
 	}
 
 	private boolean validateEntries() {
