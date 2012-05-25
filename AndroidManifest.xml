@@ -205,7 +205,7 @@
         </activity>
         <activity
             android:name="edu.mit.mobile.android.locast.casts.UnsyncedCastsActivity"
-            android:label="@string/unicef_unsynced_casts"
+            android:label="@string/activity_unsynced_casts"
             android:taskAffinity="edu.mit.mobile.android.locast.ver2.casts.UnsyncedCastsActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
