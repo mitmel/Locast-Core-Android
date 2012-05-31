@@ -68,7 +68,10 @@ be set. To do this, run:
 
     ./set_maps_keys.sh KEY
 
-where KEY is either 'dev', 'prod' or your own API key.
+where KEY is your own API key.
+
+Additionally, you should change the namespaces for all the items defined in the
+manifest so that they don't overlap with the ones used by our lab.
 
 Translation
 -----------
