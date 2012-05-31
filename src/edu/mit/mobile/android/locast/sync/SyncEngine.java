@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.impl.cookie.DateParseException;
 import org.apache.http.impl.cookie.DateUtils;
 import org.json.JSONArray;
@@ -147,7 +148,7 @@ public class SyncEngine {
 	public boolean sync(Uri toSync, Account account, Bundle extras, ContentProviderClient provider,
 			SyncResult syncResult) throws RemoteException, SyncException, JSONException,
 			IOException, NetworkProtocolException, NoPublicPath, OperationApplicationException,
-			InterruptedException {
+			InterruptedException, HttpResponseException {
 
 		String pubPath = null;
 

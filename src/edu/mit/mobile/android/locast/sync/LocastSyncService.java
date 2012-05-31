@@ -22,6 +22,8 @@ import java.io.InterruptedIOException;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpResponseException;
 import org.json.JSONException;
 
 import android.accounts.Account;
@@ -335,6 +337,22 @@ public class LocastSyncService extends Service {
 			} catch (final RemoteException e) {
 				Log.e(TAG, e.toString(), e);
 				// TODO handle
+
+			} catch (final HttpResponseException e) {
+				Log.e(TAG, e.toString(), e);
+
+				switch (e.getStatusCode()) {
+					case HttpStatus.SC_NOT_FOUND:
+						syncResult.stats.numSkippedEntries++;
+						break;
+
+					case HttpStatus.SC_UNAUTHORIZED:
+						syncResult.stats.numAuthExceptions++;
+						break;
+
+					default:
+						syncResult.stats.numParseExceptions++;
+				}
 
 			} catch (final SyncException e) {
 				Log.e(TAG, e.toString(), e);
