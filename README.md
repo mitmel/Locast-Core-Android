@@ -53,6 +53,7 @@ tedious to set up).
 
 *   [MEL ImageCache][]
 *   [AppUpdateChecker][]
+*   [android-mapviewballoons][] (included as submodule)
 *   [MelAUtils][] (included)
 *   [SimpleContentProvider][] (included)
 *   [CWAC Adapter Wrapper][] (included)
@@ -109,3 +110,4 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 [Apache HTTP MIME]: http://hc.apache.org/httpcomponents-client-ga/httpmime/
 [markdownj]: http://code.google.com/p/markdownj/
 [locastweb]: https://github.com/mitmel/Locast-Web-Core/
+[android-mapviewballoons]: https://github.com/jgilfelt/android-mapviewballoons
