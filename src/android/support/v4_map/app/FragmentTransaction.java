@@ -107,6 +107,31 @@ public abstract class FragmentTransaction {
     public abstract FragmentTransaction show(Fragment fragment);
 
     /**
+     * Detach the given fragment from the UI.  This is the same state as
+     * when it is put on the back stack: the fragment is removed from
+     * the UI, however its state is still being actively managed by the
+     * fragment manager.  When going into this state its view hierarchy
+     * is destroyed.
+     *
+     * @param fragment The fragment to be detached.
+     *
+     * @return Returns the same FragmentTransaction instance.
+     */
+    public abstract FragmentTransaction detach(Fragment fragment);
+
+    /**
+     * Re-attach a fragment after it had previously been deatched from
+     * the UI with {@link #detach(Fragment)}.  This
+     * causes its view hierarchy to be re-created, attached to the UI,
+     * and displayed.
+     *
+     * @param fragment The fragment to be attached.
+     *
+     * @return Returns the same FragmentTransaction instance.
+     */
+    public abstract FragmentTransaction attach(Fragment fragment);
+
+    /**
      * @return <code>true</code> if this transaction contains no operations,
      * <code>false</code> otherwise.
      */
@@ -136,9 +161,19 @@ public abstract class FragmentTransaction {
 
     /**
      * Set specific animation resources to run for the fragments that are
-     * entering and exiting in this transaction.
+     * entering and exiting in this transaction. These animations will not be
+     * played when popping the back stack.
      */
     public abstract FragmentTransaction setCustomAnimations(int enter, int exit);
+
+    /**
+     * Set specific animation resources to run for the fragments that are
+     * entering and exiting in this transaction. The <code>popEnter</code>
+     * and <code>popExit</code> animations will be played for enter/exit
+     * operations specifically when popping the back stack.
+     */
+    public abstract FragmentTransaction setCustomAnimations(int enter, int exit,
+            int popEnter, int popExit);
     
     /**
      * Select a standard transition animation for this transaction.  May be
@@ -180,7 +215,7 @@ public abstract class FragmentTransaction {
 
     /**
      * Set the full title to show as a bread crumb when this transaction
-     * is on the back stack, as used by {@link FragmentBreadCrumbs}.
+     * is on the back stack.
      *
      * @param res A string resource containing the title.
      */
@@ -195,7 +230,7 @@ public abstract class FragmentTransaction {
 
     /**
      * Set the short title to show as a bread crumb when this transaction
-     * is on the back stack, as used by {@link FragmentBreadCrumbs}.
+     * is on the back stack.
      *
      * @param res A string resource containing the title.
      */

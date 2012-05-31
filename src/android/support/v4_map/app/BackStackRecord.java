@@ -43,7 +43,7 @@ final class BackStackState implements Parcelable {
             if (op.removed != null) numRemoved += op.removed.size();
             op = op.next;
         }
-        mOps = new int[bse.mNumOp*5 + numRemoved];
+        mOps = new int[bse.mNumOp*7 + numRemoved];
 
         if (!bse.mAddToBackStack) {
             throw new IllegalStateException("Not on back stack");
@@ -56,6 +56,8 @@ final class BackStackState implements Parcelable {
             mOps[pos++] = op.fragment.mIndex;
             mOps[pos++] = op.enterAnim;
             mOps[pos++] = op.exitAnim;
+            mOps[pos++] = op.popEnterAnim;
+            mOps[pos++] = op.popExitAnim;
             if (op.removed != null) {
                 final int N = op.removed.size();
                 mOps[pos++] = N;
@@ -101,6 +103,8 @@ final class BackStackState implements Parcelable {
             op.fragment = f;
             op.enterAnim = mOps[pos++];
             op.exitAnim = mOps[pos++];
+            op.popEnterAnim = mOps[pos++];
+            op.popExitAnim = mOps[pos++];
             final int N = mOps[pos++];
             if (N > 0) {
                 op.removed = new ArrayList<Fragment>(N);
@@ -169,6 +173,8 @@ final class BackStackRecord extends FragmentTransaction implements
     static final int OP_REMOVE = 3;
     static final int OP_HIDE = 4;
     static final int OP_SHOW = 5;
+    static final int OP_DETACH = 6;
+    static final int OP_ATTACH = 7;
 
     static final class Op {
         Op next;
@@ -177,6 +183,8 @@ final class BackStackRecord extends FragmentTransaction implements
         Fragment fragment;
         int enterAnim;
         int exitAnim;
+        int popEnterAnim;
+        int popExitAnim;
         ArrayList<Fragment> removed;
     }
 
@@ -185,6 +193,8 @@ final class BackStackRecord extends FragmentTransaction implements
     int mNumOp;
     int mEnterAnim;
     int mExitAnim;
+    int mPopEnterAnim;
+    int mPopExitAnim;
     int mTransition;
     int mTransitionStyle;
     boolean mAddToBackStack;
@@ -214,6 +224,12 @@ final class BackStackRecord extends FragmentTransaction implements
                     writer.print(" mExitAnim=#");
                     writer.println(Integer.toHexString(mExitAnim));
         }
+        if (mPopEnterAnim != 0 || mPopExitAnim !=0) {
+            writer.print(prefix); writer.print("mPopEnterAnim=#");
+                    writer.print(Integer.toHexString(mPopEnterAnim));
+                    writer.print(" mPopExitAnim=#");
+                    writer.println(Integer.toHexString(mPopExitAnim));
+        }
         if (mBreadCrumbTitleRes != 0 || mBreadCrumbTitleText != null) {
             writer.print(prefix); writer.print("mBreadCrumbTitleRes=#");
                     writer.print(Integer.toHexString(mBreadCrumbTitleRes));
@@ -238,8 +254,16 @@ final class BackStackRecord extends FragmentTransaction implements
                 writer.print(innerPrefix); writer.print("cmd="); writer.print(op.cmd);
                         writer.print(" fragment="); writer.println(op.fragment);
                 if (op.enterAnim != 0 || op.exitAnim != 0) {
-                    writer.print(prefix); writer.print("enterAnim="); writer.print(op.enterAnim);
-                            writer.print(" exitAnim="); writer.println(op.exitAnim);
+                    writer.print(prefix); writer.print("enterAnim=#");
+                            writer.print(Integer.toHexString(op.enterAnim));
+                            writer.print(" exitAnim=#");
+                            writer.println(Integer.toHexString(op.exitAnim));
+                }
+                if (op.popEnterAnim != 0 || op.popExitAnim != 0) {
+                    writer.print(prefix); writer.print("popEnterAnim=#");
+                            writer.print(Integer.toHexString(op.popEnterAnim));
+                            writer.print(" popExitAnim=#");
+                            writer.println(Integer.toHexString(op.popExitAnim));
                 }
                 if (op.removed != null && op.removed.size() > 0) {
                     for (int i=0; i<op.removed.size(); i++) {
@@ -299,6 +323,8 @@ final class BackStackRecord extends FragmentTransaction implements
         }
         op.enterAnim = mEnterAnim;
         op.exitAnim = mExitAnim;
+        op.popEnterAnim = mPopEnterAnim;
+        op.popExitAnim = mPopExitAnim;
         mNumOp++;
     }
 
@@ -318,10 +344,6 @@ final class BackStackRecord extends FragmentTransaction implements
     }
 
     private void doAddOp(int containerViewId, Fragment fragment, String tag, int opcmd) {
-        if (fragment.mImmediateActivity != null) {
-            throw new IllegalStateException("Fragment already added: " + fragment);
-        }
-        fragment.mImmediateActivity = mManager.mActivity;
         fragment.mFragmentManager = mManager;
 
         if (tag != null) {
@@ -362,11 +384,6 @@ final class BackStackRecord extends FragmentTransaction implements
     }
 
     public FragmentTransaction remove(Fragment fragment) {
-        if (fragment.mImmediateActivity == null) {
-            throw new IllegalStateException("Fragment not added: " + fragment);
-        }
-        fragment.mImmediateActivity = null;
-
         Op op = new Op();
         op.cmd = OP_REMOVE;
         op.fragment = fragment;
@@ -376,10 +393,6 @@ final class BackStackRecord extends FragmentTransaction implements
     }
 
     public FragmentTransaction hide(Fragment fragment) {
-        if (fragment.mImmediateActivity == null) {
-            throw new IllegalStateException("Fragment not added: " + fragment);
-        }
-
         Op op = new Op();
         op.cmd = OP_HIDE;
         op.fragment = fragment;
@@ -389,10 +402,6 @@ final class BackStackRecord extends FragmentTransaction implements
     }
 
     public FragmentTransaction show(Fragment fragment) {
-        if (fragment.mImmediateActivity == null) {
-            throw new IllegalStateException("Fragment not added: " + fragment);
-        }
-
         Op op = new Op();
         op.cmd = OP_SHOW;
         op.fragment = fragment;
@@ -401,9 +410,34 @@ final class BackStackRecord extends FragmentTransaction implements
         return this;
     }
 
+    public FragmentTransaction detach(Fragment fragment) {
+        Op op = new Op();
+        op.cmd = OP_DETACH;
+        op.fragment = fragment;
+        addOp(op);
+
+        return this;
+    }
+
+    public FragmentTransaction attach(Fragment fragment) {
+        Op op = new Op();
+        op.cmd = OP_ATTACH;
+        op.fragment = fragment;
+        addOp(op);
+
+        return this;
+    }
+
     public FragmentTransaction setCustomAnimations(int enter, int exit) {
+        return setCustomAnimations(enter, exit, 0, 0);
+    }
+
+    public FragmentTransaction setCustomAnimations(int enter, int exit,
+            int popEnter, int popExit) {
         mEnterAnim = enter;
         mExitAnim = exit;
+        mPopEnterAnim = popEnter;
+        mPopExitAnim = popExit;
         return this;
     }
 
@@ -567,6 +601,16 @@ final class BackStackRecord extends FragmentTransaction implements
                     f.mNextAnim = op.enterAnim;
                     mManager.showFragment(f, mTransition, mTransitionStyle);
                 } break;
+                case OP_DETACH: {
+                    Fragment f = op.fragment;
+                    f.mNextAnim = op.exitAnim;
+                    mManager.detachFragment(f, mTransition, mTransitionStyle);
+                } break;
+                case OP_ATTACH: {
+                    Fragment f = op.fragment;
+                    f.mNextAnim = op.enterAnim;
+                    mManager.attachFragment(f, mTransition, mTransitionStyle);
+                } break;
                 default: {
                     throw new IllegalArgumentException("Unknown cmd: " + op.cmd);
                 }
@@ -593,38 +637,52 @@ final class BackStackRecord extends FragmentTransaction implements
             switch (op.cmd) {
                 case OP_ADD: {
                     Fragment f = op.fragment;
-                    f.mImmediateActivity = null;
+                    f.mNextAnim = op.popExitAnim;
                     mManager.removeFragment(f,
                             FragmentManagerImpl.reverseTransit(mTransition),
                             mTransitionStyle);
                 } break;
                 case OP_REPLACE: {
                     Fragment f = op.fragment;
-                    f.mImmediateActivity = null;
+                    f.mNextAnim = op.popExitAnim;
                     mManager.removeFragment(f,
                             FragmentManagerImpl.reverseTransit(mTransition),
                             mTransitionStyle);
                     if (op.removed != null) {
                         for (int i=0; i<op.removed.size(); i++) {
                             Fragment old = op.removed.get(i);
-                            f.mImmediateActivity = mManager.mActivity;
+                            old.mNextAnim = op.popEnterAnim;
                             mManager.addFragment(old, false);
                         }
                     }
                 } break;
                 case OP_REMOVE: {
                     Fragment f = op.fragment;
-                    f.mImmediateActivity = mManager.mActivity;
+                    f.mNextAnim = op.popEnterAnim;
                     mManager.addFragment(f, false);
                 } break;
                 case OP_HIDE: {
                     Fragment f = op.fragment;
+                    f.mNextAnim = op.popEnterAnim;
                     mManager.showFragment(f,
                             FragmentManagerImpl.reverseTransit(mTransition), mTransitionStyle);
                 } break;
                 case OP_SHOW: {
                     Fragment f = op.fragment;
+                    f.mNextAnim = op.popExitAnim;
                     mManager.hideFragment(f,
+                            FragmentManagerImpl.reverseTransit(mTransition), mTransitionStyle);
+                } break;
+                case OP_DETACH: {
+                    Fragment f = op.fragment;
+                    f.mNextAnim = op.popEnterAnim;
+                    mManager.attachFragment(f,
+                            FragmentManagerImpl.reverseTransit(mTransition), mTransitionStyle);
+                } break;
+                case OP_ATTACH: {
+                    Fragment f = op.fragment;
+                    f.mNextAnim = op.popEnterAnim;
+                    mManager.detachFragment(f,
                             FragmentManagerImpl.reverseTransit(mTransition), mTransitionStyle);
                 } break;
                 default: {

@@ -16,11 +16,7 @@
 
 package android.support.v4_map.app;
 
-import java.io.FileDescriptor;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -39,9 +35,20 @@ import android.view.Window;
 
 import com.google.android.maps.MapActivity;
 
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 /**
- * Base class for activities that want to use the support-based Fragment and
- * Loader APIs.
+ * Base class for activities that want to use the support-based
+ * {@link android.support.v4.app.Fragment} and
+ * {@link android.support.v4.content.Loader} APIs.
+ *
+ * <p>When using this class as opposed to new platform's built-in fragment
+ * and loader support, you must use the {@link #getSupportFragmentManager()}
+ * and {@link #getSupportLoaderManager()} methods respectively to access
+ * those features.
  *
  * <p>Known limitations:</p>
  * <ul>
@@ -56,19 +63,20 @@ import com.google.android.maps.MapActivity;
  * prior to Honeycomb, where the state is saved before pausing.  To address this,
  * when running on platforms prior to Honeycomb an exception will not be thrown
  * if you change fragments between the state save and the activity being stopped.
- * This means that is some cases if the activity is restored from its last saved
+ * This means that in some cases if the activity is restored from its last saved
  * state, this may be a snapshot slightly before what the user last saw.</p>
  * </ul>
  */
-abstract public class MapFragmentActivity extends MapActivity {
-    private static final String TAG = "FragmentActivity";
-
+public class MapFragmentActivity extends MapActivity {
+    private static final String TAG = "MapFragmentActivity";
+    
     private static final String FRAGMENTS_TAG = "android:support:fragments";
-
+    
     // This is the SDK API version of Honeycomb (3.0).
     private static final int HONEYCOMB = 11;
 
     static final int MSG_REALLY_STOPPED = 1;
+    static final int MSG_RESUME_PENDING = 2;
 
     final Handler mHandler = new Handler() {
         @Override
@@ -79,6 +87,10 @@ abstract public class MapFragmentActivity extends MapActivity {
                         doReallyStop(false);
                     }
                     break;
+                case MSG_RESUME_PENDING:
+                    mFragments.dispatchResume();
+                    mFragments.execPendingActions();
+                    break;
                 default:
                     super.handleMessage(msg);
             }
@@ -86,10 +98,12 @@ abstract public class MapFragmentActivity extends MapActivity {
 
     };
     final FragmentManagerImpl mFragments = new FragmentManagerImpl();
-
+    
+    boolean mCreated;
     boolean mResumed;
     boolean mStopped;
     boolean mReallyStopped;
+    boolean mRetaining;
 
     boolean mOptionsMenuInvalidated;
 
@@ -97,14 +111,15 @@ abstract public class MapFragmentActivity extends MapActivity {
     boolean mLoadersStarted;
     HCSparseArray<LoaderManagerImpl> mAllLoaderManagers;
     LoaderManagerImpl mLoaderManager;
-
+    
     static final class NonConfigurationInstances {
         Object activity;
+        Object custom;
         HashMap<String, Object> children;
         ArrayList<Fragment> fragments;
         HCSparseArray<LoaderManagerImpl> loaders;
     }
-
+    
     static class FragmentTag {
         public static final int[] Fragment = {
             0x01010003, 0x010100d0, 0x010100d1
@@ -113,11 +128,11 @@ abstract public class MapFragmentActivity extends MapActivity {
         public static final int Fragment_name = 0;
         public static final int Fragment_tag = 2;
     }
-
+    
     // ------------------------------------------------------------------------
     // HOOKS INTO ACTIVITY
     // ------------------------------------------------------------------------
-
+    
     /**
      * Dispatch incoming result to the correct fragment.
      */
@@ -131,7 +146,7 @@ abstract public class MapFragmentActivity extends MapActivity {
                         + Integer.toHexString(requestCode));
                 return;
             }
-            final Fragment frag = mFragments.mActive.get(index);
+            Fragment frag = mFragments.mActive.get(index);
             if (frag == null) {
                 Log.w(TAG, "Activity result no fragment exists for index: 0x"
                         + Integer.toHexString(requestCode));
@@ -139,7 +154,7 @@ abstract public class MapFragmentActivity extends MapActivity {
             frag.onActivityResult(requestCode&0xffff, resultCode, data);
             return;
         }
-
+        
         super.onActivityResult(requestCode, resultCode, data);
     }
 
@@ -147,8 +162,7 @@ abstract public class MapFragmentActivity extends MapActivity {
      * Take care of popping the fragment back stack or finishing the activity
      * as appropriate.
      */
-    @Override
-	public void onBackPressed() {
+    public void onBackPressed() {
         if (!mFragments.popBackStackImmediate()) {
             finish();
         }
@@ -173,16 +187,16 @@ abstract public class MapFragmentActivity extends MapActivity {
         if (getLayoutInflater().getFactory() == null) {
             getLayoutInflater().setFactory(this);
         }
-
+        
         super.onCreate(savedInstanceState);
-
-        final NonConfigurationInstances nc = (NonConfigurationInstances)
+        
+        NonConfigurationInstances nc = (NonConfigurationInstances)
                 getLastNonConfigurationInstance();
         if (nc != null) {
             mAllLoaderManagers = nc.loaders;
         }
         if (savedInstanceState != null) {
-            final Parcelable p = savedInstanceState.getParcelable(FRAGMENTS_TAG);
+            Parcelable p = savedInstanceState.getParcelable(FRAGMENTS_TAG);
             mFragments.restoreAllState(p, nc != null ? nc.fragments : null);
         }
         mFragments.dispatchCreate();
@@ -206,7 +220,7 @@ abstract public class MapFragmentActivity extends MapActivity {
         }
         return super.onCreatePanelMenu(featureId, menu);
     }
-
+    
     /**
      * Add support for inflating the &lt;fragment> tag.
      */
@@ -215,18 +229,18 @@ abstract public class MapFragmentActivity extends MapActivity {
         if (!"fragment".equals(name)) {
             return super.onCreateView(name, context, attrs);
         }
-
+        
         String fname = attrs.getAttributeValue(null, "class");
-        final TypedArray a =  context.obtainStyledAttributes(attrs, FragmentTag.Fragment);
+        TypedArray a =  context.obtainStyledAttributes(attrs, FragmentTag.Fragment);
         if (fname == null) {
             fname = a.getString(FragmentTag.Fragment_name);
         }
-        final int id = a.getResourceId(FragmentTag.Fragment_id, View.NO_ID);
-        final String tag = a.getString(FragmentTag.Fragment_tag);
+        int id = a.getResourceId(FragmentTag.Fragment_id, View.NO_ID);
+        String tag = a.getString(FragmentTag.Fragment_tag);
         a.recycle();
-
-        final View parent = null; // NOTE: no way to get parent pre-Honeycomb.
-        final int containerId = parent != null ? parent.getId() : 0;
+        
+        View parent = null; // NOTE: no way to get parent pre-Honeycomb.
+        int containerId = parent != null ? parent.getId() : 0;
         if (containerId == View.NO_ID && id == View.NO_ID && tag == null) {
             throw new IllegalArgumentException(attrs.getPositionDescription()
                     + ": Must specify unique android:id, android:tag, or have a parent with an id for " + fname);
@@ -243,11 +257,9 @@ abstract public class MapFragmentActivity extends MapActivity {
             fragment = mFragments.findFragmentById(containerId);
         }
 
-        if (FragmentManagerImpl.DEBUG) {
-			Log.v(TAG, "onCreateView: id=0x"
-			        + Integer.toHexString(id) + " fname=" + fname
-			        + " existing=" + fragment);
-		}
+        if (FragmentManagerImpl.DEBUG) Log.v(TAG, "onCreateView: id=0x"
+                + Integer.toHexString(id) + " fname=" + fname
+                + " existing=" + fragment);
         if (fragment == null) {
             fragment = Fragment.instantiate(this, fname);
             fragment.mFromLayout = true;
@@ -255,9 +267,8 @@ abstract public class MapFragmentActivity extends MapActivity {
             fragment.mContainerId = containerId;
             fragment.mTag = tag;
             fragment.mInLayout = true;
-            fragment.mImmediateActivity = this;
             fragment.mFragmentManager = mFragments;
-            fragment.onInflate(attrs, fragment.mSavedFragmentState);
+            fragment.onInflate(this, attrs, fragment.mSavedFragmentState);
             mFragments.addFragment(fragment, true);
 
         } else if (fragment.mInLayout) {
@@ -271,12 +282,11 @@ abstract public class MapFragmentActivity extends MapActivity {
             // This fragment was retained from a previous instance; get it
             // going now.
             fragment.mInLayout = true;
-            fragment.mImmediateActivity = this;
             // If this fragment is newly instantiated (either right now, or
             // from last saved state), then give it the attributes to
             // initialize itself.
             if (!fragment.mRetaining) {
-                fragment.onInflate(attrs, fragment.mSavedFragmentState);
+                fragment.onInflate(this, attrs, fragment.mSavedFragmentState);
             }
             mFragments.moveToState(fragment);
         }
@@ -343,11 +353,11 @@ abstract public class MapFragmentActivity extends MapActivity {
         if (super.onMenuItemSelected(featureId, item)) {
             return true;
         }
-
+        
         switch (featureId) {
             case Window.FEATURE_OPTIONS_PANEL:
                 return mFragments.dispatchOptionsItemSelected(item);
-
+                
             case Window.FEATURE_CONTEXT_MENU:
                 return mFragments.dispatchContextItemSelected(item);
 
@@ -368,7 +378,7 @@ abstract public class MapFragmentActivity extends MapActivity {
         }
         super.onPanelClosed(featureId, menu);
     }
-
+    
     /**
      * Dispatch onPause() to fragments.
      */
@@ -376,16 +386,22 @@ abstract public class MapFragmentActivity extends MapActivity {
     protected void onPause() {
         super.onPause();
         mResumed = false;
+        if (mHandler.hasMessages(MSG_RESUME_PENDING)) {
+            mHandler.removeMessages(MSG_RESUME_PENDING);
+            mFragments.dispatchResume();
+        }
         mFragments.dispatchPause();
     }
 
     /**
-     * Dispatch onActivityCreated() on fragments.
+     * Dispatch onResume() to fragments.
      */
     @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-        mFragments.dispatchActivityCreated();
+    protected void onResume() {
+        super.onResume();
+        mHandler.sendEmptyMessage(MSG_RESUME_PENDING);
+        mResumed = true;
+        mFragments.execPendingActions();
     }
 
     /**
@@ -394,6 +410,7 @@ abstract public class MapFragmentActivity extends MapActivity {
     @Override
     protected void onPostResume() {
         super.onPostResume();
+        mHandler.removeMessages(MSG_RESUME_PENDING);
         mFragments.dispatchResume();
         mFragments.execPendingActions();
     }
@@ -417,18 +434,9 @@ abstract public class MapFragmentActivity extends MapActivity {
     }
 
     /**
-     * Ensure any outstanding fragment transactions have been committed.
-     */
-    @Override
-    protected void onResume() {
-        super.onResume();
-        mResumed = true;
-        mFragments.execPendingActions();
-    }
-
-    /**
      * Retain all appropriate fragment and loader state.  You can NOT
-     * override this yourself!
+     * override this yourself!  Use {@link #onRetainCustomNonConfigurationInstance()}
+     * if you want to retain your own state.
      */
     @Override
     public final Object onRetainNonConfigurationInstance() {
@@ -436,13 +444,15 @@ abstract public class MapFragmentActivity extends MapActivity {
             doReallyStop(true);
         }
 
-        final ArrayList<Fragment> fragments = mFragments.retainNonConfig();
+        Object custom = onRetainCustomNonConfigurationInstance();
+
+        ArrayList<Fragment> fragments = mFragments.retainNonConfig();
         boolean retainLoaders = false;
         if (mAllLoaderManagers != null) {
             // prune out any loader managers that were already stopped and so
             // have nothing useful to retain.
             for (int i=mAllLoaderManagers.size()-1; i>=0; i--) {
-                final LoaderManagerImpl lm = mAllLoaderManagers.valueAt(i);
+                LoaderManagerImpl lm = mAllLoaderManagers.valueAt(i);
                 if (lm.mRetaining) {
                     retainLoaders = true;
                 } else {
@@ -451,12 +461,13 @@ abstract public class MapFragmentActivity extends MapActivity {
                 }
             }
         }
-        if (fragments == null && !retainLoaders) {
+        if (fragments == null && !retainLoaders && custom == null) {
             return null;
         }
-
-        final NonConfigurationInstances nci = new NonConfigurationInstances();
+        
+        NonConfigurationInstances nci = new NonConfigurationInstances();
         nci.activity = null;
+        nci.custom = custom;
         nci.children = null;
         nci.fragments = fragments;
         nci.loaders = mAllLoaderManagers;
@@ -469,7 +480,7 @@ abstract public class MapFragmentActivity extends MapActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        final Parcelable p = mFragments.saveAllState();
+        Parcelable p = mFragments.saveAllState();
         if (p != null) {
             outState.putParcelable(FRAGMENTS_TAG, p);
         }
@@ -484,12 +495,17 @@ abstract public class MapFragmentActivity extends MapActivity {
         super.onStart();
 
         mStopped = false;
+        mReallyStopped = false;
         mHandler.removeMessages(MSG_REALLY_STOPPED);
+
+        if (!mCreated) {
+            mCreated = true;
+            mFragments.dispatchActivityCreated();
+        }
 
         mFragments.noteStateNotSaved();
         mFragments.execPendingActions();
-
-
+        
         if (!mLoadersStarted) {
             mLoadersStarted = true;
             if (mLoaderManager != null) {
@@ -500,11 +516,13 @@ abstract public class MapFragmentActivity extends MapActivity {
             mCheckedForLoaderManager = true;
         }
         // NOTE: HC onStart goes here.
-
+        
         mFragments.dispatchStart();
         if (mAllLoaderManagers != null) {
             for (int i=mAllLoaderManagers.size()-1; i>=0; i--) {
-                mAllLoaderManagers.valueAt(i).finishRetain();
+                LoaderManagerImpl lm = mAllLoaderManagers.valueAt(i);
+                lm.finishRetain();
+                lm.doReportStart();
             }
         }
     }
@@ -518,19 +536,42 @@ abstract public class MapFragmentActivity extends MapActivity {
 
         mStopped = true;
         mHandler.sendEmptyMessage(MSG_REALLY_STOPPED);
-
+        
         mFragments.dispatchStop();
     }
 
     // ------------------------------------------------------------------------
     // NEW METHODS
     // ------------------------------------------------------------------------
+    
+    /**
+     * Use this instead of {@link #onRetainNonConfigurationInstance()}.
+     * Retrieve later with {@link #getLastCustomNonConfigurationInstance()}.
+     */
+    public Object onRetainCustomNonConfigurationInstance() {
+        return null;
+    }
 
-    void supportInvalidateOptionsMenu() {
+    /**
+     * Return the value previously returned from
+     * {@link #onRetainCustomNonConfigurationInstance()}.
+     */
+    public Object getLastCustomNonConfigurationInstance() {
+        NonConfigurationInstances nc = (NonConfigurationInstances)
+                getLastNonConfigurationInstance();
+        return nc != null ? nc.custom : null;
+    }
+
+    /**
+     * Invalidate the activity's options menu. This will cause relevant presentations
+     * of the menu to fully update via calls to onCreateOptionsMenu and
+     * onPrepareOptionsMenu the next time the menu is requested.
+     */
+    public void supportInvalidateOptionsMenu() {
         if (android.os.Build.VERSION.SDK_INT >= HONEYCOMB) {
             // If we are running on HC or greater, we can use the framework
             // API to invalidate the options menu.
-        	//XXX ActivityCompatHoneycomb.invalidateOptionsMenu(this);
+            ActivityCompatHoneycomb.invalidateOptionsMenu(this);
             return;
         }
 
@@ -538,7 +579,7 @@ abstract public class MapFragmentActivity extends MapActivity {
         // the options menu the next time it is prepared.
         mOptionsMenuInvalidated = true;
     }
-
+    
     /**
      * Print the Activity's state into the given stream.  This gets invoked if
      * you run "adb shell dumpsys activity <activity_component_name>".
@@ -554,11 +595,12 @@ abstract public class MapFragmentActivity extends MapActivity {
             // XXX This can only work if we can call the super-class impl. :/
             //ActivityCompatHoneycomb.dump(this, prefix, fd, writer, args);
         }
-        writer.print(prefix); writer.print("Local FragmentActivity ");
+        writer.print(prefix); writer.print("Local MapFragmentActivity ");
                 writer.print(Integer.toHexString(System.identityHashCode(this)));
                 writer.println(" State:");
-        final String innerPrefix = prefix + "  ";
-        writer.print(innerPrefix); writer.print("mResumed=");
+        String innerPrefix = prefix + "  ";
+        writer.print(innerPrefix); writer.print("mCreated=");
+                writer.print(mCreated); writer.print("mResumed=");
                 writer.print(mResumed); writer.print(" mStopped=");
                 writer.print(mStopped); writer.print(" mReallyStopped=");
                 writer.println(mReallyStopped);
@@ -576,8 +618,9 @@ abstract public class MapFragmentActivity extends MapActivity {
     void doReallyStop(boolean retaining) {
         if (!mReallyStopped) {
             mReallyStopped = true;
+            mRetaining = retaining;
             mHandler.removeMessages(MSG_REALLY_STOPPED);
-            onReallyStop(retaining);
+            onReallyStop();
         }
     }
 
@@ -588,11 +631,11 @@ abstract public class MapFragmentActivity extends MapActivity {
      * we need to know this, to know whether to retain fragments.  This will
      * tell us what we need to know.
      */
-    void onReallyStop(boolean retaining) {
+    void onReallyStop() {
         if (mLoadersStarted) {
             mLoadersStarted = false;
             if (mLoaderManager != null) {
-                if (!retaining) {
+                if (!mRetaining) {
                     mLoaderManager.doStop();
                 } else {
                     mLoaderManager.doRetain();
@@ -600,19 +643,19 @@ abstract public class MapFragmentActivity extends MapActivity {
             }
         }
 
-        mFragments.dispatchReallyStop(retaining);
+        mFragments.dispatchReallyStop();
     }
 
     // ------------------------------------------------------------------------
     // FRAGMENT SUPPORT
     // ------------------------------------------------------------------------
-
+    
     /**
      * Called when a fragment is attached to the activity.
      */
     public void onAttachFragment(Fragment fragment) {
     }
-
+    
     /**
      * Return the FragmentManager for interacting with fragments associated
      * with this activity.
@@ -636,7 +679,7 @@ abstract public class MapFragmentActivity extends MapActivity {
     /**
      * Called by Fragment.startActivityForResult() to implement its behavior.
      */
-    public void startActivityFromFragment(Fragment fragment, Intent intent,
+    public void startActivityFromFragment(Fragment fragment, Intent intent, 
             int requestCode) {
         if (requestCode == -1) {
             super.startActivityForResult(intent, -1);
@@ -645,24 +688,24 @@ abstract public class MapFragmentActivity extends MapActivity {
         if ((requestCode&0xffff0000) != 0) {
             throw new IllegalArgumentException("Can only use lower 16 bits for requestCode");
         }
-        super.startActivityForResult(intent, (fragment.mIndex+1)<<16 + (requestCode*0xffff));
+        super.startActivityForResult(intent, ((fragment.mIndex+1)<<16) + (requestCode&0xffff));
     }
-
-    void invalidateFragmentIndex(int index) {
+    
+    void invalidateSupportFragmentIndex(int index) {
         //Log.v(TAG, "invalidateFragmentIndex: index=" + index);
         if (mAllLoaderManagers != null) {
-            final LoaderManagerImpl lm = mAllLoaderManagers.get(index);
-            if (lm != null) {
+            LoaderManagerImpl lm = mAllLoaderManagers.get(index);
+            if (lm != null && !lm.mRetaining) {
                 lm.doDestroy();
+                mAllLoaderManagers.remove(index);
             }
-            mAllLoaderManagers.remove(index);
         }
     }
-
+    
     // ------------------------------------------------------------------------
     // LOADER SUPPORT
     // ------------------------------------------------------------------------
-
+    
     /**
      * Return the LoaderManager for this fragment, creating it if needed.
      */
@@ -674,7 +717,7 @@ abstract public class MapFragmentActivity extends MapActivity {
         mLoaderManager = getLoaderManager(-1, mLoadersStarted, true);
         return mLoaderManager;
     }
-
+    
     LoaderManagerImpl getLoaderManager(int index, boolean started, boolean create) {
         if (mAllLoaderManagers == null) {
             mAllLoaderManagers = new HCSparseArray<LoaderManagerImpl>();
@@ -690,4 +733,10 @@ abstract public class MapFragmentActivity extends MapActivity {
         }
         return lm;
     }
+
+	@Override
+	protected boolean isRouteDisplayed() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }
