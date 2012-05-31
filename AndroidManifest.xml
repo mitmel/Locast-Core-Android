@@ -207,11 +207,6 @@
             android:name="edu.mit.mobile.android.locast.casts.UnsyncedCastsActivity"
             android:label="@string/activity_unsynced_casts"
             android:taskAffinity="edu.mit.mobile.android.locast.ver2.casts.UnsyncedCastsActivity" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         <activity android:name="edu.mit.mobile.android.locast.collections.CollectionDetail" >
             <intent-filter>
