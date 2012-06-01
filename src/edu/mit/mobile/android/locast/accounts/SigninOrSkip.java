@@ -45,7 +45,6 @@ public class SigninOrSkip extends Activity implements OnClickListener {
 		findViewById(R.id.sign_in).setOnClickListener(this);
 		final Button skip = (Button) findViewById(R.id.skip);
 		skip.setOnClickListener(this);
-		findViewById(R.id.refresh).setVisibility(View.GONE);
 
 		final Bundle extras = getIntent().getExtras();
 		if (extras != null) {

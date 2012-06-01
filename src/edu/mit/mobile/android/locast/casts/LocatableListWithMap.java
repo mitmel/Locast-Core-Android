@@ -36,8 +36,8 @@ import android.support.v4.widget.CursorAdapter;
 import android.support.v4_map.app.LoaderManager;
 import android.support.v4_map.app.MapFragmentActivity;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
@@ -50,6 +50,7 @@ import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 import com.google.android.maps.MyLocationOverlay;
 import com.google.android.maps.Overlay;
+import com.markupartist.android.widget.ActionBar;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
@@ -64,9 +65,9 @@ import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
-import edu.mit.mobile.android.widget.RefreshButton;
 
-public class LocatableListWithMap extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnClickListener, OnItemClickListener {
+public class LocatableListWithMap extends MapFragmentActivity implements
+		LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener {
 
 	private static final String TAG = LocatableListWithMap.class.getSimpleName();
 	private CursorAdapter mAdapter;
@@ -92,13 +93,10 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 
 	private int mSearchRadius = 500; // m
 
-	public static final String
-		ACTION_SEARCH_NEARBY = "edu.mit.mobile.android.locast.ACTION_SEARCH_NEARBY";
+	public static final String ACTION_SEARCH_NEARBY = "edu.mit.mobile.android.locast.ACTION_SEARCH_NEARBY";
 
 	private boolean actionSearchNearby = false;
 	private boolean mExpeditedSync;
-
-	private RefreshButton mRefresh;
 
 	private Object mSyncHandle;
 
@@ -106,25 +104,23 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 
 	private final static int MSG_SET_GEOPOINT = 200;
 
-	private final Handler mHandler = new Handler(){
+	private final Handler mHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
-			switch (msg.what){
-			case LocastSyncStatusObserver.MSG_SET_REFRESHING:
-				if (Constants.DEBUG){
-					Log.d(TAG, "refreshing...");
-				}
-				mProgressBar.showProgressBar(true);
-				mRefresh.setRefreshing(true);
-				break;
+			switch (msg.what) {
+				case LocastSyncStatusObserver.MSG_SET_REFRESHING:
+					if (Constants.DEBUG) {
+						Log.d(TAG, "refreshing...");
+					}
+					mProgressBar.showProgressBar(true);
+					break;
 
-			case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
-				if (Constants.DEBUG){
-					Log.d(TAG, "done loading.");
-				}
-				mProgressBar.showProgressBar(false);
-				mRefresh.setRefreshing(false);
-				break;
+				case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
+					if (Constants.DEBUG) {
+						Log.d(TAG, "done loading.");
+					}
+					mProgressBar.showProgressBar(false);
+					break;
 
 				case MSG_SET_GEOPOINT:
 					setDataUriNear((GeoPoint) msg.obj, msg.arg1);
@@ -137,18 +133,19 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.map_list_activity);
-		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
-		findViewById(R.id.refresh).setOnClickListener(this);
-		findViewById(R.id.home).setOnClickListener(this);
+		mProgressBar = (NotificationProgressBar) (findViewById(R.id.progressNotification));
+
+		final ActionBar ab = (ActionBar) findViewById(R.id.actionbar);
+		getMenuInflater().inflate(R.menu.actionbar_view_dir, ab.asMenu());
 
 		mMapView = (MyMapView) findViewById(R.id.map);
 		mMapController = mMapView.getController();
 		mListView = (ListView) findViewById(android.R.id.list);
 		mListView.setOnItemClickListener(this);
-		mListView.addFooterView(getLayoutInflater().inflate(R.layout.list_footer, null), null, false);
+		mListView.addFooterView(getLayoutInflater().inflate(R.layout.list_footer, null), null,
+				false);
 		mListView.setEmptyView(findViewById(R.id.progressNotification));
-		mRefresh = (RefreshButton) findViewById(R.id.refresh);
-		mRefresh.setOnClickListener(this);
+
 		mLoaderManager = getSupportLoaderManager();
 
 		final Intent intent = getIntent();
@@ -159,7 +156,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		actionSearchNearby = ACTION_SEARCH_NEARBY.equals(action);
 		final boolean actionView = Intent.ACTION_VIEW.equals(action);
 
-		if (!actionView && !actionSearchNearby){
+		if (!actionView && !actionSearchNearby) {
 			Log.e(TAG, "unhandled action " + action);
 			finish();
 			return;
@@ -185,30 +182,32 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		final Uri data = intent.getData();
 		final String type = intent.resolveType(this);
 
-		if (MediaProvider.TYPE_CAST_DIR.equals(type)){
+		if (MediaProvider.TYPE_CAST_DIR.equals(type)) {
 			mAdapter = new CastCursorAdapter(this, null);
 
-			mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache, new int[]{R.id.media_thumbnail}, 48, 48, ImageLoaderAdapter.UNIT_DIP));
+			mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache,
+					new int[] { R.id.media_thumbnail }, 48, 48, ImageLoaderAdapter.UNIT_DIP));
 			initMapOverlays(new CastsOverlay(this, mMapView));
 
 			title = getString(R.string.title_casts);
 
 			mSearchRadius = 1500;
 
-		}else{
+		} else {
 			throw new IllegalArgumentException("Unhandled content type " + type);
 		}
 
 		mBaseContent = data;
 		setDataUri(data);
 
-		if (actionSearchNearby){
+		if (actionSearchNearby) {
 			title = getString(R.string.title_nearby, title);
 		}
 		// if it's showing only favorited items, adjust the title's language accordingly.
 		final Boolean favorited = Favoritable.decodeFavoritedUri(data);
-		if (favorited != null){
-			title = getString(favorited ? R.string.title_favorited : R.string.title_unfavorited, title);
+		if (favorited != null) {
+			title = getString(favorited ? R.string.title_favorited : R.string.title_unfavorited,
+					title);
 		}
 
 		setTitle(title);
@@ -225,7 +224,8 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 			mMyLocationOverlay.enableMyLocation();
 		}
 		mExpeditedSync = true;
-		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(this, mHandler));
+		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(
+				this, mHandler));
 		LocastSyncStatusObserver.notifySyncStatusToHandler(this, mHandler);
 	}
 
@@ -235,7 +235,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		if (actionSearchNearby) {
 			mMyLocationOverlay.disableMyLocation();
 		}
-		if (mSyncHandle != null){
+		if (mSyncHandle != null) {
 			ContentResolver.removeStatusChangeListener(mSyncHandle);
 		}
 	}
@@ -243,19 +243,19 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	/**
 	 * Gets the last-known location and updates with that.
 	 */
-	private void updateLocation(){
+	private void updateLocation() {
 		final LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
 		final String provider = lm.getBestProvider(new Criteria(), true);
-		if (provider == null){
+		if (provider == null) {
 			Toast.makeText(this, getString(R.string.error_no_providers), Toast.LENGTH_LONG).show();
 			finish();
 			return;
 		}
 
 		final Location loc = lm.getLastKnownLocation(provider);
-		if (loc != null){
+		if (loc != null) {
 			updateLocation(loc);
-		}else{
+		} else {
 			Toast.makeText(this, R.string.notice_finding_your_location, Toast.LENGTH_LONG).show();
 			setRefreshing(true);
 		}
@@ -267,12 +267,12 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	 *
 	 * @param loc
 	 */
-	private void updateLocation(Location loc){
-		if (loc == null){
+	private void updateLocation(Location loc) {
+		if (loc == null) {
 			throw new NullPointerException();
 		}
 
-		if (actionSearchNearby){
+		if (actionSearchNearby) {
 			setDataUriNear(loc, mSearchRadius);
 		}
 
@@ -297,7 +297,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		setDataUri(Locatable.toDistanceSearchUri(mBaseContent, loc, searchRadius));
 	}
 
-	private void setDataUri(Uri data){
+	private void setDataUri(Uri data) {
 
 		final Bundle args = new Bundle();
 		args.putParcelable(LOADER_ARG_DATA, data);
@@ -309,7 +309,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		setRefreshing(true);
 
 		mContentNearLocation = data;
-		if (data != null){
+		if (data != null) {
 			refresh(false);
 		}
 	}
@@ -317,17 +317,16 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	@Override
 	public void onWindowFocusChanged(boolean hasFocus) {
 		super.onWindowFocusChanged(hasFocus);
-		if (hasFocus){
+		if (hasFocus) {
 
 		}
 	}
 
-	private void setRefreshing(boolean isRefreshing){
-		final RefreshButton refresh = (RefreshButton)findViewById(R.id.refresh);
-		refresh.setRefreshing(isRefreshing);
+	private void setRefreshing(boolean isRefreshing) {
+		// TODO
 	}
 
-	private void initMapOverlays(LocatableItemOverlay overlay){
+	private void initMapOverlays(LocatableItemOverlay overlay) {
 		mLocatableItemsOverlay = overlay;
 		final List<Overlay> overlays = mMapView.getOverlays();
 		mMyLocationOverlay = new MyMyLocationOverlay(this, mMapView);
@@ -339,13 +338,13 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	}
 
 	@Override
-	public void setTitle(CharSequence title){
+	public void setTitle(CharSequence title) {
 		super.setTitle(title);
-		((TextView)findViewById(android.R.id.title)).setText(title);
+		((TextView) findViewById(android.R.id.title)).setText(title);
 	}
 
-	private void refresh(boolean explicitSync){
-		if ((System.nanoTime() - mLastUpdate) < AUTO_UPDATE_FREQUENCY && !explicitSync){
+	private void refresh(boolean explicitSync) {
+		if ((System.nanoTime() - mLastUpdate) < AUTO_UPDATE_FREQUENCY && !explicitSync) {
 			// not enough time has elapsed for a non-explicit sync to be allowed
 			return;
 		}
@@ -359,15 +358,20 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	}
 
 	@Override
-	public void onClick(View v) {
-		switch (v.getId()){
-		case R.id.refresh:
-			refresh(true);
-			break;
-		case R.id.home:
-			startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
-			break;
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case R.id.refresh:
+				refresh(true);
+				return true;
+
+			case R.id.actionbar_item_home:
+				startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
+				return true;
+
+			default:
+				return super.onOptionsItemSelected(item);
 		}
+
 	}
 
 	@Override
@@ -395,14 +399,14 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 	}
 
 	private static String LOADER_ARG_DATA = "edu.mit.mobile.android.locast.LOADER_ARG_DATA";
-	private final static int
- LOADER_ID_CAST = 0;
+	private final static int LOADER_ID_CAST = 0;
 
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		switch (id){
-		case LOADER_ID_CAST:
-			return new CursorLoader(this, (Uri) args.getParcelable(LOADER_ARG_DATA), Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
+		switch (id) {
+			case LOADER_ID_CAST:
+				return new CursorLoader(this, (Uri) args.getParcelable(LOADER_ARG_DATA),
+						Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
 
 			default:
 				return null;
@@ -415,7 +419,7 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 		mLocatableItemsOverlay.swapCursor(c);
 
 		// When items are found
-		if (c.moveToFirst()){
+		if (c.moveToFirst()) {
 			if (!mUserPanned) {
 				mMapController.zoomToSpan(mLocatableItemsOverlay.getLatSpanE6(),
 						mLocatableItemsOverlay.getLonSpanE6());
@@ -423,11 +427,12 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 
 				mMapController.animateTo(center);
 			}
-		}else{
+		} else {
 
 			if (!mUserPanned && mLastLocation != null) {
 				mMapController.setZoom(15);
-				final GeoPoint myPosition = new GeoPoint((int)(mLastLocation.getLatitude() * 1E6), (int)(mLastLocation.getLongitude() * 1E6));
+				final GeoPoint myPosition = new GeoPoint((int) (mLastLocation.getLatitude() * 1E6),
+						(int) (mLastLocation.getLongitude() * 1E6));
 
 				mMapController.animateTo(myPosition);
 			}
@@ -435,9 +440,9 @@ public class LocatableListWithMap extends MapFragmentActivity implements LoaderM
 
 		setRefreshing(false);
 
-		if (mExpeditedSync){
+		if (mExpeditedSync) {
 			mExpeditedSync = false;
-			if (mListView.getAdapter().isEmpty()){
+			if (mListView.getAdapter().isEmpty()) {
 				LocastSyncService.startExpeditedAutomaticSync(this, mContentNearLocation);
 			}
 		}

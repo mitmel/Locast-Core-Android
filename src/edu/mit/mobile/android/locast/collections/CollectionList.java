@@ -35,13 +35,14 @@ import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.markupartist.android.widget.ActionBar;
 import com.stackoverflow.ArrayUtils;
 
 import edu.mit.mobile.android.appupdater.AppUpdateChecker;
@@ -57,10 +58,9 @@ import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
-import edu.mit.mobile.android.widget.RefreshButton;
 
 public class CollectionList extends FragmentActivity implements
-		LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener {
+		LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener {
 
 	private static final String TAG = CollectionList.class.getSimpleName();
 	private CursorAdapter mAdapter;
@@ -81,9 +81,9 @@ public class CollectionList extends FragmentActivity implements
 	private static final boolean SHOW_DESCRIPTION = true;
 
 	private final String[] COLLECTION_DISPLAY = SHOW_DESCRIPTION ? new String[] {
-			Collection._TITLE,
-			Collection._THUMBNAIL, Collection._DESCRIPTION } : new String[] { Collection._TITLE,
-			Collection._THUMBNAIL, Collection._CASTS_COUNT, Collection._FAVORITES_COUNT };
+			Collection._TITLE, Collection._THUMBNAIL, Collection._DESCRIPTION } : new String[] {
+			Collection._TITLE, Collection._THUMBNAIL, Collection._CASTS_COUNT,
+			Collection._FAVORITES_COUNT };
 
 	private String[] COLLECTION_PROJECTION;
 
@@ -97,30 +97,26 @@ public class CollectionList extends FragmentActivity implements
 
 	private boolean mSyncWhenLoaded = true;
 
-	private RefreshButton mRefresh;
-
 	private Object mSyncHandle;
 	private NotificationProgressBar mProgressBar;
 
 	private final Handler mHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
-			switch (msg.what){
-			case LocastSyncStatusObserver.MSG_SET_REFRESHING:
-				if (Constants.DEBUG){
-					Log.d(TAG, "refreshing...");
-				}
-				mProgressBar.showProgressBar(true);
-				mRefresh.setRefreshing(true);
-				break;
+			switch (msg.what) {
+				case LocastSyncStatusObserver.MSG_SET_REFRESHING:
+					if (Constants.DEBUG) {
+						Log.d(TAG, "refreshing...");
+					}
+					mProgressBar.showProgressBar(true);
+					break;
 
-			case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
-				if (Constants.DEBUG){
-					Log.d(TAG, "done loading.");
-				}
-				mProgressBar.showProgressBar(false);
-				mRefresh.setRefreshing(false);
-				break;
+				case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
+					if (Constants.DEBUG) {
+						Log.d(TAG, "done loading.");
+					}
+					mProgressBar.showProgressBar(false);
+					break;
 			}
 		};
 	};
@@ -129,17 +125,17 @@ public class CollectionList extends FragmentActivity implements
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.simple_list_activity);
-		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
-
-		findViewById(R.id.refresh).setOnClickListener(this);
-		findViewById(R.id.home).setOnClickListener(this);
+		mProgressBar = (NotificationProgressBar) (findViewById(R.id.progressNotification));
 
 		mListView = (ListView) findViewById(android.R.id.list);
 		mListView.setOnItemClickListener(this);
-		mListView.addFooterView(LayoutInflater.from(this).inflate(R.layout.list_footer, null), null, false);
+		mListView.addFooterView(LayoutInflater.from(this).inflate(R.layout.list_footer, null),
+				null, false);
 		mListView.setEmptyView(findViewById(R.id.progressNotification));
-		mRefresh = (RefreshButton) findViewById(R.id.refresh);
-		mRefresh.setOnClickListener(this);
+
+		final ActionBar ab = (ActionBar) findViewById(R.id.actionbar);
+		getMenuInflater().inflate(R.menu.actionbar_view_dir, ab.asMenu());
+
 		if (Constants.USE_APPUPDATE_CHECKER) {
 			mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url),
 					new OnUpdateDialog(this, getString(R.string.app_name)));
@@ -294,16 +290,20 @@ public class CollectionList extends FragmentActivity implements
 	}
 
 	@Override
-	public void onClick(View v) {
-		switch (v.getId()) {
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
 			case R.id.refresh:
 				refresh(true);
-				break;
+				return true;
 
-			case R.id.home:
+			case R.id.actionbar_item_home:
 				startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
-				break;
+				return true;
+
+			default:
+				return super.onOptionsItemSelected(item);
 		}
+
 	}
 
 	@Override

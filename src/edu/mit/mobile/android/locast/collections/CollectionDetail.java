@@ -52,6 +52,7 @@ import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
 import com.google.android.maps.OverlayItem;
+import com.markupartist.android.widget.ActionBar;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
 import edu.mit.mobile.android.imagecache.ImageLoaderAdapter;
@@ -64,7 +65,6 @@ import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
-import edu.mit.mobile.android.widget.RefreshButton;
 
 public class CollectionDetail extends MapFragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener, OnClickListener, DialogInterface.OnClickListener {
 	private static final String TAG = CollectionDetail.class.getSimpleName();
@@ -104,8 +104,6 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
 	private static final String[] COLLECTION_PROJECTION = new String[] { Collection._ID,
 			Collection._DESCRIPTION, Collection._TITLE, Collection._CASTS_COUNT };
 
-	private RefreshButton mRefresh;
-
 	private Object mSyncHandle;
 
 	private NotificationProgressBar mProgressBar;
@@ -119,7 +117,6 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
 					Log.d(TAG, "refreshing...");
 				}
 				mProgressBar.showProgressBar(true);
-				mRefresh.setRefreshing(true);
 				break;
 
 			case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
@@ -127,7 +124,6 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
 					Log.d(TAG, "done loading.");
 				}
 				mProgressBar.showProgressBar(false);
-				mRefresh.setRefreshing(false);
 				break;
 			}
 		};
@@ -142,12 +138,13 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
 
 		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
 
+		final ActionBar ab = (ActionBar) findViewById(R.id.actionbar);
+		getMenuInflater().inflate(R.menu.actionbar_view_item, ab.asMenu());
+
 		mImageCache = ImageCache.getInstance(this);
 		clickTimer = new Timer();
 
 		mCastView = (ListView)findViewById(R.id.casts);
-		findViewById(R.id.refresh).setOnClickListener(this);
-		findViewById(R.id.home).setOnClickListener(this);
 
 		final LayoutInflater layoutInflater = getLayoutInflater();
 
@@ -156,8 +153,7 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
 				null, false);
 		mCastView.addFooterView(layoutInflater.inflate(R.layout.list_footer, null), null, false);
 		mCastView.setEmptyView(findViewById(R.id.empty2));
-		mRefresh = (RefreshButton) findViewById(R.id.refresh);
-		mRefresh.setOnClickListener(this);
+
 
 		final View addCast = findViewById(R.id.add_cast);
 		addCast.setOnClickListener(this);
@@ -329,13 +325,6 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
 	@Override
 	public void onClick(View v) {
 		switch(v.getId()){
-		case R.id.refresh:
-			refresh(true);
-			break;
-
-		case R.id.home:
-			startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
-            break;
 
 		case R.id.add_cast:
 				startActivity(new Intent(Intent.ACTION_INSERT, Collection.CASTS.getUri(getIntent()
@@ -443,6 +432,10 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
 				startActivity(new Intent(Intent.ACTION_INSERT, Collection.CASTS.getUri(getIntent()
 						.getData())));
 			return true;
+
+			case R.id.actionbar_item_home:
+				startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
+				return true;
 
 		case R.id.refresh:
 			refresh(true);

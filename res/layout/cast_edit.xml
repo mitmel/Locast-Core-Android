@@ -4,7 +4,7 @@
     android:layout_height="fill_parent" >
 
     <include
-        android:id="@+id/action_bar"
+        android:id="@+id/actionbar"
         layout="@layout/action_bar" />
 
     <TextView
@@ -12,7 +12,7 @@
         style="@style/Notice"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/action_bar"
+        android:layout_below="@id/actionbar"
         android:textStyle="normal"
         android:visibility="gone" />
 

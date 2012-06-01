@@ -33,8 +33,8 @@ import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v4_map.app.LoaderManager;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.CheckBox;
@@ -42,6 +42,7 @@ import android.widget.Gallery;
 import android.widget.TextView;
 
 import com.google.android.maps.MapView;
+import com.markupartist.android.widget.ActionBar;
 import com.stackoverflow.ArrayUtils;
 
 import edu.mit.mobile.android.imagecache.ImageCache;
@@ -59,11 +60,10 @@ import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.widget.FavoriteClickHandler;
 import edu.mit.mobile.android.widget.MarkDown;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
-import edu.mit.mobile.android.widget.RefreshButton;
 import edu.mit.mobile.android.widget.ValidatingCheckBox;
 
 public class CastDetail extends LocatableDetail implements LoaderManager.LoaderCallbacks<Cursor>,
-		OnItemClickListener, OnClickListener {
+		OnItemClickListener {
 	private static final String TAG = CastDetail.class.getSimpleName();
 
 	/**
@@ -103,7 +103,6 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 						Log.d(TAG, "refreshing...");
 					}
 					mProgressBar.showProgressBar(true);
-					mRefresh.setRefreshing(true);
 					break;
 
 				case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
@@ -111,13 +110,10 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 						Log.d(TAG, "done loading.");
 					}
 					mProgressBar.showProgressBar(false);
-					mRefresh.setRefreshing(false);
 					break;
 			}
 		};
 	};
-
-	private RefreshButton mRefresh;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -127,6 +123,9 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 
 		mProgressBar =(NotificationProgressBar) (findViewById(R.id.progressNotification));
 		final Uri data = getIntent().getData();
+
+		final ActionBar ab = (ActionBar) findViewById(R.id.actionbar);
+		getMenuInflater().inflate(R.menu.actionbar_view_item, ab.asMenu());
 
 		mCastMediaUri = Cast.getCastMediaUri(data);
 
@@ -143,10 +142,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		mLoaderManager = getSupportLoaderManager();
 		mLoaderManager.initLoader(LOADER_CAST, null, this);
 		mLoaderManager.initLoader(LOADER_CAST_MEDIA, null, this);
-		findViewById(R.id.home).setOnClickListener(this);
-		findViewById(R.id.refresh).setOnClickListener(this);
-		mRefresh = (RefreshButton) findViewById(R.id.refresh);
-		mRefresh.setOnClickListener(this);
+
 		vcb = (ValidatingCheckBox) findViewById(R.id.favorite);
 
 		vcb.setValidatedClickHandler(new MyFavoriteClickHandler(this, data));
@@ -187,15 +183,18 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 	}
 
 	@Override
-	public void onClick(View v) {
-		switch (v.getId()) {
-			case R.id.home:
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case R.id.actionbar_item_home:
 				startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
-				break;
+				return true;
 
 			case R.id.refresh:
 				LocastSyncService.startSync(this, getIntent().getData(), true);
-				break;
+				return true;
+
+			default:
+				return super.onOptionsItemSelected(item);
 		}
 	}
 

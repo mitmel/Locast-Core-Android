@@ -5,7 +5,7 @@
 
 
     <!-- This is needed as API level 5 doesn't seem to respect the API-level qualifier. -->
-    <style name="LightTheme" parent="@android:style/Theme.Light">
+    <style name="LightTheme" parent="@style/Theme.ActionBar.Light">
         <item name="android:tabWidgetStyle">@android:style/Widget.TabWidget</item>
     </style>
 

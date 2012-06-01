@@ -1,43 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:mel="http://mobile.mit.edu/schemas/android"
+<com.markupartist.android.widget.ActionBar xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res/edu.mit.mobile.android.locast.ver2"
+    android:id="@+id/actionbar"
     style="@style/ActionBar"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content" >
-
-    <edu.mit.mobile.android.widget.RefreshButton
-        android:id="@+id/refresh"
-        style="@style/ActionBar.Button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:padding="10dip"
-        android:src="@drawable/ic_refresh"
-        mel:refreshingDrawable="@drawable/ic_refresh_refreshing" />
-
-    <TextView
-        android:id="@+id/home"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_centerVertical="true"
-        android:layout_marginLeft="10dip"
-        android:text="@string/app_name"
-        android:textAppearance="@android:style/TextAppearance.Large"
-        android:textColor="@color/foreground_dark" />
-
-    <!--
-         <edu.mit.mobile.android.widget.RefreshButton
-        android:id="@+id/refresh"
-        style="@style/ActionBar.Button"
-        android:layout_width="48dip"
-        android:layout_height="48dip"
-        android:layout_alignBottom="@+id/title"
-        android:layout_alignParentRight="true"
-        android:layout_alignTop="@+id/title"
-        mel:refreshingDrawable="@drawable/ic_refresh_refreshing"
-        android:src="@drawable/ic_refresh" />
-    -->
-
-</RelativeLayout>
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:title="@string/app_name" />

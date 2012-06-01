@@ -6,4 +6,9 @@
     <color name="foreground_dark">#fff</color>
     <color name="background_dark">#35BED3</color>
     <color name="negative_action">#d93131</color>
+    
+    <!-- Set our actionbar colors to something simple -->
+    <color name="actionbar_divider">#55DEF3</color>
+    <color name="actionbar_background_start">#35BED3</color>
+    <color name="actionbar_background_end">#35BED3</color>
 </resources>

@@ -3,14 +3,14 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent" >
 
-    <include layout="@layout/action_bar" android:id="@+id/action_bar" />
+    <include layout="@layout/action_bar" android:id="@+id/actionbar" />
 
     <TextView
         android:id="@android:id/title"
         style="@style/SubTitle"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/action_bar" />
+        android:layout_below="@id/actionbar" />
 
     <ListView
         android:id="@android:id/list"

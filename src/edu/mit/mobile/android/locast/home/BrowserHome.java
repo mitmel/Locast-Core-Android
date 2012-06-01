@@ -37,6 +37,9 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Gallery;
 import android.widget.Toast;
+
+import com.markupartist.android.widget.ActionBar;
+
 import edu.mit.mobile.android.appupdater.AppUpdateChecker;
 import edu.mit.mobile.android.appupdater.OnUpdateDialog;
 import edu.mit.mobile.android.imagecache.ImageCache;
@@ -55,7 +58,6 @@ import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
-import edu.mit.mobile.android.widget.RefreshButton;
 
 public class BrowserHome extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>,
 		OnItemClickListener, OnClickListener {
@@ -86,7 +88,6 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 						Log.d(TAG, "refreshing...");
 					}
 					mProgressBar.showProgressBar(true);
-					mRefresh.setRefreshing(true);
 					break;
 
 				case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
@@ -94,13 +95,10 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 						Log.d(TAG, "done loading.");
 					}
 					mProgressBar.showProgressBar(false);
-					mRefresh.setRefreshing(false);
 					break;
 			}
 		};
 	};
-
-	private RefreshButton mRefresh;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -129,8 +127,9 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 		final LoaderManager lm = getSupportLoaderManager();
 		lm.initLoader(LOADER_FEATURED_CASTS, null, this);
 
-		mRefresh = (RefreshButton) findViewById(R.id.refresh);
-		mRefresh.setOnClickListener(this);
+		final ActionBar ab = (ActionBar) findViewById(R.id.actionbar);
+		getMenuInflater().inflate(R.menu.actionbar_view_dir, ab.asMenu());
+
 		findViewById(R.id.collections).setOnClickListener(this);
 		findViewById(R.id.nearby).setOnClickListener(this);
 		findViewById(R.id.favorites).setOnClickListener(this);
