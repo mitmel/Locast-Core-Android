@@ -16,15 +16,17 @@
 
 package android.support.v4_map.app;
 
-import android.app.Activity;
-import android.content.Intent;
-
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.content.Intent;
 
 /**
  * Implementation of activity compatibility that can call Honeycomb APIs.
  */
+@TargetApi(11)
 class ActivityCompatHoneycomb {
     static void invalidateOptionsMenu(Activity activity) {
         activity.invalidateOptionsMenu();
