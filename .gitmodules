@@ -1,5 +1,5 @@
-[submodule "android-mapviewballoons"]
-	path = android-mapviewballoons
+[submodule "libs-src/android-mapviewballoons"]
+	path = libs-src/android-mapviewballoons
 	url = git://github.com/jgilfelt/android-mapviewballoons.git
 [submodule "libs-src/android-actionbar"]
 	path = libs-src/android-actionbar
