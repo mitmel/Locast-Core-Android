@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-  <string name="app_name">Rai Local Abruzzo</string>
+  <string name="app_name">Open Locast</string>
   <string name="signup_text">Registrati per utilizzare Locast</string>
   <string name="about">Informazioni</string>
   <string name="settings">Impostazioni</string>
@@ -96,8 +96,8 @@
   <string name="pref_title_password">Password</string>
   <string name="pref_cat_advanced">Avanzato</string>
   <string name="pref_title_server_url">Server URL</string>
-  <string name="welcome_message">Benvenuti! Rai Local Abruzzo è una applicazione turistica geo-localizzata che ti aiuta a visitare l\'Abruzzo.</string>
-  <string name="auth_signin_or_skip_notice">Per caricare foto e video sulla piattaforma Rai Local Abruzzo devi registrare un account</string>
+  <string name="welcome_message">Benvenuti a Open Locast.</string>
+  <string name="auth_signin_or_skip_notice">Per caricare foto e video sulla piattaforma Open Locast devi registrare un account</string>
   <string name="auth_signin_register">Entra / Registrati</string>
   <string name="auth_skip">Salta</string>
   <string name="title_casts">Casts</string>

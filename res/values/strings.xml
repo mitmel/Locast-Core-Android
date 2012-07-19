@@ -7,7 +7,7 @@
 	<string name="app_update_url" translatable="false">http://locast.mit.edu/m/openlocast.json</string>
 	
     <string name="signup_url" translatable="false">http://mel-pydev.mit.edu/openlocast/register/</string>
-	<string name="signup_text">Register to join Locast</string>
+	<string name="signup_text">Register to join Open Locast</string>
 	
 	<!-- Main screen -->
     <string name="about">About</string>
@@ -105,7 +105,7 @@
     
 	<!-- Sync -->
 	<string name="sync_first">No local content detected. Starting first sync…</string>
-	<string name="sync_notification">Synchronizing Locast…</string>
+	<string name="sync_notification">Synchronizing Open Locast…</string>
 	<string name="sync_success">Sync successful.</string>
 	<string name="sync_menu">Synchronize</string>
 	<string name="sync_upload_success">Cast uploaded successfully.</string>
@@ -116,17 +116,17 @@
     <string name="error_sync_canceled">Sync canceled.</string>
 	<string name="error_sync">Could not synchronize with server. Do you have a network connection?</string>
 	<string name="error_sync_no_post">Sorry, there was a problem uploading your media to the server. Please try synchronizing again.</string>
-    <string name="error_sync_no_data_network">Cannot sync Locast: no data network. Please check your connection and try again.</string>
+    <string name="error_sync_no_data_network">Cannot sync Open Locast: no data network. Please check your connection and try again.</string>
     <string name="sync_downloading_cast">Downloading \"%1$s\"…</string>
     <string name="sync_uploading_cast">Uploading \"%1$s\"…</string>
     
     <!-- Android Sync -->
-    <string name="username_label">Locast username</string>
+    <string name="username_label">Open Locast username</string>
     <string name="password_label">Password</string>
     <string name="login_message_authenticating">authenticating…</string>
     <string name="login_message_loginfail">Invalid username or password.</string>
     <string name="login_message_login_empty_password">Please enter a password.</string>
-    <string name="login_message_login_empty_username">Please enter your Locast username and password.</string>
+    <string name="login_message_login_empty_username">Please enter your Open Locast username and password.</string>
      <!-- Placeholder here is for application name -->
     <string name="login_title">%1$s Login</string>
     <string name="logout">Logout</string>
@@ -150,15 +150,15 @@
    	<!-- advanced category -->
 	<string name="pref_cat_advanced">Advanced</string>
 	<string name="pref_title_server_url">Server URL</string>
-	<string name="pref_locast_site">Locast Site</string>
-	<string name="pref_locast_site_dialog_title">Choose a Locast site</string>
-	<string name="pref_locast_site_summary">Choose another Locast site.</string>
+	<string name="pref_locast_site">Open Locast Site</string>
+	<string name="pref_locast_site_dialog_title">Choose an Open Locast site</string>
+	<string name="pref_locast_site_summary">Choose another Open Locast site.</string>
 	<string name="pref_locast_site_message">This will only affect any newly added accounts. To change this for the active instance you must first remove any existing accounts.</string>
 	
 	<string name="welcome_message">Welcome to Open Locast.</string>
 	
-	<string name="auth_signin_or_skip_notice">You\'ll need an account to upload photos and videos to Rai Local Abruzzo</string>
-	<string name="auth_signin_for_favorites">In order to save your favorite casts, you\'ll need a Rai Local account.</string>
+	<string name="auth_signin_or_skip_notice">You\'ll need an account to upload photos and videos to Open Locast</string>
+	<string name="auth_signin_for_favorites">In order to save your favorite casts, you\'ll need an Open Locast account.</string>
 	
 	<string name="auth_signin_register">Sign In / Register</string>
 	
@@ -209,7 +209,7 @@
 		<item >Video</item>
 		<item >Picture</item>
 	</string-array>
-		<string name="auth_set_site">Set Locast Site</string>
+		<string name="auth_set_site">Set Open Locast Site</string>
 		<string name="cast_edit_error_camera_did_not_return_image">Error: camera did not return an image. Please try again.</string>
 		<string name="cast_edit_media_empty">Tap the buttons below to add photos and videos</string>
 	<string name="loading_data">Loading data…</string>
@@ -232,7 +232,7 @@ reception, try standing in a clear area outside away from buildings.</string>
 	<string name="pick_media_from_gallery">Pick Media from Gallery</string>
 	<string name="remove_media">remove media from cast</string>
 	<string name="media_title_hint">media title</string>
-	<string name="sync_locast_media">Sync Locast Media</string>
+	<string name="sync_locast_media">Sync Open Locast Media</string>
 	<string name="powered_by_locast">powered by Locast</string>
 	<string name="edit">Edit</string>
 </resources>
