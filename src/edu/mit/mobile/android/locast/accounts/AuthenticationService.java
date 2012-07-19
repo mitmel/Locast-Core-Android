@@ -20,6 +20,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
+import edu.mit.mobile.android.locast.Constants;
 
 /**
  * Service to handle Account authentication. It instantiates the authenticator
@@ -30,7 +31,7 @@ public class AuthenticationService extends Service {
     private Authenticator mAuthenticator;
 
 	public static final String
-		AUTHORITY = "edu.mit.mobile.android.locast",
+ AUTHORITY = Constants.AUTHORITY,
 		ACCOUNT_TYPE = AUTHORITY,
 		AUTHTOKEN_TYPE = AUTHORITY,
 		USERDATA_USERID = "id",
