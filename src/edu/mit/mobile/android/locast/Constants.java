@@ -37,12 +37,12 @@ public class Constants {
 	/**
 	 * If true, the user can create casts.
 	 */
-	public static final boolean CAN_CREATE_CASTS = true;
+	public static final boolean CAN_CREATE_CASTS = true /* account framework required: */&& USE_ACCOUNT_FRAMEWORK;
 
 	/**
 	 * If false, enables a demo account that can be used to make non-authenticated requests.
 	 */
-	public static final boolean REQUIRE_LOGIN = true;
+	public static final boolean REQUIRE_LOGIN = true /* account framework required: */&& USE_ACCOUNT_FRAMEWORK;
 
 	/**
 	 * Enables a built-in app update checker if the app is not going to be published on the Market.
