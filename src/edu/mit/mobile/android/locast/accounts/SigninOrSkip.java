@@ -19,7 +19,9 @@ package edu.mit.mobile.android.locast.accounts;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -34,6 +36,8 @@ public class SigninOrSkip extends Activity implements OnClickListener {
 	 */
 	public static final String EXTRA_MESSAGE = "edu.mit.mobile.android.locast.SigninOrSkip.EXTRA_MESSAGE",
 			EXTRA_SKIP_IS_CANCEL = "edu.mit.mobile.android.locast.SigninOrSkip.EXTRA_SKIP_IS_CANCEL";
+
+	public static final String PREF_HAVE_RUN_BEFORE = "have_run_before";
 
 	private boolean mSkipIsCancel = false;
 
@@ -101,7 +105,16 @@ public class SigninOrSkip extends Activity implements OnClickListener {
 	 * @return true if this seems to be the first time running the app
 	 */
 	public static final boolean checkFirstTime(Context context) {
-		return Authenticator.getAccounts(context).length == 0;
+		if (Constants.USE_ACCOUNT_FRAMEWORK) {
+			return Authenticator.getAccounts(context).length == 0;
+		} else {
+			final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+			final boolean runBefore = prefs.getBoolean(PREF_HAVE_RUN_BEFORE, false);
+			if (!runBefore) {
+				prefs.edit().putBoolean(PREF_HAVE_RUN_BEFORE, true).commit();
+			}
+			return !runBefore;
+		}
 	}
 
 	/**

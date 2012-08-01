@@ -76,7 +76,7 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 	private CastsOverlay mCastsOverlay;
 	private SimpleCursorAdapter mCastMedia;
 
-	private ValidatingCheckBox vcb;
+	private ValidatingCheckBox mFavoriteButton;
 
 	private static final int LOADER_CAST = 0, LOADER_CAST_MEDIA = 1;
 
@@ -143,9 +143,15 @@ public class CastDetail extends LocatableDetail implements LoaderManager.LoaderC
 		mLoaderManager.initLoader(LOADER_CAST, null, this);
 		mLoaderManager.initLoader(LOADER_CAST_MEDIA, null, this);
 
-		vcb = (ValidatingCheckBox) findViewById(R.id.favorite);
 
-		vcb.setValidatedClickHandler(new MyFavoriteClickHandler(this, data));
+		mFavoriteButton = (ValidatingCheckBox) findViewById(R.id.favorite);
+		if (Constants.USE_ACCOUNT_FRAMEWORK) {
+			mFavoriteButton.setValidatedClickHandler(new MyFavoriteClickHandler(this, data));
+		} else {
+			if (mFavoriteButton != null) {
+				mFavoriteButton.setVisibility(View.GONE);
+			}
+		}
 
 		final Gallery castMediaView = (Gallery) findViewById(R.id.cast_media);
 

@@ -269,8 +269,8 @@
                 <data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.castmedia" />
                 <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.comments" />
                 <data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.comments" />
-                <data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.itineraries" />
-                <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.itineraries" />
+                <data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.collections" />
+                <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.collections" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SYNC" />

@@ -132,7 +132,13 @@ public class BrowserHome extends FragmentActivity implements LoaderManager.Loade
 
 		findViewById(R.id.collections).setOnClickListener(this);
 		findViewById(R.id.nearby).setOnClickListener(this);
-		findViewById(R.id.favorites).setOnClickListener(this);
+		final View fav = findViewById(R.id.favorites);
+		if (Constants.USE_ACCOUNT_FRAMEWORK) {
+			fav.setOnClickListener(this);
+
+		} else if (fav != null) {
+			fav.setVisibility(View.GONE);
+		}
 
 		final boolean isFirstTime = SigninOrSkip.checkFirstTime(this);
 		shouldRefresh = !isFirstTime;
