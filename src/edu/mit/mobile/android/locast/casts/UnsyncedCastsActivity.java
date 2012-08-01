@@ -48,7 +48,7 @@ import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.CastMedia;
-import edu.mit.mobile.android.locast.sync.LocastSyncService;
+import edu.mit.mobile.android.locast.sync.LocastSync;
 import edu.mit.mobile.android.locast.sync.SyncEngine;
 import edu.mit.mobile.android.locast.ver2.R;
 
@@ -214,8 +214,7 @@ public class UnsyncedCastsActivity extends FragmentActivity implements
 			case R.id.sync: {
 				final Bundle extras = new Bundle();
 				extras.putBoolean(ContentResolver.SYNC_EXTRAS_UPLOAD, true);
-				LocastSyncService.startSync(UnsyncedCastsActivity.this, Cast.CONTENT_URI, true,
-						extras);
+				LocastSync.startSync(UnsyncedCastsActivity.this, Cast.CONTENT_URI, true, extras);
 			}
 				break;
 
