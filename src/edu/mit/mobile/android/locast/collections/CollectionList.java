@@ -54,7 +54,7 @@ import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.SigninOrSkip;
 import edu.mit.mobile.android.locast.data.Collection;
 import edu.mit.mobile.android.locast.data.MediaProvider;
-import edu.mit.mobile.android.locast.sync.LocastSyncService;
+import edu.mit.mobile.android.locast.sync.LocastSync;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
@@ -252,7 +252,7 @@ public class CollectionList extends FragmentActivity implements
 	}
 
 	private void refresh(boolean explicitSync) {
-		LocastSyncService.startSync(this, mUri, explicitSync);
+		LocastSync.startSync(this, mUri, explicitSync);
 	}
 
 	@Override
@@ -271,7 +271,7 @@ public class CollectionList extends FragmentActivity implements
 		if (mSyncWhenLoaded) {
 			mSyncWhenLoaded = false;
 			if (mListView.getAdapter().isEmpty()) {
-				LocastSyncService.startExpeditedAutomaticSync(this, mUri);
+				LocastSync.startExpeditedAutomaticSync(this, mUri);
 			} else {
 				refresh(false);
 			}

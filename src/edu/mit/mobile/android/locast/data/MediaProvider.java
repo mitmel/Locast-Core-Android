@@ -61,7 +61,7 @@ import edu.mit.mobile.android.content.m2m.M2MDBHelper;
 import edu.mit.mobile.android.content.m2m.M2MReverseHelper;
 import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
-import edu.mit.mobile.android.locast.sync.LocastSyncService;
+import edu.mit.mobile.android.locast.sync.LocastSync;
 
 public class MediaProvider extends ContentProvider {
 	private final static String TAG = MediaProvider.class.getSimpleName();
@@ -916,7 +916,7 @@ public class MediaProvider extends ContentProvider {
 		mContentResolver.notifyChange(uri, null);
 		if (needSync && canSync){
 
-			LocastSyncService.startSync(getContext(), uri, false);
+			LocastSync.startSync(getContext(), uri, false);
 		}
 		return count;
 	}

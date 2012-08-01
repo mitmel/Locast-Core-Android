@@ -13,14 +13,14 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <!--
-    <uses-permission android:name="android.permission.CAMERA" />
-	<uses-permission android:name="android.permission.RECORD_AUDIO"/>
-    -->
-
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- If Constants.USE_ACCOUNT_FRAMEWORK is true, these should be uncommented: -->
+
+
+    <!--
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
     <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
@@ -29,6 +29,8 @@
     <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
+    -->
+
     <uses-permission android:name="edu.mit.mobile.android.locast.SYNC_MEDIA" />
 
     <permission
@@ -40,7 +42,11 @@
         android:name="edu.mit.mobile.android.locast"
         android:label="@string/app_name" />
 
+    <!-- for using the templated recorder -->
     <!--
+    <uses-permission android:name="android.permission.CAMERA" />
+	<uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    
     <uses-feature android:name="android.hardware.camera" />
 	<uses-feature android:name="android.hardware.camera.autofocus" />
     -->
@@ -217,6 +223,12 @@
                 <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.collections" />
             </intent-filter>
         </activity>
+        <!--
+		*****************************************************************************************************
+		*                                              Sync                                                 *
+		*****************************************************************************************************
+        -->
+
 
         <!-- this has its own process so it can have more memory for thumbnail generation -->
         <service
@@ -237,7 +249,50 @@
             android:name="edu.mit.mobile.android.locast.data.MediaProvider"
             android:authorities="edu.mit.mobile.android.locast.ver2.provider" />
 
+        <!-- if Constants.USE_ACCOUNT_FRAMEWORK is false, uncomment this. Otherwise comment it out. -->
+
         <service
+            android:name="edu.mit.mobile.android.locast.sync.LocastSimpleSyncService"
+            android:exported="false"
+            android:process="edu.mit.mobile.android.locast.Sync" >
+            <intent-filter>
+                <action android:name="edu.mit.mobile.android.locast.ACTION_CANCEL_SYNC" />
+
+                <data android:mimeType="*/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SYNC" />
+
+                <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.casts" />
+                <data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.casts" />
+                <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.castmedia" />
+                <data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.castmedia" />
+                <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.comments" />
+                <data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.comments" />
+                <data android:mimeType="vnd.android.cursor.dir/vnd.edu.mit.mobile.android.locast.ver2.itineraries" />
+                <data android:mimeType="vnd.android.cursor.item/vnd.edu.mit.mobile.android.locast.ver2.itineraries" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SYNC" />
+
+                <data
+                    android:host="locast.mit.edu"
+                    android:scheme="http" />
+                <data
+                    android:host="locast.mit.edu"
+                    android:scheme="https" />
+                <data
+                    android:host="mel-pydev.mit.edu"
+                    android:scheme="http" />
+                <data
+                    android:host="mel-pydev.mit.edu"
+                    android:scheme="https" />
+            </intent-filter>
+        </service>
+
+        <!-- if Constants.USE_ACCOUNT_FRAMEWORK is true, uncomment these. Otherwise comment it out. -->
+        <!--
+         <service
             android:name="edu.mit.mobile.android.locast.accounts.AuthenticationService"
             android:exported="true"
             android:permission="android.permission.AUTHENTICATE_ACCOUNTS" >
@@ -272,14 +327,19 @@
             android:excludeFromRecents="true"
             android:label="@string/app_name" >
 
-            <!--
+           <!- - 
 			No intent-filter here! This activity is only ever launched by someone
 			who explicitly knows the class name
-            -->
+           - ->
         </activity>
         <activity
             android:name="edu.mit.mobile.android.locast.accounts.SigninOrSkip"
-            android:excludeFromRecents="true" />
+            android:excludeFromRecents="true" /> 
+        -->
+
+
+        <!-- end Constants.USE_ACCOUNT_FRAMEWORK=true commented section -->
+
         <activity
             android:name=".browser.ResetActivity"
             android:excludeFromRecents="true"

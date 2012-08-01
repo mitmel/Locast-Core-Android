@@ -1,4 +1,5 @@
 package edu.mit.mobile.android.locast;
+
 /*
  * Copyright (C) 2011  MIT Mobile Experience Lab
  *
@@ -21,9 +22,18 @@ public class Constants {
 	public static final String AUTHORITY = "edu.mit.mobile.android.locast";
 
 	/**
-	 * General debugging flag. This needs to be a constant so that the compiler will remove any debugging code.
+	 * General debugging flag. This needs to be a constant so that the compiler will remove any
+	 * debugging code.
 	 */
 	public static final boolean DEBUG = false;
+
+	/**
+	 * If true, this uses the Android account framework for storing accounts. Make sure the
+	 * appropriate permissions are uncommented in the AndroidManifest.xml. If this is false, all
+	 * requests will be anonymous and content creation will be disabled.
+	 */
+	public static final boolean USE_ACCOUNT_FRAMEWORK = false;
+
 	/**
 	 * If true, the user can create casts.
 	 */

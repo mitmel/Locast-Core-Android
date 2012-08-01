@@ -61,7 +61,7 @@ import edu.mit.mobile.android.locast.casts.CastCursorAdapter;
 import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.data.Collection;
 import edu.mit.mobile.android.locast.maps.CastsOverlay;
-import edu.mit.mobile.android.locast.sync.LocastSyncService;
+import edu.mit.mobile.android.locast.sync.LocastSync;
 import edu.mit.mobile.android.locast.sync.LocastSyncStatusObserver;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
@@ -302,8 +302,8 @@ public class CollectionDetail extends MapFragmentActivity implements LoaderManag
 		final Bundle extras2 = new Bundle();
 		// we always deprioritize this so that the casts will take priority.
 		extras2.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, false);
-		LocastSyncService.startSync(this, mUri, explicitSync, extras2);
-		LocastSyncService.startSync(this, mCastsUri, explicitSync, extras);
+		LocastSync.startSync(this, mUri, explicitSync, extras2);
+		LocastSync.startSync(this, mCastsUri, explicitSync, extras);
 
 	}
 

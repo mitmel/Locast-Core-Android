@@ -112,7 +112,10 @@ public class SigninOrSkip extends Activity implements OnClickListener {
 	 * @param requestCode
 	 */
 	public static final boolean startSignin(Activity context, int requestCode) {
-		if (Constants.REQUIRE_LOGIN) {
+		if (!Constants.USE_ACCOUNT_FRAMEWORK) {
+			return true;
+
+		} else if (Constants.REQUIRE_LOGIN) {
 			if (!Authenticator.hasRealAccount(context)) {
 				context.startActivityForResult(new Intent(context, AuthenticatorActivity.class),
 						requestCode);

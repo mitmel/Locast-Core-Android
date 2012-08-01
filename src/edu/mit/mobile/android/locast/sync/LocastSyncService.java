@@ -80,82 +80,6 @@ public class LocastSyncService extends Service {
 	public static final String EXTRA_SYNC_URI = "edu.mit.mobile.android.locast.sync.EXTRA_SYNC_URI";
 
 	/**
-	 * Convenience method to start a background sync of the first account found.
-	 *
-	 * @param context
-	 * @param what
-	 * @see #startSync(Account, Uri, boolean, Bundle)
-	 */
-	public static void startSync(Context context, Uri what) {
-		startSync(Authenticator.getFirstAccount(context), what, false, new Bundle());
-	}
-
-	/**
-	 * Convenience method to start a sync of the first account found.
-	 *
-	 * @param context
-	 * @param what
-	 * @param explicitSync
-	 * @see #startSync(Account, Uri, boolean, Bundle)
-	 */
-	public static void startSync(Context context, Uri what, boolean explicitSync) {
-		startSync(Authenticator.getFirstAccount(context), what, explicitSync, new Bundle());
-	}
-
-	/**
-	 * @param context
-	 * @param what
-	 * @param explicitSync
-	 * @param extras
-	 * @see #startSync(Account, Uri, boolean, Bundle)
-	 */
-	public static void startSync(Context context, Uri what, boolean explicitSync, Bundle extras) {
-		startSync(Authenticator.getFirstAccount(context), what, explicitSync, extras);
-	}
-
-	public static void startExpeditedAutomaticSync(Context context, Uri what){
-		final Bundle extras = new Bundle();
-		extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
-
-		startSync(Authenticator.getFirstAccount(context), what, false, extras);
-	}
-
-	/**
-	 * Requests a sync of the item specified by a public URL.
-	 *
-	 * @param context
-	 * @param httpPubUrl
-	 *            an http or https URL pointing to a json array of json objects
-	 *            (if {@code destination} is a dir uri) or a single json object.
-	 * @param destination
-	 *            the destination local uri for the result to be stored in if
-	 *            it's not present
-	 * @param explicitSync
-	 * @see #startSync(Account, Uri, boolean, Bundle)
-	 */
-	public static void startSync(Context context, Uri httpPubUrl, Uri destination,
-			boolean explicitSync) {
-		final Bundle b = new Bundle();
-		b.putString(SyncEngine.EXTRA_DESTINATION_URI, destination.toString());
-
-		startSync(Authenticator.getFirstAccount(context), httpPubUrl, explicitSync, b);
-	}
-
-	/**
-	 * Convenience method to request a sync.
-	 *
-	 * @param account
-	 * @param what
-	 * @param explicitSync
-	 * @see #startSync(Account, Uri, boolean, Bundle)
-	 */
-	public static void startSync(Account account, Uri what, boolean explicitSync) {
-		final Bundle b = new Bundle();
-
-		startSync(account, what, explicitSync, b);
-	}
-
-	/**
 	 * Convenience method to request a sync.
 	 *
 	 * This wraps {@link ContentResolver#requestSync(Account, String, Bundle)}
@@ -168,18 +92,13 @@ public class LocastSyncService extends Service {
 	 *            the extras
 	 * @param extras
 	 */
-	public static void startSync(Account account, Uri what, boolean explicitSync, Bundle extras) {
-		if (explicitSync) {
-			extras.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
-			if (!extras.containsKey(ContentResolver.SYNC_EXTRAS_EXPEDITED)) {
-				extras.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
-			}
-		}
+	public static void startSync(Account account, Uri what, Bundle extras) {
+
 		if (what != null){
 			extras.putString(LocastSyncService.EXTRA_SYNC_URI, what.toString());
 		}
 
-		if (extras.getBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, false)){
+		if (extras.getBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, false)) {
 			if (SYNC_ADAPTER != null) {
 				if (DEBUG) {
 					Log.d(TAG, "canceling current sync to make room for expedited sync of " + what);
@@ -189,8 +108,8 @@ public class LocastSyncService extends Service {
 			}
 		}
 
-		if (DEBUG){
-			Log.d(TAG, "requesting sync for "+account + " with extras: "+extras);
+		if (DEBUG) {
+			Log.d(TAG, "requesting sync for " + account + " with extras: " + extras);
 		}
 		ContentResolver.requestSync(account, MediaProvider.AUTHORITY, extras);
 	}

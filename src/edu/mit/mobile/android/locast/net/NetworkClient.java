@@ -199,13 +199,22 @@ public class NetworkClient extends DefaultHttpClient {
 	 * @param context
 	 * @param account
 	 */
-	private NetworkClient(Context context, Account account) {
+	public NetworkClient(Context context, Account account) {
 		super();
 		this.mContext = context;
 
 		initClient();
 
 		loadFromExistingAccount(account);
+	}
+
+	public NetworkClient(Context context) {
+		super();
+		this.mContext = context;
+
+		initClient();
+
+		loadWithoutAccount();
 	}
 
 	/**
@@ -268,6 +277,91 @@ public class NetworkClient extends DefaultHttpClient {
 	}
 
 	/************************* credentials and pairing **********************/
+
+	public static NetworkClient getInstance(Context context, Account account) {
+		if (account == null) {
+			return new NetworkClient(context);
+		} else {
+			return new NetworkClient(context, account);
+		}
+	}
+
+	public static String getBaseUrlFromPreferences(Context context) {
+		final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		return prefs.getString(NetworkClient.PREF_SERVER_URL,
+				context.getString(R.string.default_api_url));
+
+	}
+
+	private void setBaseUrl(String baseUrlString) throws MalformedURLException {
+		final URL baseUrl = new URL(baseUrlString);
+		try {
+			mBaseUrl = baseUrl.toURI();
+
+			mAuthScope = new AuthScope(mBaseUrl.getHost(), mBaseUrl.getPort());
+
+		} catch (final URISyntaxException e) {
+			final MalformedURLException me = new MalformedURLException(e.getLocalizedMessage());
+			me.initCause(e);
+			throw me;
+		}
+	}
+
+	/**
+	 * initializes
+	 */
+	protected synchronized void loadWithoutAccount() {
+		final String baseUrlString = getBaseUrlFromPreferences(mContext);
+
+		try {
+			setBaseUrl(baseUrlString);
+
+		} catch (final MalformedURLException e) {
+			Log.e(TAG, e.getLocalizedMessage(), e);
+		}
+	}
+
+	protected synchronized void loadFromExistingAccount(Account account) {
+		if (account == null) {
+			throw new IllegalArgumentException("must specify account");
+		}
+
+		String baseUrlString;
+
+		final AccountManager am = AccountManager.get(mContext);
+		baseUrlString = am.getUserData(account, AuthenticationService.USERDATA_LOCAST_API_URL);
+		if (baseUrlString == null) {
+			Log.w(TAG, "loading base URL from preferences instead of account metadata");
+			baseUrlString = getBaseUrlFromPreferences(mContext);
+			// if it's null in the userdata, then it must be an account from before this feature
+			// was added.
+			// Store for later use.
+			am.setUserData(account, AuthenticationService.USERDATA_LOCAST_API_URL, baseUrlString);
+		}
+
+		try {
+			setBaseUrl(baseUrlString);
+
+			setCredentialsFromAccount(account);
+
+		} catch (final MalformedURLException e) {
+			Log.e(TAG, e.getLocalizedMessage(), e);
+
+		}
+	}
+
+	public void setCredentialsFromAccount(Account account) {
+		final AccountManager am = AccountManager.get(mContext);
+
+		if (Authenticator.DEMO_ACCOUNT.equals(account.name)) {
+			if (DEBUG) {
+				Log.i(TAG, "demo account is being used");
+			}
+			return;
+		}
+
+		setCredentials(account.name, am.getPassword(account));
+	}
 
 	public String getUsername() {
 		String username = null;
@@ -981,7 +1075,7 @@ public class NetworkClient extends DefaultHttpClient {
 		final String postUrl = getFullUrlAsString(serverPath);
 		final HttpPost r = new HttpPost(postUrl);
 
-		if (DEBUG){
+		if (DEBUG) {
 			Log.d(TAG, "Multipart-MIME POSTing " + localFile + " (mimetype: " + contentType
 					+ ") to " + postUrl);
 		}
@@ -1085,73 +1179,6 @@ public class NetworkClient extends DefaultHttpClient {
 		return context.getContentResolver().openInputStream(localFileUri);
 	}
 
-	public static NetworkClient getInstance(Context context, Account account) {
-		return new NetworkClient(context, account);
-	}
-
-	public static String getBaseUrlFromPreferences(Context context) {
-		final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		return prefs.getString(NetworkClient.PREF_SERVER_URL,
-				context.getString(R.string.default_api_url));
-
-	}
-
-	private void setBaseUrl(String baseUrlString) throws MalformedURLException {
-		final URL baseUrl = new URL(baseUrlString);
-		try {
-			mBaseUrl = baseUrl.toURI();
-
-			mAuthScope = new AuthScope(mBaseUrl.getHost(), mBaseUrl.getPort());
-
-		} catch (final URISyntaxException e) {
-			final MalformedURLException me = new MalformedURLException(e.getLocalizedMessage());
-			me.initCause(e);
-			throw me;
-		}
-	}
-
-	protected synchronized void loadFromExistingAccount(Account account) {
-		if (account == null) {
-			throw new IllegalArgumentException("must specify account");
-		}
-
-		String baseUrlString;
-
-		final AccountManager am = AccountManager.get(mContext);
-		baseUrlString = am.getUserData(account, AuthenticationService.USERDATA_LOCAST_API_URL);
-		if (baseUrlString == null) {
-			Log.w(TAG, "loading base URL from preferences instead of account metadata");
-			baseUrlString = getBaseUrlFromPreferences(mContext);
-			// if it's null in the userdata, then it must be an account from before this feature
-			// was added.
-			// Store for later use.
-			am.setUserData(account, AuthenticationService.USERDATA_LOCAST_API_URL, baseUrlString);
-		}
-
-		try {
-			setBaseUrl(baseUrlString);
-
-			setCredentialsFromAccount(account);
-
-		} catch (final MalformedURLException e) {
-			Log.e(TAG, e.getLocalizedMessage(), e);
-
-		}
-	}
-
-	public void setCredentialsFromAccount(Account account) {
-		final AccountManager am = AccountManager.get(mContext);
-
-		if (Authenticator.DEMO_ACCOUNT.equals(account.name)) {
-			if (DEBUG) {
-				Log.i(TAG, "demo account is being used");
-			}
-			return;
-		}
-
-		setCredentials(account.name, am.getPassword(account));
-	}
-
 	/**
 	 * Perform an offline check to see if there is a pairing stored for this client. Does not block
 	 * on network connection.
@@ -1244,7 +1271,6 @@ public class NetworkClient extends DefaultHttpClient {
 			notification.doneText = context.getString(R.string.sync_upload_success_message,
 					castTitle);
 			notification.successful = true;
-
 
 		} catch (final NetworkProtocolException e) {
 			notification.setUnsuccessful(e.getLocalizedMessage());
