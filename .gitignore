@@ -5,3 +5,4 @@ deploy/
 errors/
 *.swp
 README.html
+.project
