@@ -32,29 +32,29 @@ import com.google.android.maps.Overlay;
  *
  */
 public class PointerShadowOverlay extends Overlay {
-	private GeoPoint mGeoPoint;
+    private GeoPoint mGeoPoint;
 
-	private final PointerShadow mPointerShadow;
+    private final PointerShadow mPointerShadow;
 
-	public PointerShadowOverlay(Context context, PointerShadow pointerShadow) {
-		mPointerShadow = pointerShadow;
-	}
+    public PointerShadowOverlay(Context context, PointerShadow pointerShadow) {
+        mPointerShadow = pointerShadow;
+    }
 
-	public void setPointer(GeoPoint gp) {
-		mGeoPoint = gp;
-	}
+    public void setPointer(GeoPoint gp) {
+        mGeoPoint = gp;
+    }
 
-	private final Point p = new Point();
+    private final Point p = new Point();
 
-	@Override
-	public void draw(Canvas canvas, MapView mapView, boolean shadow) {
-		if (shadow) {
-			return;
-		}
-		if (mGeoPoint == null){
-			return;
-		}
-		mapView.getProjection().toPixels(mGeoPoint, p);
-		mPointerShadow.setOffset(p.x, p.y);
-	}
+    @Override
+    public void draw(Canvas canvas, MapView mapView, boolean shadow) {
+        if (shadow) {
+            return;
+        }
+        if (mGeoPoint == null){
+            return;
+        }
+        mapView.getProjection().toPixels(mGeoPoint, p);
+        mPointerShadow.setOffset(p.x, p.y);
+    }
 }

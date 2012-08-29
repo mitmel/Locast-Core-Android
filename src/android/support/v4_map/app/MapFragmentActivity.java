@@ -734,9 +734,9 @@ public class MapFragmentActivity extends MapActivity {
         return lm;
     }
 
-	@Override
-	protected boolean isRouteDisplayed() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    protected boolean isRouteDisplayed() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }

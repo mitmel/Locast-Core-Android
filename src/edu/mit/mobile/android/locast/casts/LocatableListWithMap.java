@@ -67,391 +67,391 @@ import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
 
 public class LocatableListWithMap extends MapFragmentActivity implements
-		LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener {
-
-	private static final String TAG = LocatableListWithMap.class.getSimpleName();
-	private CursorAdapter mAdapter;
-	private ListView mListView;
-	private Uri mContentNearLocation;
-	private Uri mBaseContent;
-
-	private LocatableItemOverlay mLocatableItemsOverlay;
-	private MyMapView mMapView;
-	private MapController mMapController;
-	private MyMyLocationOverlay mMyLocationOverlay;
-	private Location mLastLocation;
-	private LoaderManager mLoaderManager;
-	private long mLastUpdate;
-
-	private boolean mUserPanned = false;
-
-	private ImageCache mImageCache;
-
-	// constants related to auto-refreshing
-	private static long AUTO_UPDATE_FREQUENCY = 15 * 1000 * 1000; // nano-seconds
-	private static float MIN_UPDATE_DISTANCE = 50; // meters
-
-	private int mSearchRadius = 500; // m
-
-	public static final String ACTION_SEARCH_NEARBY = "edu.mit.mobile.android.locast.ACTION_SEARCH_NEARBY";
-
-	private boolean actionSearchNearby = false;
-	private boolean mExpeditedSync;
-
-	private Object mSyncHandle;
-
-	private NotificationProgressBar mProgressBar;
-
-	private final static int MSG_SET_GEOPOINT = 200;
-
-	private final Handler mHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-				case LocastSyncStatusObserver.MSG_SET_REFRESHING:
-					if (Constants.DEBUG) {
-						Log.d(TAG, "refreshing...");
-					}
-					mProgressBar.showProgressBar(true);
-					break;
-
-				case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
-					if (Constants.DEBUG) {
-						Log.d(TAG, "done loading.");
-					}
-					mProgressBar.showProgressBar(false);
-					break;
-
-				case MSG_SET_GEOPOINT:
-					setDataUriNear((GeoPoint) msg.obj, msg.arg1);
-					break;
-			}
-		};
-	};
-
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.map_list_activity);
-		mProgressBar = (NotificationProgressBar) (findViewById(R.id.progressNotification));
-
-		final ActionBar ab = (ActionBar) findViewById(R.id.actionbar);
-		getMenuInflater().inflate(R.menu.actionbar_view_dir, ab.asMenu());
-
-		mMapView = (MyMapView) findViewById(R.id.map);
-		mMapController = mMapView.getController();
-		mListView = (ListView) findViewById(android.R.id.list);
-		mListView.setOnItemClickListener(this);
-		mListView.addFooterView(getLayoutInflater().inflate(R.layout.list_footer, null), null,
-				false);
-		mListView.setEmptyView(findViewById(R.id.progressNotification));
-
-		mLoaderManager = getSupportLoaderManager();
-
-		final Intent intent = getIntent();
-		final String action = intent.getAction();
-
-		mImageCache = ImageCache.getInstance(this);
-
-		actionSearchNearby = ACTION_SEARCH_NEARBY.equals(action);
-		final boolean actionView = Intent.ACTION_VIEW.equals(action);
-
-		if (!actionView && !actionSearchNearby) {
-			Log.e(TAG, "unhandled action " + action);
-			finish();
-			return;
-		}
-
-		mMapView.setOnChangeListener(new MyMapView.OnChangeListener() {
-
-			@Override
-			public void onChange(MapView view, GeoPoint newCenter, GeoPoint oldCenter, int newZoom,
-					int oldZoom) {
-				Log.d(TAG, "onChange triggered");
-				if (!oldCenter.equals(newCenter)) {
-					mUserPanned = true;
-					Log.d(TAG, "centers are different, requesting a reload");
-					mHandler.obtainMessage(MSG_SET_GEOPOINT, mSearchRadius, 0, newCenter)
-							.sendToTarget();
-				}
-			}
-		});
-
-		CharSequence title;
-
-		final Uri data = intent.getData();
-		final String type = intent.resolveType(this);
-
-		if (MediaProvider.TYPE_CAST_DIR.equals(type)) {
-			mAdapter = new CastCursorAdapter(this, null);
-
-			mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache,
-					new int[] { R.id.media_thumbnail }, 48, 48, ImageLoaderAdapter.UNIT_DIP));
-			initMapOverlays(new CastsOverlay(this, mMapView));
-
-			title = getString(R.string.title_casts);
-
-			mSearchRadius = 1500;
-
-		} else {
-			throw new IllegalArgumentException("Unhandled content type " + type);
-		}
-
-		mBaseContent = data;
-		setDataUri(data);
-
-		if (actionSearchNearby) {
-			title = getString(R.string.title_nearby, title);
-		}
-		// if it's showing only favorited items, adjust the title's language accordingly.
-		final Boolean favorited = Favoritable.decodeFavoritedUri(data);
-		if (favorited != null) {
-			title = getString(favorited ? R.string.title_favorited : R.string.title_unfavorited,
-					title);
-		}
-
-		setTitle(title);
-		if (actionSearchNearby) {
-			updateLocation();
-		}
-		setRefreshing(true);
-	}
-
-	@Override
-	protected void onResume() {
-		super.onResume();
-		if (actionSearchNearby) {
-			mMyLocationOverlay.enableMyLocation();
-		}
-		mExpeditedSync = true;
-		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(
-				this, mHandler));
-		LocastSyncStatusObserver.notifySyncStatusToHandler(this, mHandler);
-	}
-
-	@Override
-	protected void onPause() {
-		super.onPause();
-		if (actionSearchNearby) {
-			mMyLocationOverlay.disableMyLocation();
-		}
-		if (mSyncHandle != null) {
-			ContentResolver.removeStatusChangeListener(mSyncHandle);
-		}
-	}
-
-	/**
-	 * Gets the last-known location and updates with that.
-	 */
-	private void updateLocation() {
-		final LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
-		final String provider = lm.getBestProvider(new Criteria(), true);
-		if (provider == null) {
-			Toast.makeText(this, getString(R.string.error_no_providers), Toast.LENGTH_LONG).show();
-			finish();
-			return;
-		}
-
-		final Location loc = lm.getLastKnownLocation(provider);
-		if (loc != null) {
-			updateLocation(loc);
-		} else {
-			Toast.makeText(this, R.string.notice_finding_your_location, Toast.LENGTH_LONG).show();
-			setRefreshing(true);
-		}
-		mLastLocation = loc;
-	}
-
-	/**
-	 * Called when the location updates.
-	 *
-	 * @param loc
-	 */
-	private void updateLocation(Location loc) {
-		if (loc == null) {
-			throw new NullPointerException();
-		}
-
-		if (actionSearchNearby) {
-			setDataUriNear(loc, mSearchRadius);
-		}
-
-		mLastLocation = loc;
-	}
-
-	/**
-	 * Loads the data centered around the given point and radius.
-	 *
-	 * @param loc
-	 */
-	private void setDataUriNear(Location loc, int searchRadius) {
-		setDataUri(Locatable.toDistanceSearchUri(mBaseContent, loc, searchRadius));
-	}
-
-	/**
-	 * Loads the data centered around the given point and radius.
-	 *
-	 * @param loc
-	 */
-	private void setDataUriNear(GeoPoint loc, int searchRadius) {
-		setDataUri(Locatable.toDistanceSearchUri(mBaseContent, loc, searchRadius));
-	}
-
-	private void setDataUri(Uri data) {
-
-		final Bundle args = new Bundle();
-		args.putParcelable(LOADER_ARG_DATA, data);
-		final String type = getContentResolver().getType(data);
-		if (MediaProvider.TYPE_CAST_DIR.equals(type)) {
-			mLoaderManager.restartLoader(LOADER_ID_CAST, args, this);
-		}
-
-		setRefreshing(true);
-
-		mContentNearLocation = data;
-		if (data != null) {
-			refresh(false);
-		}
-	}
-
-	@Override
-	public void onWindowFocusChanged(boolean hasFocus) {
-		super.onWindowFocusChanged(hasFocus);
-		if (hasFocus) {
-
-		}
-	}
-
-	private void setRefreshing(boolean isRefreshing) {
-		// TODO
-	}
-
-	private void initMapOverlays(LocatableItemOverlay overlay) {
-		mLocatableItemsOverlay = overlay;
-		final List<Overlay> overlays = mMapView.getOverlays();
-		mMyLocationOverlay = new MyMyLocationOverlay(this, mMapView);
-
-		if (actionSearchNearby) {
-			overlays.add(mMyLocationOverlay);
-		}
-		overlays.add(mLocatableItemsOverlay);
-	}
-
-	@Override
-	public void setTitle(CharSequence title) {
-		super.setTitle(title);
-		((TextView) findViewById(android.R.id.title)).setText(title);
-	}
-
-	private void refresh(boolean explicitSync) {
-		if ((System.nanoTime() - mLastUpdate) < AUTO_UPDATE_FREQUENCY && !explicitSync) {
-			// not enough time has elapsed for a non-explicit sync to be allowed
-			return;
-		}
-		mLastUpdate = System.nanoTime();
-		LocastSync.startSync(this, mContentNearLocation, explicitSync);
-	}
-
-	@Override
-	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
-		startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mBaseContent, id)));
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-			case R.id.refresh:
-				refresh(true);
-				return true;
-
-			case R.id.actionbar_item_home:
-				startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
-				return true;
-
-			default:
-				return super.onOptionsItemSelected(item);
-		}
-
-	}
-
-	@Override
-	protected boolean isRouteDisplayed() {
-		return false;
-	}
-
-	private class MyMyLocationOverlay extends MyLocationOverlay {
-
-		private Location mPrevLocation = null;
-
-		public MyMyLocationOverlay(Context context, MapView mapView) {
-			super(context, mapView);
-		}
-
-		@Override
-		public synchronized void onLocationChanged(Location location) {
-			super.onLocationChanged(location);
-			if (!mUserPanned
-					&& (mPrevLocation == null || location.distanceTo(mPrevLocation) > MIN_UPDATE_DISTANCE)) {
-				updateLocation(location);
-				mPrevLocation = location;
-			}
-		}
-	}
-
-	private static String LOADER_ARG_DATA = "edu.mit.mobile.android.locast.LOADER_ARG_DATA";
-	private final static int LOADER_ID_CAST = 0;
-
-	@Override
-	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		switch (id) {
-			case LOADER_ID_CAST:
-				return new CursorLoader(this, (Uri) args.getParcelable(LOADER_ARG_DATA),
-						Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
-
-			default:
-				return null;
-		}
-	}
-
-	@Override
-	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
-		mAdapter.swapCursor(c);
-		mLocatableItemsOverlay.swapCursor(c);
-
-		// When items are found
-		if (c.moveToFirst()) {
-			if (!mUserPanned) {
-				mMapController.zoomToSpan(mLocatableItemsOverlay.getLatSpanE6(),
-						mLocatableItemsOverlay.getLonSpanE6());
-				final GeoPoint center = mLocatableItemsOverlay.getCenter();
-
-				mMapController.animateTo(center);
-			}
-		} else {
-
-			if (!mUserPanned && mLastLocation != null) {
-				mMapController.setZoom(15);
-				final GeoPoint myPosition = new GeoPoint((int) (mLastLocation.getLatitude() * 1E6),
-						(int) (mLastLocation.getLongitude() * 1E6));
-
-				mMapController.animateTo(myPosition);
-			}
-		}
-
-		setRefreshing(false);
-
-		if (mExpeditedSync) {
-			mExpeditedSync = false;
-			if (mListView.getAdapter().isEmpty()) {
-				LocastSync.startExpeditedAutomaticSync(this, mContentNearLocation);
-			}
-		}
-	}
-
-	@Override
-	public void onLoaderReset(Loader<Cursor> loader) {
-		mAdapter.swapCursor(null);
-		mLocatableItemsOverlay.swapCursor(null);
-
-	}
+        LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener {
+
+    private static final String TAG = LocatableListWithMap.class.getSimpleName();
+    private CursorAdapter mAdapter;
+    private ListView mListView;
+    private Uri mContentNearLocation;
+    private Uri mBaseContent;
+
+    private LocatableItemOverlay mLocatableItemsOverlay;
+    private MyMapView mMapView;
+    private MapController mMapController;
+    private MyMyLocationOverlay mMyLocationOverlay;
+    private Location mLastLocation;
+    private LoaderManager mLoaderManager;
+    private long mLastUpdate;
+
+    private boolean mUserPanned = false;
+
+    private ImageCache mImageCache;
+
+    // constants related to auto-refreshing
+    private static long AUTO_UPDATE_FREQUENCY = 15 * 1000 * 1000; // nano-seconds
+    private static float MIN_UPDATE_DISTANCE = 50; // meters
+
+    private int mSearchRadius = 500; // m
+
+    public static final String ACTION_SEARCH_NEARBY = "edu.mit.mobile.android.locast.ACTION_SEARCH_NEARBY";
+
+    private boolean actionSearchNearby = false;
+    private boolean mExpeditedSync;
+
+    private Object mSyncHandle;
+
+    private NotificationProgressBar mProgressBar;
+
+    private final static int MSG_SET_GEOPOINT = 200;
+
+    private final Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case LocastSyncStatusObserver.MSG_SET_REFRESHING:
+                    if (Constants.DEBUG) {
+                        Log.d(TAG, "refreshing...");
+                    }
+                    mProgressBar.showProgressBar(true);
+                    break;
+
+                case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
+                    if (Constants.DEBUG) {
+                        Log.d(TAG, "done loading.");
+                    }
+                    mProgressBar.showProgressBar(false);
+                    break;
+
+                case MSG_SET_GEOPOINT:
+                    setDataUriNear((GeoPoint) msg.obj, msg.arg1);
+                    break;
+            }
+        };
+    };
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.map_list_activity);
+        mProgressBar = (NotificationProgressBar) (findViewById(R.id.progressNotification));
+
+        final ActionBar ab = (ActionBar) findViewById(R.id.actionbar);
+        getMenuInflater().inflate(R.menu.actionbar_view_dir, ab.asMenu());
+
+        mMapView = (MyMapView) findViewById(R.id.map);
+        mMapController = mMapView.getController();
+        mListView = (ListView) findViewById(android.R.id.list);
+        mListView.setOnItemClickListener(this);
+        mListView.addFooterView(getLayoutInflater().inflate(R.layout.list_footer, null), null,
+                false);
+        mListView.setEmptyView(findViewById(R.id.progressNotification));
+
+        mLoaderManager = getSupportLoaderManager();
+
+        final Intent intent = getIntent();
+        final String action = intent.getAction();
+
+        mImageCache = ImageCache.getInstance(this);
+
+        actionSearchNearby = ACTION_SEARCH_NEARBY.equals(action);
+        final boolean actionView = Intent.ACTION_VIEW.equals(action);
+
+        if (!actionView && !actionSearchNearby) {
+            Log.e(TAG, "unhandled action " + action);
+            finish();
+            return;
+        }
+
+        mMapView.setOnChangeListener(new MyMapView.OnChangeListener() {
+
+            @Override
+            public void onChange(MapView view, GeoPoint newCenter, GeoPoint oldCenter, int newZoom,
+                    int oldZoom) {
+                Log.d(TAG, "onChange triggered");
+                if (!oldCenter.equals(newCenter)) {
+                    mUserPanned = true;
+                    Log.d(TAG, "centers are different, requesting a reload");
+                    mHandler.obtainMessage(MSG_SET_GEOPOINT, mSearchRadius, 0, newCenter)
+                            .sendToTarget();
+                }
+            }
+        });
+
+        CharSequence title;
+
+        final Uri data = intent.getData();
+        final String type = intent.resolveType(this);
+
+        if (MediaProvider.TYPE_CAST_DIR.equals(type)) {
+            mAdapter = new CastCursorAdapter(this, null);
+
+            mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache,
+                    new int[] { R.id.media_thumbnail }, 48, 48, ImageLoaderAdapter.UNIT_DIP));
+            initMapOverlays(new CastsOverlay(this, mMapView));
+
+            title = getString(R.string.title_casts);
+
+            mSearchRadius = 1500;
+
+        } else {
+            throw new IllegalArgumentException("Unhandled content type " + type);
+        }
+
+        mBaseContent = data;
+        setDataUri(data);
+
+        if (actionSearchNearby) {
+            title = getString(R.string.title_nearby, title);
+        }
+        // if it's showing only favorited items, adjust the title's language accordingly.
+        final Boolean favorited = Favoritable.decodeFavoritedUri(data);
+        if (favorited != null) {
+            title = getString(favorited ? R.string.title_favorited : R.string.title_unfavorited,
+                    title);
+        }
+
+        setTitle(title);
+        if (actionSearchNearby) {
+            updateLocation();
+        }
+        setRefreshing(true);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (actionSearchNearby) {
+            mMyLocationOverlay.enableMyLocation();
+        }
+        mExpeditedSync = true;
+        mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(
+                this, mHandler));
+        LocastSyncStatusObserver.notifySyncStatusToHandler(this, mHandler);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (actionSearchNearby) {
+            mMyLocationOverlay.disableMyLocation();
+        }
+        if (mSyncHandle != null) {
+            ContentResolver.removeStatusChangeListener(mSyncHandle);
+        }
+    }
+
+    /**
+     * Gets the last-known location and updates with that.
+     */
+    private void updateLocation() {
+        final LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
+        final String provider = lm.getBestProvider(new Criteria(), true);
+        if (provider == null) {
+            Toast.makeText(this, getString(R.string.error_no_providers), Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
+        final Location loc = lm.getLastKnownLocation(provider);
+        if (loc != null) {
+            updateLocation(loc);
+        } else {
+            Toast.makeText(this, R.string.notice_finding_your_location, Toast.LENGTH_LONG).show();
+            setRefreshing(true);
+        }
+        mLastLocation = loc;
+    }
+
+    /**
+     * Called when the location updates.
+     *
+     * @param loc
+     */
+    private void updateLocation(Location loc) {
+        if (loc == null) {
+            throw new NullPointerException();
+        }
+
+        if (actionSearchNearby) {
+            setDataUriNear(loc, mSearchRadius);
+        }
+
+        mLastLocation = loc;
+    }
+
+    /**
+     * Loads the data centered around the given point and radius.
+     *
+     * @param loc
+     */
+    private void setDataUriNear(Location loc, int searchRadius) {
+        setDataUri(Locatable.toDistanceSearchUri(mBaseContent, loc, searchRadius));
+    }
+
+    /**
+     * Loads the data centered around the given point and radius.
+     *
+     * @param loc
+     */
+    private void setDataUriNear(GeoPoint loc, int searchRadius) {
+        setDataUri(Locatable.toDistanceSearchUri(mBaseContent, loc, searchRadius));
+    }
+
+    private void setDataUri(Uri data) {
+
+        final Bundle args = new Bundle();
+        args.putParcelable(LOADER_ARG_DATA, data);
+        final String type = getContentResolver().getType(data);
+        if (MediaProvider.TYPE_CAST_DIR.equals(type)) {
+            mLoaderManager.restartLoader(LOADER_ID_CAST, args, this);
+        }
+
+        setRefreshing(true);
+
+        mContentNearLocation = data;
+        if (data != null) {
+            refresh(false);
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+
+        }
+    }
+
+    private void setRefreshing(boolean isRefreshing) {
+        // TODO
+    }
+
+    private void initMapOverlays(LocatableItemOverlay overlay) {
+        mLocatableItemsOverlay = overlay;
+        final List<Overlay> overlays = mMapView.getOverlays();
+        mMyLocationOverlay = new MyMyLocationOverlay(this, mMapView);
+
+        if (actionSearchNearby) {
+            overlays.add(mMyLocationOverlay);
+        }
+        overlays.add(mLocatableItemsOverlay);
+    }
+
+    @Override
+    public void setTitle(CharSequence title) {
+        super.setTitle(title);
+        ((TextView) findViewById(android.R.id.title)).setText(title);
+    }
+
+    private void refresh(boolean explicitSync) {
+        if ((System.nanoTime() - mLastUpdate) < AUTO_UPDATE_FREQUENCY && !explicitSync) {
+            // not enough time has elapsed for a non-explicit sync to be allowed
+            return;
+        }
+        mLastUpdate = System.nanoTime();
+        LocastSync.startSync(this, mContentNearLocation, explicitSync);
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
+        startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mBaseContent, id)));
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.refresh:
+                refresh(true);
+                return true;
+
+            case R.id.actionbar_item_home:
+                startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+
+    }
+
+    @Override
+    protected boolean isRouteDisplayed() {
+        return false;
+    }
+
+    private class MyMyLocationOverlay extends MyLocationOverlay {
+
+        private Location mPrevLocation = null;
+
+        public MyMyLocationOverlay(Context context, MapView mapView) {
+            super(context, mapView);
+        }
+
+        @Override
+        public synchronized void onLocationChanged(Location location) {
+            super.onLocationChanged(location);
+            if (!mUserPanned
+                    && (mPrevLocation == null || location.distanceTo(mPrevLocation) > MIN_UPDATE_DISTANCE)) {
+                updateLocation(location);
+                mPrevLocation = location;
+            }
+        }
+    }
+
+    private static String LOADER_ARG_DATA = "edu.mit.mobile.android.locast.LOADER_ARG_DATA";
+    private final static int LOADER_ID_CAST = 0;
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        switch (id) {
+            case LOADER_ID_CAST:
+                return new CursorLoader(this, (Uri) args.getParcelable(LOADER_ARG_DATA),
+                        Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
+
+            default:
+                return null;
+        }
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
+        mAdapter.swapCursor(c);
+        mLocatableItemsOverlay.swapCursor(c);
+
+        // When items are found
+        if (c.moveToFirst()) {
+            if (!mUserPanned) {
+                mMapController.zoomToSpan(mLocatableItemsOverlay.getLatSpanE6(),
+                        mLocatableItemsOverlay.getLonSpanE6());
+                final GeoPoint center = mLocatableItemsOverlay.getCenter();
+
+                mMapController.animateTo(center);
+            }
+        } else {
+
+            if (!mUserPanned && mLastLocation != null) {
+                mMapController.setZoom(15);
+                final GeoPoint myPosition = new GeoPoint((int) (mLastLocation.getLatitude() * 1E6),
+                        (int) (mLastLocation.getLongitude() * 1E6));
+
+                mMapController.animateTo(myPosition);
+            }
+        }
+
+        setRefreshing(false);
+
+        if (mExpeditedSync) {
+            mExpeditedSync = false;
+            if (mListView.getAdapter().isEmpty()) {
+                LocastSync.startExpeditedAutomaticSync(this, mContentNearLocation);
+            }
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mAdapter.swapCursor(null);
+        mLocatableItemsOverlay.swapCursor(null);
+
+    }
 }

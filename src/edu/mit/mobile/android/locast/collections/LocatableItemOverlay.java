@@ -33,201 +33,201 @@ import edu.mit.mobile.android.locast.data.Locatable;
 import edu.mit.mobile.android.locast.maps.MapsUtils;
 
 abstract public class LocatableItemOverlay extends BalloonItemizedOverlay<OverlayItem> {
-	private static final String TAG = LocatableItemOverlay.class.getSimpleName();
+    private static final String TAG = LocatableItemOverlay.class.getSimpleName();
 
-	protected Cursor mLocatableItems;
-	private int mLatCol, mLonCol;
-	private boolean mShowBalloon = true;
+    protected Cursor mLocatableItems;
+    private int mLatCol, mLonCol;
+    private boolean mShowBalloon = true;
 
-	private ComparableOverlayItem mFocused;
+    private ComparableOverlayItem mFocused;
 
-	public static final String[] LOCATABLE_ITEM_PROJECTION = { Locatable.Columns._LATITUDE,
-			Locatable.Columns._LONGITUDE };
+    public static final String[] LOCATABLE_ITEM_PROJECTION = { Locatable.Columns._LATITUDE,
+            Locatable.Columns._LONGITUDE };
 
-	private final ContentObserver mContentObserver = new ContentObserver(new Handler()) {
-		@Override
-		public void onChange(boolean selfChange) {
-			populateFromCursor();
-		}
-	};
-	private int mSize;
+    private final ContentObserver mContentObserver = new ContentObserver(new Handler()) {
+        @Override
+        public void onChange(boolean selfChange) {
+            populateFromCursor();
+        }
+    };
+    private int mSize;
 
-	private OverlayItem mBalloonFocused;
+    private OverlayItem mBalloonFocused;
 
-	private boolean mPopulating;
+    private boolean mPopulating;
 
-	public LocatableItemOverlay(Drawable marker, MapView mapview) {
-		this(marker, mapview, null);
-	}
+    public LocatableItemOverlay(Drawable marker, MapView mapview) {
+        this(marker, mapview, null);
+    }
 
-	public LocatableItemOverlay(Drawable marker, MapView mapview, Cursor items) {
-		super(marker, mapview);
+    public LocatableItemOverlay(Drawable marker, MapView mapview, Cursor items) {
+        super(marker, mapview);
 
-		mLocatableItems = items;
+        mLocatableItems = items;
 
-		populateFromCursor();
-	}
+        populateFromCursor();
+    }
 
-	private void populateFromCursor() {
-		onPrePopulate();
-		populate();
-		onPostPopulate();
-	}
+    private void populateFromCursor() {
+        onPrePopulate();
+        populate();
+        onPostPopulate();
+    }
 
-	public static Drawable boundCenterBottom(Drawable drawable) {
-		// why isn't this visible?
-		return ItemizedOverlay.boundCenterBottom(drawable);
-	}
+    public static Drawable boundCenterBottom(Drawable drawable) {
+        // why isn't this visible?
+        return ItemizedOverlay.boundCenterBottom(drawable);
+    }
 
-	public void swapCursor(Cursor locatableItems) {
-		mLocatableItems = locatableItems;
-		updateCursorCols();
-		populateFromCursor();
-	}
+    public void swapCursor(Cursor locatableItems) {
+        mLocatableItems = locatableItems;
+        updateCursorCols();
+        populateFromCursor();
+    }
 
-	public void setShowBalloon(boolean showBalloon) {
-		mShowBalloon = showBalloon;
-	}
+    public void setShowBalloon(boolean showBalloon) {
+        mShowBalloon = showBalloon;
+    }
 
-	@Override
-	public boolean onTap(GeoPoint p, MapView mapView) {
-		if (mShowBalloon) {
-			try {
-				return super.onTap(p, mapView);
+    @Override
+    public boolean onTap(GeoPoint p, MapView mapView) {
+        if (mShowBalloon) {
+            try {
+                return super.onTap(p, mapView);
 
-			} catch (final ArrayIndexOutOfBoundsException e) {
-				// XXX this error kept cropping up, but no source of the error could be found
-				Log.w(TAG, "caught and discarded OOB exception", e);
-				return false;
-			}
-		} else {
-			return false;
-		}
-	}
+            } catch (final ArrayIndexOutOfBoundsException e) {
+                // XXX this error kept cropping up, but no source of the error could be found
+                Log.w(TAG, "caught and discarded OOB exception", e);
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
 
-	protected void onPrePopulate() {
-		// updateCursorCols();
-		updateSize();
-		mFocused = null;
-		mBalloonFocused = getFocus();
-		mPopulating = true;
-	}
+    protected void onPrePopulate() {
+        // updateCursorCols();
+        updateSize();
+        mFocused = null;
+        mBalloonFocused = getFocus();
+        mPopulating = true;
+    }
 
-	protected void onCreateItem(ComparableOverlayItem i) {
-		if (mPopulating) {
-			if (mFocused == null && i.equals(mBalloonFocused)) {
-				mFocused = i;
-			}
-		}
-	}
+    protected void onCreateItem(ComparableOverlayItem i) {
+        if (mPopulating) {
+            if (mFocused == null && i.equals(mBalloonFocused)) {
+                mFocused = i;
+            }
+        }
+    }
 
-	protected void onPostPopulate() {
-		if (mFocused == null) {
-			if (mBalloonFocused != null) {
-				hideBalloon();
-			}
-		} else {
-			try {
-				setFocus(mFocused);
-			} catch (final ArrayIndexOutOfBoundsException e) {
-				// XXX we shouldn't be getting this exception, but at least we're not crashing.
-				Log.w(TAG, "error setting focus", e);
-			}
-		}
-		mPopulating = false;
-	}
+    protected void onPostPopulate() {
+        if (mFocused == null) {
+            if (mBalloonFocused != null) {
+                hideBalloon();
+            }
+        } else {
+            try {
+                setFocus(mFocused);
+            } catch (final ArrayIndexOutOfBoundsException e) {
+                // XXX we shouldn't be getting this exception, but at least we're not crashing.
+                Log.w(TAG, "error setting focus", e);
+            }
+        }
+        mPopulating = false;
+    }
 
-	public void onPause() {
-		if (mLocatableItems != null) {
-			mLocatableItems.unregisterContentObserver(mContentObserver);
-		}
-	}
+    public void onPause() {
+        if (mLocatableItems != null) {
+            mLocatableItems.unregisterContentObserver(mContentObserver);
+        }
+    }
 
-	public void onResume() {
-		if (mLocatableItems != null) {
-			mLocatableItems.registerContentObserver(mContentObserver);
-		}
-	}
+    public void onResume() {
+        if (mLocatableItems != null) {
+            mLocatableItems.registerContentObserver(mContentObserver);
+        }
+    }
 
-	public void changeCursor(Cursor locatableItems) {
-		final Cursor oldCursor = mLocatableItems;
-		mLocatableItems = locatableItems;
-		updateCursorCols();
-		populateFromCursor();
+    public void changeCursor(Cursor locatableItems) {
+        final Cursor oldCursor = mLocatableItems;
+        mLocatableItems = locatableItems;
+        updateCursorCols();
+        populateFromCursor();
 
-		if (oldCursor != null && !oldCursor.isClosed()) {
-			oldCursor.close();
-		}
-	}
+        if (oldCursor != null && !oldCursor.isClosed()) {
+            oldCursor.close();
+        }
+    }
 
-	protected void updateCursorCols() {
-		if (mLocatableItems != null) {
-			mLatCol = mLocatableItems.getColumnIndex(Locatable.Columns._LATITUDE);
-			mLonCol = mLocatableItems.getColumnIndex(Locatable.Columns._LONGITUDE);
-		}
-	}
+    protected void updateCursorCols() {
+        if (mLocatableItems != null) {
+            mLatCol = mLocatableItems.getColumnIndex(Locatable.Columns._LATITUDE);
+            mLonCol = mLocatableItems.getColumnIndex(Locatable.Columns._LONGITUDE);
+        }
+    }
 
-	protected GeoPoint getItemLocation(Cursor item) {
-		return MapsUtils.getGeoPoint(item, mLatCol, mLonCol);
-	}
+    protected GeoPoint getItemLocation(Cursor item) {
+        return MapsUtils.getGeoPoint(item, mLatCol, mLonCol);
+    }
 
-	/**
-	 * this does not work properly when crossing -180/180 boundaries.
-	 *
-	 * @see com.google.android.maps.ItemizedOverlay#getCenter()
-	 */
-	@Override
-	public GeoPoint getCenter() {
-		int maxLat, minLat;
-		int maxLon, minLon;
+    /**
+     * this does not work properly when crossing -180/180 boundaries.
+     *
+     * @see com.google.android.maps.ItemizedOverlay#getCenter()
+     */
+    @Override
+    public GeoPoint getCenter() {
+        int maxLat, minLat;
+        int maxLon, minLon;
 
-		mLocatableItems.moveToFirst();
-		final double[] latLon = new double[2];
-		Locatable.toLocationArray(mLocatableItems, mLatCol, mLonCol, latLon);
-		maxLat = minLat = (int) (latLon[0] * 1E6);
-		maxLon = minLon = (int) (latLon[1] * 1E6);
-		mLocatableItems.moveToNext();
-		for (; !mLocatableItems.isAfterLast(); mLocatableItems.moveToNext()) {
-			Locatable.toLocationArray(mLocatableItems, mLatCol, mLonCol, latLon);
-			maxLat = Math.max(maxLat, (int) (latLon[0] * 1E6));
-			minLat = Math.min(minLat, (int) (latLon[0] * 1E6));
+        mLocatableItems.moveToFirst();
+        final double[] latLon = new double[2];
+        Locatable.toLocationArray(mLocatableItems, mLatCol, mLonCol, latLon);
+        maxLat = minLat = (int) (latLon[0] * 1E6);
+        maxLon = minLon = (int) (latLon[1] * 1E6);
+        mLocatableItems.moveToNext();
+        for (; !mLocatableItems.isAfterLast(); mLocatableItems.moveToNext()) {
+            Locatable.toLocationArray(mLocatableItems, mLatCol, mLonCol, latLon);
+            maxLat = Math.max(maxLat, (int) (latLon[0] * 1E6));
+            minLat = Math.min(minLat, (int) (latLon[0] * 1E6));
 
-			maxLon = Math.max(maxLon, (int) (latLon[1] * 1E6));
-			minLon = Math.min(minLon, (int) (latLon[1] * 1E6));
-		}
+            maxLon = Math.max(maxLon, (int) (latLon[1] * 1E6));
+            minLon = Math.min(minLon, (int) (latLon[1] * 1E6));
+        }
 
-		return new GeoPoint((maxLat - minLat) / 2 + minLat, (maxLon - minLon) / 2 + minLon);
-	}
+        return new GeoPoint((maxLat - minLat) / 2 + minLat, (maxLon - minLon) / 2 + minLon);
+    }
 
-	private void updateSize() {
+    private void updateSize() {
 
-		mSize = mLocatableItems != null ? mLocatableItems.getCount() : 0;
-	}
+        mSize = mLocatableItems != null ? mLocatableItems.getCount() : 0;
+    }
 
-	@Override
-	public int size() {
-		return mSize;
-	}
+    @Override
+    public int size() {
+        return mSize;
+    }
 
-	public static class ComparableOverlayItem extends OverlayItem {
-		private final long mId;
+    public static class ComparableOverlayItem extends OverlayItem {
+        private final long mId;
 
-		public ComparableOverlayItem(GeoPoint point, String title, String snippet, long id) {
-			super(point, title, snippet);
-			mId = id;
-		}
+        public ComparableOverlayItem(GeoPoint point, String title, String snippet, long id) {
+            super(point, title, snippet);
+            mId = id;
+        }
 
-		public long getId(){
-			return mId;
-		}
+        public long getId(){
+            return mId;
+        }
 
-		@Override
-		public boolean equals(Object o) {
-			if (o instanceof ComparableOverlayItem) {
-				return mId == ((ComparableOverlayItem) o).getId();
-			} else {
-				return super.equals(o);
-			}
-		}
-	}
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof ComparableOverlayItem) {
+                return mId == ((ComparableOverlayItem) o).getId();
+            } else {
+                return super.equals(o);
+            }
+        }
+    }
 }

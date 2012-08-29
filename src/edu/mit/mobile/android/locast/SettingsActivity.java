@@ -32,85 +32,85 @@ import edu.mit.mobile.android.locast.ver2.R;
 
 public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener, OnPreferenceChangeListener {
 
-	private static final int REQUEST_RESET_DB = 0;
-	private static final String TAG = SettingsActivity.class.getSimpleName();
-	private String newUrl;
+    private static final int REQUEST_RESET_DB = 0;
+    private static final String TAG = SettingsActivity.class.getSimpleName();
+    private String newUrl;
 
-	private PreferenceScreen preferenceScreen;
+    private PreferenceScreen preferenceScreen;
 
-	@Override
-	protected void onCreate(Bundle icicle) {
-		super.onCreate(icicle);
-		addPreferencesFromResource(R.xml.preferences);
-		preferenceScreen = getPreferenceScreen();
-	}
+    @Override
+    protected void onCreate(Bundle icicle) {
+        super.onCreate(icicle);
+        addPreferencesFromResource(R.xml.preferences);
+        preferenceScreen = getPreferenceScreen();
+    }
 
-	@Override
-	protected void onResume() {
-		super.onResume();
-		preferenceScreen.getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
-	}
+    @Override
+    protected void onResume() {
+        super.onResume();
+        preferenceScreen.getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+    }
 
-	@Override
-	protected void onPause() {
-		super.onPause();
-		preferenceScreen.getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-	}
+    @Override
+    protected void onPause() {
+        super.onPause();
+        preferenceScreen.getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+    }
 
-	private void setUrl(String newUrl){
-		final Editor editor = preferenceScreen.getSharedPreferences().edit();
-		editor.putString(NetworkClient.PREF_SERVER_URL, newUrl);
-		editor.commit();
-	}
+    private void setUrl(String newUrl){
+        final Editor editor = preferenceScreen.getSharedPreferences().edit();
+        editor.putString(NetworkClient.PREF_SERVER_URL, newUrl);
+        editor.commit();
+    }
 
 
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		switch (requestCode){
-		case REQUEST_RESET_DB:
-			if (resultCode == RESULT_OK){
-				setUrl(newUrl);
-				finish();
-			}else if (resultCode == RESULT_CANCELED){
-				// reset the URL to the currently entered one
-				final ListPreference pref = (ListPreference) preferenceScreen.findPreference(NetworkClient.PREF_LOCAST_SITE);
-				if (pref != null){
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode){
+        case REQUEST_RESET_DB:
+            if (resultCode == RESULT_OK){
+                setUrl(newUrl);
+                finish();
+            }else if (resultCode == RESULT_CANCELED){
+                // reset the URL to the currently entered one
+                final ListPreference pref = (ListPreference) preferenceScreen.findPreference(NetworkClient.PREF_LOCAST_SITE);
+                if (pref != null){
 
-					pref.setValue(preferenceScreen.getSharedPreferences().getString(NetworkClient.PREF_SERVER_URL, null));
-				}
-			}
-			break;
+                    pref.setValue(preferenceScreen.getSharedPreferences().getString(NetworkClient.PREF_SERVER_URL, null));
+                }
+            }
+            break;
 
-			default:
-				super.onActivityResult(requestCode, resultCode, data);
-		}
-	}
+            default:
+                super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
 
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-		if (key.equals(NetworkClient.PREF_LOCAST_SITE)){
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (key.equals(NetworkClient.PREF_LOCAST_SITE)){
 
-			final String newUrl = sharedPreferences.getString(NetworkClient.PREF_LOCAST_SITE, null);
-			// only do this if something's actually changed.
-			if (newUrl != null && !newUrl.equals(sharedPreferences.getString(NetworkClient.PREF_SERVER_URL, null))){
-				setUrl(newUrl);
-				// TODO this needs to ensure that the prefereces are up to date
-			}
-		}
-	}
+            final String newUrl = sharedPreferences.getString(NetworkClient.PREF_LOCAST_SITE, null);
+            // only do this if something's actually changed.
+            if (newUrl != null && !newUrl.equals(sharedPreferences.getString(NetworkClient.PREF_SERVER_URL, null))){
+                setUrl(newUrl);
+                // TODO this needs to ensure that the prefereces are up to date
+            }
+        }
+    }
 
-	@Override
-	public boolean onPreferenceChange(Preference preference, Object newValue) {
-		final String key = preference.getKey();
-		if (key.equals(NetworkClient.PREF_SERVER_URL)) {
-			String baseurl = (String) newValue;
-			if (!baseurl.endsWith("/")) {
-				if (Constants.DEBUG) {
-					Log.w(TAG, "Baseurl in preferences (" + baseurl
-							+ ") didn't end in a slash, so we added one.");
-				}
-				baseurl = baseurl + "/";
-			}
-		}
-		return true;
-	}
+    @Override
+    public boolean onPreferenceChange(Preference preference, Object newValue) {
+        final String key = preference.getKey();
+        if (key.equals(NetworkClient.PREF_SERVER_URL)) {
+            String baseurl = (String) newValue;
+            if (!baseurl.endsWith("/")) {
+                if (Constants.DEBUG) {
+                    Log.w(TAG, "Baseurl in preferences (" + baseurl
+                            + ") didn't end in a slash, so we added one.");
+                }
+                baseurl = baseurl + "/";
+            }
+        }
+        return true;
+    }
 }

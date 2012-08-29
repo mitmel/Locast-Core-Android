@@ -143,16 +143,16 @@ public final class IntentIntegrator {
     downloadDialog.setMessage(stringMessage);
     downloadDialog.setPositiveButton(stringButtonYes, new DialogInterface.OnClickListener() {
       public void onClick(DialogInterface dialogInterface, int i) {
-    	  try{
+          try{
         final Uri uri = Uri.parse("market://search?q=pname:com.google.zxing.client.android");
         final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
         activity.startActivity(intent);
-    	  }catch (final ActivityNotFoundException e){
-    		  //Toast.makeText(activity.getApplicationContext(), "Cannot find handler for market:// uris. Sorry, you will need to install this by hand.", Toast.LENGTH_LONG);
-    		  final Uri uri = Uri.parse("http://zxing.googlecode.com/files/BarcodeScanner3.01.apk");
-    		  final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-    	      activity.startActivity(intent);
-    	  }
+          }catch (final ActivityNotFoundException e){
+              //Toast.makeText(activity.getApplicationContext(), "Cannot find handler for market:// uris. Sorry, you will need to install this by hand.", Toast.LENGTH_LONG);
+              final Uri uri = Uri.parse("http://zxing.googlecode.com/files/BarcodeScanner3.01.apk");
+              final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+              activity.startActivity(intent);
+          }
       }
     });
     downloadDialog.setNegativeButton(stringButtonNo, new DialogInterface.OnClickListener() {

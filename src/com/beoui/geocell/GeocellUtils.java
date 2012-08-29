@@ -115,7 +115,7 @@ public final class GeocellUtils {
 
     /**
      *
-     * 	 Calculates the grid of cells formed between the two given cells.
+     *   Calculates the grid of cells formed between the two given cells.
 
       Generates the set of cells in the grid created by interpolating from the
       given Northeast geocell to the given Southwest geocell.
@@ -298,7 +298,7 @@ public final class GeocellUtils {
     }
 
     /**
-     * 	  Returns the shortest distance between a point and a geocell bounding box.
+     *    Returns the shortest distance between a point and a geocell bounding box.
 
       If the point is inside the cell, the shortest distance is always to a 'edge'
       of the cell rectangle. If the point is outside the cell, the shortest distance
@@ -452,32 +452,32 @@ public final class GeocellUtils {
      * @param p2: indicating the second point.
      * @return The 2D great-circle distance between the two given points, in meters.
      */
-	public static double distance(Point p1, Point p2) {
-		final double p1lat = Math.toRadians(p1.getLat());
-		final double p1lon = Math.toRadians(p1.getLon());
-		final double p2lat = Math.toRadians(p2.getLat());
-		final double p2lon = Math.toRadians(p2.getLon());
-		return RADIUS
-				* Math.acos(makeDoubleInRange(Math.sin(p1lat) * Math.sin(p2lat)
-						+ Math.cos(p1lat) * Math.cos(p2lat)
-						* Math.cos(p2lon - p1lon)));
-	}
+    public static double distance(Point p1, Point p2) {
+        final double p1lat = Math.toRadians(p1.getLat());
+        final double p1lon = Math.toRadians(p1.getLon());
+        final double p2lat = Math.toRadians(p2.getLat());
+        final double p2lon = Math.toRadians(p2.getLon());
+        return RADIUS
+                * Math.acos(makeDoubleInRange(Math.sin(p1lat) * Math.sin(p2lat)
+                        + Math.cos(p1lat) * Math.cos(p2lat)
+                        * Math.cos(p2lon - p1lon)));
+    }
 
-	/**
-	 * This function is used to fix issue 10:
-	 * GeocellUtils.distance(...) uses Math.acos(arg) method. In some cases arg > 1 (i.e 1.0000000002), so acos cannot be calculated and the method returns NaN.
-	 * @param d
-	 * @return a double between -1 and 1
-	 */
-	public static double makeDoubleInRange(double d) {
-		double result = d;
-		if (d > 1) {
-			result = 1;
-		} else if (d < -1) {
-			result = -1;
-		}
-		return result;
-	}
+    /**
+     * This function is used to fix issue 10:
+     * GeocellUtils.distance(...) uses Math.acos(arg) method. In some cases arg > 1 (i.e 1.0000000002), so acos cannot be calculated and the method returns NaN.
+     * @param d
+     * @return a double between -1 and 1
+     */
+    public static double makeDoubleInRange(double d) {
+        double result = d;
+        if (d > 1) {
+            result = 1;
+        } else if (d < -1) {
+            result = -1;
+        }
+        return result;
+    }
 
     /**
      * Returns the edges of the rectangular region containing all of the
@@ -520,53 +520,53 @@ public final class GeocellUtils {
 
 
 
-	private static Field getField(Class<?> type, Class<? extends Annotation> annotation) {
-	    for(final Field field : type.getDeclaredFields()) {
-    		if(field.isAnnotationPresent(annotation)) {
-    			try {
-    				field.setAccessible(true);
-					return field;
-				} catch (final IllegalArgumentException e) {
-					// TODO Auto-generated catch block
-					return null;
-				}
-    		}
-    	}
+    private static Field getField(Class<?> type, Class<? extends Annotation> annotation) {
+        for(final Field field : type.getDeclaredFields()) {
+            if(field.isAnnotationPresent(annotation)) {
+                try {
+                    field.setAccessible(true);
+                    return field;
+                } catch (final IllegalArgumentException e) {
+                    // TODO Auto-generated catch block
+                    return null;
+                }
+            }
+        }
 
-	    final Class<?> superClass = type.getSuperclass();
-	    if(superClass != null) {
-	    	return getField(superClass, annotation);
-	    }
+        final Class<?> superClass = type.getSuperclass();
+        if(superClass != null) {
+            return getField(superClass, annotation);
+        }
 
-	    return null;
+        return null;
     }
 
     public static Point getLocation(Object entity) {
-    	if(entity instanceof LocationCapable) {
-    		return ((LocationCapable) entity).getLocation();
-    	}
+        if(entity instanceof LocationCapable) {
+            return ((LocationCapable) entity).getLocation();
+        }
 
-    	final Point location = new Point();
+        final Point location = new Point();
 
-    	try {
-	        location.setLat(getField(entity.getClass(), Latitude.class).getDouble(entity));
-	    	location.setLon(getField(entity.getClass(), Longitude.class).getDouble(entity));
+        try {
+            location.setLat(getField(entity.getClass(), Latitude.class).getDouble(entity));
+            location.setLon(getField(entity.getClass(), Longitude.class).getDouble(entity));
         } catch (final IllegalArgumentException e1) {
-	        // TODO Auto-generated catch block
-	        e1.printStackTrace();
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
         } catch (final IllegalAccessException e1) {
-	        // TODO Auto-generated catch block
-	        e1.printStackTrace();
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
         }
 
         return location;
     }
 
     public static String getGeocellsFieldName(Class<?> type) {
-    	if(LocationCapable.class.isAssignableFrom(type)) {
-    		return "geocells";
-    	}
+        if(LocationCapable.class.isAssignableFrom(type)) {
+            return "geocells";
+        }
 
-    	return getField(type, Geocells.class).getName();
+        return getField(type, Geocells.class).getName();
     }
 }

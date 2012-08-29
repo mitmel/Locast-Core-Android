@@ -7,5 +7,5 @@ package com.stackoverflow;
  * @see http://stackoverflow.com/questions/122105/java-what-is-the-best-way-to-filter-a-collection
  */
 public interface Predicate<T> {
-	boolean apply(T in);
+    boolean apply(T in);
 }

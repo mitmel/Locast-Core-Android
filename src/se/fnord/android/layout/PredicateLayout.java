@@ -39,7 +39,7 @@ public class PredicateLayout extends ViewGroup {
     }
 
     public PredicateLayout(Context context, AttributeSet attrs){
-    	super(context, attrs);
+        super(context, attrs);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class PredicateLayout extends ViewGroup {
         final int count = getChildCount();
         int line_height = 0;
 
-    	int xpos = getPaddingLeft();
+        int xpos = getPaddingLeft();
         int ypos = getPaddingTop();
 
         for (int i = 0; i < count; i++) {
@@ -76,12 +76,12 @@ public class PredicateLayout extends ViewGroup {
         this.line_height = line_height;
 
         if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.UNSPECIFIED){
-        	height = ypos + line_height;
+            height = ypos + line_height;
 
         }else if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.AT_MOST){
-        	if (ypos + line_height < height){
-        		height = ypos + line_height;
-        	}
+            if (ypos + line_height < height){
+                height = ypos + line_height;
+            }
         }
         setMeasuredDimension(width, height);
     }
@@ -94,8 +94,8 @@ public class PredicateLayout extends ViewGroup {
     @Override
     protected boolean checkLayoutParams(ViewGroup.LayoutParams p) {
         if (p instanceof LayoutParams) {
-			return true;
-		}
+            return true;
+        }
         return false;
     }
 

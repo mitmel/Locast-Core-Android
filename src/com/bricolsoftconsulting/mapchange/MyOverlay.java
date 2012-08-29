@@ -21,41 +21,41 @@ import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
 
 public class MyOverlay extends Overlay
-{	
-	// ------------------------------------------------------------------------
-	// LISTENER DEFINITIONS
-	// ------------------------------------------------------------------------
-	
-	// Tap listener
-	public interface OnTapListener
-	{
-		public void onTap(MapView v, GeoPoint geoPoint);
-	}
-	
-	// ------------------------------------------------------------------------
-	// GETTERS / SETTERS
-	// ------------------------------------------------------------------------
-	
-	// Setters
-	public void setOnTapListener(OnTapListener listener)
-	{
-		mTapListener = listener;
-	}
+{   
+    // ------------------------------------------------------------------------
+    // LISTENER DEFINITIONS
+    // ------------------------------------------------------------------------
+    
+    // Tap listener
+    public interface OnTapListener
+    {
+        public void onTap(MapView v, GeoPoint geoPoint);
+    }
+    
+    // ------------------------------------------------------------------------
+    // GETTERS / SETTERS
+    // ------------------------------------------------------------------------
+    
+    // Setters
+    public void setOnTapListener(OnTapListener listener)
+    {
+        mTapListener = listener;
+    }
 
-	// ------------------------------------------------------------------------
-	// MEMBERS
-	// ------------------------------------------------------------------------
-	
-	private OnTapListener mTapListener;
-	
-	// ------------------------------------------------------------------------
-	// EVENT HANDLERS
-	// ------------------------------------------------------------------------
-	
-	@Override
-	public boolean onTap(GeoPoint geoPoint, MapView mapView)
-	{
-		mTapListener.onTap(mapView, geoPoint);
-		return super.onTap(geoPoint, mapView);
-	}
+    // ------------------------------------------------------------------------
+    // MEMBERS
+    // ------------------------------------------------------------------------
+    
+    private OnTapListener mTapListener;
+    
+    // ------------------------------------------------------------------------
+    // EVENT HANDLERS
+    // ------------------------------------------------------------------------
+    
+    @Override
+    public boolean onTap(GeoPoint geoPoint, MapView mapView)
+    {
+        mTapListener.onTap(mapView, geoPoint);
+        return super.onTap(geoPoint, mapView);
+    }
 }

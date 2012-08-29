@@ -38,7 +38,7 @@ public class GeocellQuery {
     
     // Use this constructor to build empty base queries.
     public GeocellQuery() {
-    	this.baseQuery = null;
+        this.baseQuery = null;
         this.declaredParameters = null;
         this.parameters = null;
     }

@@ -23,17 +23,17 @@ import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.locast.widget.DiscussionBoard;
 
 public class DiscussionActivity extends Activity {
-	DiscussionBoard discussionBoard;
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.discussion_activity_main);
+    DiscussionBoard discussionBoard;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.discussion_activity_main);
 
-		discussionBoard = (DiscussionBoard)findViewById(R.id.discussion);
-		final Intent i = getIntent();
-		final String action = i.getAction();
-		if (Intent.ACTION_VIEW.equals(action) || Intent.ACTION_EDIT.equals(action)){
-			discussionBoard.setUri(i.getData());
-		}
-	}
+        discussionBoard = (DiscussionBoard)findViewById(R.id.discussion);
+        final Intent i = getIntent();
+        final String action = i.getAction();
+        if (Intent.ACTION_VIEW.equals(action) || Intent.ACTION_EDIT.equals(action)){
+            discussionBoard.setUri(i.getData());
+        }
+    }
 }

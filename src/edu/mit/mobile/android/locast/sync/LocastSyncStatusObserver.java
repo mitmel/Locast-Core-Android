@@ -36,40 +36,40 @@ import edu.mit.mobile.android.locast.data.MediaProvider;
  */
 public class LocastSyncStatusObserver implements SyncStatusObserver{
 
-	Context mContext;
-	Handler mHandler;
+    Context mContext;
+    Handler mHandler;
 
-	public static final int
-	MSG_SET_REFRESHING = 100,
-	MSG_SET_NOT_REFRESHING = 101;
+    public static final int
+    MSG_SET_REFRESHING = 100,
+    MSG_SET_NOT_REFRESHING = 101;
 
-	private static final String TAG = LocastSyncStatusObserver.class.getSimpleName();
+    private static final String TAG = LocastSyncStatusObserver.class.getSimpleName();
 
-	public LocastSyncStatusObserver(Context context,Handler handler) {
-		this.mContext=context;
-		this.mHandler=handler;
-	}
-	@Override
-	public void onStatusChanged(int which) {
-		notifySyncStatusToHandler(mContext, mHandler);
-	}
-	public static void notifySyncStatusToHandler(Context context,Handler handler){
-		if (Constants.USE_ACCOUNT_FRAMEWORK) {
-			final Account a = Authenticator.getFirstAccount(context);
-			if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY)
-					&& !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
-				if (Constants.DEBUG) {
-					Log.d(TAG, "Sync finished, should refresh now!!");
-				}
-				handler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
-			} else {
-				if (Constants.DEBUG) {
-					Log.d(TAG, "Sync Active or Pending!!");
-				}
-				handler.sendEmptyMessage(MSG_SET_REFRESHING);
-			}
-		} else {
-			Log.e(TAG, "need to implement sync status listening");
-		}
-	}
+    public LocastSyncStatusObserver(Context context,Handler handler) {
+        this.mContext=context;
+        this.mHandler=handler;
+    }
+    @Override
+    public void onStatusChanged(int which) {
+        notifySyncStatusToHandler(mContext, mHandler);
+    }
+    public static void notifySyncStatusToHandler(Context context,Handler handler){
+        if (Constants.USE_ACCOUNT_FRAMEWORK) {
+            final Account a = Authenticator.getFirstAccount(context);
+            if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY)
+                    && !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
+                if (Constants.DEBUG) {
+                    Log.d(TAG, "Sync finished, should refresh now!!");
+                }
+                handler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
+            } else {
+                if (Constants.DEBUG) {
+                    Log.d(TAG, "Sync Active or Pending!!");
+                }
+                handler.sendEmptyMessage(MSG_SET_REFRESHING);
+            }
+        } else {
+            Log.e(TAG, "need to implement sync status listening");
+        }
+    }
 }

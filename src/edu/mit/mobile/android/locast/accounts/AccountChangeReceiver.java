@@ -29,83 +29,83 @@ import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.home.ResetActivity;
 
 public class AccountChangeReceiver extends BroadcastReceiver {
-	private static final String TAG = AccountChangeReceiver.class.getSimpleName();
+    private static final String TAG = AccountChangeReceiver.class.getSimpleName();
 
-	private static final String PREF_ACCOUNT_NAMES = "accountNames";
+    private static final String PREF_ACCOUNT_NAMES = "accountNames";
 
-	private static final String ACCOUNT_STRING_DELIMITER = ",";
+    private static final String ACCOUNT_STRING_DELIMITER = ",";
 
 
-	@Override
-	public void onReceive(Context context, Intent intent) {
-		final AccountManager am = AccountManager.get(context);
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        final AccountManager am = AccountManager.get(context);
 
-		final SharedPreferences prefs = context.getSharedPreferences("account",
-				Context.MODE_PRIVATE);
-		final String existingAccountString = prefs.getString(PREF_ACCOUNT_NAMES, "");
-		final Account[] currentAccounts = am.getAccountsByType(AuthenticationService.ACCOUNT_TYPE);
-		Arrays.sort(currentAccounts);
-		final String[] lastKnownAccounts = existingAccountString.length() > 0 ? existingAccountString
-				.split(ACCOUNT_STRING_DELIMITER) : new String[0];
+        final SharedPreferences prefs = context.getSharedPreferences("account",
+                Context.MODE_PRIVATE);
+        final String existingAccountString = prefs.getString(PREF_ACCOUNT_NAMES, "");
+        final Account[] currentAccounts = am.getAccountsByType(AuthenticationService.ACCOUNT_TYPE);
+        Arrays.sort(currentAccounts);
+        final String[] lastKnownAccounts = existingAccountString.length() > 0 ? existingAccountString
+                .split(ACCOUNT_STRING_DELIMITER) : new String[0];
 
-		// not very efficient for large numbers, but we only ever expect to have 0 or 1 accounts
-		// maybe 2 if we're unlucky.
-		for (final String lastKnownAccount : lastKnownAccounts) {
+        // not very efficient for large numbers, but we only ever expect to have 0 or 1 accounts
+        // maybe 2 if we're unlucky.
+        for (final String lastKnownAccount : lastKnownAccounts) {
 
-			boolean found = false;
-			for (final Account currentAccount : currentAccounts) {
-				if (currentAccount.name.equals(lastKnownAccount)) {
-					found = true;
-					break;
-				}
-			}
+            boolean found = false;
+            for (final Account currentAccount : currentAccounts) {
+                if (currentAccount.name.equals(lastKnownAccount)) {
+                    found = true;
+                    break;
+                }
+            }
 
-			// account has been deleted
-			if (!found) {
-				onAccountDeleted(context, new Account(lastKnownAccount,
-						AuthenticationService.ACCOUNT_TYPE));
-			}
-		}
+            // account has been deleted
+            if (!found) {
+                onAccountDeleted(context, new Account(lastKnownAccount,
+                        AuthenticationService.ACCOUNT_TYPE));
+            }
+        }
 
-		final StringBuilder accountString = new StringBuilder();
-		final boolean first = true;
-		for (final Account currentAccount : currentAccounts) {
-			boolean found = false;
-			for (final String lastKnownAccount : lastKnownAccounts) {
-				if (currentAccount.name.equals(lastKnownAccount)) {
-					found = true;
-					break;
-				}
-			}
+        final StringBuilder accountString = new StringBuilder();
+        final boolean first = true;
+        for (final Account currentAccount : currentAccounts) {
+            boolean found = false;
+            for (final String lastKnownAccount : lastKnownAccounts) {
+                if (currentAccount.name.equals(lastKnownAccount)) {
+                    found = true;
+                    break;
+                }
+            }
 
-			if (!found) {
-				onAccountAdded(context, currentAccount);
-			}
-			if (!first) {
-				accountString.append(ACCOUNT_STRING_DELIMITER);
-			}
-			accountString.append(currentAccount.name);
-		}
+            if (!found) {
+                onAccountAdded(context, currentAccount);
+            }
+            if (!first) {
+                accountString.append(ACCOUNT_STRING_DELIMITER);
+            }
+            accountString.append(currentAccount.name);
+        }
 
-		prefs.edit().putString(PREF_ACCOUNT_NAMES, accountString.toString()).commit();
-	}
+        prefs.edit().putString(PREF_ACCOUNT_NAMES, accountString.toString()).commit();
+    }
 
-	private void onAccountDeleted(Context context, Account account) {
-		if (Constants.DEBUG) {
-			Log.d(TAG, "Locast account removed: " + account);
-		}
+    private void onAccountDeleted(Context context, Account account) {
+        if (Constants.DEBUG) {
+            Log.d(TAG, "Locast account removed: " + account);
+        }
 
-		// only delete the database when it was a real account
-		if (!Authenticator.DEMO_ACCOUNT.equals(account.name)) {
-			ResetActivity.resetEverything(context, false, false);
-		}
-	}
+        // only delete the database when it was a real account
+        if (!Authenticator.DEMO_ACCOUNT.equals(account.name)) {
+            ResetActivity.resetEverything(context, false, false);
+        }
+    }
 
-	private void onAccountAdded(Context context, Account account) {
-		// that's swell! we don't really need to do anything.
-		if (Constants.DEBUG) {
-			Log.d(TAG, "Locast account added: " + account);
-		}
-	}
+    private void onAccountAdded(Context context, Account account) {
+        // that's swell! we don't really need to do anything.
+        if (Constants.DEBUG) {
+            Log.d(TAG, "Locast account added: " + account);
+        }
+    }
 
 }

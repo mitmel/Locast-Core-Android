@@ -60,265 +60,265 @@ import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.widget.NotificationProgressBar;
 
 public class CollectionList extends FragmentActivity implements
-		LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener {
+        LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener {
 
-	private static final String TAG = CollectionList.class.getSimpleName();
-	private CursorAdapter mAdapter;
-	private ListView mListView;
-	private Uri mUri;
+    private static final String TAG = CollectionList.class.getSimpleName();
+    private CursorAdapter mAdapter;
+    private ListView mListView;
+    private Uri mUri;
 
-	private ImageCache mImageCache;
+    private ImageCache mImageCache;
 
-	/**
-	 * If true, checks to ensure that there's an account before showing activity.
-	 */
-	private static final boolean CHECK_FOR_ACCOUNT = true;
+    /**
+     * If true, checks to ensure that there's an account before showing activity.
+     */
+    private static final boolean CHECK_FOR_ACCOUNT = true;
 
-	/**
-	 * If true, uses an alternate layout collection_item_with_description and loads the collection
-	 * description in it.
-	 */
-	private static final boolean SHOW_DESCRIPTION = true;
+    /**
+     * If true, uses an alternate layout collection_item_with_description and loads the collection
+     * description in it.
+     */
+    private static final boolean SHOW_DESCRIPTION = true;
 
-	private final String[] COLLECTION_DISPLAY = SHOW_DESCRIPTION ? new String[] {
-			Collection._TITLE, Collection._THUMBNAIL, Collection._DESCRIPTION } : new String[] {
-			Collection._TITLE, Collection._THUMBNAIL, Collection._CASTS_COUNT,
-			Collection._FAVORITES_COUNT };
+    private final String[] COLLECTION_DISPLAY = SHOW_DESCRIPTION ? new String[] {
+            Collection._TITLE, Collection._THUMBNAIL, Collection._DESCRIPTION } : new String[] {
+            Collection._TITLE, Collection._THUMBNAIL, Collection._CASTS_COUNT,
+            Collection._FAVORITES_COUNT };
 
-	private String[] COLLECTION_PROJECTION;
+    private String[] COLLECTION_PROJECTION;
 
-	private final int[] COLLECTION_LAYOUT_IDS = SHOW_DESCRIPTION ? new int[] { android.R.id.text1,
-			R.id.media_thumbnail, android.R.id.text2 } : new int[] { android.R.id.text1,
-			R.id.media_thumbnail, R.id.casts, R.id.favorites };
+    private final int[] COLLECTION_LAYOUT_IDS = SHOW_DESCRIPTION ? new int[] { android.R.id.text1,
+            R.id.media_thumbnail, android.R.id.text2 } : new int[] { android.R.id.text1,
+            R.id.media_thumbnail, R.id.casts, R.id.favorites };
 
-	private AppUpdateChecker mAppUpdateChecker;
+    private AppUpdateChecker mAppUpdateChecker;
 
-	private static String LOADER_DATA = "edu.mit.mobile.android.locast.LOADER_DATA";
+    private static String LOADER_DATA = "edu.mit.mobile.android.locast.LOADER_DATA";
 
-	private boolean mSyncWhenLoaded = true;
+    private boolean mSyncWhenLoaded = true;
 
-	private Object mSyncHandle;
-	private NotificationProgressBar mProgressBar;
+    private Object mSyncHandle;
+    private NotificationProgressBar mProgressBar;
 
-	private final Handler mHandler = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-				case LocastSyncStatusObserver.MSG_SET_REFRESHING:
-					if (Constants.DEBUG) {
-						Log.d(TAG, "refreshing...");
-					}
-					mProgressBar.showProgressBar(true);
-					break;
+    private final Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case LocastSyncStatusObserver.MSG_SET_REFRESHING:
+                    if (Constants.DEBUG) {
+                        Log.d(TAG, "refreshing...");
+                    }
+                    mProgressBar.showProgressBar(true);
+                    break;
 
-				case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
-					if (Constants.DEBUG) {
-						Log.d(TAG, "done loading.");
-					}
-					mProgressBar.showProgressBar(false);
-					break;
-			}
-		};
-	};
+                case LocastSyncStatusObserver.MSG_SET_NOT_REFRESHING:
+                    if (Constants.DEBUG) {
+                        Log.d(TAG, "done loading.");
+                    }
+                    mProgressBar.showProgressBar(false);
+                    break;
+            }
+        };
+    };
 
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.simple_list_activity);
-		mProgressBar = (NotificationProgressBar) (findViewById(R.id.progressNotification));
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.simple_list_activity);
+        mProgressBar = (NotificationProgressBar) (findViewById(R.id.progressNotification));
 
-		mListView = (ListView) findViewById(android.R.id.list);
-		mListView.setOnItemClickListener(this);
-		mListView.addFooterView(LayoutInflater.from(this).inflate(R.layout.list_footer, null),
-				null, false);
-		mListView.setEmptyView(findViewById(R.id.progressNotification));
+        mListView = (ListView) findViewById(android.R.id.list);
+        mListView.setOnItemClickListener(this);
+        mListView.addFooterView(LayoutInflater.from(this).inflate(R.layout.list_footer, null),
+                null, false);
+        mListView.setEmptyView(findViewById(R.id.progressNotification));
 
-		final ActionBar ab = (ActionBar) findViewById(R.id.actionbar);
-		getMenuInflater().inflate(R.menu.actionbar_view_dir, ab.asMenu());
+        final ActionBar ab = (ActionBar) findViewById(R.id.actionbar);
+        getMenuInflater().inflate(R.menu.actionbar_view_dir, ab.asMenu());
 
-		if (Constants.USE_APPUPDATE_CHECKER) {
-			mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url),
-					new OnUpdateDialog(this, getString(R.string.app_name)));
-			mAppUpdateChecker.checkForUpdates();
-		}
+        if (Constants.USE_APPUPDATE_CHECKER) {
+            mAppUpdateChecker = new AppUpdateChecker(this, getString(R.string.app_update_url),
+                    new OnUpdateDialog(this, getString(R.string.app_name)));
+            mAppUpdateChecker.checkForUpdates();
+        }
 
-		final Intent intent = getIntent();
-		final String action = intent.getAction();
+        final Intent intent = getIntent();
+        final String action = intent.getAction();
 
-		mImageCache = ImageCache.getInstance(this);
+        mImageCache = ImageCache.getInstance(this);
 
-		if (Intent.ACTION_VIEW.equals(action)) {
-			loadData(intent.getData());
+        if (Intent.ACTION_VIEW.equals(action)) {
+            loadData(intent.getData());
 
-		} else if (Intent.ACTION_MAIN.equals(action)) {
-			loadData(Collection.CONTENT_URI);
-		}
+        } else if (Intent.ACTION_MAIN.equals(action)) {
+            loadData(Collection.CONTENT_URI);
+        }
 
-		if (CHECK_FOR_ACCOUNT) {
-			if (SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN)) {
-				return;
-			}
-		}
-	}
+        if (CHECK_FOR_ACCOUNT) {
+            if (SigninOrSkip.startSignin(this, SigninOrSkip.REQUEST_SIGNIN)) {
+                return;
+            }
+        }
+    }
 
-	@Override
-	protected void onResume() {
-		super.onResume();
+    @Override
+    protected void onResume() {
+        super.onResume();
 
-		mSyncWhenLoaded = true;
-		mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(
-				this, mHandler));
-		LocastSyncStatusObserver.notifySyncStatusToHandler(this, mHandler);
-	}
+        mSyncWhenLoaded = true;
+        mSyncHandle = ContentResolver.addStatusChangeListener(0xff, new LocastSyncStatusObserver(
+                this, mHandler));
+        LocastSyncStatusObserver.notifySyncStatusToHandler(this, mHandler);
+    }
 
-	@Override
-	protected void onPause() {
-		super.onPause();
-		if (mSyncHandle != null) {
-			ContentResolver.removeStatusChangeListener(mSyncHandle);
-		}
-	}
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mSyncHandle != null) {
+            ContentResolver.removeStatusChangeListener(mSyncHandle);
+        }
+    }
 
-	@Override
-	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 
-		super.onCreateContextMenu(menu, v, menuInfo);
-	}
+        super.onCreateContextMenu(menu, v, menuInfo);
+    }
 
-	/**
-	 * Override this if you wish to show alternate columns.
-	 *
-	 * @return the list of Collection columns to display
-	 */
-	public String[] getCollectionDisplay() {
-		return COLLECTION_DISPLAY;
-	}
+    /**
+     * Override this if you wish to show alternate columns.
+     *
+     * @return the list of Collection columns to display
+     */
+    public String[] getCollectionDisplay() {
+        return COLLECTION_DISPLAY;
+    }
 
-	/**
-	 * Override this if you wish to use IDs other than {@link #COLLECTION_LAYOUT_IDS}.
-	 *
-	 * @return the list of view ids to map the {@link #getCollectionDisplay()} to
-	 */
-	public int[] getCollectionLayoutIds() {
-		return COLLECTION_LAYOUT_IDS;
-	}
+    /**
+     * Override this if you wish to use IDs other than {@link #COLLECTION_LAYOUT_IDS}.
+     *
+     * @return the list of view ids to map the {@link #getCollectionDisplay()} to
+     */
+    public int[] getCollectionLayoutIds() {
+        return COLLECTION_LAYOUT_IDS;
+    }
 
-	/**
-	 * By default, returns {@link #getCollectionDisplay()} with {@link BaseColumns#_ID} added.
-	 *
-	 * @return the projection to use to select the items in the display.
-	 */
-	public String[] getCollectionProjection() {
-		return ArrayUtils.concat(new String[] { Collection._ID }, getCollectionDisplay());
-	}
+    /**
+     * By default, returns {@link #getCollectionDisplay()} with {@link BaseColumns#_ID} added.
+     *
+     * @return the projection to use to select the items in the display.
+     */
+    public String[] getCollectionProjection() {
+        return ArrayUtils.concat(new String[] { Collection._ID }, getCollectionDisplay());
+    }
 
-	public int getCollectionItemLayout() {
-		return SHOW_DESCRIPTION ? R.layout.collection_item_with_description
-				: R.layout.collection_item;
-	}
+    public int getCollectionItemLayout() {
+        return SHOW_DESCRIPTION ? R.layout.collection_item_with_description
+                : R.layout.collection_item;
+    }
 
-	private void loadData(Uri data) {
-		final String type = getContentResolver().getType(data);
+    private void loadData(Uri data) {
+        final String type = getContentResolver().getType(data);
 
-		if (!MediaProvider.TYPE_COLLECTION_DIR.equals(type)) {
-			throw new IllegalArgumentException("cannot load type: " + type);
-		}
-		mAdapter = new SimpleThumbnailCursorAdapter(this, getCollectionItemLayout(), null,
-				getCollectionDisplay(), getCollectionLayoutIds(),
-				new int[] { R.id.media_thumbnail }, 0);
+        if (!MediaProvider.TYPE_COLLECTION_DIR.equals(type)) {
+            throw new IllegalArgumentException("cannot load type: " + type);
+        }
+        mAdapter = new SimpleThumbnailCursorAdapter(this, getCollectionItemLayout(), null,
+                getCollectionDisplay(), getCollectionLayoutIds(),
+                new int[] { R.id.media_thumbnail }, 0);
 
-		mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache,
-				new int[] { R.id.media_thumbnail }, 48, 48, ImageLoaderAdapter.UNIT_DIP));
+        mListView.setAdapter(new ImageLoaderAdapter(this, mAdapter, mImageCache,
+                new int[] { R.id.media_thumbnail }, 48, 48, ImageLoaderAdapter.UNIT_DIP));
 
-		final LoaderManager lm = getSupportLoaderManager();
-		final Bundle loaderArgs = new Bundle();
-		loaderArgs.putParcelable(LOADER_DATA, data);
-		lm.initLoader(0, loaderArgs, this);
-		setTitle(R.string.collections);
-		mUri = data;
+        final LoaderManager lm = getSupportLoaderManager();
+        final Bundle loaderArgs = new Bundle();
+        loaderArgs.putParcelable(LOADER_DATA, data);
+        lm.initLoader(0, loaderArgs, this);
+        setTitle(R.string.collections);
+        mUri = data;
 
-	}
+    }
 
-	@Override
-	public void setTitle(CharSequence title) {
-		super.setTitle(title);
-		((TextView) findViewById(android.R.id.title)).setText(title);
-	}
+    @Override
+    public void setTitle(CharSequence title) {
+        super.setTitle(title);
+        ((TextView) findViewById(android.R.id.title)).setText(title);
+    }
 
-	@Override
-	public void setTitle(int title) {
-		super.setTitle(title);
-		((TextView) findViewById(android.R.id.title)).setText(title);
-	}
+    @Override
+    public void setTitle(int title) {
+        super.setTitle(title);
+        ((TextView) findViewById(android.R.id.title)).setText(title);
+    }
 
-	private void refresh(boolean explicitSync) {
-		LocastSync.startSync(this, mUri, explicitSync);
-	}
+    private void refresh(boolean explicitSync) {
+        LocastSync.startSync(this, mUri, explicitSync);
+    }
 
-	@Override
-	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		final Uri data = args.getParcelable(LOADER_DATA);
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        final Uri data = args.getParcelable(LOADER_DATA);
 
-		final CursorLoader cl = new CursorLoader(this, data, getCollectionProjection(), null, null,
-				Collection.SORT_DEFAULT);
-		cl.setUpdateThrottle(Constants.UPDATE_THROTTLE);
-		return cl;
-	}
+        final CursorLoader cl = new CursorLoader(this, data, getCollectionProjection(), null, null,
+                Collection.SORT_DEFAULT);
+        cl.setUpdateThrottle(Constants.UPDATE_THROTTLE);
+        return cl;
+    }
 
-	@Override
-	public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
-		mAdapter.swapCursor(c);
-		if (mSyncWhenLoaded) {
-			mSyncWhenLoaded = false;
-			if (mListView.getAdapter().isEmpty()) {
-				LocastSync.startExpeditedAutomaticSync(this, mUri);
-			} else {
-				refresh(false);
-			}
-		}
-	}
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
+        mAdapter.swapCursor(c);
+        if (mSyncWhenLoaded) {
+            mSyncWhenLoaded = false;
+            if (mListView.getAdapter().isEmpty()) {
+                LocastSync.startExpeditedAutomaticSync(this, mUri);
+            } else {
+                refresh(false);
+            }
+        }
+    }
 
-	@Override
-	public void onLoaderReset(Loader<Cursor> arg0) {
-		mAdapter.swapCursor(null);
+    @Override
+    public void onLoaderReset(Loader<Cursor> arg0) {
+        mAdapter.swapCursor(null);
 
-	}
+    }
 
-	@Override
-	public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
-		startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mUri, id)));
-	}
+    @Override
+    public void onItemClick(AdapterView<?> adapter, View v, int position, long id) {
+        startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(mUri, id)));
+    }
 
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-			case R.id.refresh:
-				refresh(true);
-				return true;
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.refresh:
+                refresh(true);
+                return true;
 
-			case R.id.actionbar_item_home:
-				startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
-				return true;
+            case R.id.actionbar_item_home:
+                startActivity(getPackageManager().getLaunchIntentForPackage(getPackageName()));
+                return true;
 
-			default:
-				return super.onOptionsItemSelected(item);
-		}
+            default:
+                return super.onOptionsItemSelected(item);
+        }
 
-	}
+    }
 
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		switch (requestCode) {
-			case SigninOrSkip.REQUEST_SIGNIN:
-				if (resultCode == RESULT_CANCELED) {
-					finish();
-				} else if (resultCode == RESULT_OK) {
-					refresh(false);
-				}
-				break;
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case SigninOrSkip.REQUEST_SIGNIN:
+                if (resultCode == RESULT_CANCELED) {
+                    finish();
+                } else if (resultCode == RESULT_OK) {
+                    refresh(false);
+                }
+                break;
 
-			default:
-				break;
-		}
-	}
+            default:
+                break;
+        }
+    }
 }

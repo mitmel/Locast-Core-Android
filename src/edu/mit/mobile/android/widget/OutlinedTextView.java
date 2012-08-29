@@ -48,150 +48,150 @@ import android.widget.TextView;
  *
  */
 public class OutlinedTextView extends TextView {
-	public static String TAG = OutlinedTextView.class.getSimpleName();
-	private Layout mLayoutOutline;
-	private Layout mLayout;
-	private int mGravity = Gravity.LEFT;
-	private boolean mIncludePad = true;
-	private float mSpacingMult = 1;
-	private float mSpacingAdd = 0;
+    public static String TAG = OutlinedTextView.class.getSimpleName();
+    private Layout mLayoutOutline;
+    private Layout mLayout;
+    private int mGravity = Gravity.LEFT;
+    private boolean mIncludePad = true;
+    private float mSpacingMult = 1;
+    private float mSpacingAdd = 0;
 
-	private TextPaint mTextPaint;
-	private TextPaint mStrokePaint = new TextPaint();
-	private boolean mInvalidateLayout;
+    private TextPaint mTextPaint;
+    private TextPaint mStrokePaint = new TextPaint();
+    private boolean mInvalidateLayout;
 
-	public OutlinedTextView(Context context) {
-		super(context);
-		setStrokePaint();
-	}
+    public OutlinedTextView(Context context) {
+        super(context);
+        setStrokePaint();
+    }
 
-	public OutlinedTextView(Context context, AttributeSet attrs) {
-		super(context, attrs);
-		setStrokePaint();
-	}
+    public OutlinedTextView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        setStrokePaint();
+    }
 
-	public OutlinedTextView(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);
+    public OutlinedTextView(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
 
-		setStrokePaint();
-	}
+        setStrokePaint();
+    }
 
-	@Override
-	public void setTextAppearance(Context context, int resid) {
-		super.setTextAppearance(context, resid);
+    @Override
+    public void setTextAppearance(Context context, int resid) {
+        super.setTextAppearance(context, resid);
 
-		setStrokePaint();
-	}
+        setStrokePaint();
+    }
 
-	public void setOutlineARGB(int alpha, int red, int green, int blue){
-		mStrokePaint.setARGB(alpha, red, green, blue);
-		invalidate();
-	}
+    public void setOutlineARGB(int alpha, int red, int green, int blue){
+        mStrokePaint.setARGB(alpha, red, green, blue);
+        invalidate();
+    }
 
-	public void setOutlineColor(int color){
-		mStrokePaint.setColor(color);
-		invalidate();
-	}
+    public void setOutlineColor(int color){
+        mStrokePaint.setColor(color);
+        invalidate();
+    }
 
-	public void setOutlineWidth(float width){
-		mStrokePaint.setStrokeWidth(width);
-		invalidate();
-	}
+    public void setOutlineWidth(float width){
+        mStrokePaint.setStrokeWidth(width);
+        invalidate();
+    }
 
-	private void setStrokePaint(){
-		mTextPaint = getPaint();
-		mStrokePaint = new TextPaint(mTextPaint);
-		mStrokePaint.setTypeface(getTypeface());
-		mStrokePaint.setStyle(Paint.Style.STROKE);
+    private void setStrokePaint(){
+        mTextPaint = getPaint();
+        mStrokePaint = new TextPaint(mTextPaint);
+        mStrokePaint.setTypeface(getTypeface());
+        mStrokePaint.setStyle(Paint.Style.STROKE);
 
-		// TODO make these properties that can be set from XML
-		mStrokePaint.setARGB(255, 0, 0, 0);
-		mStrokePaint.setStrokeWidth(4);
-	}
+        // TODO make these properties that can be set from XML
+        mStrokePaint.setARGB(255, 0, 0, 0);
+        mStrokePaint.setStrokeWidth(4);
+    }
 
-	@Override
-	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-	}
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
 
-	@Override
-	public void setText(CharSequence text, BufferType type) {
-		setStrokePaint();
+    @Override
+    public void setText(CharSequence text, BufferType type) {
+        setStrokePaint();
 
-		super.setText(text, type);
-
-		mInvalidateLayout = true;
-		invalidate();
-	}
-
-	@Override
-	protected void onLayout(boolean changed, int left, int top, int right,
-			int bottom) {
-		createLayouts(left, right);
-	}
-
-	@Override
-	public void setGravity(int gravity) {
-		super.setGravity(gravity);
-
-		// call through to the parent, as it sets defaults
-		mGravity = super.getGravity();
+        super.setText(text, type);
 
         mInvalidateLayout = true;
-	}
+        invalidate();
+    }
 
-	private void createLayouts(int left, int right){
-		if (mInvalidateLayout){
-	        final int width = right - left - getCompoundPaddingRight() - getCompoundPaddingLeft();
-	        Layout.Alignment alignment;
-	        switch (mGravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
-	            case Gravity.CENTER_HORIZONTAL:
-	                alignment = Layout.Alignment.ALIGN_CENTER;
-	                break;
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right,
+            int bottom) {
+        createLayouts(left, right);
+    }
 
-	            case Gravity.RIGHT:
-	                alignment = Layout.Alignment.ALIGN_OPPOSITE;
-	                break;
+    @Override
+    public void setGravity(int gravity) {
+        super.setGravity(gravity);
 
-	            default:
-	                alignment = Layout.Alignment.ALIGN_NORMAL;
-	        }
-	        final CharSequence text = getText();
-	    	mLayout = new StaticLayout(text, mTextPaint, width, alignment, mSpacingMult, mSpacingAdd, mIncludePad);
-	    	mLayoutOutline = new StaticLayout(text, mStrokePaint, width, alignment, mSpacingMult, mSpacingAdd, mIncludePad);
-	    	mInvalidateLayout = false;
-		}
-	}
+        // call through to the parent, as it sets defaults
+        mGravity = super.getGravity();
 
-	@Override
-	public void setIncludeFontPadding(boolean includepad) {
-		super.setIncludeFontPadding(includepad);
-		mIncludePad = includepad;
-	}
+        mInvalidateLayout = true;
+    }
 
-	@Override
-	public void setLineSpacing(float add, float mult) {
-		super.setLineSpacing(add, mult);
-		mSpacingAdd = add;
-		mSpacingMult = mult;
-	}
+    private void createLayouts(int left, int right){
+        if (mInvalidateLayout){
+            final int width = right - left - getCompoundPaddingRight() - getCompoundPaddingLeft();
+            Layout.Alignment alignment;
+            switch (mGravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
+                case Gravity.CENTER_HORIZONTAL:
+                    alignment = Layout.Alignment.ALIGN_CENTER;
+                    break;
 
-	@Override
-	protected void onDraw(Canvas canvas) {
+                case Gravity.RIGHT:
+                    alignment = Layout.Alignment.ALIGN_OPPOSITE;
+                    break;
 
-		// This routine explicitly does not call super.onDraw() as trying to match
-		// up the drawn text with the outline is too hard.
-		if (mLayoutOutline != null){
+                default:
+                    alignment = Layout.Alignment.ALIGN_NORMAL;
+            }
+            final CharSequence text = getText();
+            mLayout = new StaticLayout(text, mTextPaint, width, alignment, mSpacingMult, mSpacingAdd, mIncludePad);
+            mLayoutOutline = new StaticLayout(text, mStrokePaint, width, alignment, mSpacingMult, mSpacingAdd, mIncludePad);
+            mInvalidateLayout = false;
+        }
+    }
 
-			canvas.save();
-			mTextPaint.setColor(getCurrentTextColor());
-			// basic offsets for padding
-			canvas.translate(getCompoundPaddingLeft(), getVerticalOffset() + getExtendedPaddingTop());
-			mLayoutOutline.draw(canvas);
-			mLayout.draw(canvas);
-			canvas.restore();
-		}
-	}
+    @Override
+    public void setIncludeFontPadding(boolean includepad) {
+        super.setIncludeFontPadding(includepad);
+        mIncludePad = includepad;
+    }
+
+    @Override
+    public void setLineSpacing(float add, float mult) {
+        super.setLineSpacing(add, mult);
+        mSpacingAdd = add;
+        mSpacingMult = mult;
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+
+        // This routine explicitly does not call super.onDraw() as trying to match
+        // up the drawn text with the outline is too hard.
+        if (mLayoutOutline != null){
+
+            canvas.save();
+            mTextPaint.setColor(getCurrentTextColor());
+            // basic offsets for padding
+            canvas.translate(getCompoundPaddingLeft(), getVerticalOffset() + getExtendedPaddingTop());
+            mLayoutOutline.draw(canvas);
+            mLayout.draw(canvas);
+            canvas.restore();
+        }
+    }
 
     private int getVerticalOffset() {
         int voffset = 0;
@@ -207,10 +207,10 @@ public class OutlinedTextView extends TextView {
 
             if (textht < boxht) {
                 if (gravity == Gravity.BOTTOM) {
-					voffset = boxht - textht;
-				} else {
-					voffset = (boxht - textht) >> 1;
-				}
+                    voffset = boxht - textht;
+                } else {
+                    voffset = (boxht - textht) >> 1;
+                }
             }
         }
         return voffset;

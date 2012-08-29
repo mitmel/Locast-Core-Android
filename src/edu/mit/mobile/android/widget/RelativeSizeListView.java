@@ -48,193 +48,193 @@ import edu.mit.mobile.android.locast.ver2.R;
  *
  */
 public class RelativeSizeListView extends AdapterView<RelativeSizeListAdapter> implements OnClickListener {
-	private RelativeSizeListAdapter mAdapter;
-	private int mSelectedPosition = INVALID_POSITION;
-	private long mSelectedRowId = INVALID_ROW_ID;
+    private RelativeSizeListAdapter mAdapter;
+    private int mSelectedPosition = INVALID_POSITION;
+    private long mSelectedRowId = INVALID_ROW_ID;
 
-	private DataSetObserver mDataSetObserver;
-	private int mItemCount;
-	private int mRelMax;
-	private float mMinWidth;
+    private DataSetObserver mDataSetObserver;
+    private int mItemCount;
+    private int mRelMax;
+    private float mMinWidth;
 
-	private final LinearLayout mLinearLayout;
+    private final LinearLayout mLinearLayout;
 
-	private static int TAG_ITEM_POSITION = R.id.tag; // XXX not entirely kosher, but should work.
-	public RelativeSizeListView(Context context, AttributeSet attrs,
-			int defStyle) {
-		super(context, attrs, defStyle);
+    private static int TAG_ITEM_POSITION = R.id.tag; // XXX not entirely kosher, but should work.
+    public RelativeSizeListView(Context context, AttributeSet attrs,
+            int defStyle) {
+        super(context, attrs, defStyle);
 
-		setFocusable(true);
-		setWillNotDraw(true);
-		mLinearLayout = new LinearLayout(context, attrs);
-		mLinearLayout.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
+        setFocusable(true);
+        setWillNotDraw(true);
+        mLinearLayout = new LinearLayout(context, attrs);
+        mLinearLayout.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
 
-	}
+    }
 
-	public RelativeSizeListView(Context context, AttributeSet attrs) {
-		this(context, attrs, 0);
-	}
+    public RelativeSizeListView(Context context, AttributeSet attrs) {
+        this(context, attrs, 0);
+    }
 
-	public RelativeSizeListView(Context context) {
-		this(context, null);
-	}
+    public RelativeSizeListView(Context context) {
+        this(context, null);
+    }
 
-	@Override
-	public RelativeSizeListAdapter getAdapter() {
-		return mAdapter;
-	}
+    @Override
+    public RelativeSizeListAdapter getAdapter() {
+        return mAdapter;
+    }
 
-	@Override
-	public View getSelectedView() {
-		if (mItemCount > 0 && mSelectedPosition != INVALID_POSITION){
-			return getChildAt(mSelectedPosition);
-		}else{
-			return null;
-		}
-	}
+    @Override
+    public View getSelectedView() {
+        if (mItemCount > 0 && mSelectedPosition != INVALID_POSITION){
+            return getChildAt(mSelectedPosition);
+        }else{
+            return null;
+        }
+    }
 
-	@Override
-	public Object getSelectedItem() {
-		if (mItemCount > 0 && mSelectedPosition != INVALID_POSITION){
-			return mAdapter.getItem(mSelectedPosition);
-		}else{
-			return null;
-		}
-	}
+    @Override
+    public Object getSelectedItem() {
+        if (mItemCount > 0 && mSelectedPosition != INVALID_POSITION){
+            return mAdapter.getItem(mSelectedPosition);
+        }else{
+            return null;
+        }
+    }
 
-	@Override
-	public long getSelectedItemId() {
-		return mSelectedRowId;
-	}
+    @Override
+    public long getSelectedItemId() {
+        return mSelectedRowId;
+    }
 
-	@Override
-	public int getSelectedItemPosition() {
-		return mSelectedPosition;
-	}
+    @Override
+    public int getSelectedItemPosition() {
+        return mSelectedPosition;
+    }
 
 
-	@Override
-	public int getCount() {
-		return mItemCount;
-	}
+    @Override
+    public int getCount() {
+        return mItemCount;
+    }
 
-	@Override
-	public void setEnabled(boolean enabled) {
-		super.setEnabled(enabled);
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
 
-		requestLayout();
-	}
+        requestLayout();
+    }
 
-	public void setMinWidth(float minWidth){
-		mMinWidth = minWidth;
-		requestLayout();
-	}
+    public void setMinWidth(float minWidth){
+        mMinWidth = minWidth;
+        requestLayout();
+    }
 
-	@Override
-	public void setAdapter(RelativeSizeListAdapter adapter) {
-		if (mAdapter != null){
-			mAdapter.unregisterDataSetObserver(mDataSetObserver);
-			resetList();
-		}
+    @Override
+    public void setAdapter(RelativeSizeListAdapter adapter) {
+        if (mAdapter != null){
+            mAdapter.unregisterDataSetObserver(mDataSetObserver);
+            resetList();
+        }
 
-		mAdapter = adapter;
+        mAdapter = adapter;
 
-		if (mAdapter != null){
-			updateCached();
+        if (mAdapter != null){
+            updateCached();
 
-			mDataSetObserver = new AdapterDataSetObserver();
-			mAdapter.registerDataSetObserver(mDataSetObserver);
+            mDataSetObserver = new AdapterDataSetObserver();
+            mAdapter.registerDataSetObserver(mDataSetObserver);
 
-		}else{
-			resetList();
-		}
-		requestLayout();
-	}
+        }else{
+            resetList();
+        }
+        requestLayout();
+    }
 
-	@Override
-	public void setSelection(int position) {
-		mSelectedPosition = position;
-		if (position != INVALID_POSITION){
-			mSelectedRowId = mAdapter.getItemId(position);
-		}else{
-			mSelectedRowId = INVALID_ROW_ID;
-		}
-		requestLayout();
-		invalidate();
-	}
+    @Override
+    public void setSelection(int position) {
+        mSelectedPosition = position;
+        if (position != INVALID_POSITION){
+            mSelectedRowId = mAdapter.getItemId(position);
+        }else{
+            mSelectedRowId = INVALID_ROW_ID;
+        }
+        requestLayout();
+        invalidate();
+    }
 
-	@Override
-	protected void onLayout(boolean changed, int left, int top, int right,
-			int bottom) {
-		super.onLayout(changed, left, top, right, bottom);
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right,
+            int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
 
-		if (mAdapter == null){
-			return;
-		}
+        if (mAdapter == null){
+            return;
+        }
 
-		if (getChildCount() == 0){
-			addViewInLayout(mLinearLayout, -1, new AdapterView.LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT), true);
+        if (getChildCount() == 0){
+            addViewInLayout(mLinearLayout, -1, new AdapterView.LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT), true);
 
-		}
+        }
 
-		final int currentCount = mLinearLayout.getChildCount();
-		final boolean enabled = isEnabled();
-		// first remove any views
-		mLinearLayout.removeViews(0, Math.max(0, currentCount - mItemCount));
-		for (int i = 0; i < mItemCount; i++){
-			final View existingView = i < currentCount ? mLinearLayout.getChildAt(i): null;
-			final View child = mAdapter.getView(i, existingView, mLinearLayout);
-			child.setTag(TAG_ITEM_POSITION, i);
-			child.setSelected(mSelectedPosition == i);
-			child.setEnabled(enabled);
+        final int currentCount = mLinearLayout.getChildCount();
+        final boolean enabled = isEnabled();
+        // first remove any views
+        mLinearLayout.removeViews(0, Math.max(0, currentCount - mItemCount));
+        for (int i = 0; i < mItemCount; i++){
+            final View existingView = i < currentCount ? mLinearLayout.getChildAt(i): null;
+            final View child = mAdapter.getView(i, existingView, mLinearLayout);
+            child.setTag(TAG_ITEM_POSITION, i);
+            child.setSelected(mSelectedPosition == i);
+            child.setEnabled(enabled);
 
-			final LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.FILL_PARENT);
+            final LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.FILL_PARENT);
 
-			child.setLayoutParams(params);
-			(params).weight = mRelMax - mAdapter.getRelativeSize(i);
-			if (existingView == null){
-				child.setOnClickListener(this);
-				mLinearLayout.addView(child);
-			}
-		}
+            child.setLayoutParams(params);
+            (params).weight = mRelMax - mAdapter.getRelativeSize(i);
+            if (existingView == null){
+                child.setOnClickListener(this);
+                mLinearLayout.addView(child);
+            }
+        }
 
-		mLinearLayout.measure(MeasureSpec.EXACTLY | right - left, MeasureSpec.EXACTLY | bottom - top);
-		mLinearLayout.layout(0, 0, right-left, bottom-top);
-	}
+        mLinearLayout.measure(MeasureSpec.EXACTLY | right - left, MeasureSpec.EXACTLY | bottom - top);
+        mLinearLayout.layout(0, 0, right-left, bottom-top);
+    }
 
-	private void resetList(){
-		mLinearLayout.removeAllViews();
-		mSelectedPosition = INVALID_POSITION;
-		mSelectedRowId = INVALID_ROW_ID;
-		invalidate();
-	}
+    private void resetList(){
+        mLinearLayout.removeAllViews();
+        mSelectedPosition = INVALID_POSITION;
+        mSelectedRowId = INVALID_ROW_ID;
+        invalidate();
+    }
 
-	private void updateCached(){
-		mItemCount = mAdapter.getCount();
-		mRelMax = 0;
-		for (int i = 0; i < mItemCount; i++){
-			mRelMax += mAdapter.getRelativeSize(i);
-		}
-	}
+    private void updateCached(){
+        mItemCount = mAdapter.getCount();
+        mRelMax = 0;
+        for (int i = 0; i < mItemCount; i++){
+            mRelMax += mAdapter.getRelativeSize(i);
+        }
+    }
 
-	class AdapterDataSetObserver extends DataSetObserver {
-		@Override
-		public void onChanged() {
-			updateCached();
-			requestLayout();
-		}
+    class AdapterDataSetObserver extends DataSetObserver {
+        @Override
+        public void onChanged() {
+            updateCached();
+            requestLayout();
+        }
 
-		@Override
-		public void onInvalidated() {
-			mItemCount = 0;
+        @Override
+        public void onInvalidated() {
+            mItemCount = 0;
 
-			resetList();
-		}
-	}
+            resetList();
+        }
+    }
 
-	@Override
-	public void onClick(View v) {
-		final Integer position = (Integer) v.getTag(TAG_ITEM_POSITION);
-		performItemClick(v, position, getItemIdAtPosition(position));
-	}
+    @Override
+    public void onClick(View v) {
+        final Integer position = (Integer) v.getTag(TAG_ITEM_POSITION);
+        performItemClick(v, position, getItemIdAtPosition(position));
+    }
 }

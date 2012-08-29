@@ -30,79 +30,79 @@ import android.widget.CheckBox;
  *
  */
 public class ValidatingCheckBox extends CheckBox {
-	private ValidatedClickHandler mValidatedClickHandler;
+    private ValidatedClickHandler mValidatedClickHandler;
 
-	public ValidatingCheckBox(Context context) {
-		super(context);
-	}
-	public ValidatingCheckBox(Context context, AttributeSet attrs) {
-		super(context, attrs);
-	}
-	public ValidatingCheckBox(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);
-	}
+    public ValidatingCheckBox(Context context) {
+        super(context);
+    }
+    public ValidatingCheckBox(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+    public ValidatingCheckBox(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+    }
 
-	@Override
-	public boolean performClick() {
-		if (mValidatedClickHandler != null){
-			new ValidatedClickTask().execute();
-			return true;
-		}else{
-			return super.performClick();
-		}
-	}
+    @Override
+    public boolean performClick() {
+        if (mValidatedClickHandler != null){
+            new ValidatedClickTask().execute();
+            return true;
+        }else{
+            return super.performClick();
+        }
+    }
 
-	public void setValidatedClickHandler(
-			ValidatedClickHandler mValidatedClickHandler) {
-		this.mValidatedClickHandler = mValidatedClickHandler;
+    public void setValidatedClickHandler(
+            ValidatedClickHandler mValidatedClickHandler) {
+        this.mValidatedClickHandler = mValidatedClickHandler;
 
-	}
+    }
 
-	/**
-	 * Like CheckBox, but lets you set the state of the checkbox after
-	 * validating that it has been properly set on whatever model backs the state.
-	 *
-	 * @author steve
-	 *
-	 */
-	public interface ValidatedClickHandler {
-		/**
-		 * This will get called on a background thread, so you can block here if you
-		 * want.
-		 *
-		 * @param checkBox
-		 * @return the new state of the checkbox or null if you wish to leave it unchanged.
-		 */
-		public Boolean performClick(ValidatingCheckBox checkBox);
+    /**
+     * Like CheckBox, but lets you set the state of the checkbox after
+     * validating that it has been properly set on whatever model backs the state.
+     *
+     * @author steve
+     *
+     */
+    public interface ValidatedClickHandler {
+        /**
+         * This will get called on a background thread, so you can block here if you
+         * want.
+         *
+         * @param checkBox
+         * @return the new state of the checkbox or null if you wish to leave it unchanged.
+         */
+        public Boolean performClick(ValidatingCheckBox checkBox);
 
-		/**
-		 * Called before {@link #performClick(ValidatingCheckBox)} on the UI thread.
-		 * @param checkBox
-		 */
-		public void prePerformClick(ValidatingCheckBox checkBox);
-	}
+        /**
+         * Called before {@link #performClick(ValidatingCheckBox)} on the UI thread.
+         * @param checkBox
+         */
+        public void prePerformClick(ValidatingCheckBox checkBox);
+    }
 
-	private class ValidatedClickTask extends AsyncTask<Void, Void, Boolean> {
+    private class ValidatedClickTask extends AsyncTask<Void, Void, Boolean> {
 
-		@Override
-		protected void onPreExecute() {
-			setEnabled(false);
+        @Override
+        protected void onPreExecute() {
+            setEnabled(false);
 
-			mValidatedClickHandler.prePerformClick(ValidatingCheckBox.this);
-		}
+            mValidatedClickHandler.prePerformClick(ValidatingCheckBox.this);
+        }
 
-		@Override
-		protected Boolean doInBackground(Void... params) {
-			return mValidatedClickHandler.performClick(ValidatingCheckBox.this);
-		}
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            return mValidatedClickHandler.performClick(ValidatingCheckBox.this);
+        }
 
-		@Override
-		protected void onPostExecute(Boolean result) {
-			setEnabled(true);
+        @Override
+        protected void onPostExecute(Boolean result) {
+            setEnabled(true);
 
-			if (result != null){
-				setChecked(result);
-			}
-		}
-	}
+            if (result != null){
+                setChecked(result);
+            }
+        }
+    }
 }

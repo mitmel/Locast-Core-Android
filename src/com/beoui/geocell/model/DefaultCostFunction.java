@@ -23,12 +23,12 @@ import com.beoui.geocell.GeocellUtils;
  */
 public class DefaultCostFunction implements CostFunction {
 
-	/*
-	 * (non-Javadoc)
-	 * @see com.beoui.utils.CostFunction#defaultCostFunction(int, int)
-	 */
-	public double defaultCostFunction(int numCells, int resolution) {
-		return numCells > Math.pow(GeocellUtils.GEOCELL_GRID_SIZE, 2) ? Double.MAX_VALUE : 0;
-	}
-	
+    /*
+     * (non-Javadoc)
+     * @see com.beoui.utils.CostFunction#defaultCostFunction(int, int)
+     */
+    public double defaultCostFunction(int numCells, int resolution) {
+        return numCells > Math.pow(GeocellUtils.GEOCELL_GRID_SIZE, 2) ? Double.MAX_VALUE : 0;
+    }
+    
 }

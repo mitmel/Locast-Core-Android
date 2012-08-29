@@ -27,18 +27,18 @@ import edu.mit.mobile.android.locast.Constants;
  * and returns its IBinder.
  */
 public class AuthenticationService extends Service {
-	private static final String TAG = AuthenticationService.class.getSimpleName();
+    private static final String TAG = AuthenticationService.class.getSimpleName();
     private Authenticator mAuthenticator;
 
-	public static final String
+    public static final String
  AUTHORITY = Constants.AUTHORITY,
-		ACCOUNT_TYPE = AUTHORITY,
-		AUTHTOKEN_TYPE = AUTHORITY,
-		USERDATA_USERID = "id",
-		USERDATA_DISPLAY_NAME = "display_name",
-		USERDATA_USER_URI = "uri",
-		USERDATA_LOCAST_API_URL = "locast_url"
-		;
+        ACCOUNT_TYPE = AUTHORITY,
+        AUTHTOKEN_TYPE = AUTHORITY,
+        USERDATA_USERID = "id",
+        USERDATA_DISPLAY_NAME = "display_name",
+        USERDATA_USER_URI = "uri",
+        USERDATA_LOCAST_API_URL = "locast_url"
+        ;
 
     @Override
     public void onCreate() {

@@ -44,28 +44,28 @@ import edu.mit.mobile.android.locast.sync.LocastSync;
 import edu.mit.mobile.android.locast.ver2.R;
 
 public class DiscussionBoard extends ListView implements OnClickListener, OnEditorActionListener {
-	public static final String TAG = DiscussionBoard.class.getSimpleName();
-	private final Context mContext;
+    public static final String TAG = DiscussionBoard.class.getSimpleName();
+    private final Context mContext;
 
-	private final EditText postingTextField;
+    private final EditText postingTextField;
 
-	private final Button addPostingButton;
+    private final Button addPostingButton;
 
     private Uri thisThread;
     private Cursor c;
 
     //private WebImageLoader imageLoader;
 
-	public DiscussionBoard(Context context) {
-		this(context, null);
-	}
+    public DiscussionBoard(Context context) {
+        this(context, null);
+    }
 
-	public DiscussionBoard(Context context, AttributeSet attrs) {
-		super(context, attrs);
+    public DiscussionBoard(Context context, AttributeSet attrs) {
+        super(context, attrs);
 
-		mContext = context;
+        mContext = context;
 
-		addHeaderView(LayoutInflater.from(context).inflate(R.layout.discussionboard, this, false));
+        addHeaderView(LayoutInflater.from(context).inflate(R.layout.discussionboard, this, false));
 
         postingTextField = (EditText) findViewById(R.id.discussionText);
         postingTextField.setOnEditorActionListener(this);
@@ -75,105 +75,105 @@ public class DiscussionBoard extends ListView implements OnClickListener, OnEdit
         addPostingButton.setOnClickListener(this);
 
         if (context instanceof Activity){
-        	//imageLoader = ((Application)context.getApplicationContext()).getImageLoader();
+            //imageLoader = ((Application)context.getApplicationContext()).getImageLoader();
         }
-	}
+    }
 
-	private static final String[] ADAPTER_FROM = {Comment._AUTHOR, Comment._AUTHOR_ICON,  Comment._DESCRIPTION, Comment._MODIFIED_DATE, Comment._COMMENT_NUMBER};
-	private static final int[] ADAPTER_TO      = {R.id.username,   R.id.userthumb,        R.id.text,            R.id.date,              R.id.commentnumber};
+    private static final String[] ADAPTER_FROM = {Comment._AUTHOR, Comment._AUTHOR_ICON,  Comment._DESCRIPTION, Comment._MODIFIED_DATE, Comment._COMMENT_NUMBER};
+    private static final int[] ADAPTER_TO      = {R.id.username,   R.id.userthumb,        R.id.text,            R.id.date,              R.id.commentnumber};
 
-	public class DiscussionBoardAdapter extends SimpleCursorAdapter {
-		public DiscussionBoardAdapter(Context context, Cursor c) {
-			super(context, R.layout.discussionboardentry, c, ADAPTER_FROM, ADAPTER_TO);
-		}
+    public class DiscussionBoardAdapter extends SimpleCursorAdapter {
+        public DiscussionBoardAdapter(Context context, Cursor c) {
+            super(context, R.layout.discussionboardentry, c, ADAPTER_FROM, ADAPTER_TO);
+        }
 
-		@Override
-		public void setViewImage(ImageView v, String value) {
-			if (value != null && value.length() > 0){
-				// XXX imageLoader.loadImage(v, value);
-			}
-		}
+        @Override
+        public void setViewImage(ImageView v, String value) {
+            if (value != null && value.length() > 0){
+                // XXX imageLoader.loadImage(v, value);
+            }
+        }
 
-		@Override
-		public void setViewText(TextView v, String text) {
-			switch (v.getId()){
-			case R.id.date:
-				final Date d = new Date(Long.parseLong(text));
-				v.setText(d.toLocaleString());
-				break;
+        @Override
+        public void setViewText(TextView v, String text) {
+            switch (v.getId()){
+            case R.id.date:
+                final Date d = new Date(Long.parseLong(text));
+                v.setText(d.toLocaleString());
+                break;
 
-				default:
-					super.setViewText(v, text);
-			}
+                default:
+                    super.setViewText(v, text);
+            }
 
-		}
-	}
+        }
+    }
 
     private void savePosting() {
-    	//save comment
-    	final String text = postingTextField.getText().toString().trim();
+        //save comment
+        final String text = postingTextField.getText().toString().trim();
 
-    	if (text.length() == 0) {
-			return;
-		}
+        if (text.length() == 0) {
+            return;
+        }
 
 
-    	final ContentResolver cr = mContext.getContentResolver();
-    	final ContentValues cv = new ContentValues();
-		cv.put(Comment._DESCRIPTION, text);
-		cr.insert(thisThread, cv);
+        final ContentResolver cr = mContext.getContentResolver();
+        final ContentValues cv = new ContentValues();
+        cv.put(Comment._DESCRIPTION, text);
+        cr.insert(thisThread, cv);
 
-		postingTextField.setText("");
+        postingTextField.setText("");
     }
 
 
 
     public void setParentUri(Uri parent){
-    	setUri(Uri.withAppendedPath(parent, Comment.PATH));
+        setUri(Uri.withAppendedPath(parent, Comment.PATH));
     }
 
     public void setUri(Uri myUri){
-    	Log.d(TAG, "Loading comments for "+myUri);
-    	thisThread = myUri;
-       	c = getContext().getContentResolver().query(thisThread,
-				Comment.PROJECTION, null, null, Comment.DEFAULT_SORT_BY);
+        Log.d(TAG, "Loading comments for "+myUri);
+        thisThread = myUri;
+        c = getContext().getContentResolver().query(thisThread,
+                Comment.PROJECTION, null, null, Comment.DEFAULT_SORT_BY);
 
-       	for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
-       		ProviderUtils.dumpCursorToLog(c, Comment.PROJECTION);
-       	}
+        for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
+            ProviderUtils.dumpCursorToLog(c, Comment.PROJECTION);
+        }
 
-       	LocastSync.startSync(getContext(), thisThread, false);
+        LocastSync.startSync(getContext(), thisThread, false);
 
-    	c.registerContentObserver(new ContentObserver(new Handler()) {
-    		@Override
-    		public void onChange(boolean selfChange) {
-    			c.requery();
-    		}
-		});
-    	setAdapter(new DiscussionBoardAdapter(getContext(), c));
+        c.registerContentObserver(new ContentObserver(new Handler()) {
+            @Override
+            public void onChange(boolean selfChange) {
+                c.requery();
+            }
+        });
+        setAdapter(new DiscussionBoardAdapter(getContext(), c));
     }
 
     @Override
     protected void onDetachedFromWindow() {
-    	c.close();
-    	super.onDetachedFromWindow();
+        c.close();
+        super.onDetachedFromWindow();
     }
 
-	public void onClick(View v) {
-		switch (v.getId()){
-		case R.id.send:
-			savePosting();
-			break;
-		}
+    public void onClick(View v) {
+        switch (v.getId()){
+        case R.id.send:
+            savePosting();
+            break;
+        }
 
-	}
+    }
 
-	public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-		switch (v.getId()){
-		case R.id.discussionText:
-			savePosting();
-			return true;
-		}
-		return false;
-	}
+    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+        switch (v.getId()){
+        case R.id.discussionText:
+            savePosting();
+            return true;
+        }
+        return false;
+    }
 }

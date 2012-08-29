@@ -29,61 +29,61 @@ import edu.mit.mobile.android.locast.widget.TagList;
 import edu.mit.mobile.android.locast.widget.TagList.OnTagListChangeListener;
 
 public class BrowseByTagsActivity extends CastListActivity implements OnTagListChangeListener {
-	private TagList tagList;
+    private TagList tagList;
 
-	private Uri thisUri;
+    private Uri thisUri;
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-		setContentView(R.layout.cast_browse_tags);
-		new ArrayList<String>(CastCursorAdapter.DEFAULT_PROJECTION.length);
+        setContentView(R.layout.cast_browse_tags);
+        new ArrayList<String>(CastCursorAdapter.DEFAULT_PROJECTION.length);
 
-		tagList = (TagList)findViewById(R.id.tag_list);
-		tagList.addedRecommendedTags(Cast.getPopularTags(getContentResolver()));
-		final Cursor c = query(tagList.getTags());
-		loadList(c);
+        tagList = (TagList)findViewById(R.id.tag_list);
+        tagList.addedRecommendedTags(Cast.getPopularTags(getContentResolver()));
+        final Cursor c = query(tagList.getTags());
+        loadList(c);
 
-		tagList.setOnTagListChangeListener(this);
-	}
+        tagList.setOnTagListChangeListener(this);
+    }
 
-	private Cursor query(Collection<String>tags){
-		Cursor c;
-		if (tags.isEmpty()){
-			thisUri = Cast.CONTENT_URI;
-		}else{
-			thisUri = Cast.getTagUri(Cast.CONTENT_URI, tags);
-		}
-		c = managedQuery(thisUri, CastCursorAdapter.DEFAULT_PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
-		return c;
-	}
+    private Cursor query(Collection<String>tags){
+        Cursor c;
+        if (tags.isEmpty()){
+            thisUri = Cast.CONTENT_URI;
+        }else{
+            thisUri = Cast.getTagUri(Cast.CONTENT_URI, tags);
+        }
+        c = managedQuery(thisUri, CastCursorAdapter.DEFAULT_PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT);
+        return c;
+    }
 
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		getMenuInflater().inflate(R.menu.browse_by_tags, menu);
-		return true;
-	}
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.browse_by_tags, menu);
+        return true;
+    }
 
-	@Override
-	public boolean onMenuItemSelected(int featureId, MenuItem item) {
+    @Override
+    public boolean onMenuItemSelected(int featureId, MenuItem item) {
 
-		switch(item.getItemId()){
-		case R.id.view_in_map:
-		//startActivity(new Intent(Intent.ACTION_VIEW, Uri.withAppendedPath(thisUri, Tag.PATH)));
-		//startActivity(new Intent(getApplicationContext(), BrowseByMapActivity.class).setData(thisUri));
-		return true;
+        switch(item.getItemId()){
+        case R.id.view_in_map:
+        //startActivity(new Intent(Intent.ACTION_VIEW, Uri.withAppendedPath(thisUri, Tag.PATH)));
+        //startActivity(new Intent(getApplicationContext(), BrowseByMapActivity.class).setData(thisUri));
+        return true;
 
-		default:
-			return super.onMenuItemSelected(featureId, item);
-		}
-	}
+        default:
+            return super.onMenuItemSelected(featureId, item);
+        }
+    }
 
-	public void onTagListChange(TagList v) {
-		tagList.clearRecommendedTags();
-		tagList.addedRecommendedTags(Cast.getPopularTags(getContentResolver()));
+    public void onTagListChange(TagList v) {
+        tagList.clearRecommendedTags();
+        tagList.addedRecommendedTags(Cast.getPopularTags(getContentResolver()));
 
-		// TODO fix this
-		// getListAdapter().changeCursor(query(v.getTags()));
-	}
+        // TODO fix this
+        // getListAdapter().changeCursor(query(v.getTags()));
+    }
 }

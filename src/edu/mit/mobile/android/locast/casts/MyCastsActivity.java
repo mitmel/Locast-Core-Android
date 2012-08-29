@@ -21,16 +21,16 @@ import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 
 public class MyCastsActivity extends CastListActivity {
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-		final NetworkClient nc = NetworkClient.getInstance(getApplicationContext(),
-				Authenticator.getFirstAccount(this));
+        final NetworkClient nc = NetworkClient.getInstance(getApplicationContext(),
+                Authenticator.getFirstAccount(this));
 
-		loadList(managedQuery(Cast.CONTENT_URI, CastCursorAdapter.DEFAULT_PROJECTION,
-				Cast._AUTHOR+"=?",
-				new String[]{nc.getUsername()},
-				Cast._MODIFIED_DATE+" DESC"));
-	}
+        loadList(managedQuery(Cast.CONTENT_URI, CastCursorAdapter.DEFAULT_PROJECTION,
+                Cast._AUTHOR+"=?",
+                new String[]{nc.getUsername()},
+                Cast._MODIFIED_DATE+" DESC"));
+    }
 }

@@ -26,67 +26,67 @@ import android.net.Uri;
  */
 
 public class Comment extends JsonSyncableItem {
-	public final static String PATH = "comments";
-	public final static Uri CONTENT_URI = Uri
-			.parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
-	public final static String DEFAULT_SORT_BY = _MODIFIED_DATE + " DESC";
+    public final static String PATH = "comments";
+    public final static Uri CONTENT_URI = Uri
+            .parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
+    public final static String DEFAULT_SORT_BY = _MODIFIED_DATE + " DESC";
 
-	public final static String SERVER_PATH = "comments/";
+    public final static String SERVER_PATH = "comments/";
 
-	public static final String
-		_AUTHOR = "author",
-		_AUTHOR_ICON = "author_icon",
-		_PARENT_ID    = "parentid",
-		_PARENT_CLASS = "parentclass",
-		_DESCRIPTION  = "description",
-		_COMMENT_NUMBER    = "comment_number";
+    public static final String
+        _AUTHOR = "author",
+        _AUTHOR_ICON = "author_icon",
+        _PARENT_ID    = "parentid",
+        _PARENT_CLASS = "parentclass",
+        _DESCRIPTION  = "description",
+        _COMMENT_NUMBER    = "comment_number";
 
-	public final static String[] PROJECTION = {
-			_ID,
-			_PUBLIC_URI,
-			_AUTHOR,
-			_AUTHOR_ICON,
-			_MODIFIED_DATE,
-			_PARENT_ID,
-			_PARENT_CLASS,
-			_DESCRIPTION,
-			_COMMENT_NUMBER};
+    public final static String[] PROJECTION = {
+            _ID,
+            _PUBLIC_URI,
+            _AUTHOR,
+            _AUTHOR_ICON,
+            _MODIFIED_DATE,
+            _PARENT_ID,
+            _PARENT_CLASS,
+            _DESCRIPTION,
+            _COMMENT_NUMBER};
 
-	public Comment(Cursor c) {
-		super(c);
-	}
+    public Comment(Cursor c) {
+        super(c);
+    }
 
-	@Override
-	public Uri getContentUri() {
-		return CONTENT_URI;
-	}
+    @Override
+    public Uri getContentUri() {
+        return CONTENT_URI;
+    }
 
-	@Override
-	public SyncMap getSyncMap() {
-		return SYNC_MAP;
-	}
+    @Override
+    public SyncMap getSyncMap() {
+        return SYNC_MAP;
+    }
 
 
-	public static final SyncMap SYNC_MAP = new ItemSyncMap();
+    public static final SyncMap SYNC_MAP = new ItemSyncMap();
 
-	public static class ItemSyncMap extends JsonSyncableItem.ItemSyncMap {
+    public static class ItemSyncMap extends JsonSyncableItem.ItemSyncMap {
 
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = -8410267481565950832L;
+        /**
+         *
+         */
+        private static final long serialVersionUID = -8410267481565950832L;
 
-		public ItemSyncMap() {
-			super();
+        public ItemSyncMap() {
+            super();
 
-			final SyncMap author = new SyncMap();
-			author.put(_AUTHOR, new SyncFieldMap("username", SyncFieldMap.STRING));
-			author.put(_AUTHOR_ICON, new SyncFieldMap("icon", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_BOTH));
-			put("_author_object", new SyncMapChain("author", author, SyncItem.SYNC_FROM));
+            final SyncMap author = new SyncMap();
+            author.put(_AUTHOR, new SyncFieldMap("username", SyncFieldMap.STRING));
+            author.put(_AUTHOR_ICON, new SyncFieldMap("icon", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_BOTH));
+            put("_author_object", new SyncMapChain("author", author, SyncItem.SYNC_FROM));
 
-			remove(_CREATED_DATE);
-			put(_MODIFIED_DATE,	new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM)); // comments only have a creation date.
-			put(_DESCRIPTION, 	new SyncFieldMap("content", SyncFieldMap.STRING));
-		}
-	}
+            remove(_CREATED_DATE);
+            put(_MODIFIED_DATE, new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM)); // comments only have a creation date.
+            put(_DESCRIPTION,   new SyncFieldMap("content", SyncFieldMap.STRING));
+        }
+    }
 }

@@ -39,10 +39,10 @@ import edu.mit.mobile.android.locast.ver2.R;
  * authenticating accounts in the Locast domain
  */
 public class Authenticator extends AbstractAccountAuthenticator {
-	private final static String TAG = Authenticator.class.getSimpleName();
+    private final static String TAG = Authenticator.class.getSimpleName();
     // Authentication Service context
 
-	public static final String PREF_SKIP_AUTH = "skip_authentication";
+    public static final String PREF_SKIP_AUTH = "skip_authentication";
 
     private final Context mContext;
 
@@ -69,20 +69,20 @@ public class Authenticator extends AbstractAccountAuthenticator {
     }
 
     public static boolean hasRealAccount(Context context){
-		final Account[] accounts = getAccounts(context);
-		boolean hasRealAccount = false;
-		for (final Account account : accounts) {
-			if (!DEMO_ACCOUNT.equals(account.name)) {
-				hasRealAccount = true;
-				break;
-			}
-		}
+        final Account[] accounts = getAccounts(context);
+        boolean hasRealAccount = false;
+        for (final Account account : accounts) {
+            if (!DEMO_ACCOUNT.equals(account.name)) {
+                hasRealAccount = true;
+                break;
+            }
+        }
 
-		return hasRealAccount;
+        return hasRealAccount;
     }
 
     public static Account[] getAccounts(Context context){
-    	return AccountManager.get(context).getAccountsByType(AuthenticationService.ACCOUNT_TYPE);
+        return AccountManager.get(context).getAccountsByType(AuthenticationService.ACCOUNT_TYPE);
     }
 
     /**
@@ -94,7 +94,7 @@ public class Authenticator extends AbstractAccountAuthenticator {
         if (options != null && options.containsKey(AccountManager.KEY_PASSWORD)) {
             final String password =
                 options.getString(AccountManager.KEY_PASSWORD);
-			final Bundle verified = onlineConfirmPassword(account, password);
+            final Bundle verified = onlineConfirmPassword(account, password);
             final Bundle result = new Bundle();
             result.putBoolean(AccountManager.KEY_BOOLEAN_RESULT, verified != null);
             return result;
@@ -134,13 +134,13 @@ public class Authenticator extends AbstractAccountAuthenticator {
         final AccountManager am = AccountManager.get(mContext);
         final String password = am.getPassword(account);
         if (password != null) {
-			final Bundle accountData = onlineConfirmPassword(account, password);
+            final Bundle accountData = onlineConfirmPassword(account, password);
             if (accountData != null) {
                 final Bundle result = new Bundle();
 
                 result.putString(AccountManager.KEY_ACCOUNT_NAME, account.name);
                 result.putString(AccountManager.KEY_ACCOUNT_TYPE,
-                		AuthenticationService.ACCOUNT_TYPE);
+                        AuthenticationService.ACCOUNT_TYPE);
                 result.putString(AccountManager.KEY_AUTHTOKEN, password);
                 return result;
             }
@@ -185,17 +185,17 @@ public class Authenticator extends AbstractAccountAuthenticator {
      * Validates user's password on the server
      */
     private Bundle onlineConfirmPassword(Account account, String password) {
-    	Bundle response = null;
-    	try {
-			response = NetworkClient.authenticate(mContext, account, password);
+        Bundle response = null;
+        try {
+            response = NetworkClient.authenticate(mContext, account, password);
 
-		} catch (final IOException e) {
-			Log.e(TAG, e.getLocalizedMessage(), e);
-		} catch (final JSONException e) {
-			Log.e(TAG, e.getLocalizedMessage(), e);
-		} catch (final NetworkProtocolException e) {
-			Log.e(TAG, e.getLocalizedMessage(), e);
-		}
+        } catch (final IOException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        } catch (final JSONException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        } catch (final NetworkProtocolException e) {
+            Log.e(TAG, e.getLocalizedMessage(), e);
+        }
         return response;
     }
 
@@ -216,59 +216,59 @@ public class Authenticator extends AbstractAccountAuthenticator {
     }
 
     public static String getUserUri(Context context){
-		final Account[] accounts = Authenticator.getAccounts(context);
-		if (accounts.length > 0){
-			return AccountManager.get(context).getUserData(accounts[0], AuthenticationService.USERDATA_USER_URI);
-		}
-		return null;
+        final Account[] accounts = Authenticator.getAccounts(context);
+        if (accounts.length > 0){
+            return AccountManager.get(context).getUserData(accounts[0], AuthenticationService.USERDATA_USER_URI);
+        }
+        return null;
     }
 
     public static Account getFirstAccount(Context context){
-		final Account[] accounts = Authenticator.getAccounts(context);
-		if (accounts.length > 0){
-			return accounts[0];
-		}
-		return null;
+        final Account[] accounts = Authenticator.getAccounts(context);
+        if (accounts.length > 0){
+            return accounts[0];
+        }
+        return null;
     }
 
     public static String getUserData(Context context, String key){
-    	final Account account = getFirstAccount(context);
-    	if (account == null){
-    		throw new RuntimeException("no accounts registered");
-    	}
-		return AccountManager.get(context).getUserData(account, key);
+        final Account account = getFirstAccount(context);
+        if (account == null){
+            throw new RuntimeException("no accounts registered");
+        }
+        return AccountManager.get(context).getUserData(account, key);
     }
 
     public static final String DEMO_ACCOUNT = "demo@locast.example.com";
 
-	/**
-	 * Adds an account that acts as a placeholder to allow the sync to work properly. The sync
-	 * framework always requires an account.
-	 *
-	 * @param context
-	 */
+    /**
+     * Adds an account that acts as a placeholder to allow the sync to work properly. The sync
+     * framework always requires an account.
+     *
+     * @param context
+     */
     public static void addDemoAccount(Context context){
-		final Account[] accounts = Authenticator.getAccounts(context);
+        final Account[] accounts = Authenticator.getAccounts(context);
 
-		if (accounts.length > 0) {
-			// if there's already a demo account, we don't want to add another.
-			// if there isn't, we're not going to delete the actual account.
-			return;
-		}
-    	final AccountManager am = AccountManager.get(context);
-    	final Account account = new Account(DEMO_ACCOUNT, AuthenticationService.ACCOUNT_TYPE);
-    	am.addAccountExplicitly(account, null, null);
+        if (accounts.length > 0) {
+            // if there's already a demo account, we don't want to add another.
+            // if there isn't, we're not going to delete the actual account.
+            return;
+        }
+        final AccountManager am = AccountManager.get(context);
+        final Account account = new Account(DEMO_ACCOUNT, AuthenticationService.ACCOUNT_TYPE);
+        am.addAccountExplicitly(account, null, null);
 
-    	ContentResolver.setSyncAutomatically(account,
+        ContentResolver.setSyncAutomatically(account,
                 MediaProvider.AUTHORITY, true);
     }
 
-	/**
-	 * @param context
-	 * @return true if there's a demo account
-	 */
+    /**
+     * @param context
+     * @return true if there's a demo account
+     */
     public static boolean isDemoMode(Context context){
-    	final Account a = getFirstAccount(context);
-    	return a != null && DEMO_ACCOUNT.equals(a.name);
+        final Account a = getFirstAccount(context);
+        return a != null && DEMO_ACCOUNT.equals(a.name);
     }
 }

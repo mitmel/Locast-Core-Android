@@ -30,52 +30,52 @@ import edu.mit.mobile.android.locast.data.Cast;
 import edu.mit.mobile.android.locast.ver2.R;
 
 public class CastsOverlay extends LocatableItemOverlay {
-	private int mTitleCol, mDescriptionCol;
-	private final Drawable mCastDrawable;
-	private final Context mContext;
-	private int mIdCol;
+    private int mTitleCol, mDescriptionCol;
+    private final Drawable mCastDrawable;
+    private final Context mContext;
+    private int mIdCol;
 
-	public static final String[] CASTS_OVERLAY_PROJECTION = ArrayUtils.concat(LOCATABLE_ITEM_PROJECTION,
+    public static final String[] CASTS_OVERLAY_PROJECTION = ArrayUtils.concat(LOCATABLE_ITEM_PROJECTION,
  new String[] { Cast._ID, Cast._TITLE, Cast._DESCRIPTION });
 
-	public CastsOverlay(Context context, MapView mapview) {
-		super(boundCenter(context.getResources().getDrawable(R.drawable.ic_map_community)),
-				mapview);
-		final Resources res = context.getResources();
-		mCastDrawable = boundCenterBottom(res.getDrawable(R.drawable.ic_map_community));
-		mContext = context;
-	}
+    public CastsOverlay(Context context, MapView mapview) {
+        super(boundCenter(context.getResources().getDrawable(R.drawable.ic_map_community)),
+                mapview);
+        final Resources res = context.getResources();
+        mCastDrawable = boundCenterBottom(res.getDrawable(R.drawable.ic_map_community));
+        mContext = context;
+    }
 
-	@Override
-	protected void updateCursorCols() {
-		super.updateCursorCols();
-		if (mLocatableItems != null){
-			mIdCol = mLocatableItems.getColumnIndex(Cast._ID);
-			mTitleCol = mLocatableItems.getColumnIndex(Cast._TITLE);
-			mDescriptionCol = mLocatableItems.getColumnIndex(Cast._DESCRIPTION);
-		}
-	}
+    @Override
+    protected void updateCursorCols() {
+        super.updateCursorCols();
+        if (mLocatableItems != null){
+            mIdCol = mLocatableItems.getColumnIndex(Cast._ID);
+            mTitleCol = mLocatableItems.getColumnIndex(Cast._TITLE);
+            mDescriptionCol = mLocatableItems.getColumnIndex(Cast._DESCRIPTION);
+        }
+    }
 
-	@Override
-	protected boolean onBalloonTap(int index, OverlayItem item) {
-		mLocatableItems.moveToPosition(index);
-		final Cast cast = new Cast(mLocatableItems);
-		mContext.startActivity(new Intent(Intent.ACTION_VIEW, cast.getCanonicalUri()));
+    @Override
+    protected boolean onBalloonTap(int index, OverlayItem item) {
+        mLocatableItems.moveToPosition(index);
+        final Cast cast = new Cast(mLocatableItems);
+        mContext.startActivity(new Intent(Intent.ACTION_VIEW, cast.getCanonicalUri()));
 
-		return true;
-	}
+        return true;
+    }
 
-	@Override
-	protected OverlayItem createItem(int i){
-		mLocatableItems.moveToPosition(i);
+    @Override
+    protected OverlayItem createItem(int i){
+        mLocatableItems.moveToPosition(i);
 
-		final ComparableOverlayItem item = new ComparableOverlayItem(
-				getItemLocation(mLocatableItems),
-				mLocatableItems.getString(mTitleCol), mLocatableItems.getString(mDescriptionCol),
-				mLocatableItems.getLong(mIdCol));
+        final ComparableOverlayItem item = new ComparableOverlayItem(
+                getItemLocation(mLocatableItems),
+                mLocatableItems.getString(mTitleCol), mLocatableItems.getString(mDescriptionCol),
+                mLocatableItems.getLong(mIdCol));
 
-		item.setMarker(mCastDrawable);
-		onCreateItem(item);
-		return item;
-	}
+        item.setMarker(mCastDrawable);
+        onCreateItem(item);
+        return item;
+    }
 }

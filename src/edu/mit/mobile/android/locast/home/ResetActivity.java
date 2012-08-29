@@ -37,65 +37,65 @@ import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.ver2.R;
 
 public class ResetActivity extends Activity implements OnClickListener {
-	private static final String TAG = ResetActivity.class.getSimpleName();
+    private static final String TAG = ResetActivity.class.getSimpleName();
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.reset_activity);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.reset_activity);
 
-		ContentResolver.cancelSync(Authenticator.getFirstAccount(this), MediaProvider.AUTHORITY);
+        ContentResolver.cancelSync(Authenticator.getFirstAccount(this), MediaProvider.AUTHORITY);
 
-		findViewById(R.id.reset).setOnClickListener(this);
-		findViewById(R.id.cancel).setOnClickListener(this);
-	}
+        findViewById(R.id.reset).setOnClickListener(this);
+        findViewById(R.id.cancel).setOnClickListener(this);
+    }
 
-	@Override
-	public void onClick(View v) {
-		switch (v.getId()) {
-		case R.id.reset:
-				resetEverything(this, true, true);
-			setResult(RESULT_OK);
-			finish();
-			break;
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+        case R.id.reset:
+                resetEverything(this, true, true);
+            setResult(RESULT_OK);
+            finish();
+            break;
 
-		case R.id.cancel:
-			setResult(RESULT_CANCELED);
-			finish();
-			break;
-		}
-	}
+        case R.id.cancel:
+            setResult(RESULT_CANCELED);
+            finish();
+            break;
+        }
+    }
 
-	public static void resetEverything(Context context, boolean showNotice, boolean removeAccounts) {
-		if (Constants.DEBUG) {
-			Log.d(TAG, "erasing all data...");
-		}
+    public static void resetEverything(Context context, boolean showNotice, boolean removeAccounts) {
+        if (Constants.DEBUG) {
+            Log.d(TAG, "erasing all data...");
+        }
 
-		if (removeAccounts) {
-			final AccountManager am = (AccountManager) context.getSystemService(ACCOUNT_SERVICE);
+        if (removeAccounts) {
+            final AccountManager am = (AccountManager) context.getSystemService(ACCOUNT_SERVICE);
 
-			for (final Account account : Authenticator.getAccounts(context)) {
-				am.removeAccount(account, null, null);
-			}
-		}
+            for (final Account account : Authenticator.getAccounts(context)) {
+                am.removeAccount(account, null, null);
+            }
+        }
 
-		// clear cache
-		for (final File file : context.getCacheDir().listFiles()) {
-			file.delete();
-		}
+        // clear cache
+        for (final File file : context.getCacheDir().listFiles()) {
+            file.delete();
+        }
 
-		final ContentResolver cr = context.getContentResolver();
+        final ContentResolver cr = context.getContentResolver();
 
-		cr.delete(Cast.CONTENT_URI, null, null);
-		cr.delete(Comment.CONTENT_URI, null, null);
-		cr.delete(Collection.CONTENT_URI, null, null);
+        cr.delete(Cast.CONTENT_URI, null, null);
+        cr.delete(Comment.CONTENT_URI, null, null);
+        cr.delete(Collection.CONTENT_URI, null, null);
 
-		if (showNotice) {
-			Toast.makeText(context.getApplicationContext(), R.string.notice_databases_reset,
-					Toast.LENGTH_LONG).show();
-		}
-		if (Constants.DEBUG) {
-			Log.d(TAG, "All Locast data has been erased.");
-		}
-	}
+        if (showNotice) {
+            Toast.makeText(context.getApplicationContext(), R.string.notice_databases_reset,
+                    Toast.LENGTH_LONG).show();
+        }
+        if (Constants.DEBUG) {
+            Log.d(TAG, "All Locast data has been erased.");
+        }
+    }
 }

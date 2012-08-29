@@ -32,74 +32,74 @@ import android.net.Uri;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncItem;
 
 public class SyncMap extends HashMap<String, SyncItem> {
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 4817034517893809747L;
+    /**
+     *
+     */
+    private static final long serialVersionUID = 4817034517893809747L;
 
-	/**
-	 * If set, this item is treated as a child of another item and a parent must sync before this
-	 * can be sync'd. This ensures that even if a sync event is triggered for the child, it will
-	 * never attempt to synch before its parent.
-	 *
-	 * This really only looks to see that the parent has gotten a public URI first, so as soon as
-	 * that happens, the child will be able to sync.
-	 */
-	public static final String FLAG_PARENT_MUST_SYNC_FIRST = "parent_must_sync_first";
+    /**
+     * If set, this item is treated as a child of another item and a parent must sync before this
+     * can be sync'd. This ensures that even if a sync event is triggered for the child, it will
+     * never attempt to synch before its parent.
+     *
+     * This really only looks to see that the parent has gotten a public URI first, so as soon as
+     * that happens, the child will be able to sync.
+     */
+    public static final String FLAG_PARENT_MUST_SYNC_FIRST = "parent_must_sync_first";
 
-	private static final HashSet<String> mFlags = new HashSet<String>();
+    private static final HashSet<String> mFlags = new HashSet<String>();
 
-	public SyncMap() {
+    public SyncMap() {
 
-	}
+    }
 
-	public SyncMap(SyncMap syncMap) {
-		super(syncMap);
-	}
+    public SyncMap(SyncMap syncMap) {
+        super(syncMap);
+    }
 
-	public void addFlag(String flag) {
-		mFlags.add(flag);
-	}
+    public void addFlag(String flag) {
+        mFlags.add(flag);
+    }
 
-	public void removeFlag(String flag) {
-		mFlags.remove(flag);
-	}
+    public void removeFlag(String flag) {
+        mFlags.remove(flag);
+    }
 
-	public boolean isFlagSet(String flag) {
-		return mFlags.contains(flag);
-	}
+    public boolean isFlagSet(String flag) {
+        return mFlags.contains(flag);
+    }
 
-	public Set<String> getFlags() {
-		return new HashSet<String>(mFlags);
-	}
+    public Set<String> getFlags() {
+        return new HashSet<String>(mFlags);
+    }
 
-	/**
-	 * Called just before an item is sync'd.
-	 *
-	 * @param c
-	 *            Cursor pointing to the given item.
-	 *
-	 * @throws SyncException
-	 */
-	public void onPreSyncItem(ContentResolver cr, Uri uri, Cursor c) throws SyncException {
-	}
+    /**
+     * Called just before an item is sync'd.
+     *
+     * @param c
+     *            Cursor pointing to the given item.
+     *
+     * @throws SyncException
+     */
+    public void onPreSyncItem(ContentResolver cr, Uri uri, Cursor c) throws SyncException {
+    }
 
-	/**
-	 * Hook called after an item has been synchronized on the server. Called each time the sync
-	 * request is made. Make sure to call through when subclassing.
-	 * @param account TODO
-	 * @param uri
-	 *            Local URI pointing to the item.
-	 * @param updated
-	 *            true if the item was updated during the sync.
-	 *
-	 * @throws SyncException
-	 * @throws IOException
-	 */
-	public void onPostSyncItem(Context context, Account account, Uri uri, JSONObject item, boolean updated)
-			throws SyncException, IOException {
-		for (final SyncItem childItem : this.values()) {
-			childItem.onPostSyncItem(context, account, uri, item, updated);
-		}
-	}
+    /**
+     * Hook called after an item has been synchronized on the server. Called each time the sync
+     * request is made. Make sure to call through when subclassing.
+     * @param account TODO
+     * @param uri
+     *            Local URI pointing to the item.
+     * @param updated
+     *            true if the item was updated during the sync.
+     *
+     * @throws SyncException
+     * @throws IOException
+     */
+    public void onPostSyncItem(Context context, Account account, Uri uri, JSONObject item, boolean updated)
+            throws SyncException, IOException {
+        for (final SyncItem childItem : this.values()) {
+            childItem.onPostSyncItem(context, account, uri, item, updated);
+        }
+    }
 }

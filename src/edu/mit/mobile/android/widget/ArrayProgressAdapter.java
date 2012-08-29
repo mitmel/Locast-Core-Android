@@ -24,82 +24,82 @@ import android.widget.BaseAdapter;
 import android.widget.ProgressBar;
 
 public class ArrayProgressAdapter<T> extends BaseAdapter implements RelativeSizeListAdapter{
-	private final Context mContext;
+    private final Context mContext;
 
 
-	private final ArrayList<ProgressItem> items = new ArrayList<ProgressItem>();
-	public ArrayProgressAdapter(Context context) {
-		mContext = context;
-	}
+    private final ArrayList<ProgressItem> items = new ArrayList<ProgressItem>();
+    public ArrayProgressAdapter(Context context) {
+        mContext = context;
+    }
 
-	@Override
-	public View getView(int position, View convertView, ViewGroup parent) {
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
 
-		final ProgressBar progress;
+        final ProgressBar progress;
 
-		if (convertView == null){
-	         progress = new ProgressBar(mContext, null, android.R.attr.progressBarStyleHorizontal);
-	         progress.setIndeterminate(false);
-		}else{
-			progress = (ProgressBar) convertView;
-		}
+        if (convertView == null){
+             progress = new ProgressBar(mContext, null, android.R.attr.progressBarStyleHorizontal);
+             progress.setIndeterminate(false);
+        }else{
+            progress = (ProgressBar) convertView;
+        }
 
-		final ProgressItem item = getItem(position);
-		progress.setMax((int) item.max);
-		progress.setProgress((int) item.value);
-		return progress;
-	}
+        final ProgressItem item = getItem(position);
+        progress.setMax((int) item.max);
+        progress.setProgress((int) item.value);
+        return progress;
+    }
 
-	@Override
-	public float getRelativeSize(int position) {
-		final ProgressItem item = getItem(position);
-		return item.max;
-	}
+    @Override
+    public float getRelativeSize(int position) {
+        final ProgressItem item = getItem(position);
+        return item.max;
+    }
 
-	public void clear(){
-		items.clear();
-	}
+    public void clear(){
+        items.clear();
+    }
 
-	public void add(T data, float value, float max){
-		items.add(new ProgressItem(data, value, max));
-		notifyDataSetChanged();
-	}
+    public void add(T data, float value, float max){
+        items.add(new ProgressItem(data, value, max));
+        notifyDataSetChanged();
+    }
 
-	public void update(int position, T data, float value, float max){
-		final ProgressItem item = getItem(position);
-		item.data = data;
-		item.value = value;
-		item.max = max;
-		notifyDataSetChanged();
-	}
-
-
-	@Override
-	public int getCount() {
-		return items.size();
-	}
+    public void update(int position, T data, float value, float max){
+        final ProgressItem item = getItem(position);
+        item.data = data;
+        item.value = value;
+        item.max = max;
+        notifyDataSetChanged();
+    }
 
 
-	@Override
-	public ProgressItem getItem(int position) {
-		return items.get(position);
-	}
+    @Override
+    public int getCount() {
+        return items.size();
+    }
 
 
-	@Override
-	public long getItemId(int position) {
-		return position;
-	}
+    @Override
+    public ProgressItem getItem(int position) {
+        return items.get(position);
+    }
 
-	public class ProgressItem{
-		public T data;
-		public float value;
-		public float max;
 
-		public ProgressItem(T data, float value, float max){
-			this.data = data;
-			this.value = value;
-			this.max = max;
-		}
-	}
+    @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    public class ProgressItem{
+        public T data;
+        public float value;
+        public float max;
+
+        public ProgressItem(T data, float value, float max){
+            this.data = data;
+            this.value = value;
+            this.max = max;
+        }
+    }
 }

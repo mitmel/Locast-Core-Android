@@ -18,5 +18,5 @@ package edu.mit.mobile.android.widget;
 import android.widget.ListAdapter;
 
 public interface RelativeSizeListAdapter extends ListAdapter {
-	public float getRelativeSize(int position);
+    public float getRelativeSize(int position);
 }

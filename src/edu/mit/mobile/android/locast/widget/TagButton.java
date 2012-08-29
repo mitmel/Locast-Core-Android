@@ -27,12 +27,12 @@ import edu.mit.mobile.android.locast.ver2.R;
  *
  */
 public class TagButton extends Button {
-	private boolean added;
-	private boolean editable = false;
+    private boolean added;
+    private boolean editable = false;
 
-	public TagButton(Context context) {
-		this(context, null, false, true);
-	}
+    public TagButton(Context context) {
+        this(context, null, false, true);
+    }
 
 
     public TagButton(Context context, AttributeSet attrs, int defStyle) {
@@ -46,52 +46,52 @@ public class TagButton extends Button {
     }
 
 
-	public TagButton(Context context, String text, boolean added, boolean editable){
-		super(context);
-		this.setText(text);
-		this.setTextColor(Color.BLACK);
-		this.setTag(text);
+    public TagButton(Context context, String text, boolean added, boolean editable){
+        super(context);
+        this.setText(text);
+        this.setTextColor(Color.BLACK);
+        this.setTag(text);
 
-		this.editable = editable;
-		this.added = added;
+        this.editable = editable;
+        this.added = added;
 
-		updateResource();
-	}
+        updateResource();
+    }
 
-	/**
-	 * Sets the state of the button to reflect whether or not the tag
-	 * has been added to the set of tags on an item.
-	 *
-	 * @param added
-	 */
-	public void setAdded(boolean added){
+    /**
+     * Sets the state of the button to reflect whether or not the tag
+     * has been added to the set of tags on an item.
+     *
+     * @param added
+     */
+    public void setAdded(boolean added){
 
-		this.added = added;
-		updateResource();
-	}
+        this.added = added;
+        updateResource();
+    }
 
-	private void updateResource(){
-		if (isEditable()){
-			if (isAdded()){
-				this.setBackgroundResource(R.drawable.btn_tag_remove);
-			}else{
-				this.setBackgroundResource(R.drawable.btn_tag_add);
-			}
-		}else{
-			this.setBackgroundResource(R.drawable.btn_tag_normal);
-		}
-	}
+    private void updateResource(){
+        if (isEditable()){
+            if (isAdded()){
+                this.setBackgroundResource(R.drawable.btn_tag_remove);
+            }else{
+                this.setBackgroundResource(R.drawable.btn_tag_add);
+            }
+        }else{
+            this.setBackgroundResource(R.drawable.btn_tag_normal);
+        }
+    }
 
-	public boolean isAdded(){
-		return added;
-	}
+    public boolean isAdded(){
+        return added;
+    }
 
-	public boolean isEditable() {
-		return editable;
-	}
+    public boolean isEditable() {
+        return editable;
+    }
 
-	public void setTagName(String name){
-		setText(name);
-		setTag(name);
-	}
+    public void setTagName(String name){
+        setText(name);
+        setTag(name);
+    }
 }

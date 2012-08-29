@@ -50,54 +50,54 @@ import edu.mit.mobile.android.maps.PointerShadowOverlay;
  */
 abstract public class LocatableDetail extends MapFragmentActivity {
 
-	private MapView mMapView;
-	private MapController mMapController;
-	private PointerShadow mPointerShadow;
-	private PointerShadowOverlay mShadowOverlay;
-	private LocatableItemOverlay mLocatableItemOverlay;
+    private MapView mMapView;
+    private MapController mMapController;
+    private PointerShadow mPointerShadow;
+    private PointerShadowOverlay mShadowOverlay;
+    private LocatableItemOverlay mLocatableItemOverlay;
 
-	public static final int DEFAULT_ZOOM_LEVEL = 15;
+    public static final int DEFAULT_ZOOM_LEVEL = 15;
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-	}
+    }
 
-	protected abstract LocatableItemOverlay createItemOverlay();
+    protected abstract LocatableItemOverlay createItemOverlay();
 
-	protected void initOverlays() {
-		mMapView = (MapView) findViewById(R.id.map);
+    protected void initOverlays() {
+        mMapView = (MapView) findViewById(R.id.map);
 
-		mMapController = mMapView.getController();
-		mPointerShadow = (PointerShadow) findViewById(R.id.pointer_shadow);
-		mShadowOverlay = new PointerShadowOverlay(this, mPointerShadow);
-		mLocatableItemOverlay = createItemOverlay();
-		mMapView.setBuiltInZoomControls(true);
-		final List<Overlay> overlays = mMapView.getOverlays();
-		overlays.add(mLocatableItemOverlay);
-		overlays.add(mShadowOverlay);
+        mMapController = mMapView.getController();
+        mPointerShadow = (PointerShadow) findViewById(R.id.pointer_shadow);
+        mShadowOverlay = new PointerShadowOverlay(this, mPointerShadow);
+        mLocatableItemOverlay = createItemOverlay();
+        mMapView.setBuiltInZoomControls(true);
+        final List<Overlay> overlays = mMapView.getOverlays();
+        overlays.add(mLocatableItemOverlay);
+        overlays.add(mShadowOverlay);
 
-		mMapView.setVisibility(View.VISIBLE);
-	}
+        mMapView.setVisibility(View.VISIBLE);
+    }
 
-	public void setPointer(GeoPoint geoPoint) {
-		mShadowOverlay.setPointer(geoPoint);
-	}
+    public void setPointer(GeoPoint geoPoint) {
+        mShadowOverlay.setPointer(geoPoint);
+    }
 
-	protected void setPointerFromCursor(Cursor c){
-		setPointerFromCursor(c, DEFAULT_ZOOM_LEVEL);
-	}
+    protected void setPointerFromCursor(Cursor c){
+        setPointerFromCursor(c, DEFAULT_ZOOM_LEVEL);
+    }
 
-	private GeoPoint mCurrentPointer;
+    private GeoPoint mCurrentPointer;
 
-	protected void setPointerFromCursor(Cursor c, int zoomLevel){
-		final GeoPoint gp = MapsUtils.getGeoPoint(c);
-		if (mCurrentPointer == null || !mCurrentPointer.equals(gp)){
-			setPointer(gp);
-			mMapController.setCenter(gp);
-			mMapController.setZoom(zoomLevel);
-			mCurrentPointer = gp;
-		}
-	}
+    protected void setPointerFromCursor(Cursor c, int zoomLevel){
+        final GeoPoint gp = MapsUtils.getGeoPoint(c);
+        if (mCurrentPointer == null || !mCurrentPointer.equals(gp)){
+            setPointer(gp);
+            mMapController.setCenter(gp);
+            mMapController.setZoom(zoomLevel);
+            mCurrentPointer = gp;
+        }
+    }
 }

@@ -31,121 +31,121 @@ import edu.mit.mobile.android.locast.ver2.R;
 
 public class SigninOrSkip extends Activity implements OnClickListener {
 
-	/**
-	 * A CharSequence
-	 */
-	public static final String EXTRA_MESSAGE = "edu.mit.mobile.android.locast.SigninOrSkip.EXTRA_MESSAGE",
-			EXTRA_SKIP_IS_CANCEL = "edu.mit.mobile.android.locast.SigninOrSkip.EXTRA_SKIP_IS_CANCEL";
+    /**
+     * A CharSequence
+     */
+    public static final String EXTRA_MESSAGE = "edu.mit.mobile.android.locast.SigninOrSkip.EXTRA_MESSAGE",
+            EXTRA_SKIP_IS_CANCEL = "edu.mit.mobile.android.locast.SigninOrSkip.EXTRA_SKIP_IS_CANCEL";
 
-	public static final String PREF_HAVE_RUN_BEFORE = "have_run_before";
+    public static final String PREF_HAVE_RUN_BEFORE = "have_run_before";
 
-	private boolean mSkipIsCancel = false;
+    private boolean mSkipIsCancel = false;
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.auth_signin_or_skip);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.auth_signin_or_skip);
 
-		findViewById(R.id.sign_in).setOnClickListener(this);
-		final Button skip = (Button) findViewById(R.id.skip);
-		skip.setOnClickListener(this);
+        findViewById(R.id.sign_in).setOnClickListener(this);
+        final Button skip = (Button) findViewById(R.id.skip);
+        skip.setOnClickListener(this);
 
-		final Bundle extras = getIntent().getExtras();
-		if (extras != null) {
-			final CharSequence msg = extras.getCharSequence(EXTRA_MESSAGE);
-			if (msg != null) {
-				((TextView) findViewById(R.id.sign_in_or_skip_notice)).setText(msg);
-			}
+        final Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+            final CharSequence msg = extras.getCharSequence(EXTRA_MESSAGE);
+            if (msg != null) {
+                ((TextView) findViewById(R.id.sign_in_or_skip_notice)).setText(msg);
+            }
 
-			mSkipIsCancel = extras.getBoolean(EXTRA_SKIP_IS_CANCEL, mSkipIsCancel);
-			if (mSkipIsCancel) {
-				skip.setText(android.R.string.cancel);
-			}
-		}
-	}
+            mSkipIsCancel = extras.getBoolean(EXTRA_SKIP_IS_CANCEL, mSkipIsCancel);
+            if (mSkipIsCancel) {
+                skip.setText(android.R.string.cancel);
+            }
+        }
+    }
 
-	private void skip(){
-		if (mSkipIsCancel) {
-			setResult(RESULT_CANCELED);
-			finish();
-			return;
-		}
-		Authenticator.addDemoAccount(this);
-		setResult(RESULT_OK);
-		finish();
-	}
-	public static final int REQUEST_SIGNIN = 100;
+    private void skip(){
+        if (mSkipIsCancel) {
+            setResult(RESULT_CANCELED);
+            finish();
+            return;
+        }
+        Authenticator.addDemoAccount(this);
+        setResult(RESULT_OK);
+        finish();
+    }
+    public static final int REQUEST_SIGNIN = 100;
 
-	@Override
-	public void onClick(View v) {
-		switch (v.getId()){
-		case R.id.sign_in:
-			startActivityForResult(new Intent(this, AuthenticatorActivity.class), REQUEST_SIGNIN);
-			break;
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+        case R.id.sign_in:
+            startActivityForResult(new Intent(this, AuthenticatorActivity.class), REQUEST_SIGNIN);
+            break;
 
-		case R.id.skip:
-			skip();
-			break;
-		}
-	}
+        case R.id.skip:
+            skip();
+            break;
+        }
+    }
 
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		switch(requestCode){
-		case REQUEST_SIGNIN:
-			if (resultCode == RESULT_OK){
-				setResult(RESULT_OK);
-				finish();
-			}
-			break;
-		}
-	}
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch(requestCode){
+        case REQUEST_SIGNIN:
+            if (resultCode == RESULT_OK){
+                setResult(RESULT_OK);
+                finish();
+            }
+            break;
+        }
+    }
 
-	/**
-	 * @return true if this seems to be the first time running the app
-	 */
-	public static final boolean checkFirstTime(Context context) {
-		if (Constants.USE_ACCOUNT_FRAMEWORK) {
-			return Authenticator.getAccounts(context).length == 0;
-		} else {
-			final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-			final boolean runBefore = prefs.getBoolean(PREF_HAVE_RUN_BEFORE, false);
-			if (!runBefore) {
-				prefs.edit().putBoolean(PREF_HAVE_RUN_BEFORE, true).commit();
-			}
-			return !runBefore;
-		}
-	}
+    /**
+     * @return true if this seems to be the first time running the app
+     */
+    public static final boolean checkFirstTime(Context context) {
+        if (Constants.USE_ACCOUNT_FRAMEWORK) {
+            return Authenticator.getAccounts(context).length == 0;
+        } else {
+            final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+            final boolean runBefore = prefs.getBoolean(PREF_HAVE_RUN_BEFORE, false);
+            if (!runBefore) {
+                prefs.edit().putBoolean(PREF_HAVE_RUN_BEFORE, true).commit();
+            }
+            return !runBefore;
+        }
+    }
 
-	/**
-	 *
-	 * Calls context.startActivityForResult() with the appropriate intent
-	 *
-	 * @param context
-	 * @param requestCode
-	 */
-	public static final boolean startSignin(Activity context, int requestCode) {
-		if (!Constants.USE_ACCOUNT_FRAMEWORK) {
-			return true;
+    /**
+     *
+     * Calls context.startActivityForResult() with the appropriate intent
+     *
+     * @param context
+     * @param requestCode
+     */
+    public static final boolean startSignin(Activity context, int requestCode) {
+        if (!Constants.USE_ACCOUNT_FRAMEWORK) {
+            return true;
 
-		} else if (Constants.REQUIRE_LOGIN) {
-			if (!Authenticator.hasRealAccount(context)) {
-				context.startActivityForResult(new Intent(context, AuthenticatorActivity.class),
-						requestCode);
-				return true;
-			}
-			// login isn't required, but accounts can be created.
-		} else if (Constants.CAN_CREATE_CASTS) {
-			if (!Authenticator.isDemoMode(context) && !Authenticator.hasRealAccount(context)) {
-				context.startActivityForResult(new Intent(context, SigninOrSkip.class), requestCode);
-				return true;
-			}
-		} else {
-			// we shouldn't do anything if there's no possibility of creating casts.
-			if (checkFirstTime(context)) {
-				Authenticator.addDemoAccount(context);
-			}
-		}
-		return false;
-	}
+        } else if (Constants.REQUIRE_LOGIN) {
+            if (!Authenticator.hasRealAccount(context)) {
+                context.startActivityForResult(new Intent(context, AuthenticatorActivity.class),
+                        requestCode);
+                return true;
+            }
+            // login isn't required, but accounts can be created.
+        } else if (Constants.CAN_CREATE_CASTS) {
+            if (!Authenticator.isDemoMode(context) && !Authenticator.hasRealAccount(context)) {
+                context.startActivityForResult(new Intent(context, SigninOrSkip.class), requestCode);
+                return true;
+            }
+        } else {
+            // we shouldn't do anything if there's no possibility of creating casts.
+            if (checkFirstTime(context)) {
+                Authenticator.addDemoAccount(context);
+            }
+        }
+        return false;
+    }
 }

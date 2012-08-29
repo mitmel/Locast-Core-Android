@@ -17,5 +17,5 @@ package edu.mit.mobile.android;
  */
 
 public class MelAndroid {
-	public final static String NS = "http://mobile.mit.edu/schemas/android";
+    public final static String NS = "http://mobile.mit.edu/schemas/android";
 }

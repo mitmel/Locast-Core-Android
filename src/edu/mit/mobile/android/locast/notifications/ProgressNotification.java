@@ -31,107 +31,107 @@ import edu.mit.mobile.android.locast.ver2.R;
  *
  */
 public class ProgressNotification extends Notification {
-	// public attributes
-	public PendingIntent doneIntent;
-	public CharSequence doneTitle;
-	public CharSequence doneText;
-	public int doneIcon = 0;
-	public boolean successful = true;
+    // public attributes
+    public PendingIntent doneIntent;
+    public CharSequence doneTitle;
+    public CharSequence doneText;
+    public int doneIcon = 0;
+    public boolean successful = true;
 
-	// static constants
-	private static final int NOTIFICATION_BASE = 0x1000;
-	public static final int
-		TYPE_GENERIC = 0,
-		TYPE_UPLOAD = 1,
-		TYPE_DOWNLOAD = 2;
+    // static constants
+    private static final int NOTIFICATION_BASE = 0x1000;
+    public static final int
+        TYPE_GENERIC = 0,
+        TYPE_UPLOAD = 1,
+        TYPE_DOWNLOAD = 2;
 
-	private final boolean mLeaveWhenDone;
-	private final NotificationManager nm;
-	private final Context mContext;
+    private final boolean mLeaveWhenDone;
+    private final NotificationManager nm;
+    private final Context mContext;
 
-	public ProgressNotification(Context context, int icon){
-		this(context, icon, null, false);
-	}
+    public ProgressNotification(Context context, int icon){
+        this(context, icon, null, false);
+    }
 
-	public ProgressNotification(Context context, CharSequence tickerText, int type, PendingIntent contentIntent, boolean leaveWhenDone) {
-		this(context, 0, tickerText, leaveWhenDone);
-		this.contentIntent = contentIntent;
-		setType(type);
-	}
+    public ProgressNotification(Context context, CharSequence tickerText, int type, PendingIntent contentIntent, boolean leaveWhenDone) {
+        this(context, 0, tickerText, leaveWhenDone);
+        this.contentIntent = contentIntent;
+        setType(type);
+    }
 
-	public ProgressNotification(Context context, int icon, CharSequence tickerText, boolean leaveWhenDone) {
-		super(icon, null, System.currentTimeMillis());
-		flags |= Notification.FLAG_ONGOING_EVENT;
+    public ProgressNotification(Context context, int icon, CharSequence tickerText, boolean leaveWhenDone) {
+        super(icon, null, System.currentTimeMillis());
+        flags |= Notification.FLAG_ONGOING_EVENT;
 
-		contentView = new RemoteViews(context.getPackageName(), R.layout.notification_progress);
-		mLeaveWhenDone = leaveWhenDone;
-		nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        contentView = new RemoteViews(context.getPackageName(), R.layout.notification_progress);
+        mLeaveWhenDone = leaveWhenDone;
+        nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-		setType(TYPE_GENERIC);
-		setTitle(tickerText);
-		mContext = context;
-	}
+        setType(TYPE_GENERIC);
+        setTitle(tickerText);
+        mContext = context;
+    }
 
-	public void setProgress(int max, int complete){
-		contentView.setProgressBar(R.id.progress, max, complete, max == 0);
-	}
+    public void setProgress(int max, int complete){
+        contentView.setProgressBar(R.id.progress, max, complete, max == 0);
+    }
 
-	public void setTitle(CharSequence title){
-		contentView.setTextViewText(R.id.title, title);
-	}
+    public void setTitle(CharSequence title){
+        contentView.setTextViewText(R.id.title, title);
+    }
 
-	/**
-	 * Set the iconography to a given set. Call notify() after this.
-	 *
-	 * @param type
-	 */
-	public void setType(int type){
-		switch (type){
-		case TYPE_UPLOAD:
-			//doneIcon = android.R.drawable.stat_sys_upload_done;
-			doneIcon = R.drawable.stat_notify_success;
-			icon = android.R.drawable.stat_sys_upload;
-			break;
+    /**
+     * Set the iconography to a given set. Call notify() after this.
+     *
+     * @param type
+     */
+    public void setType(int type){
+        switch (type){
+        case TYPE_UPLOAD:
+            //doneIcon = android.R.drawable.stat_sys_upload_done;
+            doneIcon = R.drawable.stat_notify_success;
+            icon = android.R.drawable.stat_sys_upload;
+            break;
 
-		case TYPE_DOWNLOAD:
-			doneIcon = android.R.drawable.stat_sys_download_done;
-			icon = android.R.drawable.stat_sys_download;
-			break;
+        case TYPE_DOWNLOAD:
+            doneIcon = android.R.drawable.stat_sys_download_done;
+            icon = android.R.drawable.stat_sys_download;
+            break;
 
-		}
-		contentView.setImageViewResource(R.id.icon, icon);
-	}
+        }
+        contentView.setImageViewResource(R.id.icon, icon);
+    }
 
-	/**
-	 * Make sure to call done() after this.
-	 *
-	 * @param message the reason why this transfer failed.
-	 */
-	public void setUnsuccessful(CharSequence message){
-		successful = false;
-		if (message != null){
-			doneText = message;
-		}
-	}
+    /**
+     * Make sure to call done() after this.
+     *
+     * @param message the reason why this transfer failed.
+     */
+    public void setUnsuccessful(CharSequence message){
+        successful = false;
+        if (message != null){
+            doneText = message;
+        }
+    }
 
-	/**
-	 * Mark the progress done. This should be called even if the transfer is unsuccessful.
-	 * If you set leaveWhenDone, then make sure that you have set any doneTitle, doneText, and doneIntent that you want set.
-	 *
-	 * @param id an ID that's unique for the set of things being done.
-	 */
-	public void done(int id){
-		if (mLeaveWhenDone){
-			int doneIcon;
-			if (successful){
-				doneIcon = this.doneIcon != 0 ? this.doneIcon : icon;
-			}else{
-				doneIcon = android.R.drawable.stat_notify_error;
-			}
-			final Notification doneNotification = new Notification(doneIcon, doneTitle, System.currentTimeMillis());
-			doneNotification.flags |= Notification.FLAG_SHOW_LIGHTS | Notification.FLAG_AUTO_CANCEL;
-			doneNotification.setLatestEventInfo(mContext, doneTitle, doneText, doneIntent);
-			nm.notify(NOTIFICATION_BASE + id, doneNotification);
-		}
-	}
+    /**
+     * Mark the progress done. This should be called even if the transfer is unsuccessful.
+     * If you set leaveWhenDone, then make sure that you have set any doneTitle, doneText, and doneIntent that you want set.
+     *
+     * @param id an ID that's unique for the set of things being done.
+     */
+    public void done(int id){
+        if (mLeaveWhenDone){
+            int doneIcon;
+            if (successful){
+                doneIcon = this.doneIcon != 0 ? this.doneIcon : icon;
+            }else{
+                doneIcon = android.R.drawable.stat_notify_error;
+            }
+            final Notification doneNotification = new Notification(doneIcon, doneTitle, System.currentTimeMillis());
+            doneNotification.flags |= Notification.FLAG_SHOW_LIGHTS | Notification.FLAG_AUTO_CANCEL;
+            doneNotification.setLatestEventInfo(mContext, doneTitle, doneText, doneIntent);
+            nm.notify(NOTIFICATION_BASE + id, doneNotification);
+        }
+    }
 }

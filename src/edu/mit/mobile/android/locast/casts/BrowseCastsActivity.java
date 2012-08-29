@@ -37,105 +37,105 @@ import edu.mit.mobile.android.location.IncrementalLocator;
  *
  */
 public class BrowseCastsActivity extends CastListActivity implements LocationListener, OnClickListener {
-	private static String TAG = BrowseCastsActivity.class.getSimpleName();
+    private static String TAG = BrowseCastsActivity.class.getSimpleName();
 
-	private IncrementalLocator iloc;
-	private CastCursorAdapter nearbyCursorAdapter;
+    private IncrementalLocator iloc;
+    private CastCursorAdapter nearbyCursorAdapter;
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-		final SeparatedListAdapter adapter = new SeparatedListAdapter(this, R.layout.list_section_header);
+        final SeparatedListAdapter adapter = new SeparatedListAdapter(this, R.layout.list_section_header);
 
-		adapter.addSection(getString(R.string.section_drafts),
-				new CastCursorAdapter(this,
-						managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._PUBLIC_URI + "=null OR "+Cast._DRAFT, null, null)));
+        adapter.addSection(getString(R.string.section_drafts),
+                new CastCursorAdapter(this,
+                        managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._PUBLIC_URI + "=null OR "+Cast._DRAFT, null, null)));
 
-		adapter.addSection(getString(R.string.section_featured),
-				new CastCursorAdapter(this,
-						managedQuery(TaggableItem.getTagUri(Cast.CONTENT_URI,
-								TaggableItem.addPrefixToTag(TaggableItem.SYSTEM_PREFIX, "_featured")),
-								Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT)));
+        adapter.addSection(getString(R.string.section_featured),
+                new CastCursorAdapter(this,
+                        managedQuery(TaggableItem.getTagUri(Cast.CONTENT_URI,
+                                TaggableItem.addPrefixToTag(TaggableItem.SYSTEM_PREFIX, "_featured")),
+                                Cast.PROJECTION, null, null, Cast.SORT_ORDER_DEFAULT)));
 
-		nearbyCursorAdapter = new CastCursorAdapter(this,
-				managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._ID + "=-1", null, null));
+        nearbyCursorAdapter = new CastCursorAdapter(this,
+                managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._ID + "=-1", null, null));
 
-		adapter.addSection(getString(R.string.section_nearby),
-				nearbyCursorAdapter);
+        adapter.addSection(getString(R.string.section_nearby),
+                nearbyCursorAdapter);
 
-		adapter.addSection(getString(R.string.section_starred),
-				new CastCursorAdapter(this,
-						managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._FAVORITED + " != 0", null, null)));
+        adapter.addSection(getString(R.string.section_starred),
+                new CastCursorAdapter(this,
+                        managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Cast._FAVORITED + " != 0", null, null)));
 
-		adapter.addSection(getString(R.string.section_all),
-				new CastCursorAdapter(this,
-						managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, null, null, null)));
+        adapter.addSection(getString(R.string.section_all),
+                new CastCursorAdapter(this,
+                        managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, null, null, null)));
 
-		iloc = new IncrementalLocator(this);
+        iloc = new IncrementalLocator(this);
 
-		getListView().setFastScrollEnabled(true);
-		setListAdapter(adapter);
+        getListView().setFastScrollEnabled(true);
+        setListAdapter(adapter);
 
-		final View v = findViewById(R.id.new_cast);
-		if (v != null){
-			v.setOnClickListener(this);
-		}
-	}
+        final View v = findViewById(R.id.new_cast);
+        if (v != null){
+            v.setOnClickListener(this);
+        }
+    }
 
-	@Override
-	protected void onPause() {
-		super.onPause();
-		iloc.removeLocationUpdates(this);
-	}
+    @Override
+    protected void onPause() {
+        super.onPause();
+        iloc.removeLocationUpdates(this);
+    }
 
-	@Override
-	protected void onResume() {
-		super.onResume();
-		iloc.requestLocationUpdates(this);
-	}
+    @Override
+    protected void onResume() {
+        super.onResume();
+        iloc.requestLocationUpdates(this);
+    }
 
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		super.onCreateOptionsMenu(menu);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
 
-		getMenuInflater().inflate(R.menu.cast_list, menu);
+        getMenuInflater().inflate(R.menu.cast_list, menu);
 
-		return true;
-	}
+        return true;
+    }
 
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()){
-		case R.id.refresh:
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+        case R.id.refresh:
 
-				LocastSync.startSync(this, getIntent().getData(), true);
-			return true;
+                LocastSync.startSync(this, getIntent().getData(), true);
+            return true;
 
-		}
+        }
 
-		return super.onOptionsItemSelected(item);
-	}
+        return super.onOptionsItemSelected(item);
+    }
 
-	private void updateNearbyLocation(Location location){
-		final String[] nearLoc = {String.valueOf(location.getLatitude()),
-				String.valueOf(location.getLongitude())};
+    private void updateNearbyLocation(Location location){
+        final String[] nearLoc = {String.valueOf(location.getLatitude()),
+                String.valueOf(location.getLongitude())};
 
-		nearbyCursorAdapter.changeCursor(managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Locatable.SELECTION_LAT_LON, nearLoc, null));
-	}
+        nearbyCursorAdapter.changeCursor(managedQuery(Cast.CONTENT_URI, Cast.PROJECTION, Locatable.SELECTION_LAT_LON, nearLoc, null));
+    }
 
-	public void onLocationChanged(Location location) {
-		updateNearbyLocation(location);
-	}
+    public void onLocationChanged(Location location) {
+        updateNearbyLocation(location);
+    }
 
-	public void onProviderDisabled(String provider) {}
+    public void onProviderDisabled(String provider) {}
 
-	public void onProviderEnabled(String provider) {}
+    public void onProviderEnabled(String provider) {}
 
-	public void onStatusChanged(String provider, int status, Bundle extras) {}
+    public void onStatusChanged(String provider, int status, Bundle extras) {}
 
-	public void onClick(View v) {
-		startActivity(new Intent(Intent.ACTION_INSERT, Cast.CONTENT_URI));
+    public void onClick(View v) {
+        startActivity(new Intent(Intent.ACTION_INSERT, Cast.CONTENT_URI));
 
-	}
+    }
 }

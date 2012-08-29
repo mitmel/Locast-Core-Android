@@ -29,10 +29,10 @@ import android.os.Handler;
  * Then in your {@link Activity#onPause onPause} and {@link Activity#onResume onResume} methods, do:
  *<pre>
  * {@code
- *	protected void onPause() {
- *		super.onPause();
- * 		mContentObserver.onPause(c);
- *	}
+ *  protected void onPause() {
+ *      super.onPause();
+ *      mContentObserver.onPause(c);
+ *  }
  * }
  *
  *</pre>
@@ -40,80 +40,80 @@ import android.os.Handler;
  *
  */
 public class BasicCursorContentObserver extends ContentObserver {
-	private final BasicCursorContentObserverWatcher mObservable;
-	private Cursor mCursor;
+    private final BasicCursorContentObserverWatcher mObservable;
+    private Cursor mCursor;
 
-	public BasicCursorContentObserver(BasicCursorContentObserverWatcher observable) {
-		super(new Handler());
-		mObservable = observable;
-	}
+    public BasicCursorContentObserver(BasicCursorContentObserverWatcher observable) {
+        super(new Handler());
+        mObservable = observable;
+    }
 
-	@Override
-	public boolean deliverSelfNotifications() {
-		return true;
-	}
+    @Override
+    public boolean deliverSelfNotifications() {
+        return true;
+    }
 
-	@Override
-	public void onChange(boolean selfChange) {
-		final Cursor c = mCursor;
-		if (!selfChange){
-			c.requery();
-		}
+    @Override
+    public void onChange(boolean selfChange) {
+        final Cursor c = mCursor;
+        if (!selfChange){
+            c.requery();
+        }
 
-		if (!c.isClosed() && c.moveToFirst()){
-			mObservable.loadFromCursor();
-		}else{
-			mObservable.onCursorItemDeleted();
-		}
-	}
+        if (!c.isClosed() && c.moveToFirst()){
+            mObservable.loadFromCursor();
+        }else{
+            mObservable.onCursorItemDeleted();
+        }
+    }
 
-	/**
-	 * Call this from your activity's onPause method. This unregisters the content observer.
-	 *
-	 * @param c
-	 */
-	public void onPause(Cursor c){
-		if (c != null){
-			c.unregisterContentObserver(this);
-			mCursor = null;
-		}
-	}
+    /**
+     * Call this from your activity's onPause method. This unregisters the content observer.
+     *
+     * @param c
+     */
+    public void onPause(Cursor c){
+        if (c != null){
+            c.unregisterContentObserver(this);
+            mCursor = null;
+        }
+    }
 
-	/**
-	 * Call this from your activity's onResume function with the cursor you wish to observe.
-	 * This registers the content observer and calls your loadFromCursor method.
-	 *
-	 * @param c
-	 */
-	public void onResume(Cursor c){
-		if (c != null){
-			mCursor = c;
-			c.registerContentObserver(this);
-			if (c.moveToFirst()){
-				mObservable.loadFromCursor();
-			}else{
-				// handle the case where this item is deleted
-				mObservable.onCursorItemDeleted();
-			}
-		}
-	}
+    /**
+     * Call this from your activity's onResume function with the cursor you wish to observe.
+     * This registers the content observer and calls your loadFromCursor method.
+     *
+     * @param c
+     */
+    public void onResume(Cursor c){
+        if (c != null){
+            mCursor = c;
+            c.registerContentObserver(this);
+            if (c.moveToFirst()){
+                mObservable.loadFromCursor();
+            }else{
+                // handle the case where this item is deleted
+                mObservable.onCursorItemDeleted();
+            }
+        }
+    }
 
-	// XXX gotta come up with a better name than this...
-	/**
-	 * Implement this to load your content from the cursor. {@link #loadFromCursor} will be called each time that your content refreshes as well as on first load.
-	 * @author steve
-	 *
-	 */
-	public interface BasicCursorContentObserverWatcher {
+    // XXX gotta come up with a better name than this...
+    /**
+     * Implement this to load your content from the cursor. {@link #loadFromCursor} will be called each time that your content refreshes as well as on first load.
+     * @author steve
+     *
+     */
+    public interface BasicCursorContentObserverWatcher {
 
-		/**
-		 * Add the code necessary to load data from the cursor.
-		 * Called from the cursor's {@link ContentObserver#onChange(boolean)} method.
-		 */
-		public void loadFromCursor();
-		/**
-		 * Called when the item being observed is deleted.
-		 */
-		public void onCursorItemDeleted();
-	}
+        /**
+         * Add the code necessary to load data from the cursor.
+         * Called from the cursor's {@link ContentObserver#onChange(boolean)} method.
+         */
+        public void loadFromCursor();
+        /**
+         * Called when the item being observed is deleted.
+         */
+        public void onCursorItemDeleted();
+    }
 }

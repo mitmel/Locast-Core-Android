@@ -16,12 +16,12 @@ package edu.mit.mobile.android.locast.data;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 public class SyncException extends Exception {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -7528931945096125226L;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -7528931945096125226L;
 
-	public SyncException(String message ) {
-		super(message);
-	}
+    public SyncException(String message ) {
+        super(message);
+    }
 }

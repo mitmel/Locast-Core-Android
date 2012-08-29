@@ -25,23 +25,23 @@ import com.google.android.maps.OverlayItem;
 
 public class BasicLocatableOverlay extends LocatableItemOverlay {
 
-	public BasicLocatableOverlay(Drawable marker, MapView mapview) {
-		super(marker, mapview);
-	}
+    public BasicLocatableOverlay(Drawable marker, MapView mapview) {
+        super(marker, mapview);
+    }
 
-	public BasicLocatableOverlay(Drawable marker, MapView mapview, Cursor c) {
-		super(marker, mapview, c);
-	}
+    public BasicLocatableOverlay(Drawable marker, MapView mapview, Cursor c) {
+        super(marker, mapview, c);
+    }
 
-	@Override
-	protected OverlayItem createItem(int i) {
-		this.mLocatableItems.moveToPosition(i);
-		final ComparableOverlayItem item = new ComparableOverlayItem(
-				getItemLocation(mLocatableItems), "", "",
-				mLocatableItems.getLong(mLocatableItems.getColumnIndex(BaseColumns._ID)));
+    @Override
+    protected OverlayItem createItem(int i) {
+        this.mLocatableItems.moveToPosition(i);
+        final ComparableOverlayItem item = new ComparableOverlayItem(
+                getItemLocation(mLocatableItems), "", "",
+                mLocatableItems.getLong(mLocatableItems.getColumnIndex(BaseColumns._ID)));
 
-		onCreateItem(item);
+        onCreateItem(item);
 
-		return item;
-	}
+        return item;
+    }
 }

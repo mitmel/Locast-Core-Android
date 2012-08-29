@@ -44,191 +44,191 @@ import edu.mit.mobile.android.locast.ver2.R;
  *
  */
 public class LocastSimpleSyncService extends Service {
-	private static final String TAG = LocastSimpleSyncService.class.getSimpleName();
+    private static final String TAG = LocastSimpleSyncService.class.getSimpleName();
 
-	public static final boolean DEBUG = Constants.DEBUG;
+    public static final boolean DEBUG = Constants.DEBUG;
 
-	private SyncEngine mSyncEngine;
+    private SyncEngine mSyncEngine;
 
-	private NetworkClient mNetworkClient;
+    private NetworkClient mNetworkClient;
 
-	private SyncQueueProcessor mSyncProcessor;
-	private Thread mSyncThread;
+    private SyncQueueProcessor mSyncProcessor;
+    private Thread mSyncThread;
 
-	private final PriorityBlockingQueue<SyncItem> mPriorityQueue = new PriorityBlockingQueue<LocastSimpleSyncService.SyncItem>();
+    private final PriorityBlockingQueue<SyncItem> mPriorityQueue = new PriorityBlockingQueue<LocastSimpleSyncService.SyncItem>();
 
-	public static void startSync(Context context, Uri uri, Bundle extras) {
-		final Intent intent = new Intent(Intent.ACTION_SYNC, uri);
-		intent.putExtras(extras);
-		context.startService(intent);
-	}
+    public static void startSync(Context context, Uri uri, Bundle extras) {
+        final Intent intent = new Intent(Intent.ACTION_SYNC, uri);
+        intent.putExtras(extras);
+        context.startService(intent);
+    }
 
-	@Override
-	public void onCreate() {
-		super.onCreate();
-		mNetworkClient = new NetworkClient(this);
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        mNetworkClient = new NetworkClient(this);
 
-		mSyncEngine = new SyncEngine(this, mNetworkClient);
-		mSyncProcessor = new SyncQueueProcessor();
-		mSyncThread = new Thread(mSyncProcessor);
-		mSyncThread.start();
-	}
+        mSyncEngine = new SyncEngine(this, mNetworkClient);
+        mSyncProcessor = new SyncQueueProcessor();
+        mSyncThread = new Thread(mSyncProcessor);
+        mSyncThread.start();
+    }
 
-	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
-		final Uri uri = intent.getData();
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        final Uri uri = intent.getData();
 
-		final Bundle extras = intent.getExtras();
+        final Bundle extras = intent.getExtras();
 
-		enqueueItem(uri, extras);
+        enqueueItem(uri, extras);
 
-		return START_REDELIVER_INTENT;
-	}
+        return START_REDELIVER_INTENT;
+    }
 
-	public void enqueueItem(Uri uri, Bundle extras) {
+    public void enqueueItem(Uri uri, Bundle extras) {
 
-		final boolean expedited = extras.getBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, false);
-		final boolean manual = extras.getBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, false);
+        final boolean expedited = extras.getBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, false);
+        final boolean manual = extras.getBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, false);
 
-		final SyncItem i = new SyncItem(uri, extras, (expedited ? 10 : 0) + (manual ? 5 : 0));
+        final SyncItem i = new SyncItem(uri, extras, (expedited ? 10 : 0) + (manual ? 5 : 0));
 
-		if (!expedited && mPriorityQueue.contains(i)) {
-			Log.d(TAG, "not adding " + i + " as it's already in the sync queue");
-			return;
-		}
+        if (!expedited && mPriorityQueue.contains(i)) {
+            Log.d(TAG, "not adding " + i + " as it's already in the sync queue");
+            return;
+        }
 
-		mPriorityQueue.add(i);
-		Log.d(TAG, "enqueued " + i);
-	}
+        mPriorityQueue.add(i);
+        Log.d(TAG, "enqueued " + i);
+    }
 
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-		mSyncProcessor.stop();
-	}
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mSyncProcessor.stop();
+    }
 
-	@Override
-	public IBinder onBind(Intent intent) {
-		return new LocalBinder();
-	}
+    @Override
+    public IBinder onBind(Intent intent) {
+        return new LocalBinder();
+    }
 
-	public class LocalBinder extends Binder {
-		public LocastSimpleSyncService getBinder() {
-			return LocastSimpleSyncService.this;
-		}
-	}
+    public class LocalBinder extends Binder {
+        public LocastSimpleSyncService getBinder() {
+            return LocastSimpleSyncService.this;
+        }
+    }
 
-	private NotificationProgressListener showNotification() {
-		final ProgressNotification notification = new ProgressNotification(this,
-				getString(R.string.sync_notification), ProgressNotification.TYPE_GENERIC,
-				PendingIntent.getActivity(
-						this,
-						0,
-						getPackageManager().getLaunchIntentForPackage(getPackageName()).addFlags(
-								Intent.FLAG_ACTIVITY_NEW_TASK), 0), false);
+    private NotificationProgressListener showNotification() {
+        final ProgressNotification notification = new ProgressNotification(this,
+                getString(R.string.sync_notification), ProgressNotification.TYPE_GENERIC,
+                PendingIntent.getActivity(
+                        this,
+                        0,
+                        getPackageManager().getLaunchIntentForPackage(getPackageName()).addFlags(
+                                Intent.FLAG_ACTIVITY_NEW_TASK), 0), false);
 
-		final NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		final NotificationProgressListener npl = new NotificationProgressListener(nm, notification,
-				100, 0);
+        final NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        final NotificationProgressListener npl = new NotificationProgressListener(nm, notification,
+                100, 0);
 
-		nm.notify(R.id.sync, notification);
+        nm.notify(R.id.sync, notification);
 
-		return npl;
-	}
+        return npl;
+    }
 
-	private void clearNotification() {
-		final NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		nm.cancel(R.id.sync);
-	}
+    private void clearNotification() {
+        final NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        nm.cancel(R.id.sync);
+    }
 
-	private class SyncQueueProcessor implements Runnable {
+    private class SyncQueueProcessor implements Runnable {
 
-		private boolean mKeepOn = true;
+        private boolean mKeepOn = true;
 
-		public void stop() {
-			mKeepOn = false;
-			Thread.currentThread().interrupt();
-		}
+        public void stop() {
+            mKeepOn = false;
+            Thread.currentThread().interrupt();
+        }
 
-		@Override
-		public void run() {
-			while (mKeepOn) {
+        @Override
+        public void run() {
+            while (mKeepOn) {
 
-				try {
-					showNotification();
-					final SyncResult sr = new SyncResult();
-					final SyncItem item = mPriorityQueue.take();
-					Log.d(TAG, "took " + item + " from sync queue. Syncing...");
-					mSyncEngine.sync(item.uri, null, item.extras, getContentResolver()
-							.acquireContentProviderClient(MediaProvider.AUTHORITY), sr);
-					Log.d(TAG, "finished syncing " + item);
-					Log.d(TAG, mPriorityQueue.size() + " item(s) in queue");
+                try {
+                    showNotification();
+                    final SyncResult sr = new SyncResult();
+                    final SyncItem item = mPriorityQueue.take();
+                    Log.d(TAG, "took " + item + " from sync queue. Syncing...");
+                    mSyncEngine.sync(item.uri, null, item.extras, getContentResolver()
+                            .acquireContentProviderClient(MediaProvider.AUTHORITY), sr);
+                    Log.d(TAG, "finished syncing " + item);
+                    Log.d(TAG, mPriorityQueue.size() + " item(s) in queue");
 
-				} catch (final RemoteException e) {
-					Log.e(TAG, "sync error", e);
-				} catch (final SyncException e) {
-					Log.e(TAG, "sync error", e);
-				} catch (final JSONException e) {
-					Log.e(TAG, "sync error", e);
-				} catch (final IOException e) {
-					Log.e(TAG, "sync error", e);
-				} catch (final NetworkProtocolException e) {
-					Log.e(TAG, "sync error", e);
-				} catch (final NoPublicPath e) {
-					Log.e(TAG, "sync error", e);
-				} catch (final OperationApplicationException e) {
-					Log.e(TAG, "sync error", e);
-				} catch (final InterruptedException e) {
-					Log.w(TAG, "interrupted", e);
-				} finally {
-					clearNotification();
-				}
-			}
-		}
-	}
+                } catch (final RemoteException e) {
+                    Log.e(TAG, "sync error", e);
+                } catch (final SyncException e) {
+                    Log.e(TAG, "sync error", e);
+                } catch (final JSONException e) {
+                    Log.e(TAG, "sync error", e);
+                } catch (final IOException e) {
+                    Log.e(TAG, "sync error", e);
+                } catch (final NetworkProtocolException e) {
+                    Log.e(TAG, "sync error", e);
+                } catch (final NoPublicPath e) {
+                    Log.e(TAG, "sync error", e);
+                } catch (final OperationApplicationException e) {
+                    Log.e(TAG, "sync error", e);
+                } catch (final InterruptedException e) {
+                    Log.w(TAG, "interrupted", e);
+                } finally {
+                    clearNotification();
+                }
+            }
+        }
+    }
 
-	private static class SyncItem implements Comparable<SyncItem> {
-		final Uri uri;
-		final Bundle extras;
-		final int priority; // higher priority is more likely to occur
-		final long creationTime = System.currentTimeMillis();
+    private static class SyncItem implements Comparable<SyncItem> {
+        final Uri uri;
+        final Bundle extras;
+        final int priority; // higher priority is more likely to occur
+        final long creationTime = System.currentTimeMillis();
 
-		public SyncItem(Uri uri, Bundle extras) {
-			this(uri, extras, 0);
-		}
+        public SyncItem(Uri uri, Bundle extras) {
+            this(uri, extras, 0);
+        }
 
-		public SyncItem(Uri uri, Bundle extras, int priority) {
-			this.uri = uri;
-			this.extras = extras;
-			this.priority = priority;
-		}
+        public SyncItem(Uri uri, Bundle extras, int priority) {
+            this.uri = uri;
+            this.extras = extras;
+            this.priority = priority;
+        }
 
-		@Override
-		public boolean equals(Object o) {
-			if (o instanceof SyncItem) {
-				final SyncItem osi = (SyncItem) o;
-				return this.priority == osi.priority
-						&& (uri != null ? uri.equals(osi.uri) : uri != osi.uri)
-						&& (extras != null ? extras.equals(osi.extras) : extras != osi.extras);
-			} else {
-				return false;
-			}
-		}
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof SyncItem) {
+                final SyncItem osi = (SyncItem) o;
+                return this.priority == osi.priority
+                        && (uri != null ? uri.equals(osi.uri) : uri != osi.uri)
+                        && (extras != null ? extras.equals(osi.extras) : extras != osi.extras);
+            } else {
+                return false;
+            }
+        }
 
-		@Override
-		public int compareTo(SyncItem another) {
-			if (priority == another.priority) {
-				return -/* inverted */Long.valueOf(creationTime).compareTo(another.creationTime);
-			} else {
-				return -/* inverted */Integer.valueOf(priority).compareTo(another.priority);
-			}
-		}
+        @Override
+        public int compareTo(SyncItem another) {
+            if (priority == another.priority) {
+                return -/* inverted */Long.valueOf(creationTime).compareTo(another.creationTime);
+            } else {
+                return -/* inverted */Integer.valueOf(priority).compareTo(another.priority);
+            }
+        }
 
-		@Override
-		public String toString() {
+        @Override
+        public String toString() {
 
-			return "SyncItem: uri=" + uri + ", extras=" + extras + ", priority=" + priority
-					+ ", creationTime=" + creationTime;
-		}
-	}
+            return "SyncItem: uri=" + uri + ", extras=" + extras + ", priority=" + priority
+                    + ", creationTime=" + creationTime;
+        }
+    }
 }
