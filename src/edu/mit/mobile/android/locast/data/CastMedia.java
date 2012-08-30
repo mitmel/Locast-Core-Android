@@ -26,7 +26,6 @@ import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -38,7 +37,6 @@ import android.net.Uri;
 import android.provider.MediaStore.Images.Media;
 import android.provider.MediaStore.MediaColumns;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.android.maps.GeoPoint;
 
@@ -55,7 +53,6 @@ import edu.mit.mobile.android.locast.accounts.AuthenticationService;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.sync.MediaSync;
-import edu.mit.mobile.android.locast.ver2.R;
 
 @UriPath(CastMedia.PATH)
 public class CastMedia extends JsonSyncableItem {
@@ -159,7 +156,7 @@ public class CastMedia extends JsonSyncableItem {
         return media;
     }
 
-    public static void showMedia(Context context, Cursor c, Uri castMediaUri) {
+    public static Intent showMedia(Context context, Cursor c, Uri castMediaUri) {
         final String mediaString = c.getString(c.getColumnIndex(CastMedia._MEDIA_URL));
         final String locMediaString = c.getString(c.getColumnIndex(CastMedia._LOCAL_URI));
         String mimeType = null;
@@ -182,29 +179,28 @@ public class CastMedia extends JsonSyncableItem {
             }
         } else {
             Log.e(TAG, "asked to show media for " + castMediaUri + " but there was nothing to show");
-            return;
+            return null;
         }
 
         final Intent i = new Intent(Intent.ACTION_VIEW);
         i.setDataAndType(media, mimeType);
 
         if (mimeType != null && mimeType.startsWith("video/")) {
-            context.startActivity(new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(
-                    castMediaUri, c.getLong(c.getColumnIndex(CastMedia._ID)))));
+            return new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(castMediaUri,
+                    c.getLong(c.getColumnIndex(CastMedia._ID))));
         } else {
             // setting the MIME type for URLs doesn't work.
-            try {
-                context.startActivity(i);
-            } catch (final ActivityNotFoundException e) {
+            if (i.resolveActivity(context.getPackageManager()) != null) {
+                return i;
+            } else {
                 // try it again, but without a mime type.
                 if (mimeType != null) {
                     i.setDataAndType(media, null);
                 }
-                try {
-                    context.startActivity(i);
-                } catch (final ActivityNotFoundException e2) {
-                    Toast.makeText(context, R.string.error_cast_media_no_activities,
-                            Toast.LENGTH_LONG).show();
+                if (i.resolveActivity(context.getPackageManager()) != null) {
+                    return i;
+                } else {
+                    return null;
                 }
             }
         }

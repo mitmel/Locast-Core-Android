@@ -4,97 +4,16 @@
 	<string name="app_name">Open Locast</string>
 
     <string name="default_api_url" translatable="false">http://mel-pydev.mit.edu/openlocast/api/</string>
-	<string name="app_update_url" translatable="false">http://locast.mit.edu/m/openlocast.json</string>
 	
     <string name="signup_url" translatable="false">http://mel-pydev.mit.edu/openlocast/register/</string>
 	<string name="signup_text">Register to join Open Locast</string>
-	
-	<!-- Main screen -->
-    <string name="about">About</string>
-    <string name="settings">Settings</string>
+
 	
 	<!-- Generic user-facing error messages -->
 	<string name="error_no_providers">Error: no location providers</string>
-	<string name="error_no_maps">Error: no map handler present.</string>
-	<string name="error_cannot_edit">Sorry, you don\'t have permission to edit this item.</string>
-	<string name="error_please_enter_a_title">Please enter a title.</string>
 
     <!-- Generic user-facing notices -->
     <string name="notice_databases_reset">Local database reset.</string>
-	
-	<!-- List sections -->
-	<string name="section_featured">Featured</string>
-	<string name="section_drafts">Drafts</string>
-	<string name="section_nearby">Nearby</string>
-	<string name="section_starred">Starred</string>
-	<string name="section_all">All</string>
-
-	<!-- casts -->
-    <string name="cast_title_hint">Cast Title</string>
-	<string name="add_to_project">Add to Project</string>
-	<string name="add_cast_to_x"><b>Add Cast to</b> %1$s</string>
-	<string name="edit_cast">Edit Cast</string>
-	<string name="view_cast">View Cast</string>
-	<string name="remove_cast">Remove Cast from Project</string>
-	<string name="current_location">Current location: </string>
-	<string name="cast_location">Cast location: </string>
-	<string name="set_location">Set Location</string>
-	<string name="my_casts">My Casts</string>
-	<string name="casts_tags">Tags</string>
-	<string name="view_casts_in_map">View casts in map</string>
-	<string name="cast_publish_title">Publish Cast</string>
-    <string name="action_record_cast">Record a cast</string>
-    <string name="add_cast">Add Cast</string>
-    <string name="description">Description</string>
-    <string name="cast_play">Play Cast</string>
-    <string name="notice_cast_saved_uploading">Cast saved. Uploading to server…</string>
-    <string name="notice_cast_saved_no_network">Cast has been saved and will be uploaded when a network connection is established and the synchronization is started.</string>
-    <string name="error_cast_saving">Error saving cast.</string>
-    <string name="cast_recording_canceled">Recording canceled</string>
-    <string name="cast_synchronizing">Synchronizing cast…</string>
-    <string name="notice_cast_video_has_not_been_uploaded_yet">Cast video has not been uploaded yet.</string>
-    <string name="error_cast_could_not_play_video">Could not play video.</string>
-	<string name="error_cast_no_videos">Sorry, there aren\'t any videos for this cast yet.</string>
-    <string name="cast_error_could_not_play_video_neither_net_nor_local">Could not play video as the network is disconnected and there is no cached copy.</string>
-	
-	<!-- dialogs -->
-	<string name="cast_delete_title">Delete Cast</string>
-	<string name="cast_delete_message">Are you sure you want to delete this cast? All shots will be lost.</string>
-	
-	<!-- projects -->
-	<string name="project_title">Project Title</string>
-	<string name="project_description">Project Description</string>
-	<string name="project_no_casts">This project does not contain any casts. You can add a cast by pressing \'menu\'.</string>
-	<string name="project_new_cast">Record a cast</string>
-	<string name="project_pick_title">Pick a project</string>
-	<string name="project_list_view_title">Projects</string>
-    <string name="edit_project">Edit Project</string>
-    <string name="add_project">Add Project</string>
-	<string name="added_cast_to">Added cast to %s</string>
-	<string name="project_you_joined">You have joined %s</string>
-	<string name="project_you_left">You have left %s</string>
-    <string name="error_loading_project">Error loading project.</string>
-	
-	<!-- Video recorder -->
-    <string name="video_recorder_error_could_not_make_directory">Could not make directory, \'%1$s\', for recording videos.</string>
-    <string name="video_recorder_error_cannot_write_to_sd_card">Cannot write to SD card.</string>
-    	
-	<string name="dialog_button_delete">Delete</string>
-	<string name="dialog_button_rerecord">Rerecord</string>
-	
-	<!-- discussion -->
-	<string name="discussion_hint">Comment</string>
-	
-	<!-- LocationLink widget -->
-	<string name="location_link_no_location">No Location</string>
-	<string name="location_link_accuracy_meter">±%.0f meters</string>
-	<string name="location_link_accuracy_kilometer">±%.01f kilometers</string>
-	
-	<!-- generic actions -->
-	<string name="done">Done</string>
-	<string name="publish">Publish</string>
-    <string name="send">Send</string>
-    <string name="save">Save</string>
 
    	<string name="wipe_database">Wipe Database</string>
     

@@ -45,17 +45,7 @@ public class Constants {
     public static final boolean REQUIRE_LOGIN = true /* account framework required: */&& USE_ACCOUNT_FRAMEWORK;
 
     /**
-     * Enables a built-in app update checker if the app is not going to be published on the Market.
-     */
-    public static final boolean USE_APPUPDATE_CHECKER = true;
-
-    /**
      * For various cursor views, this says how frequently it should refresh the UI.
      */
     public static final long UPDATE_THROTTLE = 500;
-
-    /**
-     * If Google Maps is used, set to false. This enables various workarounds and API differences.
-     */
-    public static final boolean USES_OSMDROID = false;
 }

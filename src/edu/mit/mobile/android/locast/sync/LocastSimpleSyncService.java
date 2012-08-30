@@ -131,14 +131,14 @@ public class LocastSimpleSyncService extends Service {
         final NotificationProgressListener npl = new NotificationProgressListener(nm, notification,
                 100, 0);
 
-        nm.notify(R.id.sync, notification);
+        nm.notify(R.string.sync, notification);
 
         return npl;
     }
 
     private void clearNotification() {
         final NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        nm.cancel(R.id.sync);
+        nm.cancel(R.string.sync);
     }
 
     private class SyncQueueProcessor implements Runnable {

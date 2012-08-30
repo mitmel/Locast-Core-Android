@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<edu.mit.mobile.android.widget.CheckableTabIndicator
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="wrap_content"
-	android:layout_height="wrap_content"
-	android:layout_weight="1"
-
-	style="@style/CastEditTabIndicator"
-	android:background="@drawable/btn_tab_middle" />

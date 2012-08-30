@@ -177,19 +177,12 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.login:
-                handleLogin();
-                break;
-
-            case R.id.cancel:
-                finish();
-                break;
-
-            case R.id.register:
-                startActivity(new Intent(Intent.ACTION_VIEW,
-                        Uri.parse(getString(R.string.signup_url))));
-                break;
+        if (v.getId() == R.id.login) {
+            handleLogin();
+        } else if (v.getId() == R.id.cancel) {
+            finish();
+        } else if (v.getId() == R.id.register) {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.signup_url))));
         }
     }
 
@@ -392,6 +385,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
             mActivity = activity;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         protected void onPreExecute() {
             mActivity.showDialog(DIALOG_PROGRESS);
@@ -418,6 +412,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
             return null;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         protected void onPostExecute(Bundle userData) {
             mActivity.dismissDialog(DIALOG_PROGRESS);
@@ -445,22 +440,19 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.set_base_url:
-                startActivity(new Intent(this, SettingsActivity.class));
-                return true;
-
-            default:
-                return super.onOptionsItemSelected(item);
+        if (item.getItemId() == R.id.set_base_url) {
+            startActivity(new Intent(this, SettingsActivity.class));
+            return true;
+        } else {
+            return super.onOptionsItemSelected(item);
         }
     }
 
     @Override
     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-        switch (v.getId()) {
-            case R.id.password:
-                handleLogin();
-                return true;
+        if (v.getId() == R.id.password) {
+            handleLogin();
+            return true;
         }
         return false;
     }

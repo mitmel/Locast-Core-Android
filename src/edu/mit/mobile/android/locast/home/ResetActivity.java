@@ -31,8 +31,8 @@ import android.widget.Toast;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.Authenticator;
 import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.Comment;
 import edu.mit.mobile.android.locast.data.Collection;
+import edu.mit.mobile.android.locast.data.Comment;
 import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.ver2.R;
 
@@ -52,17 +52,13 @@ public class ResetActivity extends Activity implements OnClickListener {
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()) {
-        case R.id.reset:
-                resetEverything(this, true, true);
+        if (v.getId() == R.id.reset) {
+            resetEverything(this, true, true);
             setResult(RESULT_OK);
             finish();
-            break;
-
-        case R.id.cancel:
+        } else if (v.getId() == R.id.cancel) {
             setResult(RESULT_CANCELED);
             finish();
-            break;
         }
     }
 

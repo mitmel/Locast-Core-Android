@@ -4,15 +4,10 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
-    <include
-        android:id="@+id/actionbar"
-        layout="@layout/action_bar" />
-
     <TextView
         android:id="@+id/sign_in_or_skip_notice"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/actionbar"
         android:layout_centerHorizontal="true"
         android:layout_margin="40sp"
         android:gravity="center"
