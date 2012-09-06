@@ -293,9 +293,9 @@ public class NetworkClient extends DefaultHttpClient {
 
     public static String getBaseUrlFromPreferences(Context context) {
         final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        return prefs.getString(NetworkClient.PREF_SERVER_URL,
-                context.getString(R.string.default_api_url));
-
+        // return prefs.getString(NetworkClient.PREF_SERVER_URL,
+        // context.getString(R.string.default_api_url));
+        return null; // XXX BROKEN. Need to implement
     }
 
     private void setBaseUrl(String baseUrlString) throws MalformedURLException {
