@@ -29,11 +29,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.accounts.Authenticator;
-import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.Collection;
-import edu.mit.mobile.android.locast.data.Comment;
-import edu.mit.mobile.android.locast.data.MediaProvider;
+import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticator;
 import edu.mit.mobile.android.locast.ver2.R;
 
 public class ResetActivity extends Activity implements OnClickListener {
@@ -44,7 +40,8 @@ public class ResetActivity extends Activity implements OnClickListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.reset_activity);
 
-        ContentResolver.cancelSync(Authenticator.getFirstAccount(this), MediaProvider.AUTHORITY);
+        // ContentResolver.cancelSync(AbsLocastAuthenticator.getFirstAccount(this),
+        // MediaProvider.AUTHORITY);
 
         findViewById(R.id.reset).setOnClickListener(this);
         findViewById(R.id.cancel).setOnClickListener(this);
@@ -70,7 +67,7 @@ public class ResetActivity extends Activity implements OnClickListener {
         if (removeAccounts) {
             final AccountManager am = (AccountManager) context.getSystemService(ACCOUNT_SERVICE);
 
-            for (final Account account : Authenticator.getAccounts(context)) {
+            for (final Account account : AbsLocastAuthenticator.getAccounts(context)) {
                 am.removeAccount(account, null, null);
             }
         }
@@ -82,9 +79,7 @@ public class ResetActivity extends Activity implements OnClickListener {
 
         final ContentResolver cr = context.getContentResolver();
 
-        cr.delete(Cast.CONTENT_URI, null, null);
-        cr.delete(Comment.CONTENT_URI, null, null);
-        cr.delete(Collection.CONTENT_URI, null, null);
+        // TODO delete everything here.
 
         if (showNotice) {
             Toast.makeText(context.getApplicationContext(), R.string.notice_databases_reset,

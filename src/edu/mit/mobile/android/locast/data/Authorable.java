@@ -6,6 +6,10 @@ import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncFieldMap;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncItem;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncMapChain;
 
+/**
+ * The content item has an author.
+ * 
+ */
 public abstract class Authorable {
 
     public interface Columns {

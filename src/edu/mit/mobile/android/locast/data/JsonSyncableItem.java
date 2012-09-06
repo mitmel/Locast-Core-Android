@@ -48,7 +48,7 @@ import edu.mit.mobile.android.content.column.DatetimeColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
-import edu.mit.mobile.android.locast.sync.LocastSync;
+import edu.mit.mobile.android.locast.sync.LocastSyncService;
 
 /**
  * This type of object row can be serialized to/from JSON and synchronized to a server.
@@ -672,7 +672,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
                 final NetworkClient nc = NetworkClient.getInstance(context, account);
                 final Uri serverUri = nc.getFullUrl(childPubUri);
 
-                LocastSync.startSync(context, serverUri, childDir, false);
+                LocastSyncService.startSync(context, serverUri, childDir, false);
 
             } catch (final JSONException e) {
                 final IOException ioe = new IOException("JSON encoding error");

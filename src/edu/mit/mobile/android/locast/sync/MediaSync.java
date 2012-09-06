@@ -62,11 +62,11 @@ import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.accounts.Authenticator;
-import edu.mit.mobile.android.locast.data.Cast;
+import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticator;
 import edu.mit.mobile.android.locast.data.CastMedia;
-import edu.mit.mobile.android.locast.data.MediaProvider;
+import edu.mit.mobile.android.locast.data.JsonSyncableItem;
 import edu.mit.mobile.android.locast.data.SyncException;
+import edu.mit.mobile.android.locast.data.Titled;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient.InputStreamWatcher;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;
@@ -74,7 +74,7 @@ import edu.mit.mobile.android.locast.notifications.ProgressNotification;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.utils.StreamUtils;
 
-public class MediaSync extends Service implements MediaScannerConnectionClient {
+public abstract class MediaSync extends Service implements MediaScannerConnectionClient {
     private final static String TAG = MediaSync.class.getSimpleName();
 
     /*
@@ -186,7 +186,11 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
         if (ACTION_SYNC_RESOURCES.equals(intent.getAction())) {
             final Uri data = intent.getData();
             if (data == null) {
-                enqueueUnpublishedMedia();
+                try {
+                    enqueueUnpublishedMedia();
+                } catch (final SyncException e) {
+                    Log.e(TAG, "cannot sync request URL", e);
+                }
 
             } else {
                 enqueueItem(data, intent.getExtras());
@@ -198,13 +202,31 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
         return START_REDELIVER_INTENT;
     }
 
-    public void enqueueUnpublishedMedia() {
+    private SyncableProvider getSyncableProvider(Uri uri) {
+        return (SyncableProvider) mCr.acquireContentProviderClient(uri).getLocalContentProvider();
+    }
 
-        final CastMedia c = new CastMedia(mCr.query(CastMedia.CONTENT_URI, CASTMEDIA_PROJECTION,
-                CastMedia._MEDIA_URL + " ISNULL AND " + CastMedia._PUBLIC_URI + " NOT NULL AND "
-                        + CastMedia._LOCAL_URI + " NOT NULL", null, null));
+    public abstract void enqueueUnpublishedMedia() throws SyncException;
+
+    private static final String SELECTION_UNPUBLISHED_CAST_MEDIA = CastMedia._MEDIA_URL
+            + " ISNULL AND " + CastMedia._PUBLIC_URI + " NOT NULL AND " + CastMedia._LOCAL_URL
+            + " NOT NULL";
+
+    public void enqueueUnpublishedMedia(Uri castMedia) throws SyncException {
+
+        final SyncableProvider provider = getSyncableProvider(castMedia);
+
+        if (provider == null) {
+            throw new SyncException("provider must run from same thread as media sync");
+        }
+
+        final JsonSyncableItem c = provider.getWrappedContentItem(castMedia, mCr.query(castMedia,
+                CASTMEDIA_PROJECTION, SELECTION_UNPUBLISHED_CAST_MEDIA, null, null));
 
         try {
+            if (!(c instanceof CastMedia)) {
+                throw new SyncException(castMedia + " cannot be synchronized with MediaSync");
+            }
             c.moveToFirst();
 
             if (Constants.DEBUG) {
@@ -320,43 +342,39 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
         }
     }
 
-    final static String[] CASTMEDIA_PROJECTION = { CastMedia._ID, CastMedia._MIME_TYPE,
-            CastMedia._LOCAL_URI, CastMedia._MEDIA_URL, CastMedia._KEEP_OFFLINE,
-            CastMedia._PUBLIC_URI, CastMedia.CAST, CastMedia._THUMB_LOCAL };
+    abstract boolean getKeepOffline(Uri castMediaUri, CastMedia castMedia);
 
-    final static String[] CAST_PROJECTION = { Cast._ID, Cast._FAVORITED };
+    abstract Uri getTitledItemForCastMedia(Uri castMedia);
+
+    final static String[] CASTMEDIA_PROJECTION = { CastMedia._ID, CastMedia._MIME_TYPE,
+            CastMedia._LOCAL_URL, CastMedia._MEDIA_URL, CastMedia._KEEP_OFFLINE,
+            CastMedia._PUBLIC_URI, CastMedia._THUMB_LOCAL };
 
     /**
      * Synchronize the media of the given castMedia. It will download or upload as needed.
-     *
+     * 
      * Blocks until the sync is complete.
-     *
+     * 
      * @param castMediaUri
      *            a {@link CastMedia} item uri
      * @throws SyncException
      */
     public void syncItemMedia(Uri castMediaUri) throws SyncException {
 
-        final Cursor castMedia = mCr.query(castMediaUri, CASTMEDIA_PROJECTION, null, null, null);
+        final SyncableProvider provider = getSyncableProvider(castMediaUri);
 
-        final Uri castUri = CastMedia.getCast(castMediaUri);
-        final Cursor cast = mCr.query(castUri, CAST_PROJECTION, null, null, null);
+        final CastMedia castMedia = (CastMedia) provider.getWrappedContentItem(castMediaUri,
+                mCr.query(castMediaUri, CASTMEDIA_PROJECTION, null, null, null));
 
         try {
             if (!castMedia.moveToFirst()) {
                 throw new IllegalArgumentException("uri " + castMediaUri + " has no content");
             }
 
-            if (!cast.moveToFirst()) {
-                throw new IllegalArgumentException(castMediaUri + " cast " + castUri
-                        + " has no content");
-            }
-
             // cache the column numbers
             final int mediaUrlCol = castMedia.getColumnIndex(CastMedia._MEDIA_URL);
-            final int localUriCol = castMedia.getColumnIndex(CastMedia._LOCAL_URI);
+            final int localUriCol = castMedia.getColumnIndex(CastMedia._LOCAL_URL);
 
-            final boolean isFavorite = cast.getInt(cast.getColumnIndex(Cast._FAVORITED)) != 0;
             final boolean keepOffline = castMedia.getInt(castMedia
                     .getColumnIndex(CastMedia._KEEP_OFFLINE)) != 0;
 
@@ -386,7 +404,8 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
                     Log.w(TAG, "attempted to sync " + castMediaUri + " which has a null uploadPath");
                     return;
                 }
-                uploadMedia(uploadPath, castMediaUri, mimeType, locMedia);
+                uploadMedia(uploadPath, castMediaUri, getTitledItemForCastMedia(castMediaUri),
+                        mimeType, locMedia);
 
             } else if (!hasLocMedia && hasPubMedia) {
                 // only have a public copy, so download it and store locally.
@@ -394,7 +413,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
                 final File destfile = getFilePath(pubMediaUri);
 
                 // the following conditions indicate that the cast media should be downloaded.
-                if (keepOffline || isFavorite) {
+                if (keepOffline || getKeepOffline(castMediaUri, castMedia)) {
                     final boolean anythingChanged = downloadMediaFile(pubMedia, destfile,
                             castMediaUri);
 
@@ -415,7 +434,6 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
                 }
             }
         } finally {
-            cast.close();
             castMedia.close();
         }
     }
@@ -432,11 +450,11 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
      */
     private void updateLocalFile(Uri castMediaUri, File localFile, File localThumbnail) {
         final ContentValues cv = new ContentValues();
-        cv.put(CastMedia._LOCAL_URI, Uri.fromFile(localFile).toString());
+        cv.put(CastMedia._LOCAL_URL, Uri.fromFile(localFile).toString());
         if (localThumbnail != null) {
             cv.put(CastMedia._THUMB_LOCAL, Uri.fromFile(localFile).toString());
         }
-        cv.put(MediaProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
+        cv.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
 
         getContentResolver().update(castMediaUri, cv, null, null);
 
@@ -452,22 +470,24 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
      * @param locMedia
      * @throws SyncException
      */
-    private void uploadMedia(String uploadPath, Uri castMediaUri, String contentType,
+    private void uploadMedia(String uploadPath, Uri castMediaUri, Uri titledItem,
+            String contentType,
             final Uri locMedia) throws SyncException {
         // upload
         try {
             // TODO this should get the account info from something else.
             final NetworkClient nc = NetworkClient.getInstance(this,
-                    Authenticator.getFirstAccount(this));
+                    AbsLocastAuthenticator.getFirstAccount(this));
 
             final JSONObject updatedCastMedia = nc.uploadContentWithNotification(this,
-                    CastMedia.getCast(castMediaUri), uploadPath, locMedia, contentType,
+ titledItem,
+                    uploadPath, locMedia, contentType,
                     NetworkClient.UploadType.FORM_POST);
 
             final ContentValues cv = CastMedia.fromJSON(this, castMediaUri, updatedCastMedia,
                     CastMedia.SYNC_MAP);
 
-            cv.put(MediaProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
+            cv.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
 
             mCr.update(castMediaUri, cv, null, null);
         } catch (final Exception e) {
@@ -547,7 +567,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
     public boolean downloadMediaFile(String pubUri, File saveFile, Uri castMediaUri)
             throws SyncException {
         final NetworkClient nc = NetworkClient.getInstance(this,
-                Authenticator.getFirstAccount(this));
+                AbsLocastAuthenticator.getFirstAccount(this));
         try {
             boolean dirty = true;
             // String contentType = null;
@@ -585,8 +605,8 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
                 // file locally.
             }
             if (dirty) {
-                final Uri castUri = CastMedia.getCast(castMediaUri);
-                String castTitle = Cast.getTitle(this, castUri);
+                final Uri titledItem = getTitledItemForCastMedia(castMediaUri);
+                String castTitle = Titled.getTitle(this, titledItem);
                 if (castTitle == null) {
                     castTitle = "untitled";
                 }
@@ -596,7 +616,7 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
                 final ProgressNotification notification = new ProgressNotification(this, getString(
                         R.string.sync_downloading_cast, castTitle),
                         ProgressNotification.TYPE_DOWNLOAD, PendingIntent.getActivity(this, 0,
-                                new Intent(Intent.ACTION_VIEW, castUri)
+                                new Intent(Intent.ACTION_VIEW, titledItem)
                                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0), false);
 
                 final NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -778,8 +798,8 @@ public class MediaSync extends Service implements MediaScannerConnectionClient {
     private void updateCastMediaLocalUri(Uri castMedia, String locMedia, String mimeType) {
 
         final ContentValues cvCastMedia = new ContentValues();
-        cvCastMedia.put(CastMedia._LOCAL_URI, locMedia);
-        cvCastMedia.put(MediaProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
+        cvCastMedia.put(CastMedia._LOCAL_URL, locMedia);
+        cvCastMedia.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
 
         try {
             final String locThumb = generateThumbnail(castMedia, mimeType, locMedia);

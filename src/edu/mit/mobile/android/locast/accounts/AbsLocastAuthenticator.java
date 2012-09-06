@@ -24,29 +24,26 @@ import android.accounts.AbstractAccountAuthenticator;
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
-import edu.mit.mobile.android.locast.ver2.R;
 
 /**
  * This class is an implementation of AbstractAccountAuthenticator for
  * authenticating accounts in the Locast domain
  */
-public class Authenticator extends AbstractAccountAuthenticator {
-    private final static String TAG = Authenticator.class.getSimpleName();
+public abstract class AbsLocastAuthenticator extends AbstractAccountAuthenticator {
+    private final static String TAG = AbsLocastAuthenticator.class.getSimpleName();
     // Authentication Service context
 
     public static final String PREF_SKIP_AUTH = "skip_authentication";
 
     private final Context mContext;
 
-    public Authenticator(Context context) {
+    public AbsLocastAuthenticator(Context context) {
         super(context);
         mContext = context;
     }
@@ -58,8 +55,8 @@ public class Authenticator extends AbstractAccountAuthenticator {
     public Bundle addAccount(AccountAuthenticatorResponse response,
         String accountType, String authTokenType, String[] requiredFeatures,
         Bundle options) {
-        final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
-        intent.putExtra(AuthenticatorActivity.EXTRA_AUTHTOKEN_TYPE,
+        final Intent intent = getAuthenticator(mContext);
+        intent.putExtra(AbsLocastAuthenticatorActivity.EXTRA_AUTHTOKEN_TYPE,
             authTokenType);
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE,
             response);
@@ -70,20 +67,21 @@ public class Authenticator extends AbstractAccountAuthenticator {
 
     public static boolean hasRealAccount(Context context){
         final Account[] accounts = getAccounts(context);
-        boolean hasRealAccount = false;
-        for (final Account account : accounts) {
-            if (!DEMO_ACCOUNT.equals(account.name)) {
-                hasRealAccount = true;
-                break;
-            }
-        }
+        final boolean hasRealAccount = accounts.length > 0;
 
         return hasRealAccount;
     }
 
     public static Account[] getAccounts(Context context){
-        return AccountManager.get(context).getAccountsByType(AuthenticationService.ACCOUNT_TYPE);
+        return AccountManager.get(context).getAccountsByType(AbsLocastAuthenticationService.ACCOUNT_TYPE);
     }
+
+    /**
+     * @param context
+     * @return an intent that would launch the appropriate {@link AbsLocastAuthenticatorActivity}.
+     *         All the extras will be populated for you.
+     */
+    abstract Intent getAuthenticator(Context context);
 
     /**
      * {@inheritDoc}
@@ -100,9 +98,9 @@ public class Authenticator extends AbstractAccountAuthenticator {
             return result;
         }
         // Launch AuthenticatorActivity to confirm credentials
-        final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
-        intent.putExtra(AuthenticatorActivity.EXTRA_USERNAME, account.name);
-        intent.putExtra(AuthenticatorActivity.EXTRA_CONFIRMCREDENTIALS, true);
+        final Intent intent = getAuthenticator(mContext);
+        intent.putExtra(AbsLocastAuthenticatorActivity.EXTRA_USERNAME, account.name);
+        intent.putExtra(AbsLocastAuthenticatorActivity.EXTRA_CONFIRMCREDENTIALS, true);
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE,
             response);
         final Bundle bundle = new Bundle();
@@ -125,7 +123,7 @@ public class Authenticator extends AbstractAccountAuthenticator {
     @Override
     public Bundle getAuthToken(AccountAuthenticatorResponse response,
         Account account, String authTokenType, Bundle loginOptions) {
-        if (!authTokenType.equals(AuthenticationService.AUTHTOKEN_TYPE)) {
+        if (!authTokenType.equals(AbsLocastAuthenticationService.AUTHTOKEN_TYPE)) {
             final Bundle result = new Bundle();
             result.putString(AccountManager.KEY_ERROR_MESSAGE,
                 "invalid authTokenType");
@@ -140,34 +138,22 @@ public class Authenticator extends AbstractAccountAuthenticator {
 
                 result.putString(AccountManager.KEY_ACCOUNT_NAME, account.name);
                 result.putString(AccountManager.KEY_ACCOUNT_TYPE,
-                        AuthenticationService.ACCOUNT_TYPE);
+                        AbsLocastAuthenticationService.ACCOUNT_TYPE);
                 result.putString(AccountManager.KEY_AUTHTOKEN, password);
                 return result;
             }
         }
         // the password was missing or incorrect, return an Intent to an
         // Activity that will prompt the user for the password.
-        final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
-        intent.putExtra(AuthenticatorActivity.EXTRA_USERNAME, account.name);
-        intent.putExtra(AuthenticatorActivity.EXTRA_AUTHTOKEN_TYPE,
+        final Intent intent = getAuthenticator(mContext);
+        intent.putExtra(AbsLocastAuthenticatorActivity.EXTRA_USERNAME, account.name);
+        intent.putExtra(AbsLocastAuthenticatorActivity.EXTRA_AUTHTOKEN_TYPE,
             authTokenType);
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE,
             response);
         final Bundle bundle = new Bundle();
         bundle.putParcelable(AccountManager.KEY_INTENT, intent);
         return bundle;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getAuthTokenLabel(String authTokenType) {
-        if (authTokenType.equals(AuthenticationService.AUTHTOKEN_TYPE)) {
-            return mContext.getString(R.string.app_name);
-        }
-        return null;
-
     }
 
     /**
@@ -205,26 +191,26 @@ public class Authenticator extends AbstractAccountAuthenticator {
     @Override
     public Bundle updateCredentials(AccountAuthenticatorResponse response,
         Account account, String authTokenType, Bundle loginOptions) {
-        final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
-        intent.putExtra(AuthenticatorActivity.EXTRA_USERNAME, account.name);
-        intent.putExtra(AuthenticatorActivity.EXTRA_AUTHTOKEN_TYPE,
+        final Intent intent = getAuthenticator(mContext);
+        intent.putExtra(AbsLocastAuthenticatorActivity.EXTRA_USERNAME, account.name);
+        intent.putExtra(AbsLocastAuthenticatorActivity.EXTRA_AUTHTOKEN_TYPE,
             authTokenType);
-        intent.putExtra(AuthenticatorActivity.EXTRA_CONFIRMCREDENTIALS, false);
+        intent.putExtra(AbsLocastAuthenticatorActivity.EXTRA_CONFIRMCREDENTIALS, false);
         final Bundle bundle = new Bundle();
         bundle.putParcelable(AccountManager.KEY_INTENT, intent);
         return bundle;
     }
 
     public static String getUserUri(Context context){
-        final Account[] accounts = Authenticator.getAccounts(context);
+        final Account[] accounts = AbsLocastAuthenticator.getAccounts(context);
         if (accounts.length > 0){
-            return AccountManager.get(context).getUserData(accounts[0], AuthenticationService.USERDATA_USER_URI);
+            return AccountManager.get(context).getUserData(accounts[0], AbsLocastAuthenticationService.USERDATA_USER_URI);
         }
         return null;
     }
 
     public static Account getFirstAccount(Context context){
-        final Account[] accounts = Authenticator.getAccounts(context);
+        final Account[] accounts = AbsLocastAuthenticator.getAccounts(context);
         if (accounts.length > 0){
             return accounts[0];
         }
@@ -237,38 +223,5 @@ public class Authenticator extends AbstractAccountAuthenticator {
             throw new RuntimeException("no accounts registered");
         }
         return AccountManager.get(context).getUserData(account, key);
-    }
-
-    public static final String DEMO_ACCOUNT = "demo@locast.example.com";
-
-    /**
-     * Adds an account that acts as a placeholder to allow the sync to work properly. The sync
-     * framework always requires an account.
-     *
-     * @param context
-     */
-    public static void addDemoAccount(Context context){
-        final Account[] accounts = Authenticator.getAccounts(context);
-
-        if (accounts.length > 0) {
-            // if there's already a demo account, we don't want to add another.
-            // if there isn't, we're not going to delete the actual account.
-            return;
-        }
-        final AccountManager am = AccountManager.get(context);
-        final Account account = new Account(DEMO_ACCOUNT, AuthenticationService.ACCOUNT_TYPE);
-        am.addAccountExplicitly(account, null, null);
-
-        ContentResolver.setSyncAutomatically(account,
-                MediaProvider.AUTHORITY, true);
-    }
-
-    /**
-     * @param context
-     * @return true if there's a demo account
-     */
-    public static boolean isDemoMode(Context context){
-        final Account a = getFirstAccount(context);
-        return a != null && DEMO_ACCOUNT.equals(a.name);
     }
 }

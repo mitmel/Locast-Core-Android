@@ -1,4 +1,5 @@
 package edu.mit.mobile.android.locast.sync;
+
 /*
  * Copyright (C) 2011  MIT Mobile Experience Lab
  *
@@ -23,41 +24,41 @@ import android.content.SyncStatusObserver;
 import android.os.Handler;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.accounts.Authenticator;
-import edu.mit.mobile.android.locast.data.MediaProvider;
+import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticator;
 
 /**
- * A implementation of a SyncStatusObserver that will be used to monitor
- * the current account synchronization and notify to a specific handler
- * when the process is ended
+ * A implementation of a SyncStatusObserver that will be used to monitor the current account
+ * synchronization and notify to a specific handler when the process is ended
  *
  * @author Cristian Piacente
  *
  */
-public class LocastSyncStatusObserver implements SyncStatusObserver{
+public class LocastSyncStatusObserver implements SyncStatusObserver {
 
     Context mContext;
     Handler mHandler;
+    private final String mAuthority;
 
-    public static final int
-    MSG_SET_REFRESHING = 100,
-    MSG_SET_NOT_REFRESHING = 101;
+    public static final int MSG_SET_REFRESHING = 100, MSG_SET_NOT_REFRESHING = 101;
 
     private static final String TAG = LocastSyncStatusObserver.class.getSimpleName();
 
-    public LocastSyncStatusObserver(Context context,Handler handler) {
-        this.mContext=context;
-        this.mHandler=handler;
+    public LocastSyncStatusObserver(Context context, String authority, Handler handler) {
+        this.mContext = context;
+        this.mHandler = handler;
+        this.mAuthority = authority;
     }
+
     @Override
     public void onStatusChanged(int which) {
         notifySyncStatusToHandler(mContext, mHandler);
     }
-    public static void notifySyncStatusToHandler(Context context,Handler handler){
+
+    private void notifySyncStatusToHandler(Context context, Handler handler) {
         if (Constants.USE_ACCOUNT_FRAMEWORK) {
-            final Account a = Authenticator.getFirstAccount(context);
-            if (!ContentResolver.isSyncActive(a, MediaProvider.AUTHORITY)
-                    && !ContentResolver.isSyncPending(a, MediaProvider.AUTHORITY)) {
+            final Account a = AbsLocastAuthenticator.getFirstAccount(context);
+            if (!ContentResolver.isSyncActive(a, mAuthority)
+                    && !ContentResolver.isSyncPending(a, mAuthority)) {
                 if (Constants.DEBUG) {
                     Log.d(TAG, "Sync finished, should refresh now!!");
                 }

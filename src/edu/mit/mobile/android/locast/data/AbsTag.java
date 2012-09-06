@@ -25,17 +25,19 @@ import java.util.Vector;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.text.TextUtils;
+import edu.mit.mobile.android.content.column.DBColumn;
+import edu.mit.mobile.android.content.column.TextColumn;
 
-public class Tag implements BaseColumns {
-    public final static String _REF_ID   = "ref_id",
-                               _REF_CLASS= "ref_class",
-                               _NAME     = "name";
+public abstract class AbsTag implements BaseColumns {
 
-    public final static String[] DEFAULT_PROJECTION = {_REF_ID, _REF_CLASS, _NAME};
+    @DBColumn(type = TextColumn.class, unique = true, notnull = true)
+    public static final String _NAME = "name";
+
+    public static final String[] DEFAULT_PROJECTION = new String[] { _ID, _NAME };
+
     public final static String TAG_DELIM = ",";
-    public final static String PATH = "tags";
-    public final static Uri CONTENT_URI = Uri
-            .parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
+
+    public final static String TAGS_SPECIAL_CV_KEY = "tags";
 
     /**
      * Given a tag query string, return the set of tags it represents.

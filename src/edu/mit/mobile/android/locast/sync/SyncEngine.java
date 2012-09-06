@@ -52,7 +52,6 @@ import android.util.Log;
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem;
-import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.SyncException;
 import edu.mit.mobile.android.locast.data.SyncMap;
@@ -119,13 +118,16 @@ public class SyncEngine {
     final String[] PUB_URI_PROJECTION = new String[] { JsonSyncableItem._ID,
             JsonSyncableItem._PUBLIC_URI };
 
+    private final SyncableProvider mProvider;
+
     private static int FORMAT_ARGS_DEBUG = android.text.format.DateUtils.FORMAT_SHOW_TIME
             | android.text.format.DateUtils.FORMAT_SHOW_YEAR
             | android.text.format.DateUtils.FORMAT_SHOW_DATE;
 
-    public SyncEngine(Context context, NetworkClient networkClient) {
+    public SyncEngine(Context context, NetworkClient networkClient, SyncableProvider provider) {
         mContext = context;
         mNetworkClient = networkClient;
+        mProvider = provider;
     }
 
     /**
@@ -181,7 +183,7 @@ public class SyncEngine {
         }
 
         // the sync map will convert the json data to ContentValues
-        final SyncMap syncMap = MediaProvider.getSyncMap(provider, toSync);
+        final SyncMap syncMap = mProvider.getSyncMap(provider, toSync);
 
         final Uri toSyncWithoutQuerystring = toSync.buildUpon().query(null).build();
 
@@ -207,7 +209,7 @@ public class SyncEngine {
             if (pubPath == null) {
                 // we should avoid calling this too much as it
                 // can be expensive
-                pubPath = MediaProvider.getPublicPath(mContext, toSync);
+                pubPath = mProvider.getPublicPath(mContext, toSync);
             }
         } catch (final NoPublicPath e) {
             // TODO this is a special case and this is probably not the best place to handle this.
@@ -789,7 +791,7 @@ public class SyncEngine {
 
                 final Uri localUri = isDir ? ContentUris.withAppendedId(toSync,
                         id) : toSync;
-                final String postUri = MediaProvider.getPostPath(mContext, localUri);
+                final String postUri = mProvider.getPostPath(mContext, localUri);
 
                 Intent intent = new Intent(SYNC_STATUS_CHANGED);
                 intent.putExtra(EXTRA_SYNC_STATUS, "castBegin");
@@ -918,7 +920,7 @@ public class SyncEngine {
             OperationApplicationException, InterruptedException {
 
         return uploadUnpublished(itemDir, account, provider,
-                MediaProvider.getSyncMap(provider, itemDir),
+                mProvider.getSyncMap(provider, itemDir),
                 new HashMap<String, SyncEngine.SyncStatus>(), syncResult);
     }
 

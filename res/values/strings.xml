@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Default, English -->
 <resources>
-	<string name="app_name">Open Locast</string>
 
-    <string name="default_api_url" translatable="false">http://mel-pydev.mit.edu/openlocast/api/</string>
-	
-    <string name="signup_url" translatable="false">http://mel-pydev.mit.edu/openlocast/register/</string>
 	<string name="signup_text">Register to join Open Locast</string>
 
 	

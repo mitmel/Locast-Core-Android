@@ -16,7 +16,6 @@ package edu.mit.mobile.android.locast.data;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import android.database.Cursor;
-import android.net.Uri;
 
 /**
  * DB entry for a comment. Also contains a sync mapping for publishing
@@ -25,10 +24,7 @@ import android.net.Uri;
  * @author I040854
  */
 
-public class Comment extends JsonSyncableItem {
-    public final static String PATH = "comments";
-    public final static Uri CONTENT_URI = Uri
-            .parse("content://"+MediaProvider.AUTHORITY+"/"+PATH);
+public abstract class AbsComment extends JsonSyncableItem {
     public final static String DEFAULT_SORT_BY = _MODIFIED_DATE + " DESC";
 
     public final static String SERVER_PATH = "comments/";
@@ -52,13 +48,8 @@ public class Comment extends JsonSyncableItem {
             _DESCRIPTION,
             _COMMENT_NUMBER};
 
-    public Comment(Cursor c) {
+    public AbsComment(Cursor c) {
         super(c);
-    }
-
-    @Override
-    public Uri getContentUri() {
-        return CONTENT_URI;
     }
 
     @Override

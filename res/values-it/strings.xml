@@ -1,6 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-  <string name="app_name">Open Locast</string>
   <string name="signup_text">Registrati per utilizzare Locast</string>
   <string name="about">Informazioni</string>
   <string name="settings">Impostazioni</string>

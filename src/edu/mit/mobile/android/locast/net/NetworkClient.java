@@ -85,10 +85,10 @@ import android.accounts.AccountManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
-import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetFileDescriptor;
 import android.location.Location;
@@ -97,12 +97,11 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.accounts.AuthenticationService;
-import edu.mit.mobile.android.locast.accounts.Authenticator;
-import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.MediaProvider;
+import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticationService;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
+import edu.mit.mobile.android.locast.data.Titled;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
+import edu.mit.mobile.android.locast.sync.SyncableProvider;
 import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.utils.StreamUtils;
 
@@ -255,12 +254,18 @@ public class NetworkClient extends DefaultHttpClient {
         HttpProtocolParams.setUseExpectContinue(params, true);
 
         String appVersion = "unknown";
+        CharSequence appName = "OpenLocast";
+
         try {
-            appVersion = mContext.getPackageManager().getPackageInfo(mContext.getPackageName(), 0).versionName;
+            final PackageInfo pkg = mContext.getPackageManager().getPackageInfo(
+                    mContext.getPackageName(), 0);
+            appName = pkg.applicationInfo.loadLabel(mContext.getPackageManager());
+            appVersion = pkg.versionName;
         } catch (final NameNotFoundException e) {
             Log.e(TAG, e.getLocalizedMessage(), e);
         }
-        final String userAgent = mContext.getString(R.string.app_name) + "/" + appVersion;
+
+        final String userAgent = appName + "/" + appVersion;
 
         // Set the specified user agent and register standard protocols.
         HttpProtocolParams.setUserAgent(params, userAgent);
@@ -329,14 +334,14 @@ public class NetworkClient extends DefaultHttpClient {
         String baseUrlString;
 
         final AccountManager am = AccountManager.get(mContext);
-        baseUrlString = am.getUserData(account, AuthenticationService.USERDATA_LOCAST_API_URL);
+        baseUrlString = am.getUserData(account, AbsLocastAuthenticationService.USERDATA_LOCAST_API_URL);
         if (baseUrlString == null) {
             Log.w(TAG, "loading base URL from preferences instead of account metadata");
             baseUrlString = getBaseUrlFromPreferences(mContext);
             // if it's null in the userdata, then it must be an account from before this feature
             // was added.
             // Store for later use.
-            am.setUserData(account, AuthenticationService.USERDATA_LOCAST_API_URL, baseUrlString);
+            am.setUserData(account, AbsLocastAuthenticationService.USERDATA_LOCAST_API_URL, baseUrlString);
         }
 
         try {
@@ -352,13 +357,6 @@ public class NetworkClient extends DefaultHttpClient {
 
     public void setCredentialsFromAccount(Account account) {
         final AccountManager am = AccountManager.get(mContext);
-
-        if (Authenticator.DEMO_ACCOUNT.equals(account.name)) {
-            if (DEBUG) {
-                Log.i(TAG, "demo account is being used");
-            }
-            return;
-        }
 
         setCredentials(account.name, am.getPassword(account));
     }
@@ -403,7 +401,7 @@ public class NetworkClient extends DefaultHttpClient {
      * @param context
      * @param account
      *            an existing account which contains a userdata key of
-     *            {@link AuthenticationService#USERDATA_LOCAST_API_URL} which specifies the URL to
+     *            {@link AbsLocastAuthenticationService#USERDATA_LOCAST_API_URL} which specifies the URL to
      *            use.
      * @param password
      * @return a Bundle containing the user's profile or null if authentication failed.
@@ -455,7 +453,7 @@ public class NetworkClient extends DefaultHttpClient {
             }
 
             final Bundle userData = jsonObjectToBundle(jo, true);
-            userData.putString(AuthenticationService.USERDATA_LOCAST_API_URL, nc.getBaseUrl());
+            userData.putString(AbsLocastAuthenticationService.USERDATA_LOCAST_API_URL, nc.getBaseUrl());
             return userData;
 
         } catch (final HttpResponseException e) {
@@ -1188,7 +1186,7 @@ public class NetworkClient extends DefaultHttpClient {
     @Deprecated
     public boolean isPaired() {
         final AccountManager am = AccountManager.get(mContext);
-        final Account[] accounts = am.getAccountsByType(AuthenticationService.ACCOUNT_TYPE);
+        final Account[] accounts = am.getAccountsByType(AbsLocastAuthenticationService.ACCOUNT_TYPE);
         return accounts.length >= 1;
     }
 
@@ -1209,8 +1207,8 @@ public class NetworkClient extends DefaultHttpClient {
      * or not it was successful.
      *
      * @param context
-     * @param cast
-     *            cast item
+     * @param titled
+     *            the titled item that will be used to represent the media item
      * @param serverPath
      *            the path on which
      * @param localFile
@@ -1220,31 +1218,31 @@ public class NetworkClient extends DefaultHttpClient {
      * @throws IOException
      * @throws JSONException
      */
-    public JSONObject uploadContentWithNotification(Context context, Uri cast, String serverPath,
+    public JSONObject uploadContentWithNotification(Context context, Uri titled, String serverPath,
             Uri localFile, String contentType, UploadType uploadType)
             throws NetworkProtocolException, IOException, JSONException {
-        String castTitle = Cast.getTitle(context, cast);
-        if (castTitle == null) {
-            castTitle = "untitled (cast #" + cast.getLastPathSegment() + ")";
+        String itemTitle = Titled.getTitle(context, titled);
+        if (itemTitle == null) {
+            itemTitle = "untitled (item #" + titled.getLastPathSegment() + ")";
         }
         JSONObject updatedCastMedia;
         final ProgressNotification notification = new ProgressNotification(context,
-                context.getString(R.string.sync_uploading_cast, castTitle),
+                context.getString(R.string.sync_uploading_cast, itemTitle),
                 ProgressNotification.TYPE_UPLOAD, PendingIntent.getActivity(context, 0, new Intent(
-                        Intent.ACTION_VIEW, cast).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0), true);
+                        Intent.ACTION_VIEW, titled).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0), true);
 
         // assume fail: when successful, all will be reset.
         notification.successful = false;
         notification.doneTitle = context.getString(R.string.sync_upload_fail);
-        notification.doneText = context.getString(R.string.sync_upload_fail_message, castTitle);
+        notification.doneText = context.getString(R.string.sync_upload_fail_message, itemTitle);
 
         notification.doneIntent = PendingIntent.getActivity(context, 0, new Intent(
-                Intent.ACTION_VIEW, cast).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0);
+                Intent.ACTION_VIEW, titled).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0);
 
         final NotificationManager nm = (NotificationManager) context
                 .getSystemService(Context.NOTIFICATION_SERVICE);
         final NotificationProgressListener tpl = new NotificationProgressListener(nm, notification,
-                0, (int) ContentUris.parseId(cast));
+                0, titled.hashCode());
 
         try {
             final AssetFileDescriptor afd = context.getContentResolver().openAssetFileDescriptor(
@@ -1269,7 +1267,7 @@ public class NetworkClient extends DefaultHttpClient {
 
             notification.doneTitle = context.getString(R.string.sync_upload_success);
             notification.doneText = context.getString(R.string.sync_upload_success_message,
-                    castTitle);
+                    itemTitle);
             notification.successful = true;
 
         } catch (final NetworkProtocolException e) {
@@ -1295,8 +1293,16 @@ public class NetworkClient extends DefaultHttpClient {
             IOException {
         try {
             final String newStateString = "favorite=" + (newState ? "true" : "false");
+            // TODO this may work for many cases, but breaks when the provider is an a different
+            // process. Is there another way to communicate with it?
 
-            final HttpResponse hr = post(MediaProvider.getPublicPath(mContext, favoritable)
+            final SyncableProvider provider = (SyncableProvider) mContext.getContentResolver()
+                    .acquireContentProviderClient(favoritable).getLocalContentProvider();
+            if (provider == null) {
+                throw new RuntimeException("provider for " + favoritable
+                        + " must be in the same process as the calling class");
+            }
+            final HttpResponse hr = post(provider.getPublicPath(mContext, favoritable)
                     + "favorite/", newStateString);
             final JSONObject serverStateObj = toJsonObject(hr);
             final boolean serverState = serverStateObj.getBoolean("is_favorite");

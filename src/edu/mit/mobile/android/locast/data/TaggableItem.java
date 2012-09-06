@@ -41,8 +41,6 @@ import android.net.Uri;
 import com.stackoverflow.CollectionUtils;
 import com.stackoverflow.Predicate;
 
-import edu.mit.mobile.android.content.ProviderUtils;
-
 /**
  * DB entry for an item that can be tagged.
  *
@@ -68,7 +66,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
     public static class TaggableItemSyncMap extends JsonSyncableItem.ItemSyncMap {
         public TaggableItemSyncMap() {
             super();
-            put(Tag.PATH, new SyncMapJoiner(
+            put(AbsTag.TAGS_SPECIAL_CV_KEY /* XXX is this right? */, new SyncMapJoiner(
                     new TagSyncField("tags", SyncItem.SYNC_TO),
                     new TagSyncField("system_tags", SYSTEM_PREFIX, SyncItem.SYNC_TO)) {
 
@@ -154,14 +152,14 @@ public abstract class TaggableItem extends JsonSyncableItem {
 
     /**
      * @param cr
-     * @param item
+     * @param itemTags
      * @param prefix
      * @return a list of all the tags attached to a given item
      */
-    public static Set<String> getTags(ContentResolver cr, Uri item, String prefix) {
-        final Cursor tags = cr.query(Uri.withAppendedPath(item, Tag.PATH), Tag.DEFAULT_PROJECTION, null, null, null);
+    public static Set<String> getTags(ContentResolver cr, Uri itemTags, String prefix) {
+        final Cursor tags = cr.query(itemTags, AbsTag.DEFAULT_PROJECTION, null, null, null);
         final Set<String> tagSet = new HashSet<String>(tags.getCount());
-        final int tagColumn = tags.getColumnIndex(Tag._NAME);
+        final int tagColumn = tags.getColumnIndex(AbsTag._NAME);
         final Predicate<String> predicate = getPrefixPredicate(prefix);
         for (tags.moveToFirst(); !tags.isAfterLast(); tags.moveToNext()){
             final String tag = tags.getString(tagColumn);
@@ -191,17 +189,20 @@ public abstract class TaggableItem extends JsonSyncableItem {
     public static String CV_TAG_PREFIX = "prefix";
 
     /**
-     * Sets the tags of a given prefix for the given item. Any existing tags using the given prefix will be deleted.
+     * Sets the tags of a given prefix for the given item. Any existing tags using the given prefix
+     * will be deleted.
+     * 
      * @param cr
-     * @param item
+     * @param itemTags
      * @param tags
      * @param prefix
      */
-    public static void putTags(ContentResolver cr, Uri item, Collection<String> tags, String prefix) {
+    public static void putTags(ContentResolver cr, Uri itemTags, Collection<String> tags,
+            String prefix) {
         final ContentValues cv = new ContentValues();
-        cv.put(Tag.PATH, TaggableItem.toListString(addPrefixToTags(prefix, tags)));
+        cv.put(AbsTag.TAGS_SPECIAL_CV_KEY, TaggableItem.toListString(addPrefixToTags(prefix, tags)));
         cv.put(CV_TAG_PREFIX, prefix);
-        cr.update(Uri.withAppendedPath(item, Tag.PATH), cv, null, null);
+        cr.update(itemTags, cv, null, null);
     }
 
     public static int MAX_POPULAR_TAGS = 10;
@@ -212,13 +213,13 @@ public abstract class TaggableItem extends JsonSyncableItem {
      * @param cr a content resolver
      * @return the top MAX_POPULAR_TAGS most popular tags in the set, with the most popular first.
      */
-    public static List<String> getPopularTags(ContentResolver cr){
+    public static List<String> getPopularTags(ContentResolver cr, Uri tags) {
 
         final Map<String, Integer> tagPop = new HashMap<String, Integer>();
         final List<String> popTags;
 
-        final Cursor c = cr.query(Tag.CONTENT_URI, Tag.DEFAULT_PROJECTION, null, null, null);
-        final int tagColumn = c.getColumnIndex(Tag._NAME);
+        final Cursor c = cr.query(tags, AbsTag.DEFAULT_PROJECTION, null, null, null);
+        final int tagColumn = c.getColumnIndex(AbsTag._NAME);
 
         for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
             final String tag = c.getString(tagColumn);
@@ -263,34 +264,22 @@ public abstract class TaggableItem extends JsonSyncableItem {
     }
 
     /**
-     * Given a base content URI of a taggable item and a list of tags, constructs a URI
-     * representing all the items of the baseUri that match all the listed tags.
-     *
-     * @param baseUri a content URI of a TaggableItem
-     * @param tags a collection of tags
+     * Given a base content URI of a taggable item and a list of tags, constructs a URI representing
+     * all the items of the baseUri that match all the listed tags.
+     * 
+     * @param baseTagUri
+     *            a content URI of a TaggableItem
+     * @param tags
+     *            a collection of tags
      * @return a URI representing all the items that match all the given tags
      */
-    public static Uri getTagUri(Uri baseUri, Collection<String> tags){
+    public static Uri getTagUri(Uri baseTagUri, Collection<String> tags) {
         if (tags.isEmpty()){
-            return baseUri;
+            return baseTagUri;
         }
 
-        final List<String> path = baseUri.getPathSegments();
-        // AUTHORITY/casts/tags
-        if (path.size() >= 2 && Tag.PATH.equals(path.get(path.size() - 1))) {
-            baseUri = ProviderUtils.removeLastPathSegment(baseUri);
-        }
-
-        return baseUri.buildUpon()
-                .appendQueryParameter(SERVER_QUERY_PARAMETER, Tag.toTagQuery(tags)).build();
-    }
-
-    /**
-     * @param baseUri
-     * @return the URI of the list of all tags for the given item
-     */
-    public static Uri getTagListUri(Uri baseUri) {
-        return Uri.withAppendedPath(baseUri, Tag.PATH);
+        return baseTagUri.buildUpon()
+                .appendQueryParameter(SERVER_QUERY_PARAMETER, AbsTag.toTagQuery(tags)).build();
     }
 
     /**
@@ -306,7 +295,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
         if (query == null) {
             throw new IllegalArgumentException("uri doesn't contain any tags");
         }
-        return Tag.toSet(query);
+        return AbsTag.toSet(query);
     }
 
     private final static char PREFIX_SEPARATOR = ':';

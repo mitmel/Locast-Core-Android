@@ -43,7 +43,7 @@ public class AccountChangeReceiver extends BroadcastReceiver {
         final SharedPreferences prefs = context.getSharedPreferences("account",
                 Context.MODE_PRIVATE);
         final String existingAccountString = prefs.getString(PREF_ACCOUNT_NAMES, "");
-        final Account[] currentAccounts = am.getAccountsByType(AuthenticationService.ACCOUNT_TYPE);
+        final Account[] currentAccounts = am.getAccountsByType(AbsLocastAuthenticationService.ACCOUNT_TYPE);
         Arrays.sort(currentAccounts);
         final String[] lastKnownAccounts = existingAccountString.length() > 0 ? existingAccountString
                 .split(ACCOUNT_STRING_DELIMITER) : new String[0];
@@ -63,7 +63,7 @@ public class AccountChangeReceiver extends BroadcastReceiver {
             // account has been deleted
             if (!found) {
                 onAccountDeleted(context, new Account(lastKnownAccount,
-                        AuthenticationService.ACCOUNT_TYPE));
+                        AbsLocastAuthenticationService.ACCOUNT_TYPE));
             }
         }
 
@@ -96,7 +96,7 @@ public class AccountChangeReceiver extends BroadcastReceiver {
         }
 
         // only delete the database when it was a real account
-        if (!Authenticator.DEMO_ACCOUNT.equals(account.name)) {
+        if (AbsLocastAuthenticator.hasRealAccount(context)) {
             ResetActivity.resetEverything(context, false, false);
         }
     }

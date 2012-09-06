@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2010-2012 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -31,19 +31,15 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
@@ -51,10 +47,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
-import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.SettingsActivity;
-import edu.mit.mobile.android.locast.data.Cast;
-import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.ver2.R;
@@ -62,19 +54,21 @@ import edu.mit.mobile.android.locast.ver2.R;
 /**
  * Activity which displays login screen to the user.
  */
-public class AuthenticatorActivity extends AccountAuthenticatorActivity implements OnClickListener,
+public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticatorActivity implements
+        OnClickListener,
         OnEditorActionListener {
-    private static final String TAG = AuthenticatorActivity.class.getSimpleName();
+    private static final String TAG = AbsLocastAuthenticatorActivity.class.getSimpleName();
 
-    public static final String EXTRA_CONFIRMCREDENTIALS = "confirmCredentials",
-            EXTRA_PASSWORD = "password", EXTRA_USERNAME = "username",
-            EXTRA_AUTHTOKEN_TYPE = "authtokenType";
+    public static final String EXTRA_CONFIRMCREDENTIALS = "confirmCredentials";
+    public static final String EXTRA_PASSWORD = "password";
+    public static final String EXTRA_USERNAME = "username";
+    public static final String EXTRA_AUTHTOKEN_TYPE = "authtokenType";
 
     private AccountManager mAccountManager;
     private String mAuthtoken;
     private String mAuthtokenType;
 
-    private static final int DIALOG_PROGRESS = 0, DIALOG_SET_BASE_URL = 1;
+    private static final int DIALOG_PROGRESS = 100;
 
     /**
      * If set we are just checking that the user knows their credentials; this doesn't cause the
@@ -112,8 +106,9 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         Log.i(TAG, "    request new: " + mRequestNewAccount);
         requestWindowFeature(Window.FEATURE_LEFT_ICON);
         // make the title based on the app name.
-        setTitle(getString(R.string.login_title, getString(R.string.app_name)));
+        setTitle(getString(R.string.login_title, getAppName()));
 
+        // TODO make this changeable. Maybe use fragments?
         setContentView(R.layout.login);
         // this is done this way, so the associated icon is managed in XML.
         try {
@@ -139,6 +134,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         }
     }
 
+    protected abstract CharSequence getAppName();
+
     /*
      * {@inheritDoc}
      */
@@ -163,13 +160,6 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
                 });
                 return dialog;
 
-            case DIALOG_SET_BASE_URL:
-
-                final EditText baseUrl = new EditText(this);
-                baseUrl.setText(getString(R.string.default_api_url));
-                final AlertDialog.Builder db = new AlertDialog.Builder(this);
-                return db.create();
-
             default:
                 return null;
         }
@@ -182,9 +172,26 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         } else if (v.getId() == R.id.cancel) {
             finish();
         } else if (v.getId() == R.id.register) {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.signup_url))));
+            startActivity(getSignupIntent());
         }
     }
+
+    /**
+     * Generate a new account.
+     *
+     * @return
+     */
+    protected abstract Account createAccount(String username);
+
+    /**
+     * @return the authority that this authenticator handles.
+     */
+    protected abstract String getAuthority();
+
+    /**
+     * @return an intent which will take the user to the sign up page. Started with startActivity().
+     */
+    protected abstract Intent getSignupIntent();
 
     /**
      * Handles onClick event on the Submit button. Sends username/password to the server for
@@ -212,7 +219,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
      */
     protected void finishConfirmCredentials(boolean result) {
         Log.i(TAG, "finishConfirmCredentials()");
-        final Account account = new Account(mUsername, AuthenticationService.ACCOUNT_TYPE);
+        final Account account = createAccount(mUsername);
         mAccountManager.setPassword(account, mPassword);
         final Intent intent = new Intent();
         intent.putExtra(AccountManager.KEY_BOOLEAN_RESULT, result);
@@ -235,61 +242,21 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 
     protected void finishLogin(Bundle userData) {
         Log.i(TAG, "finishLogin()");
-        // ensure that there isn't a demo account sticking around.
 
-        // TODO this is NOT the place where this code belongs. Find it a better home
-        if (Authenticator.isDemoMode(this)) {
-            Log.d(TAG, "cleaning up demo mode account...");
-            ContentResolver
-                    .cancelSync(Authenticator.getFirstAccount(this), MediaProvider.AUTHORITY);
-
-            mAccountManager.removeAccount(new Account(Authenticator.DEMO_ACCOUNT,
-                    AuthenticationService.ACCOUNT_TYPE), new AccountManagerCallback<Boolean>() {
-
-                @Override
-                public void run(AccountManagerFuture<Boolean> arg0) {
-                    try {
-                        if (arg0.getResult()) {
-
-                            final ContentValues cv = new ContentValues();
-                            // invalidate all the content to force a sync.
-                            // this is to ensure that items which were marked favorite get set as
-                            // such.
-                            cv.put(Cast._SERVER_MODIFIED_DATE, 0);
-                            cv.put(Cast._MODIFIED_DATE, 0);
-                            getContentResolver().update(Cast.CONTENT_URI, cv, null, null);
-                            if (Constants.DEBUG) {
-                                Log.d(TAG, "reset all cast modified dates to force a reload");
-                            }
-                        }
-                    } catch (final OperationCanceledException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    } catch (final AuthenticatorException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    } catch (final IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                }
-            }, null);
-
-        }
-        final Account account = new Account(mUsername, AuthenticationService.ACCOUNT_TYPE);
+        final Account account = createAccount(mUsername);
 
         if (mRequestNewAccount) {
             mAccountManager.addAccountExplicitly(account, mPassword, userData);
             // Automatically enable sync for this account
-            ContentResolver.setSyncAutomatically(account, MediaProvider.AUTHORITY, true);
+            ContentResolver.setSyncAutomatically(account, getAuthority(), true);
         } else {
             mAccountManager.setPassword(account, mPassword);
         }
         final Intent intent = new Intent();
         mAuthtoken = mPassword;
         intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, mUsername);
-        intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, AuthenticationService.ACCOUNT_TYPE);
-        if (mAuthtokenType != null && mAuthtokenType.equals(AuthenticationService.AUTHTOKEN_TYPE)) {
+        intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, AbsLocastAuthenticationService.ACCOUNT_TYPE);
+        if (mAuthtokenType != null && mAuthtokenType.equals(AbsLocastAuthenticationService.AUTHTOKEN_TYPE)) {
             intent.putExtra(AccountManager.KEY_AUTHTOKEN, mAuthtoken);
         }
         setAccountAuthenticatorResult(intent.getExtras());
@@ -377,11 +344,11 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     }
 
     private class AuthenticationTask extends AsyncTask<String, Long, Bundle> {
-        private AuthenticatorActivity mActivity;
+        private AbsLocastAuthenticatorActivity mActivity;
 
         private String reason;
 
-        public AuthenticationTask(AuthenticatorActivity activity) {
+        public AuthenticationTask(AbsLocastAuthenticatorActivity activity) {
             mActivity = activity;
         }
 
@@ -395,7 +362,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         protected Bundle doInBackground(String... userPass) {
 
             try {
-                return NetworkClient.authenticate(AuthenticatorActivity.this, userPass[0],
+                return NetworkClient.authenticate(AbsLocastAuthenticatorActivity.this, userPass[0],
                         userPass[1], userPass[2]);
 
             } catch (final IOException e) {
@@ -423,28 +390,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
             mActivity = null;
         }
 
-        public void attach(AuthenticatorActivity activity) {
+        public void attach(AbsLocastAuthenticatorActivity activity) {
             mActivity = activity;
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        super.onCreateOptionsMenu(menu);
-        getMenuInflater().inflate(R.menu.login_options, menu);
-        if (Constants.DEBUG) {
-            menu.findItem(R.id.set_base_url).setVisible(true);
-        }
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.set_base_url) {
-            startActivity(new Intent(this, SettingsActivity.class));
-            return true;
-        } else {
-            return super.onOptionsItemSelected(item);
         }
     }
 
@@ -494,9 +441,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
                 case AlertDialog.BUTTON_POSITIVE:
 
                     AccountManager.get(mContext).removeAccount(
-                            Authenticator.getFirstAccount(mContext), mAccountManagerCallback, null);
+                            AbsLocastAuthenticator.getFirstAccount(mContext), mAccountManagerCallback, null);
                     break;
-
             }
         }
 
@@ -512,10 +458,10 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 
     };
 
-    public static Dialog createLogoutDialog(Context context, LogoutHandler onLogoutHandler) {
+    public static Dialog createLogoutDialog(Context context, CharSequence appName,
+            LogoutHandler onLogoutHandler) {
 
         final AlertDialog.Builder b = new AlertDialog.Builder(context);
-        final String appName = context.getString(R.string.app_name);
         b.setTitle(context.getString(R.string.auth_logout_title, appName));
         b.setMessage(context.getString(R.string.auth_logout_message, appName));
         b.setCancelable(true);

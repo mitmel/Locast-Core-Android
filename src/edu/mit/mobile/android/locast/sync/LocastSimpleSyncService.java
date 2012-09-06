@@ -7,7 +7,7 @@ import org.json.JSONException;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
+import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -20,7 +20,6 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.data.MediaProvider;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.SyncException;
 import edu.mit.mobile.android.locast.net.NetworkClient;
@@ -34,16 +33,16 @@ import edu.mit.mobile.android.locast.ver2.R;
  * A sync manager for {@link SyncEngine} that uses a simplified interface to let activities sync
  * content. Requests are put in a {@link PriorityBlockingQueue} and are handled in reverse
  * chronological order (most recent requests are first). This will be used when
- * {@link LocastSyncService} and the accounts / sync framework isn't being used.
+ * {@link AbsLocastAccountSyncService} and the accounts / sync framework isn't being used.
  * </p>
  *
  * <p>
- * Requests should be made using {@link LocastSync#startSync(Context, Uri, boolean, Bundle)} and its
- * various permutations.
+ * Requests should be made using {@link LocastSyncService#startSync(Context, Uri, boolean, Bundle)}
+ * and its various permutations.
  * </p>
  *
  */
-public class LocastSimpleSyncService extends Service {
+public abstract class LocastSimpleSyncService extends LocastSyncService {
     private static final String TAG = LocastSimpleSyncService.class.getSimpleName();
 
     public static final boolean DEBUG = Constants.DEBUG;
@@ -55,12 +54,17 @@ public class LocastSimpleSyncService extends Service {
     private SyncQueueProcessor mSyncProcessor;
     private Thread mSyncThread;
 
+    private final String mAuthority;
+
+    private SyncableProvider mProvider;
+
     private final PriorityBlockingQueue<SyncItem> mPriorityQueue = new PriorityBlockingQueue<LocastSimpleSyncService.SyncItem>();
 
-    public static void startSync(Context context, Uri uri, Bundle extras) {
-        final Intent intent = new Intent(Intent.ACTION_SYNC, uri);
-        intent.putExtras(extras);
-        context.startService(intent);
+    public ContentProviderClient mContentProviderClient;
+
+    public LocastSimpleSyncService() {
+
+        mAuthority = getAuthority();
     }
 
     @Override
@@ -68,7 +72,11 @@ public class LocastSimpleSyncService extends Service {
         super.onCreate();
         mNetworkClient = new NetworkClient(this);
 
-        mSyncEngine = new SyncEngine(this, mNetworkClient);
+        mContentProviderClient = getContentResolver().acquireContentProviderClient(mAuthority);
+
+        mProvider = (SyncableProvider) mContentProviderClient.getLocalContentProvider();
+
+        mSyncEngine = new SyncEngine(this, mNetworkClient, mProvider);
         mSyncProcessor = new SyncQueueProcessor();
         mSyncThread = new Thread(mSyncProcessor);
         mSyncThread.start();
@@ -105,6 +113,8 @@ public class LocastSimpleSyncService extends Service {
     public void onDestroy() {
         super.onDestroy();
         mSyncProcessor.stop();
+        mContentProviderClient.release();
+        mProvider = null;
     }
 
     @Override
@@ -159,8 +169,7 @@ public class LocastSimpleSyncService extends Service {
                     final SyncResult sr = new SyncResult();
                     final SyncItem item = mPriorityQueue.take();
                     Log.d(TAG, "took " + item + " from sync queue. Syncing...");
-                    mSyncEngine.sync(item.uri, null, item.extras, getContentResolver()
-                            .acquireContentProviderClient(MediaProvider.AUTHORITY), sr);
+                    mSyncEngine.sync(item.uri, null, item.extras, mContentProviderClient, sr);
                     Log.d(TAG, "finished syncing " + item);
                     Log.d(TAG, mPriorityQueue.size() + " item(s) in queue");
 

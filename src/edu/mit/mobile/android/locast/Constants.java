@@ -19,6 +19,7 @@ package edu.mit.mobile.android.locast;
 
 public class Constants {
 
+    @Deprecated
     public static final String AUTHORITY = "edu.mit.mobile.android.locast";
 
     /**
@@ -32,20 +33,24 @@ public class Constants {
      * appropriate permissions are uncommented in the AndroidManifest.xml. If this is false, all
      * requests will be anonymous and content creation will be disabled.
      */
+    @Deprecated
     public static final boolean USE_ACCOUNT_FRAMEWORK = false;
 
     /**
      * If true, the user can create casts.
      */
+    @Deprecated
     public static final boolean CAN_CREATE_CASTS = true /* account framework required: */&& USE_ACCOUNT_FRAMEWORK;
 
     /**
      * If false, enables a demo account that can be used to make non-authenticated requests.
      */
+    @Deprecated
     public static final boolean REQUIRE_LOGIN = true /* account framework required: */&& USE_ACCOUNT_FRAMEWORK;
 
     /**
      * For various cursor views, this says how frequently it should refresh the UI.
      */
+    @Deprecated
     public static final long UPDATE_THROTTLE = 500;
 }

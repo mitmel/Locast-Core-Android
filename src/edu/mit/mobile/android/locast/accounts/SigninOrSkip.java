@@ -70,7 +70,7 @@ public class SigninOrSkip extends Activity implements OnClickListener {
             finish();
             return;
         }
-        Authenticator.addDemoAccount(this);
+        // TODO implement skipping
         setResult(RESULT_OK);
         finish();
     }
@@ -79,7 +79,7 @@ public class SigninOrSkip extends Activity implements OnClickListener {
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.sign_in) {
-            startActivityForResult(new Intent(this, AuthenticatorActivity.class), REQUEST_SIGNIN);
+            startActivityForResult(new Intent(this, AbsLocastAuthenticatorActivity.class), REQUEST_SIGNIN);
         } else if (v.getId() == R.id.skip) {
             skip();
         }
@@ -102,7 +102,7 @@ public class SigninOrSkip extends Activity implements OnClickListener {
      */
     public static final boolean checkFirstTime(Context context) {
         if (Constants.USE_ACCOUNT_FRAMEWORK) {
-            return Authenticator.getAccounts(context).length == 0;
+            return AbsLocastAuthenticator.getAccounts(context).length == 0;
         } else {
             final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
             final boolean runBefore = prefs.getBoolean(PREF_HAVE_RUN_BEFORE, false);
@@ -125,24 +125,21 @@ public class SigninOrSkip extends Activity implements OnClickListener {
             return true;
 
         } else if (Constants.REQUIRE_LOGIN) {
-            if (!Authenticator.hasRealAccount(context)) {
-                context.startActivityForResult(new Intent(context, AuthenticatorActivity.class),
+            if (!AbsLocastAuthenticator.hasRealAccount(context)) {
+                context.startActivityForResult(new Intent(context, AbsLocastAuthenticatorActivity.class),
                         requestCode);
                 return true;
             }
             return false;
             // login isn't required, but accounts can be created.
         } else if (Constants.CAN_CREATE_CASTS) {
-            if (!Authenticator.isDemoMode(context) && !Authenticator.hasRealAccount(context)) {
+            if (!AbsLocastAuthenticator.hasRealAccount(context)) {
                 context.startActivityForResult(new Intent(context, SigninOrSkip.class), requestCode);
                 return true;
             }
             return false;
         } else {
-            // we shouldn't do anything if there's no possibility of creating casts.
-            if (checkFirstTime(context)) {
-                Authenticator.addDemoAccount(context);
-            }
+            // set account-free bit here
             return false;
         }
     }

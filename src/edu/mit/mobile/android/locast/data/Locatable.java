@@ -16,6 +16,10 @@ package edu.mit.mobile.android.locast.data;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,6 +27,8 @@ import org.json.JSONObject;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.location.Location;
 import android.net.Uri;
 
@@ -30,6 +36,7 @@ import com.beoui.geocell.GeocellUtils;
 import com.beoui.geocell.model.Point;
 import com.google.android.maps.GeoPoint;
 
+import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.column.DBColumn;
 import edu.mit.mobile.android.content.column.FloatColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
@@ -118,6 +125,7 @@ public abstract class Locatable {
     /**
      * Get the latitude/longitude from the row currently selected in the cursor. Requires
      * Locatable.Columns._LATITUDE and Locatable.Columns._LONGITUDE to be selected.
+     *
      * @param c
      * @return
      */
@@ -131,6 +139,62 @@ public abstract class Locatable {
         l.setLatitude(c.getDouble(lat_idx));
         l.setLongitude(c.getDouble(lon_idx));
         return l;
+    }
+
+    private static final Pattern LOC_STRING_REGEX = Pattern
+            .compile("^([\\d\\.-]+),([\\d\\.-]+)(?:,([\\d\\.]+))?");
+
+    public Cursor queryByLocation(SQLiteQueryBuilder qb, SQLiteDatabase db, String locString,
+            String locatableItemTable, String[] projection, String selection,
+            String[] selectionArgs, String sortOrder) {
+
+        qb.setTables(locatableItemTable);
+        final Matcher m = LOC_STRING_REGEX.matcher(locString);
+        if (!m.matches()) {
+            throw new IllegalArgumentException("bad location string '" + locString + "'");
+        }
+        final String lon = m.group(1);
+        final String lat = m.group(2);
+        String dist = "1500";
+        if (m.groupCount() == 3) {
+            dist = m.group(3);
+        }
+
+        final String cell = GeocellUtils.compute(
+                new Point(Double.valueOf(lat), Double.valueOf(lon)), 8);
+
+        final List<String> adjacent = GeocellUtils.allAdjacents(cell);
+
+        adjacent.add(cell);
+
+        final StringBuilder selSb = new StringBuilder();
+
+        boolean join = false;
+        for (final String adj : adjacent) {
+            if (join) {
+                selSb.append(" OR ");
+            } else {
+                join = true;
+            }
+
+            selSb.append(Locatable.Columns._GEOCELL);
+            selSb.append(" LIKE ? || '%'");
+
+        }
+
+        final String selectionExtra = selSb.toString();
+
+        return qb.query(db, projection, ProviderUtils.addExtraWhere(selection, selectionExtra),
+                ProviderUtils.addExtraWhereArgs(selectionArgs, adjacent.toArray(new String[] {})),
+                null, null, sortOrder);
+
+        // String extraWhere =
+        // "(lat - 2) > ? AND (lon - 2) > ? AND (lat + 2) < ? AND (lat + 2) < ?";
+
+        // final String[] extraArgs = {lat, lon};
+        // return qb.query(db, projection, ProviderUtils.addExtraWhere(selection,
+        // Locatable.SELECTION_LAT_LON), ProviderUtils.addExtraWhereArgs(selectionArgs, extraArgs),
+        // null, null, sortOrder);
     }
 
     /**

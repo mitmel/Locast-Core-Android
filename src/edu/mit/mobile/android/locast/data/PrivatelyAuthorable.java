@@ -4,7 +4,7 @@ import android.content.Context;
 import android.database.Cursor;
 import edu.mit.mobile.android.content.column.DBColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
-import edu.mit.mobile.android.locast.accounts.Authenticator;
+import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticator;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncFieldMap;
 
 public abstract class PrivatelyAuthorable extends Authorable {
@@ -19,7 +19,7 @@ public abstract class PrivatelyAuthorable extends Authorable {
     }
 
     /**
-     * The current user can be gotten using {@link Authenticator#getUserUri(Context)}.
+     * The current user can be gotten using {@link AbsLocastAuthenticator#getUserUri(Context)}.
      * 
      * @param c
      *            a cursor pointing at an item's row
@@ -37,7 +37,7 @@ public abstract class PrivatelyAuthorable extends Authorable {
      * @return true if the authenticated user can change the item's privacy level.
      */
     public static boolean canChangePrivacyLevel(Context context, Cursor c) {
-        final String useruri = Authenticator.getUserUri(context);
+        final String useruri = AbsLocastAuthenticator.getUserUri(context);
         return useruri == null
                 || useruri.equals(c.getString(c.getColumnIndex(Columns._AUTHOR_URI)));
     }
