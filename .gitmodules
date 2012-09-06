@@ -4,3 +4,6 @@
 [submodule "libs-src/android-actionbar"]
 	path = libs-src/android-actionbar
 	url = https://github.com/johannilsson/android-actionbar.git
+[submodule "libs-src/SimpleContentProvider"]
+	path = libs-src/SimpleContentProvider
+	url = http://mel-tools.mit.edu/git-ro/SimpleContentProvider.git
