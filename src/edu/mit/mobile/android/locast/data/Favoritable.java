@@ -27,7 +27,7 @@ import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncItem;
 public class Favoritable {
     public interface Columns {
         @DBColumn(type = BooleanColumn.class)
-        public static final String _FAVORITED = "favorited";
+        public static final String COL_FAVORITED = "favorited";
     }
 
     public static final String QUERY_PARAM = "favorited";
@@ -58,6 +58,6 @@ public class Favoritable {
     }
 
     static {
-        SYNC_MAP.put(Columns._FAVORITED, new JsonSyncableItem.SyncFieldMap("is_favorite", SyncFieldMap.BOOLEAN, SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));
+        SYNC_MAP.put(Columns.COL_FAVORITED, new JsonSyncableItem.SyncFieldMap("is_favorite", SyncFieldMap.BOOLEAN, SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));
     }
 }

@@ -31,9 +31,9 @@ import edu.mit.mobile.android.content.column.TextColumn;
 public abstract class AbsTag implements BaseColumns {
 
     @DBColumn(type = TextColumn.class, unique = true, notnull = true)
-    public static final String _NAME = "name";
+    public static final String COL_NAME = "name";
 
-    public static final String[] DEFAULT_PROJECTION = new String[] { _ID, _NAME };
+    public static final String[] DEFAULT_PROJECTION = new String[] { _ID, COL_NAME };
 
     public final static String TAG_DELIM = ",";
 

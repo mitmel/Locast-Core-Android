@@ -25,7 +25,7 @@ import android.database.Cursor;
  */
 
 public abstract class AbsComment extends JsonSyncableItem {
-    public final static String DEFAULT_SORT_BY = _MODIFIED_DATE + " DESC";
+    public final static String DEFAULT_SORT_BY = COL_MODIFIED_DATE + " DESC";
 
     public final static String SERVER_PATH = "comments/";
 
@@ -39,10 +39,10 @@ public abstract class AbsComment extends JsonSyncableItem {
 
     public final static String[] PROJECTION = {
             _ID,
-            _PUBLIC_URI,
+            COL_PUBLIC_URL,
             _AUTHOR,
             _AUTHOR_ICON,
-            _MODIFIED_DATE,
+            COL_MODIFIED_DATE,
             _PARENT_ID,
             _PARENT_CLASS,
             _DESCRIPTION,
@@ -75,8 +75,8 @@ public abstract class AbsComment extends JsonSyncableItem {
             author.put(_AUTHOR_ICON, new SyncFieldMap("icon", SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_BOTH));
             put("_author_object", new SyncMapChain("author", author, SyncItem.SYNC_FROM));
 
-            remove(_CREATED_DATE);
-            put(_MODIFIED_DATE, new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM)); // comments only have a creation date.
+            remove(COL_CREATED_DATE);
+            put(COL_MODIFIED_DATE, new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM)); // comments only have a creation date.
             put(_DESCRIPTION,   new SyncFieldMap("content", SyncFieldMap.STRING));
         }
     }

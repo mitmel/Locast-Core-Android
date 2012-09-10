@@ -28,8 +28,8 @@ public class JSONSyncableIdenticalChildFinder implements IdenticalChildFinder {
     public Uri getIdenticalChild(DBHelper m2m, Uri parentChildDir, SQLiteDatabase db, String childTable,
             ContentValues values) {
         Uri existingChild = null;
-        if (values.containsKey(JsonSyncableItem._PUBLIC_URI)){
-            final Cursor existingItem = db.query(childTable, new String[]{JsonSyncableItem._ID, JsonSyncableItem._PUBLIC_URI}, JsonSyncableItem._PUBLIC_URI+"=?", new String[]{values.getAsString(JsonSyncableItem._PUBLIC_URI)}, null, null, null);
+        if (values.containsKey(JsonSyncableItem.COL_PUBLIC_URL)){
+            final Cursor existingItem = db.query(childTable, new String[]{JsonSyncableItem._ID, JsonSyncableItem.COL_PUBLIC_URL}, JsonSyncableItem.COL_PUBLIC_URL+"=?", new String[]{values.getAsString(JsonSyncableItem.COL_PUBLIC_URL)}, null, null, null);
             if (existingItem.moveToFirst()){
                 existingChild = ContentUris.withAppendedId(parentChildDir, existingItem.getLong(existingItem.getColumnIndex(JsonSyncableItem._ID)));
             }

@@ -208,8 +208,8 @@ public abstract class MediaSync extends Service implements MediaScannerConnectio
 
     public abstract void enqueueUnpublishedMedia() throws SyncException;
 
-    private static final String SELECTION_UNPUBLISHED_CAST_MEDIA = CastMedia._MEDIA_URL
-            + " ISNULL AND " + CastMedia._PUBLIC_URI + " NOT NULL AND " + CastMedia._LOCAL_URL
+    private static final String SELECTION_UNPUBLISHED_CAST_MEDIA = CastMedia.COL_MEDIA_URL
+            + " ISNULL AND " + CastMedia.COL_PUBLIC_URL + " NOT NULL AND " + CastMedia.COL_LOCAL_URL
             + " NOT NULL";
 
     public void enqueueUnpublishedMedia(Uri castMedia) throws SyncException {
@@ -346,9 +346,9 @@ public abstract class MediaSync extends Service implements MediaScannerConnectio
 
     abstract Uri getTitledItemForCastMedia(Uri castMedia);
 
-    final static String[] CASTMEDIA_PROJECTION = { CastMedia._ID, CastMedia._MIME_TYPE,
-            CastMedia._LOCAL_URL, CastMedia._MEDIA_URL, CastMedia._KEEP_OFFLINE,
-            CastMedia._PUBLIC_URI, CastMedia._THUMB_LOCAL };
+    final static String[] CASTMEDIA_PROJECTION = { CastMedia._ID, CastMedia.COL_MIME_TYPE,
+            CastMedia.COL_LOCAL_URL, CastMedia.COL_MEDIA_URL, CastMedia.COL_KEEP_OFFLINE,
+            CastMedia.COL_PUBLIC_URL, CastMedia.COL_THUMB_LOCAL };
 
     /**
      * Synchronize the media of the given castMedia. It will download or upload as needed.
@@ -372,14 +372,14 @@ public abstract class MediaSync extends Service implements MediaScannerConnectio
             }
 
             // cache the column numbers
-            final int mediaUrlCol = castMedia.getColumnIndex(CastMedia._MEDIA_URL);
-            final int localUriCol = castMedia.getColumnIndex(CastMedia._LOCAL_URL);
+            final int mediaUrlCol = castMedia.getColumnIndex(CastMedia.COL_MEDIA_URL);
+            final int localUriCol = castMedia.getColumnIndex(CastMedia.COL_LOCAL_URL);
 
             final boolean keepOffline = castMedia.getInt(castMedia
-                    .getColumnIndex(CastMedia._KEEP_OFFLINE)) != 0;
+                    .getColumnIndex(CastMedia.COL_KEEP_OFFLINE)) != 0;
 
             final String mimeType = castMedia.getString(castMedia
-                    .getColumnIndex(CastMedia._MIME_TYPE));
+                    .getColumnIndex(CastMedia.COL_MIME_TYPE));
 
             final boolean isImage = (mimeType != null) && mimeType.startsWith("image/");
 
@@ -395,11 +395,11 @@ public abstract class MediaSync extends Service implements MediaScannerConnectio
             final boolean hasPubMedia = pubMedia != null && pubMedia.length() > 0;
 
             final String localThumb = castMedia.getString(castMedia
-                    .getColumnIndex(CastMedia._THUMB_LOCAL));
+                    .getColumnIndex(CastMedia.COL_THUMB_LOCAL));
 
             if (hasLocMedia && !hasPubMedia) {
                 final String uploadPath = castMedia.getString(castMedia
-                        .getColumnIndex(CastMedia._PUBLIC_URI));
+                        .getColumnIndex(CastMedia.COL_PUBLIC_URL));
                 if (uploadPath == null) {
                     Log.w(TAG, "attempted to sync " + castMediaUri + " which has a null uploadPath");
                     return;
@@ -450,9 +450,9 @@ public abstract class MediaSync extends Service implements MediaScannerConnectio
      */
     private void updateLocalFile(Uri castMediaUri, File localFile, File localThumbnail) {
         final ContentValues cv = new ContentValues();
-        cv.put(CastMedia._LOCAL_URL, Uri.fromFile(localFile).toString());
+        cv.put(CastMedia.COL_LOCAL_URL, Uri.fromFile(localFile).toString());
         if (localThumbnail != null) {
-            cv.put(CastMedia._THUMB_LOCAL, Uri.fromFile(localFile).toString());
+            cv.put(CastMedia.COL_THUMB_LOCAL, Uri.fromFile(localFile).toString());
         }
         cv.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
 
@@ -798,13 +798,13 @@ public abstract class MediaSync extends Service implements MediaScannerConnectio
     private void updateCastMediaLocalUri(Uri castMedia, String locMedia, String mimeType) {
 
         final ContentValues cvCastMedia = new ContentValues();
-        cvCastMedia.put(CastMedia._LOCAL_URL, locMedia);
+        cvCastMedia.put(CastMedia.COL_LOCAL_URL, locMedia);
         cvCastMedia.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
 
         try {
             final String locThumb = generateThumbnail(castMedia, mimeType, locMedia);
             if (locThumb != null) {
-                cvCastMedia.put(CastMedia._THUMB_LOCAL, locThumb);
+                cvCastMedia.put(CastMedia.COL_THUMB_LOCAL, locThumb);
             }
 
         } catch (final ThumbnailException e) {

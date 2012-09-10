@@ -59,28 +59,28 @@ public abstract class Locatable {
      */
     public static interface Columns {
         @DBColumn(type = FloatColumn.class)
-        public static final String _LATITUDE = "lat";
+        public static final String COL_LATITUDE = "lat";
 
         @DBColumn(type = FloatColumn.class)
-        public static final String _LONGITUDE = "lon";
+        public static final String COL_LONGITUDE = "lon";
 
         @DBColumn(type = TextColumn.class)
-        public static final String _GEOCELL = "geocell";
+        public static final String COL_GEOCELL = "geocell";
 
     };
 
     public static final String SERVER_QUERY_PARAMETER = "dist";
 
-    public static final String SELECTION_LAT_LON = "abs(" + Columns._LATITUDE
-            + " - ?) < 1 and abs(" + Columns._LONGITUDE + " - ?) < 1";
+    public static final String SELECTION_LAT_LON = "abs(" + Columns.COL_LATITUDE
+            + " - ?) < 1 and abs(" + Columns.COL_LONGITUDE + " - ?) < 1";
 
     public static Uri toGeoUri(Cursor c) {
-        if (c.isNull(c.getColumnIndex(Columns._LATITUDE))
-                || c.isNull(c.getColumnIndex(Columns._LONGITUDE))) {
+        if (c.isNull(c.getColumnIndex(Columns.COL_LATITUDE))
+                || c.isNull(c.getColumnIndex(Columns.COL_LONGITUDE))) {
             return null;
         }
-        return Uri.parse("geo:" + c.getDouble(c.getColumnIndex(Columns._LATITUDE)) + ","
-                + c.getDouble(c.getColumnIndex(Columns._LONGITUDE)));
+        return Uri.parse("geo:" + c.getDouble(c.getColumnIndex(Columns.COL_LATITUDE)) + ","
+                + c.getDouble(c.getColumnIndex(Columns.COL_LONGITUDE)));
     }
 
     /**
@@ -130,8 +130,8 @@ public abstract class Locatable {
      * @return
      */
     public static Location toLocation(Cursor c) {
-        final int lat_idx = c.getColumnIndex(Columns._LATITUDE);
-        final int lon_idx = c.getColumnIndex(Columns._LONGITUDE);
+        final int lat_idx = c.getColumnIndex(Columns.COL_LATITUDE);
+        final int lon_idx = c.getColumnIndex(Columns.COL_LONGITUDE);
         if (c.isNull(lat_idx) || c.isNull(lon_idx)) {
             return null;
         }
@@ -177,7 +177,7 @@ public abstract class Locatable {
                 join = true;
             }
 
-            selSb.append(Locatable.Columns._GEOCELL);
+            selSb.append(Locatable.Columns.COL_GEOCELL);
             selSb.append(" LIKE ? || '%'");
 
         }
@@ -231,7 +231,7 @@ public abstract class Locatable {
     }
 
     /**
-     * Adds the appropriate {@link Columns#_LATITUDE}, {@link Columns#_LONGITUDE} columns to the
+     * Adds the appropriate {@link Columns#COL_LATITUDE}, {@link Columns#COL_LONGITUDE} columns to the
      * given {@link ContentValues} for the given location.
      *
      * @param cv
@@ -239,8 +239,8 @@ public abstract class Locatable {
      * @return the same {@link ContentValues} that was passed in.
      */
     public static ContentValues toContentValues(ContentValues cv, GeoPoint location) {
-        cv.put(Columns._LATITUDE, location.getLatitudeE6() / 1E6d);
-        cv.put(Columns._LONGITUDE, location.getLongitudeE6() / 1E6d);
+        cv.put(Columns.COL_LATITUDE, location.getLatitudeE6() / 1E6d);
+        cv.put(Columns.COL_LONGITUDE, location.getLongitudeE6() / 1E6d);
 
         return cv;
     }
@@ -255,8 +255,8 @@ public abstract class Locatable {
             public JSONArray toJSON(Context context, Uri localItem, Cursor c, String lProp)
                     throws JSONException {
 
-                final int latCol = c.getColumnIndex(Columns._LATITUDE);
-                final int lonCol = c.getColumnIndex(Columns._LONGITUDE);
+                final int latCol = c.getColumnIndex(Columns.COL_LATITUDE);
+                final int lonCol = c.getColumnIndex(Columns.COL_LONGITUDE);
 
                 if (c.isNull(latCol) || c.isNull(lonCol)) {
                     return null;
@@ -275,9 +275,9 @@ public abstract class Locatable {
                 final ContentValues cv = new ContentValues();
                 final double lon = ja.getDouble(0);
                 final double lat = ja.getDouble(1);
-                cv.put(Columns._LONGITUDE, lon);
-                cv.put(Columns._LATITUDE, lat);
-                cv.put(Columns._GEOCELL, GeocellUtils.compute(new Point(lat, lon), 13));
+                cv.put(Columns.COL_LONGITUDE, lon);
+                cv.put(Columns.COL_LATITUDE, lat);
+                cv.put(Columns.COL_GEOCELL, GeocellUtils.compute(new Point(lat, lon), 13));
                 return cv;
             }
         });

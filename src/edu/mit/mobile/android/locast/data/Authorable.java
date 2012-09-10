@@ -14,10 +14,10 @@ public abstract class Authorable {
 
     public interface Columns {
         @DBColumn(type = TextColumn.class)
-        public static final String _AUTHOR = "author";
+        public static final String COL_AUTHOR = "author";
 
         @DBColumn(type = TextColumn.class)
-        public static final String _AUTHOR_URI = "author_uri";
+        public static final String COL_AUTHOR_URI = "author_uri";
 
     }
 
@@ -26,9 +26,9 @@ public abstract class Authorable {
     static {
 
         final SyncMap authorSync = new SyncMap();
-        authorSync.put(Columns._AUTHOR, new SyncFieldMap("display_name", SyncFieldMap.STRING,
+        authorSync.put(Columns.COL_AUTHOR, new SyncFieldMap("display_name", SyncFieldMap.STRING,
                 SyncItem.FLAG_OPTIONAL));
-        authorSync.put(Columns._AUTHOR_URI, new SyncFieldMap("uri", SyncFieldMap.STRING));
+        authorSync.put(Columns.COL_AUTHOR_URI, new SyncFieldMap("uri", SyncFieldMap.STRING));
         SYNC_MAP.put("_author", new SyncMapChain("author", authorSync, SyncItem.SYNC_FROM));
     }
 }

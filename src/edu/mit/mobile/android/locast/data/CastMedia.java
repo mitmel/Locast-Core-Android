@@ -51,22 +51,23 @@ public abstract class CastMedia extends JsonSyncableItem {
     private static final String TAG = CastMedia.class.getSimpleName();
 
     @DBColumn(type = DatetimeColumn.class)
-    public final static String _CAPTURE_TIME = "capture_time";
+    public final static String COL_CAPTURE_TIME = "capture_time";
 
     @DBColumn(type = TextColumn.class)
-    public final static String _MEDIA_URL = "url"; // the body of the object
+    public final static String COL_MEDIA_URL = "media_url"; // the body of the object
 
     @DBColumn(type = TextColumn.class)
-    public final static String _LOCAL_URL = "local_url"; // any local copy of the main media
+    public final static String COL_LOCAL_URL = "local_url"; // any local copy of the main media
 
     @DBColumn(type = TextColumn.class)
-    public final static String _MIME_TYPE = "mimetype"; // type of the media
+    public final static String COL_MIME_TYPE = "mimetype"; // type of the media
 
     @DBColumn(type = BooleanColumn.class)
-    public final static String _KEEP_OFFLINE = "offline";
+    public final static String COL_KEEP_OFFLINE = "offline";
 
+    // TODO move this to ImageContent, etc.
     @DBColumn(type = TextColumn.class)
-    public final static String _THUMB_LOCAL = "local_thumb"; // filename of the local thumbnail
+    public final static String COL_THUMB_LOCAL = "local_thumb"; // filename of the local thumbnail
 
     //@formatter:off
     public static final String
@@ -98,8 +99,8 @@ public abstract class CastMedia extends JsonSyncableItem {
     }
 
     public static Intent showMedia(Context context, Cursor c, Uri castMediaUri) {
-        final String mediaString = c.getString(c.getColumnIndex(CastMedia._MEDIA_URL));
-        final String locMediaString = c.getString(c.getColumnIndex(CastMedia._LOCAL_URL));
+        final String mediaString = c.getString(c.getColumnIndex(CastMedia.COL_MEDIA_URL));
+        final String locMediaString = c.getString(c.getColumnIndex(CastMedia.COL_LOCAL_URL));
         String mimeType = null;
 
         Uri media;
@@ -107,12 +108,12 @@ public abstract class CastMedia extends JsonSyncableItem {
         if (locMediaString != null) {
             media = Uri.parse(locMediaString);
             if ("file".equals(media.getScheme())) {
-                mimeType = c.getString(c.getColumnIndex(CastMedia._MIME_TYPE));
+                mimeType = c.getString(c.getColumnIndex(CastMedia.COL_MIME_TYPE));
             }
 
         } else if (mediaString != null) {
             media = Uri.parse(mediaString);
-            mimeType = c.getString(c.getColumnIndex(CastMedia._MIME_TYPE));
+            mimeType = c.getString(c.getColumnIndex(CastMedia.COL_MIME_TYPE));
 
             // we strip this because we don't really want to force them to go to the browser.
             if ("text/html".equals(mimeType)) {
@@ -167,11 +168,11 @@ public abstract class CastMedia extends JsonSyncableItem {
 
         final long now = System.currentTimeMillis();
 
-        cv.put(CastMedia._MODIFIED_DATE, now);
-        cv.put(CastMedia._CREATED_DATE, now);
+        cv.put(CastMedia.COL_MODIFIED_DATE, now);
+        cv.put(CastMedia.COL_CREATED_DATE, now);
 
         final String mimeType = getContentType(cr, content);
-        cv.put(CastMedia._MIME_TYPE, mimeType);
+        cv.put(CastMedia.COL_MIME_TYPE, mimeType);
 
         String mediaPath;
 
@@ -211,7 +212,7 @@ public abstract class CastMedia extends JsonSyncableItem {
                 String exifDateTime = "";
                 final ExifInterface exif = new ExifInterface(mediaPath);
                 exifDateTime = exif.getAttribute(ExifInterface.TAG_DATETIME);
-                cv.put(CastMedia._CAPTURE_TIME, exifDateTime);
+                cv.put(CastMedia.COL_CAPTURE_TIME, exifDateTime);
 
             } catch (final IOException ioex) {
                 Log.e(TAG, "EXIF: Couldn't find media: " + mediaPath);
@@ -219,13 +220,13 @@ public abstract class CastMedia extends JsonSyncableItem {
         }
 
         // ensure that there's always a capture time, even if it's faked.
-        if (!cv.containsKey(CastMedia._CAPTURE_TIME)) {
+        if (!cv.containsKey(CastMedia.COL_CAPTURE_TIME)) {
             Log.w(TAG, "faking capture time with current time");
-            cv.put(CastMedia._CAPTURE_TIME, now);
+            cv.put(CastMedia.COL_CAPTURE_TIME, now);
         }
 
-        cv.put(CastMedia._THUMB_LOCAL, mediaPath);
-        cv.put(CastMedia._LOCAL_URL, mediaPath);
+        cv.put(CastMedia.COL_THUMB_LOCAL, mediaPath);
+        cv.put(CastMedia.COL_LOCAL_URL, mediaPath);
 
         Log.d(TAG, "addMedia(" + castMedia + ", " + cv + ")");
         castMediaInfo.castMediaItem = cr.insert(castMedia, cv);
@@ -351,8 +352,8 @@ public abstract class CastMedia extends JsonSyncableItem {
                 @Override
                 public Object toJSON(Context context, Uri localItem, Cursor c, String lProp)
                         throws JSONException, NetworkProtocolException, IOException {
-                    String mimeType = c.getString(c.getColumnIndex(_MIME_TYPE));
-                    final String localUri = c.getString(c.getColumnIndex(_LOCAL_URL));
+                    String mimeType = c.getString(c.getColumnIndex(COL_MIME_TYPE));
+                    final String localUri = c.getString(c.getColumnIndex(COL_LOCAL_URL));
 
                     if (mimeType == null && localUri != null) {
 
@@ -384,14 +385,14 @@ public abstract class CastMedia extends JsonSyncableItem {
                     final String content_type = item.getString(remoteKey);
 
                     if ("linkedmedia".equals(content_type)) {
-                        cv.put(_MIME_TYPE, MIMETYPE_HTML);
+                        cv.put(COL_MIME_TYPE, MIMETYPE_HTML);
                     }
 
                     return cv;
                 }
             });
 
-            put(_CAPTURE_TIME, new SyncFieldMap("capture_time", SyncFieldMap.DATE,
+            put(COL_CAPTURE_TIME, new SyncFieldMap("capture_time", SyncFieldMap.DATE,
                     SyncItem.FLAG_OPTIONAL));
         }
 
@@ -452,7 +453,7 @@ public abstract class CastMedia extends JsonSyncableItem {
          * Implement this to handle loading from JSON. It's easiest to use
          * {@link #addToContentValues(ContentValues, String, JSONObject, String, String, boolean)}
          * here.
-         * 
+         *
          * @param context
          * @param localItem
          * @param cv
@@ -510,7 +511,7 @@ public abstract class CastMedia extends JsonSyncableItem {
 
     /**
      * A standard resource sync that maps the "primary" resource and its MIME type to
-     * {@link CastMedia#_MEDIA_URL} and {@link CastMedia#_MIME_TYPE} respectively.
+     * {@link CastMedia#COL_MEDIA_URL} and {@link CastMedia#COL_MIME_TYPE} respectively.
      *
      */
     public static class ResourcesSync extends AbsResourcesSync {
@@ -518,7 +519,7 @@ public abstract class CastMedia extends JsonSyncableItem {
         @Override
         protected void fromResourcesJSON(Context context, Uri localItem, ContentValues cv,
                 JSONObject resources, String lProp) throws NetworkProtocolException, JSONException {
-            addToContentValues(cv, "primary", resources, _MEDIA_URL, _MIME_TYPE, true);
+            addToContentValues(cv, "primary", resources, COL_MEDIA_URL, COL_MIME_TYPE, true);
 
         }
     }

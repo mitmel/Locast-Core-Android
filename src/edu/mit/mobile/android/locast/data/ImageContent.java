@@ -18,7 +18,7 @@ public abstract class ImageContent extends CastMedia {
     public static final String TAG = ImageContent.class.getSimpleName();
 
     @DBColumn(type = TextColumn.class)
-    public final static String _THUMBNAIL = "thumbnail";
+    public final static String COL_THUMBNAIL = "thumbnail";
 
     public ImageContent(Cursor c) {
         super(c);
@@ -60,7 +60,7 @@ public abstract class ImageContent extends CastMedia {
                 castMedia.path = "file://"
                         + c.getString(c.getColumnIndexOrThrow(MediaColumns.DATA));
 
-                cv.put(CastMedia._CAPTURE_TIME,
+                cv.put(CastMedia.COL_CAPTURE_TIME,
                         c.getLong(c.getColumnIndexOrThrow(Media.DATE_TAKEN)));
 
             } else {

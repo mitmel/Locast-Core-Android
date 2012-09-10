@@ -52,36 +52,36 @@ import edu.mit.mobile.android.locast.sync.LocastSyncService;
 
 /**
  * This type of object row can be serialized to/from JSON and synchronized to a server.
- * 
+ *
  * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
- * 
+ *
  */
 public abstract class JsonSyncableItem extends CursorWrapper implements ContentItem {
 
     @DBColumn(type = TextColumn.class)
-    public static final String _PUBLIC_URI = "uri";
+    public static final String COL_PUBLIC_URL = "url";
 
     @DBColumn(type = DatetimeColumn.class)
-    public static final String _MODIFIED_DATE = "modified";
+    public static final String COL_MODIFIED_DATE = "modified";
 
     @DBColumn(type = DatetimeColumn.class)
-    public static final String _SERVER_MODIFIED_DATE = "server_modified";
+    public static final String COL_SERVER_MODIFIED_DATE = "server_modified";
 
     @DBColumn(type = DatetimeColumn.class)
-    public static final String _CREATED_DATE = "created";
+    public static final String COL_CREATED_DATE = "created";
 
     @DBColumn(type = BooleanColumn.class)
-    public static final String _DRAFT = "draft";
+    public static final String COL_DRAFT = "draft";
 
     /**
      * @return The URI for a given content directory.
      */
     public abstract Uri getContentUri();
 
-    private static String[] PUB_URI_PROJECTION = {_ID, _PUBLIC_URI};
+    private static String[] PUB_URI_PROJECTION = {_ID, COL_PUBLIC_URL};
 
-    public static final String SELECTION_NOT_DRAFT = "(" + TaggableItem._DRAFT + " ISNULL OR "
-            + TaggableItem._DRAFT + " = 0)";
+    public static final String SELECTION_NOT_DRAFT = "(" + TaggableItem.COL_DRAFT + " ISNULL OR "
+            + TaggableItem.COL_DRAFT + " = 0)";
 
     public JsonSyncableItem(Cursor c) {
         super(c);
@@ -104,7 +104,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         final ContentResolver cr = context.getContentResolver();
 
         final String[] selectionArgs = {pubUri};
-        final Cursor c = cr.query(dirUri, PUB_URI_PROJECTION, _PUBLIC_URI+"=?", selectionArgs, null);
+        final Cursor c = cr.query(dirUri, PUB_URI_PROJECTION, COL_PUBLIC_URL+"=?", selectionArgs, null);
         if (c.moveToFirst()){
             uri = ContentUris.withAppendedId(dirUri, c.getLong(c.getColumnIndex(_ID)));
         }
@@ -129,9 +129,9 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         public ItemSyncMap() {
             super();
 
-            put(_PUBLIC_URI,        new SyncFieldMap("uri", SyncFieldMap.STRING, SyncItem.SYNC_FROM));
-            put(_SERVER_MODIFIED_DATE,  new SyncFieldMap("modified", SyncFieldMap.DATE, SyncItem.SYNC_FROM));
-            put(_CREATED_DATE,      new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
+            put(COL_PUBLIC_URL,        new SyncFieldMap("uri", SyncFieldMap.STRING, SyncItem.SYNC_FROM));
+            put(COL_SERVER_MODIFIED_DATE,  new SyncFieldMap("modified", SyncFieldMap.DATE, SyncItem.SYNC_FROM));
+            put(COL_CREATED_DATE,      new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
         }
     }
 

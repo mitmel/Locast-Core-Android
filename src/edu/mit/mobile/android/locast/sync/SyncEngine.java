@@ -102,21 +102,21 @@ public class SyncEngine {
 
     JsonSyncableItem._ID,
 
-    JsonSyncableItem._PUBLIC_URI,
+    JsonSyncableItem.COL_PUBLIC_URL,
 
-    JsonSyncableItem._MODIFIED_DATE,
+    JsonSyncableItem.COL_MODIFIED_DATE,
 
-    JsonSyncableItem._SERVER_MODIFIED_DATE,
+    JsonSyncableItem.COL_SERVER_MODIFIED_DATE,
 
-    JsonSyncableItem._CREATED_DATE
+    JsonSyncableItem.COL_CREATED_DATE
 
     };
 
-    private static final String SELECTION_UNPUBLISHED = JsonSyncableItem._PUBLIC_URI
+    private static final String SELECTION_UNPUBLISHED = JsonSyncableItem.COL_PUBLIC_URL
             + " ISNULL AND " + TaggableItem.SELECTION_NOT_DRAFT;
 
     final String[] PUB_URI_PROJECTION = new String[] { JsonSyncableItem._ID,
-            JsonSyncableItem._PUBLIC_URI };
+            JsonSyncableItem.COL_PUBLIC_URL };
 
     private final SyncableProvider mProvider;
 
@@ -325,8 +325,8 @@ public class SyncEngine {
             sb.append(")");
 
             final String placeholders = sb.toString();
-            selection = JsonSyncableItem._PUBLIC_URI + " IN " + placeholders;
-            selectionInverse = JsonSyncableItem._PUBLIC_URI + " NOT IN " + placeholders;
+            selection = JsonSyncableItem.COL_PUBLIC_URL + " IN " + placeholders;
+            selectionInverse = JsonSyncableItem.COL_PUBLIC_URL + " NOT IN " + placeholders;
         } else {
 
             final JSONObject jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
@@ -335,8 +335,8 @@ public class SyncEngine {
 
             syncStatuses.put(syncStatus.remote, syncStatus);
 
-            selection = JsonSyncableItem._PUBLIC_URI + "=?";
-            selectionInverse = JsonSyncableItem._PUBLIC_URI + "!=?";
+            selection = JsonSyncableItem.COL_PUBLIC_URL + "=?";
+            selectionInverse = JsonSyncableItem.COL_PUBLIC_URL + "!=?";
             selectionArgs = new String[] { syncStatus.remote };
         }
 
@@ -347,7 +347,7 @@ public class SyncEngine {
 
         // these items are on both sides
         try {
-            final int pubUriCol = check.getColumnIndex(JsonSyncableItem._PUBLIC_URI);
+            final int pubUriCol = check.getColumnIndex(JsonSyncableItem.COL_PUBLIC_URL);
             final int idCol = check.getColumnIndex(JsonSyncableItem._ID);
 
             // All the items in this cursor should be found on both
@@ -380,9 +380,9 @@ public class SyncEngine {
 
         // these items are on both sides
         try {
-            final int pubUriCol = c.getColumnIndex(JsonSyncableItem._PUBLIC_URI);
-            final int localModifiedCol = c.getColumnIndex(JsonSyncableItem._MODIFIED_DATE);
-            final int serverModifiedCol = c.getColumnIndex(JsonSyncableItem._SERVER_MODIFIED_DATE);
+            final int pubUriCol = c.getColumnIndex(JsonSyncableItem.COL_PUBLIC_URL);
+            final int localModifiedCol = c.getColumnIndex(JsonSyncableItem.COL_MODIFIED_DATE);
+            final int serverModifiedCol = c.getColumnIndex(JsonSyncableItem.COL_SERVER_MODIFIED_DATE);
             final int idCol = c.getColumnIndex(JsonSyncableItem._ID);
 
             // All the items in this cursor should be found on both
@@ -454,11 +454,11 @@ public class SyncEngine {
                             .newUpdate(localUri);
 
                     // update this so it's in the local timescale
-                    correctServerOffset(itemStatus.remoteCVs, JsonSyncableItem._CREATED_DATE,
-                            JsonSyncableItem._CREATED_DATE, localOffset);
+                    correctServerOffset(itemStatus.remoteCVs, JsonSyncableItem.COL_CREATED_DATE,
+                            JsonSyncableItem.COL_CREATED_DATE, localOffset);
                     correctServerOffset(itemStatus.remoteCVs,
-                            JsonSyncableItem._SERVER_MODIFIED_DATE,
-                            JsonSyncableItem._MODIFIED_DATE, localOffset);
+                            JsonSyncableItem.COL_SERVER_MODIFIED_DATE,
+                            JsonSyncableItem.COL_MODIFIED_DATE, localOffset);
 
                     b.withValues(itemStatus.remoteCVs);
                     b.withExpectedCount(1);
@@ -561,10 +561,10 @@ public class SyncEngine {
                 }
 
                 // update this so it's in the local timescale
-                correctServerOffset(status.remoteCVs, JsonSyncableItem._CREATED_DATE,
-                        JsonSyncableItem._CREATED_DATE, localOffset);
-                correctServerOffset(status.remoteCVs, JsonSyncableItem._SERVER_MODIFIED_DATE,
-                        JsonSyncableItem._MODIFIED_DATE, localOffset);
+                correctServerOffset(status.remoteCVs, JsonSyncableItem.COL_CREATED_DATE,
+                        JsonSyncableItem.COL_CREATED_DATE, localOffset);
+                correctServerOffset(status.remoteCVs, JsonSyncableItem.COL_SERVER_MODIFIED_DATE,
+                        JsonSyncableItem.COL_MODIFIED_DATE, localOffset);
 
                 final ContentProviderOperation.Builder b = ContentProviderOperation
                         .newInsert(toSync);
@@ -633,12 +633,12 @@ public class SyncEngine {
         c = provider.query(
                 toSync,
                 SYNC_PROJECTION,
-                ProviderUtils.addExtraWhere(selectionInverse, JsonSyncableItem._PUBLIC_URI
+                ProviderUtils.addExtraWhere(selectionInverse, JsonSyncableItem.COL_PUBLIC_URL
                         + " NOT NULL"), selectionArgs, null);
 
         try {
             final int idCol = c.getColumnIndex(JsonSyncableItem._ID);
-            final int pubUriCol = c.getColumnIndex(JsonSyncableItem._PUBLIC_URI);
+            final int pubUriCol = c.getColumnIndex(JsonSyncableItem.COL_PUBLIC_URL);
 
             cpo.clear();
 
@@ -942,8 +942,8 @@ public class SyncEngine {
             throws JSONException, IOException, NetworkProtocolException {
         final ContentValues cv = JsonSyncableItem.fromJSON(mContext, null, jo, syncMap);
 
-        final String remoteUri = cv.getAsString(JsonSyncableItem._PUBLIC_URI);
-        final long remoteModified = cv.getAsLong(JsonSyncableItem._SERVER_MODIFIED_DATE);
+        final String remoteUri = cv.getAsString(JsonSyncableItem.COL_PUBLIC_URL);
+        final long remoteModified = cv.getAsLong(JsonSyncableItem.COL_SERVER_MODIFIED_DATE);
 
         // the status starts out based on this knowledge and gets filled in
         // as the sync progresses

@@ -159,7 +159,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
     public static Set<String> getTags(ContentResolver cr, Uri itemTags, String prefix) {
         final Cursor tags = cr.query(itemTags, AbsTag.DEFAULT_PROJECTION, null, null, null);
         final Set<String> tagSet = new HashSet<String>(tags.getCount());
-        final int tagColumn = tags.getColumnIndex(AbsTag._NAME);
+        final int tagColumn = tags.getColumnIndex(AbsTag.COL_NAME);
         final Predicate<String> predicate = getPrefixPredicate(prefix);
         for (tags.moveToFirst(); !tags.isAfterLast(); tags.moveToNext()){
             final String tag = tags.getString(tagColumn);
@@ -219,7 +219,7 @@ public abstract class TaggableItem extends JsonSyncableItem {
         final List<String> popTags;
 
         final Cursor c = cr.query(tags, AbsTag.DEFAULT_PROJECTION, null, null, null);
-        final int tagColumn = c.getColumnIndex(AbsTag._NAME);
+        final int tagColumn = c.getColumnIndex(AbsTag.COL_NAME);
 
         for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()){
             final String tag = c.getString(tagColumn);

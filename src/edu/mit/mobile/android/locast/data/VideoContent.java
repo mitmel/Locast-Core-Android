@@ -8,16 +8,16 @@ import edu.mit.mobile.android.content.column.TextColumn;
 public abstract class VideoContent extends CastMedia {
 
     @DBColumn(type = IntegerColumn.class)
-    public final static String _DURATION = "duration";
+    public final static String COL_DURATION = "duration";
 
     @DBColumn(type = TextColumn.class)
-    public final static String _SCREENSHOT = "screenshot";
+    public final static String COL_SCREENSHOT = "screenshot";
 
     @DBColumn(type = TextColumn.class)
-    public final static String _ANIMATED_PREVIEW = "preview";
+    public final static String COL_ANIMATED_PREVIEW = "preview";
 
     @DBColumn(type = TextColumn.class)
-    public final static String _WEB_STREAM = "web_stream";
+    public final static String COL_WEB_STREAM = "web_stream";
 
     public VideoContent(Cursor c) {
         super(c);
@@ -36,16 +36,16 @@ public abstract class VideoContent extends CastMedia {
             super();
 
             // XXX this belongs in resources
-            put(_DURATION, new SyncFieldMap("duration", SyncFieldMap.DURATION,
+            put(COL_DURATION, new SyncFieldMap("duration", SyncFieldMap.DURATION,
                     SyncFieldMap.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 
-            put(_SCREENSHOT, new SyncFieldMap("screenshot", SyncFieldMap.STRING,
+            put(COL_SCREENSHOT, new SyncFieldMap("screenshot", SyncFieldMap.STRING,
                     SyncFieldMap.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 
-            put(_ANIMATED_PREVIEW, new SyncFieldMap("preview", SyncFieldMap.STRING,
+            put(COL_ANIMATED_PREVIEW, new SyncFieldMap("preview", SyncFieldMap.STRING,
                     SyncFieldMap.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
 
-            put(_WEB_STREAM, new SyncFieldMap("web_stream", SyncFieldMap.STRING,
+            put(COL_WEB_STREAM, new SyncFieldMap("web_stream", SyncFieldMap.STRING,
                     SyncFieldMap.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
         }
     }
