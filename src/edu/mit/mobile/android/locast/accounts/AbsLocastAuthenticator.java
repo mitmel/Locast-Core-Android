@@ -81,7 +81,7 @@ public abstract class AbsLocastAuthenticator extends AbstractAccountAuthenticato
      * @return an intent that would launch the appropriate {@link AbsLocastAuthenticatorActivity}.
      *         All the extras will be populated for you.
      */
-    abstract Intent getAuthenticator(Context context);
+    public abstract Intent getAuthenticator(Context context);
 
     /**
      * {@inheritDoc}

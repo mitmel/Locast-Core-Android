@@ -331,5 +331,7 @@ public abstract class AbsLocastAccountSyncService extends LocastSyncService {
      * @param syncResult
      */
     public abstract void syncDefaultItems(SyncEngine syncEngine, Account account, Bundle extras,
-            ContentProviderClient provider, SyncResult syncResult);
+            ContentProviderClient provider, SyncResult syncResult) throws HttpResponseException,
+            RemoteException, SyncException, JSONException, IOException, NetworkProtocolException,
+            NoPublicPath, OperationApplicationException, InterruptedException;
 }
