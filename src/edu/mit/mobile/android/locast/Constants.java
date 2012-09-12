@@ -26,7 +26,7 @@ public class Constants {
      * General debugging flag. This needs to be a constant so that the compiler will remove any
      * debugging code.
      */
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = BuildConfig.DEBUG;
 
     /**
      * If true, this uses the Android account framework for storing accounts. Make sure the
