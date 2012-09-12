@@ -75,7 +75,7 @@ public abstract class ImageContent extends CastMedia {
     public final static ItemSyncMap SYNC_MAP = new ItemSyncMap();
 
     public static class ItemSyncMap extends CastMedia.ItemSyncMap {
-
+        protected static final String RESOURCES_KEY = "_resources";
         /**
          *
          */
@@ -83,7 +83,11 @@ public abstract class ImageContent extends CastMedia {
 
         public ItemSyncMap() {
             super();
-            put("_resources", new ResourcesSync());
+            put(RESOURCES_KEY, new ResourcesSync());
+        }
+
+        protected void setResourcesSync(AbsResourcesSync res) {
+            put(RESOURCES_KEY, res);
         }
     }
 }
