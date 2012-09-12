@@ -87,14 +87,13 @@ import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetFileDescriptor;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.R;
@@ -118,6 +117,8 @@ public class NetworkClient extends DefaultHttpClient {
 
     private final static String PATH_PAIR = "pair/", PATH_UNPAIR = "un-pair/",
             PATH_USER = "user/me";
+
+    public static final String METADATA_KEY_BASE_URL = "edu.mit.mobile.android.locast.base_url";
 
     protected URI mBaseUrl;
     // one of the formats from ISO 8601
@@ -207,15 +208,6 @@ public class NetworkClient extends DefaultHttpClient {
         loadFromExistingAccount(account);
     }
 
-    public NetworkClient(Context context) {
-        super();
-        this.mContext = context;
-
-        initClient();
-
-        loadWithoutAccount();
-    }
-
     /**
      * Create a new NetworkClient using the baseUrl. You will need to call
      * {@link #setCredentials(Credentials)} at some point if you want authentication.
@@ -284,18 +276,17 @@ public class NetworkClient extends DefaultHttpClient {
     /************************* credentials and pairing **********************/
 
     public static NetworkClient getInstance(Context context, Account account) {
+
         if (account == null) {
-            return new NetworkClient(context);
+            try {
+
+                return new NetworkClient(context, getBaseUrlFromManifest(context));
+            } catch (final MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
         } else {
             return new NetworkClient(context, account);
         }
-    }
-
-    public static String getBaseUrlFromPreferences(Context context) {
-        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        // return prefs.getString(NetworkClient.PREF_SERVER_URL,
-        // context.getString(R.string.default_api_url));
-        return null; // XXX BROKEN. Need to implement
     }
 
     private void setBaseUrl(String baseUrlString) throws MalformedURLException {
@@ -312,11 +303,29 @@ public class NetworkClient extends DefaultHttpClient {
         }
     }
 
+    public static String getBaseUrlFromManifest(Context context) {
+        PackageInfo pkgInfo;
+        try {
+            pkgInfo = context.getPackageManager().getPackageInfo(context.getPackageName(),
+                    PackageManager.GET_META_DATA);
+        } catch (final NameNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        final Bundle metadata = pkgInfo.applicationInfo.metaData;
+        if (metadata == null) {
+            throw new RuntimeException(
+                    "missing base URL metadata in application element of AndroidManifest");
+        }
+        final String baseUrl = metadata.getString(METADATA_KEY_BASE_URL);
+
+        return baseUrl;
+    }
+
     /**
      * initializes
      */
-    protected synchronized void loadWithoutAccount() {
-        final String baseUrlString = getBaseUrlFromPreferences(mContext);
+    protected synchronized void loadWithoutAccount(String baseUrlString) {
 
         try {
             setBaseUrl(baseUrlString);
@@ -336,8 +345,8 @@ public class NetworkClient extends DefaultHttpClient {
         final AccountManager am = AccountManager.get(mContext);
         baseUrlString = am.getUserData(account, AbsLocastAuthenticationService.USERDATA_LOCAST_API_URL);
         if (baseUrlString == null) {
-            Log.w(TAG, "loading base URL from preferences instead of account metadata");
-            baseUrlString = getBaseUrlFromPreferences(mContext);
+            Log.e(TAG, "no Locast API information associated with account metadata");
+
             // if it's null in the userdata, then it must be an account from before this feature
             // was added.
             // Store for later use.

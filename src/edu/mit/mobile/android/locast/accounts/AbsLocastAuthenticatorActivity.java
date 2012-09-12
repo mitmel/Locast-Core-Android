@@ -213,10 +213,19 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
         }
         mPassword = mPasswordEdit.getText().toString();
         if (validateEntry()) {
-            final String baseUrl = NetworkClient.getBaseUrlFromPreferences(this);
+            final String baseUrl = getApiUrl();
             mAuthenticationTask = new AuthenticationTask(this);
             mAuthenticationTask.execute(baseUrl, mUsername, mPassword);
         }
+    }
+
+    /**
+     * Implement this to inform the Authenticator about the API URL.
+     *
+     * @return the base URL for the Locast API
+     */
+    public String getApiUrl() {
+        return NetworkClient.getBaseUrlFromManifest(getApplicationContext());
     }
 
     /**

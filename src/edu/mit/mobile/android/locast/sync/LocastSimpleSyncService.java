@@ -70,7 +70,7 @@ public abstract class LocastSimpleSyncService extends LocastSyncService {
     @Override
     public void onCreate() {
         super.onCreate();
-        mNetworkClient = new NetworkClient(this);
+        mNetworkClient = NetworkClient.getInstance(this, null);
 
         mContentProviderClient = getContentResolver().acquireContentProviderClient(mAuthority);
 
