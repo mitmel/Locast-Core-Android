@@ -94,14 +94,16 @@ public abstract class AbsLocastAccountSyncService extends LocastSyncService {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        final Bundle extras = intent.getExtras();
-
-        if (extras != null){
-            final Account account = extras.getParcelable(EXTRA_ACCOUNT);
-
-            // TODO make this shortcut the Android sync system.
-            ContentResolver.requestSync(account, getAuthority(), extras);
+        Bundle extras = intent.getExtras();
+        if (extras == null) {
+            extras = new Bundle();
         }
+        extras.putString(EXTRA_SYNC_URI, intent.getData().toString());
+
+        final Account account = extras.getParcelable(EXTRA_ACCOUNT);
+
+        // TODO make this shortcut the Android sync system.
+        ContentResolver.requestSync(account, getAuthority(), extras);
 
         return START_NOT_STICKY;
     }
@@ -212,12 +214,17 @@ public abstract class AbsLocastAccountSyncService extends LocastSyncService {
             }
 
             try {
-                mContext.startService(new Intent(MediaSync.ACTION_SYNC_RESOURCES));
+                // XXX is this needed ? mContext.startService(new
+                // Intent(AbsMediaSync.ACTION_SYNC_RESOURCES).setType(type));
 
                 if (uploadOnly) {
+                    if (uri != null) {
                     // default to only uploading content
                     syncEngine.uploadUnpublished(uri, account,
                             extras, provider, syncResult);
+                    } else {
+                        Log.w(TAG, "uploadOnly was triggered without any URI to upload");
+                    }
                 } else {
                     if (uri != null) {
                         syncEngine.sync(uri, account, extras, provider, syncResult);

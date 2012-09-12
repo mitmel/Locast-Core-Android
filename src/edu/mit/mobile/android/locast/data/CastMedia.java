@@ -45,7 +45,7 @@ import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticationService;
 import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticator;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
-import edu.mit.mobile.android.locast.sync.MediaSync;
+import edu.mit.mobile.android.locast.sync.AbsMediaSync;
 
 public abstract class CastMedia extends JsonSyncableItem {
     private static final String TAG = CastMedia.class.getSimpleName();
@@ -402,7 +402,7 @@ public abstract class CastMedia extends JsonSyncableItem {
             super.onPostSyncItem(context, account, uri, item, updated);
             if (uri != null) {
                 Log.d(TAG, "Starting media sync for " + uri);
-                context.startService(new Intent(MediaSync.ACTION_SYNC_RESOURCES, uri));
+                context.startService(new Intent(AbsMediaSync.ACTION_SYNC_RESOURCES, uri));
             }
         }
     }

@@ -74,8 +74,8 @@ import edu.mit.mobile.android.locast.notifications.ProgressNotification;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.utils.StreamUtils;
 
-public abstract class MediaSync extends Service implements MediaScannerConnectionClient {
-    private final static String TAG = MediaSync.class.getSimpleName();
+public abstract class AbsMediaSync extends Service implements MediaScannerConnectionClient {
+    private final static String TAG = AbsMediaSync.class.getSimpleName();
 
     /*
      * public interface
@@ -131,7 +131,7 @@ public abstract class MediaSync extends Service implements MediaScannerConnectio
     /**
      * Creates a new Media Sync engine.
      */
-    public MediaSync() {
+    public AbsMediaSync() {
         super();
 
         try {
@@ -904,8 +904,8 @@ public abstract class MediaSync extends Service implements MediaScannerConnectio
     }
 
     public class LocalBinder extends Binder {
-        MediaSync getService() {
-            return MediaSync.this;
+        AbsMediaSync getService() {
+            return AbsMediaSync.this;
         }
     }
 
