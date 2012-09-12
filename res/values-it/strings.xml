@@ -89,12 +89,6 @@
   <string name="moment_description_hint">Descrivi brevemente questo momento (opzionale)</string>
   <string name="save_moment">Salva Momento</string>
   <string name="error_moment_saving_moment">Errore nel salvare del momento :-(</string>
-  <string name="moment_saved">Momento salvato.</string>
-  <string name="pref_cat_account">Account</string>
-  <string name="pref_title_username">Username</string>
-  <string name="pref_title_password">Password</string>
-  <string name="pref_cat_advanced">Avanzato</string>
-  <string name="pref_title_server_url">Server URL</string>
   <string name="welcome_message">Benvenuti a Open Locast.</string>
   <string name="auth_signin_or_skip_notice">Per caricare foto e video sulla piattaforma Open Locast devi registrare un account</string>
   <string name="auth_signin_register">Entra / Registrati</string>

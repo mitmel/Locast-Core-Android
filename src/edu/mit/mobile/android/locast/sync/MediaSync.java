@@ -71,7 +71,7 @@ import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient.InputStreamWatcher;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
-import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.utils.StreamUtils;
 
 public abstract class MediaSync extends Service implements MediaScannerConnectionClient {

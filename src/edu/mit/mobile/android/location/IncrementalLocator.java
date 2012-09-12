@@ -25,7 +25,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
-import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.R;
 
 /**
  * A wrapper for a LocationManager that incrementally gets location for you,

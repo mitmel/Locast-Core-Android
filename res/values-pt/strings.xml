@@ -94,15 +94,6 @@
   <string name="moment_description_hint">Dê uma breve descrição desse momento (opcional)</string>
   <string name="save_moment">Gravar o momento</string>
   <string name="error_moment_saving_moment">Falho na gravação do momento :-(</string>
-  <string name="moment_saved">Momento gravado.</string>
-  <string name="pref_cat_account">Conta</string>
-  <string name="pref_title_username">Nome usuário</string>
-  <string name="pref_title_password">Senha</string>
-  <string name="pref_cat_advanced">Avançado</string>
-  <string name="pref_title_server_url">URL de servidor</string>
-  <string name="pref_locast_site">Site de Open Locast</string>
-  <string name="pref_locast_site_dialog_title">Escolhe um site de Open Locast</string>
-  <string name="pref_locast_site_summary">Escolhe outro site de Open Locast.</string>
   <string name="welcome_message">Bem Vindo! Open Locast Abruzzo é uma aplicação turística para visitar Abruzzo que é baseada em localizações.</string>
   <string name="auth_signin_or_skip_notice">É preciso ter uma conta para carregar fotos e vídeos a Open Locast</string>
   <string name="auth_signin_register">Entrar/Cadastrar-se</string>

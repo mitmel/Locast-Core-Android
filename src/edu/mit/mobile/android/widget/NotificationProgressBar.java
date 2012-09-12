@@ -7,7 +7,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.R;
 
 /**
  * Shows either an empty view or a progress bar.

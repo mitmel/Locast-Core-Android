@@ -20,7 +20,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.widget.RemoteViews;
-import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.R;
 
 
 /**

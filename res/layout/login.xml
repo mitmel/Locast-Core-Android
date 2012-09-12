@@ -14,7 +14,7 @@
             android:layout_height="wrap_content"
             android:visibility="gone" />
 
-        <TextView
+        <TextView android:id="@+id/username_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="5dip"

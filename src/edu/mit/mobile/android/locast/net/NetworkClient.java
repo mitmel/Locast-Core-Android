@@ -97,12 +97,12 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
+import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticationService;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.Titled;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
 import edu.mit.mobile.android.locast.sync.SyncableProvider;
-import edu.mit.mobile.android.locast.ver2.R;
 import edu.mit.mobile.android.utils.StreamUtils;
 
 /**

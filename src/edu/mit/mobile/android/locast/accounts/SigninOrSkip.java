@@ -27,7 +27,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.R;
 
 public class SigninOrSkip extends Activity implements OnClickListener {
 

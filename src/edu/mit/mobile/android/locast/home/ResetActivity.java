@@ -30,7 +30,7 @@ import android.view.View.OnClickListener;
 import android.widget.Toast;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticator;
-import edu.mit.mobile.android.locast.ver2.R;
+import edu.mit.mobile.android.locast.R;
 
 public class ResetActivity extends Activity implements OnClickListener {
     private static final String TAG = ResetActivity.class.getSimpleName();

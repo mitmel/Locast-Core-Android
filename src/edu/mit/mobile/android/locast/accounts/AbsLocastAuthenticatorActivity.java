@@ -47,9 +47,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
+import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
-import edu.mit.mobile.android.locast.ver2.R;
 
 /**
  * Activity which displays login screen to the user.
@@ -86,6 +86,8 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
     private String mUsername;
     private EditText mUsernameEdit;
 
+    private Button mRegisterButton;
+
     /**
      * {@inheritDoc}
      */
@@ -105,8 +107,11 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
 
         Log.i(TAG, "    request new: " + mRequestNewAccount);
         requestWindowFeature(Window.FEATURE_LEFT_ICON);
+
+        final CharSequence appName = getAppName();
+
         // make the title based on the app name.
-        setTitle(getString(R.string.login_title, getAppName()));
+        setTitle(getString(R.string.login_title, appName));
 
         // TODO make this changeable. Maybe use fragments?
         setContentView(R.layout.login);
@@ -124,7 +129,12 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
         mPasswordEdit.setOnEditorActionListener(this);
         findViewById(R.id.login).setOnClickListener(this);
         findViewById(R.id.cancel).setOnClickListener(this);
-        ((Button) findViewById(R.id.register)).setOnClickListener(this);
+        mRegisterButton = (Button) findViewById(R.id.register);
+        mRegisterButton.setOnClickListener(this);
+        mRegisterButton.setText(getString(R.string.signup_text, appName));
+
+        ((TextView) findViewById(R.id.username_label)).setText(getString(R.string.username_label,
+                appName));
 
         mUsernameEdit.setText(mUsername);
 
@@ -316,7 +326,8 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
             // If no username, then we ask the user to log in using an
             // appropriate service.
 
-            mUsernameEdit.setError(getText(R.string.login_message_login_empty_username));
+            mUsernameEdit.setError(getString(R.string.login_message_login_empty_username,
+                    getAppName()));
             mUsernameEdit.requestFocus();
             return false;
         } else {
