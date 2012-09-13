@@ -6,3 +6,5 @@ errors/
 *.swp
 README.html
 .project
+build.xml
+local.properties
