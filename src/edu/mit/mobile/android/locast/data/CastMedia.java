@@ -43,7 +43,6 @@ import edu.mit.mobile.android.content.column.DBColumn;
 import edu.mit.mobile.android.content.column.DatetimeColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticationService;
-import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticator;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.sync.AbsMediaSync;
 
@@ -161,7 +160,7 @@ public abstract class CastMedia extends JsonSyncableItem {
      * @return a summary of the information discovered from the content uri
      * @throws MediaProcessingException
      */
-    public static CastMediaInfo addMedia(Context context, Uri castMedia, Uri content,
+    public static CastMediaInfo addMedia(Context context, Account me, Uri castMedia, Uri content,
             ContentValues cv) throws MediaProcessingException {
 
         final ContentResolver cr = context.getContentResolver();
@@ -177,7 +176,7 @@ public abstract class CastMedia extends JsonSyncableItem {
         String mediaPath;
 
         // only add in credentials on inserts
-        final Account me = AbsLocastAuthenticator.getFirstAccount(context);
+
         final AccountManager am = AccountManager.get(context);
 
         final String displayName = am.getUserData(me, AbsLocastAuthenticationService.USERDATA_DISPLAY_NAME);

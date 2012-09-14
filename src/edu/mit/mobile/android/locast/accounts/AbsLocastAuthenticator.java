@@ -65,15 +65,15 @@ public abstract class AbsLocastAuthenticator extends AbstractAccountAuthenticato
         return bundle;
     }
 
-    public static boolean hasRealAccount(Context context){
-        final Account[] accounts = getAccounts(context);
+    public static boolean hasRealAccount(Context context, String accountType) {
+        final Account[] accounts = getAccounts(context, accountType);
         final boolean hasRealAccount = accounts.length > 0;
 
         return hasRealAccount;
     }
 
-    public static Account[] getAccounts(Context context){
-        return AccountManager.get(context).getAccountsByType(AbsLocastAuthenticationService.ACCOUNT_TYPE);
+    public static Account[] getAccounts(Context context, String accountType){
+        return AccountManager.get(context).getAccountsByType(accountType);
     }
 
     /**
@@ -82,6 +82,10 @@ public abstract class AbsLocastAuthenticator extends AbstractAccountAuthenticato
      *         All the extras will be populated for you.
      */
     public abstract Intent getAuthenticator(Context context);
+
+    public abstract String getAccountType();
+
+    public abstract String getAuthTokenType();
 
     /**
      * {@inheritDoc}
@@ -123,7 +127,7 @@ public abstract class AbsLocastAuthenticator extends AbstractAccountAuthenticato
     @Override
     public Bundle getAuthToken(AccountAuthenticatorResponse response,
         Account account, String authTokenType, Bundle loginOptions) {
-        if (!authTokenType.equals(AbsLocastAuthenticationService.AUTHTOKEN_TYPE)) {
+        if (!authTokenType.equals(getAuthTokenType())) {
             final Bundle result = new Bundle();
             result.putString(AccountManager.KEY_ERROR_MESSAGE,
                 "invalid authTokenType");
@@ -137,8 +141,7 @@ public abstract class AbsLocastAuthenticator extends AbstractAccountAuthenticato
                 final Bundle result = new Bundle();
 
                 result.putString(AccountManager.KEY_ACCOUNT_NAME, account.name);
-                result.putString(AccountManager.KEY_ACCOUNT_TYPE,
-                        AbsLocastAuthenticationService.ACCOUNT_TYPE);
+                result.putString(AccountManager.KEY_ACCOUNT_TYPE, getAccountType());
                 result.putString(AccountManager.KEY_AUTHTOKEN, password);
                 return result;
             }
@@ -201,24 +204,29 @@ public abstract class AbsLocastAuthenticator extends AbstractAccountAuthenticato
         return bundle;
     }
 
-    public static String getUserUri(Context context){
-        final Account[] accounts = AbsLocastAuthenticator.getAccounts(context);
+    public static String getUserUri(Context context, String accountType) {
+        final Account[] accounts = AbsLocastAuthenticator.getAccounts(context, accountType);
         if (accounts.length > 0){
             return AccountManager.get(context).getUserData(accounts[0], AbsLocastAuthenticationService.USERDATA_USER_URI);
         }
         return null;
     }
 
-    public static Account getFirstAccount(Context context){
-        final Account[] accounts = AbsLocastAuthenticator.getAccounts(context);
+    public static String getUserUri(Context context, Account account) {
+        return AccountManager.get(context).getUserData(account,
+                AbsLocastAuthenticationService.USERDATA_USER_URI);
+    }
+
+    public static Account getFirstAccount(Context context, String accountType) {
+        final Account[] accounts = AbsLocastAuthenticator.getAccounts(context, accountType);
         if (accounts.length > 0){
             return accounts[0];
         }
         return null;
     }
 
-    public static String getUserData(Context context, String key){
-        final Account account = getFirstAccount(context);
+    public static String getUserData(Context context, String accountType, String key) {
+        final Account account = getFirstAccount(context, accountType);
         if (account == null){
             throw new RuntimeException("no accounts registered");
         }

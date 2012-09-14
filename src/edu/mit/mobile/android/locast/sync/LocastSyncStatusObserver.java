@@ -24,7 +24,6 @@ import android.content.SyncStatusObserver;
 import android.os.Handler;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticator;
 
 /**
  * A implementation of a SyncStatusObserver that will be used to monitor the current account
@@ -38,15 +37,18 @@ public class LocastSyncStatusObserver implements SyncStatusObserver {
     Context mContext;
     Handler mHandler;
     private final String mAuthority;
+    private final Account mAccount;
 
     public static final int MSG_SET_REFRESHING = 100, MSG_SET_NOT_REFRESHING = 101;
 
     private static final String TAG = LocastSyncStatusObserver.class.getSimpleName();
 
-    public LocastSyncStatusObserver(Context context, String authority, Handler handler) {
+    public LocastSyncStatusObserver(Context context, Account account, String authority,
+            Handler handler) {
         this.mContext = context;
         this.mHandler = handler;
         this.mAuthority = authority;
+        mAccount = account;
     }
 
     @Override
@@ -56,7 +58,7 @@ public class LocastSyncStatusObserver implements SyncStatusObserver {
 
     private void notifySyncStatusToHandler(Context context, Handler handler) {
         if (Constants.USE_ACCOUNT_FRAMEWORK) {
-            final Account a = AbsLocastAuthenticator.getFirstAccount(context);
+            final Account a = mAccount;
             if (!ContentResolver.isSyncActive(a, mAuthority)
                     && !ContentResolver.isSyncPending(a, mAuthority)) {
                 if (Constants.DEBUG) {

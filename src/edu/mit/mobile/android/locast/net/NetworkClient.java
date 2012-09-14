@@ -1186,19 +1186,6 @@ public class NetworkClient extends DefaultHttpClient {
         return context.getContentResolver().openInputStream(localFileUri);
     }
 
-    /**
-     * Perform an offline check to see if there is a pairing stored for this client. Does not block
-     * on network connection.
-     *
-     * @return true if the client is paired with the server.
-     */
-    @Deprecated
-    public boolean isPaired() {
-        final AccountManager am = AccountManager.get(mContext);
-        final Account[] accounts = am.getAccountsByType(AbsLocastAuthenticationService.ACCOUNT_TYPE);
-        return accounts.length >= 1;
-    }
-
     protected void logDebug(String msg) {
         if (DEBUG) {
             Log.d(TAG, msg);

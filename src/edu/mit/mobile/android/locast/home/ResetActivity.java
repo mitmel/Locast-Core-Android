@@ -29,10 +29,10 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticator;
 import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticator;
 
-public class ResetActivity extends Activity implements OnClickListener {
+public abstract class ResetActivity extends Activity implements OnClickListener {
     private static final String TAG = ResetActivity.class.getSimpleName();
 
     @Override
@@ -47,10 +47,12 @@ public class ResetActivity extends Activity implements OnClickListener {
         findViewById(R.id.cancel).setOnClickListener(this);
     }
 
+    protected abstract String getAccountType();
+
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.reset) {
-            resetEverything(this, true, true);
+            resetEverything(this, getAccountType(), true, true);
             setResult(RESULT_OK);
             finish();
         } else if (v.getId() == R.id.cancel) {
@@ -59,7 +61,8 @@ public class ResetActivity extends Activity implements OnClickListener {
         }
     }
 
-    public static void resetEverything(Context context, boolean showNotice, boolean removeAccounts) {
+    public static void resetEverything(Context context, String accountType, boolean showNotice,
+            boolean removeAccounts) {
         if (Constants.DEBUG) {
             Log.d(TAG, "erasing all data...");
         }
@@ -67,7 +70,7 @@ public class ResetActivity extends Activity implements OnClickListener {
         if (removeAccounts) {
             final AccountManager am = (AccountManager) context.getSystemService(ACCOUNT_SERVICE);
 
-            for (final Account account : AbsLocastAuthenticator.getAccounts(context)) {
+            for (final Account account : AbsLocastAuthenticator.getAccounts(context, accountType)) {
                 am.removeAccount(account, null, null);
             }
         }

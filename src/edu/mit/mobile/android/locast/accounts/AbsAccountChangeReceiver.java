@@ -28,8 +28,8 @@ import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.home.ResetActivity;
 
-public class AccountChangeReceiver extends BroadcastReceiver {
-    private static final String TAG = AccountChangeReceiver.class.getSimpleName();
+public abstract class AbsAccountChangeReceiver extends BroadcastReceiver {
+    private static final String TAG = AbsAccountChangeReceiver.class.getSimpleName();
 
     private static final String PREF_ACCOUNT_NAMES = "accountNames";
 
@@ -43,7 +43,7 @@ public class AccountChangeReceiver extends BroadcastReceiver {
         final SharedPreferences prefs = context.getSharedPreferences("account",
                 Context.MODE_PRIVATE);
         final String existingAccountString = prefs.getString(PREF_ACCOUNT_NAMES, "");
-        final Account[] currentAccounts = am.getAccountsByType(AbsLocastAuthenticationService.ACCOUNT_TYPE);
+        final Account[] currentAccounts = am.getAccountsByType(getAccountType());
         Arrays.sort(currentAccounts);
         final String[] lastKnownAccounts = existingAccountString.length() > 0 ? existingAccountString
                 .split(ACCOUNT_STRING_DELIMITER) : new String[0];
@@ -63,7 +63,7 @@ public class AccountChangeReceiver extends BroadcastReceiver {
             // account has been deleted
             if (!found) {
                 onAccountDeleted(context, new Account(lastKnownAccount,
-                        AbsLocastAuthenticationService.ACCOUNT_TYPE));
+ getAccountType()));
             }
         }
 
@@ -96,8 +96,8 @@ public class AccountChangeReceiver extends BroadcastReceiver {
         }
 
         // only delete the database when it was a real account
-        if (AbsLocastAuthenticator.hasRealAccount(context)) {
-            ResetActivity.resetEverything(context, false, false);
+        if (AbsLocastAuthenticator.hasRealAccount(context, getAccountType())) {
+            ResetActivity.resetEverything(context, getAccountType(), false, false);
         }
     }
 
@@ -107,5 +107,7 @@ public class AccountChangeReceiver extends BroadcastReceiver {
             Log.d(TAG, "Locast account added: " + account);
         }
     }
+
+    protected abstract String getAccountType();
 
 }

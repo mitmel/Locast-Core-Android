@@ -274,14 +274,18 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
         final Intent intent = new Intent();
         mAuthtoken = mPassword;
         intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, mUsername);
-        intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, AbsLocastAuthenticationService.ACCOUNT_TYPE);
-        if (mAuthtokenType != null && mAuthtokenType.equals(AbsLocastAuthenticationService.AUTHTOKEN_TYPE)) {
+        intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, getAccountType());
+        if (mAuthtokenType != null && mAuthtokenType.equals(getAuthtokenType())) {
             intent.putExtra(AccountManager.KEY_AUTHTOKEN, mAuthtoken);
         }
         setAccountAuthenticatorResult(intent.getExtras());
         setResult(RESULT_OK, intent);
         finish();
     }
+
+    protected abstract String getAccountType();
+
+    protected abstract String getAuthtokenType();
 
     private void setLoginNoticeError(int textResID) {
         mMessage.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_warning, 0, 0, 0);
@@ -448,9 +452,11 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
 
             }
         };
+        private final String mAccountType;
 
-        public LogoutHandler(Context context) {
+        public LogoutHandler(Context context, String accountType) {
             mContext = context;
+            mAccountType = accountType;
 
         }
 
@@ -461,7 +467,8 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
                 case AlertDialog.BUTTON_POSITIVE:
 
                     AccountManager.get(mContext).removeAccount(
-                            AbsLocastAuthenticator.getFirstAccount(mContext), mAccountManagerCallback, null);
+                            AbsLocastAuthenticator.getFirstAccount(mContext, mAccountType),
+                            mAccountManagerCallback, null);
                     break;
             }
         }

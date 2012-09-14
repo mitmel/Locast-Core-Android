@@ -29,7 +29,7 @@ import android.widget.TextView;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.R;
 
-public class SigninOrSkip extends Activity implements OnClickListener {
+public abstract class AbsSigninOrSkip extends Activity implements OnClickListener {
 
     /**
      * A CharSequence
@@ -97,12 +97,14 @@ public class SigninOrSkip extends Activity implements OnClickListener {
         }
     }
 
+    protected abstract String getAccountType();
+
     /**
      * @return true if this seems to be the first time running the app
      */
-    public static final boolean checkFirstTime(Context context) {
+    public static final boolean checkFirstTime(Context context, String accountType) {
         if (Constants.USE_ACCOUNT_FRAMEWORK) {
-            return AbsLocastAuthenticator.getAccounts(context).length == 0;
+            return AbsLocastAuthenticator.getAccounts(context, accountType).length == 0;
         } else {
             final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
             final boolean runBefore = prefs.getBoolean(PREF_HAVE_RUN_BEFORE, false);
@@ -120,12 +122,12 @@ public class SigninOrSkip extends Activity implements OnClickListener {
      * @param context
      * @param requestCode
      */
-    public static final boolean startSignin(Activity context, int requestCode) {
+    public static final boolean startSignin(Activity context, String accountType, int requestCode) {
         if (!Constants.USE_ACCOUNT_FRAMEWORK) {
             return true;
 
         } else if (Constants.REQUIRE_LOGIN) {
-            if (!AbsLocastAuthenticator.hasRealAccount(context)) {
+            if (!AbsLocastAuthenticator.hasRealAccount(context, accountType)) {
                 context.startActivityForResult(new Intent(context, AbsLocastAuthenticatorActivity.class),
                         requestCode);
                 return true;
@@ -133,8 +135,8 @@ public class SigninOrSkip extends Activity implements OnClickListener {
             return false;
             // login isn't required, but accounts can be created.
         } else if (Constants.CAN_CREATE_CASTS) {
-            if (!AbsLocastAuthenticator.hasRealAccount(context)) {
-                context.startActivityForResult(new Intent(context, SigninOrSkip.class), requestCode);
+            if (!AbsLocastAuthenticator.hasRealAccount(context, accountType)) {
+                context.startActivityForResult(new Intent(context, AbsSigninOrSkip.class), requestCode);
                 return true;
             }
             return false;

@@ -19,7 +19,6 @@ package edu.mit.mobile.android.locast.accounts;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-import edu.mit.mobile.android.locast.Constants;
 
 /**
  * Service to handle Account authentication. It instantiates the authenticator and returns its
@@ -28,11 +27,6 @@ import edu.mit.mobile.android.locast.Constants;
 public abstract class AbsLocastAuthenticationService extends Service {
     private static final String TAG = AbsLocastAuthenticationService.class.getSimpleName();
     private AbsLocastAuthenticator mAbsLocastAuthenticator;
-
-    @Deprecated
-    public static final String
-
-    AUTHORITY = Constants.AUTHORITY, ACCOUNT_TYPE = AUTHORITY, AUTHTOKEN_TYPE = AUTHORITY;
 
     public static final String USERDATA_USERID = "id";
 

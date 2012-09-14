@@ -36,6 +36,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.impl.cookie.DateUtils;
 import org.json.JSONObject;
 
+import android.accounts.Account;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -62,6 +63,7 @@ import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
+import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticator;
 import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem;
@@ -71,7 +73,6 @@ import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient.InputStreamWatcher;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;
 import edu.mit.mobile.android.locast.notifications.ProgressNotification;
-import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.utils.StreamUtils;
 
 public abstract class AbsMediaSync extends Service implements MediaScannerConnectionClient {
@@ -344,6 +345,14 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
 
     abstract boolean getKeepOffline(Uri castMediaUri, CastMedia castMedia);
 
+    /**
+     * Implement this to retrieve the account to use to sync.
+     * {@link AbsLocastAuthenticator#getFirstAccount(Context, String)} may be useful here.
+     *
+     * @return
+     */
+    abstract Account getAccount();
+
     abstract Uri getTitledItemForCastMedia(Uri castMedia);
 
     final static String[] CASTMEDIA_PROJECTION = { CastMedia._ID, CastMedia.COL_MIME_TYPE,
@@ -352,9 +361,9 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
 
     /**
      * Synchronize the media of the given castMedia. It will download or upload as needed.
-     * 
+     *
      * Blocks until the sync is complete.
-     * 
+     *
      * @param castMediaUri
      *            a {@link CastMedia} item uri
      * @throws SyncException
@@ -477,7 +486,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
         try {
             // TODO this should get the account info from something else.
             final NetworkClient nc = NetworkClient.getInstance(this,
-                    AbsLocastAuthenticator.getFirstAccount(this));
+ getAccount());
 
             final JSONObject updatedCastMedia = nc.uploadContentWithNotification(this,
  titledItem,
@@ -567,7 +576,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
     public boolean downloadMediaFile(String pubUri, File saveFile, Uri castMediaUri)
             throws SyncException {
         final NetworkClient nc = NetworkClient.getInstance(this,
-                AbsLocastAuthenticator.getFirstAccount(this));
+ getAccount());
         try {
             boolean dirty = true;
             // String contentType = null;
