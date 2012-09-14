@@ -61,13 +61,13 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
     @DBColumn(type = TextColumn.class)
     public static final String COL_PUBLIC_URL = "url";
 
-    @DBColumn(type = DatetimeColumn.class)
+    @DBColumn(type = DatetimeColumn.class, notnull = true, defaultValue = DatetimeColumn.NOW_IN_MILLISECONDS)
     public static final String COL_MODIFIED_DATE = "modified";
 
     @DBColumn(type = DatetimeColumn.class)
     public static final String COL_SERVER_MODIFIED_DATE = "server_modified";
 
-    @DBColumn(type = DatetimeColumn.class)
+    @DBColumn(type = DatetimeColumn.class, notnull = true, defaultValue = DatetimeColumn.NOW_IN_MILLISECONDS)
     public static final String COL_CREATED_DATE = "created";
 
     @DBColumn(type = BooleanColumn.class)
