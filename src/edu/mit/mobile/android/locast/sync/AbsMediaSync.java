@@ -485,18 +485,14 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
      * @throws SyncException
      */
     private void uploadMedia(String uploadPath, Uri castMediaUri, Uri titledItem,
-            String contentType,
-            final Uri locMedia) throws SyncException {
+            String contentType, final Uri locMedia) throws SyncException {
         // upload
         try {
             // TODO this should get the account info from something else.
-            final NetworkClient nc = NetworkClient.getInstance(this,
- getAccount());
+            final NetworkClient nc = NetworkClient.getInstance(this, getAccount());
 
-            final JSONObject updatedCastMedia = nc.uploadContentWithNotification(this,
- titledItem,
-                    uploadPath, locMedia, contentType,
-                    NetworkClient.UploadType.FORM_POST);
+            final JSONObject updatedCastMedia = nc.uploadContentWithNotification(this, titledItem,
+                    uploadPath, locMedia, contentType, NetworkClient.UploadType.RAW_POST);
 
             final ContentValues cv = CastMedia.fromJSON(this, castMediaUri, updatedCastMedia,
                     CastMedia.SYNC_MAP);
@@ -580,8 +576,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
      */
     public boolean downloadMediaFile(String pubUri, File saveFile, Uri castMediaUri)
             throws SyncException {
-        final NetworkClient nc = NetworkClient.getInstance(this,
- getAccount());
+        final NetworkClient nc = NetworkClient.getInstance(this, getAccount());
         try {
             boolean dirty = true;
             // String contentType = null;

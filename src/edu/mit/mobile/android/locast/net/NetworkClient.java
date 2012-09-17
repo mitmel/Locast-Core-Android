@@ -51,6 +51,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
@@ -1014,6 +1015,8 @@ public class NetworkClient extends DefaultHttpClient {
      *            the local file that should be stored on the server
      * @param contentType
      *            MIME type of the file to be uploaded
+     * @param put
+     *            if true use PUT, otherwise use POST
      * @return
      * @throws NetworkProtocolException
      * @throws IOException
@@ -1021,7 +1024,8 @@ public class NetworkClient extends DefaultHttpClient {
      * @throws IllegalStateException
      */
     public JSONObject uploadContent(Context context, TransferProgressListener progressListener,
-            String serverPath, Uri localFile, String contentType) throws NetworkProtocolException,
+            String serverPath, Uri localFile, String contentType, boolean put)
+            throws NetworkProtocolException,
             IOException, IllegalStateException, JSONException {
 
         if (localFile == null) {
@@ -1032,7 +1036,12 @@ public class NetworkClient extends DefaultHttpClient {
 
         // next step is to send the file contents.
         final String putUrl = getFullUrlAsString(serverPath);
-        final HttpPut r = new HttpPut(putUrl);
+        HttpEntityEnclosingRequestBase r;
+        if (put) {
+            r = new HttpPut(putUrl);
+        } else {
+            r = new HttpPost(putUrl);
+        }
 
         if (DEBUG) {
             Log.d(TAG, "HTTP PUTting " + localFile + " (mimetype: " + contentType + ") to "
@@ -1194,7 +1203,7 @@ public class NetworkClient extends DefaultHttpClient {
     }
 
     public static enum UploadType {
-        RAW_PUT, FORM_POST
+        RAW_PUT, FORM_POST, RAW_POST
     }
 
     /**
@@ -1250,7 +1259,11 @@ public class NetworkClient extends DefaultHttpClient {
             switch (uploadType) {
                 case RAW_PUT:
                     updatedCastMedia = uploadContent(context, tpl, serverPath, localFile,
-                            contentType);
+                            contentType, true);
+                    break;
+                case RAW_POST:
+                    updatedCastMedia = uploadContent(context, tpl, serverPath, localFile,
+                            contentType, false);
                     break;
                 case FORM_POST:
                     updatedCastMedia = uploadContentUsingForm(context, tpl, serverPath, localFile,
