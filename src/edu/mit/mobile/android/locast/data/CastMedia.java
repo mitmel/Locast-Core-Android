@@ -25,7 +25,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -42,7 +41,6 @@ import edu.mit.mobile.android.content.column.BooleanColumn;
 import edu.mit.mobile.android.content.column.DBColumn;
 import edu.mit.mobile.android.content.column.DatetimeColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
-import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticationService;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.sync.AbsMediaSync;
 
@@ -175,13 +173,6 @@ public abstract class CastMedia extends JsonSyncableItem {
 
         String mediaPath;
 
-        // only add in credentials on inserts
-
-        final AccountManager am = AccountManager.get(context);
-
-        final String displayName = am.getUserData(me, AbsLocastAuthenticationService.USERDATA_DISPLAY_NAME);
-        final String authorUri = am.getUserData(me, AbsLocastAuthenticationService.USERDATA_USER_URI);
-
         // for media that use content URIs, we need to query the content provider to look up all the
         // details
 
@@ -247,25 +238,25 @@ public abstract class CastMedia extends JsonSyncableItem {
         /**
          * The content's title
          */
-        protected String title;
+        public String title;
 
         /**
          * the content's MIME type
          */
-        protected String mimeType;
+        public String mimeType;
         /**
          * the content:// URI of the newly created cast media item
          */
-        protected Uri castMediaItem;
+        public Uri castMediaItem;
         /**
          * if location information was discovered from the media's metadata, this location is
          * extracted. Otherwise null.
          */
-        protected GeoPoint location;
+        public GeoPoint location;
         /**
          * the path on disk to the media
          */
-        protected String path;
+        public String path;
 
         public CastMediaInfo() {
 

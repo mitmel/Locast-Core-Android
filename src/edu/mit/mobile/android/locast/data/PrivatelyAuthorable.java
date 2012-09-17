@@ -24,15 +24,22 @@ public abstract class PrivatelyAuthorable extends Authorable {
      * requires that the cursor has loaded {@link Columns#COL_PRIVACY} and
      * {@link Columns#COL_AUTHOR_URI}.
      *
+     * @param userUri
+     *            the user in question
      * @param c
      *            a cursor pointing at an item's row
      * @return true if the item is editable by the specified user.
      */
     public static boolean canEdit(String userUri, Cursor c) {
-        final String privacy = c.getString(c.getColumnIndexOrThrow(Columns.COL_PRIVACY));
+        if (userUri == null || userUri.length() == 0) {
+            throw new IllegalArgumentException("userUri must not be null or empty");
+        }
 
-        return privacy == null || userUri == null || userUri.length() == 0
-                || userUri.equals(c.getString(c.getColumnIndexOrThrow(Columns.COL_AUTHOR_URI)));
+        final String privacy = c.getString(c.getColumnIndexOrThrow(Columns.COL_PRIVACY));
+        final String itemAuthor = c.getString(c.getColumnIndexOrThrow(Columns.COL_AUTHOR_URI));
+
+        return userUri.equals(itemAuthor)
+                || (privacy != null && Columns.PRIVACY_PUBLIC.equals(privacy));
     }
 
     /**
@@ -45,13 +52,10 @@ public abstract class PrivatelyAuthorable extends Authorable {
                 || useruri.equals(c.getString(c.getColumnIndex(Columns.COL_AUTHOR_URI)));
     }
 
-    // the ordering of this must match the arrays.xml
-    public static final String[] PRIVACY_LIST = { Columns.PRIVACY_PUBLIC, Columns.PRIVACY_PRIVATE };
-
-    public static final SyncMap SYNC_MAP = Authorable.SYNC_MAP;
+    public static final SyncMap SYNC_MAP = new SyncMap();
 
     static {
-
+        SYNC_MAP.putAll(Authorable.SYNC_MAP);
         SYNC_MAP.put(Columns.COL_PRIVACY, new SyncFieldMap("privacy", SyncFieldMap.STRING));
     }
 }
