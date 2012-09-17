@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.impl.cookie.DateParseException;
 import org.apache.http.impl.cookie.DateUtils;
@@ -867,6 +868,16 @@ public class SyncEngine {
                         if (DEBUG) {
                             Log.e(TAG, "result was " + newJo.toString());
                         }
+                        throw e;
+                    }
+                } catch (final HttpResponseException e) {
+                    if (HttpStatus.SC_BAD_REQUEST == e.getStatusCode()) {
+                        if (DEBUG) {
+                            Log.w(TAG, "Got bad request from server when uploading " + postUri
+                                    + " skipping...");
+                        }
+                        syncResult.stats.numSkippedEntries++;
+                    } else {
                         throw e;
                     }
                 } finally {
