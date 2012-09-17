@@ -6,11 +6,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 
 import android.content.ContentProviderClient;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.RemoteException;
 import edu.mit.mobile.android.content.ContentItem;
+import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.SimpleContentProvider;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
@@ -80,6 +82,25 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
         }
         return publicPath;
     }
+
+    @Override
+    public Uri insert(Uri uri, ContentValues values) {
+        final boolean dirty = !values.containsKey(CV_FLAG_DO_NOT_MARK_DIRTY);
+        ProviderUtils.extractContentValueItem(values, CV_FLAG_DO_NOT_MARK_DIRTY);
+
+        final Uri newItem = super.insert(uri, values);
+
+        return newItem;
+    }
+
+    @Override
+    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        final boolean dirty = !values.containsKey(CV_FLAG_DO_NOT_MARK_DIRTY);
+        ProviderUtils.extractContentValueItem(values, CV_FLAG_DO_NOT_MARK_DIRTY);
+
+        return super.update(uri, values, selection, selectionArgs);
+    }
+
 
     @Override
     public JsonSyncableItem getWrappedContentItem(Uri item, Cursor c) {
