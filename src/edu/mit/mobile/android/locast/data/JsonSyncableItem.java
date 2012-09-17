@@ -688,6 +688,33 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         }
 
         /**
+         * @param context
+         * @param uri
+         *            the URI of the item whose field should be queried
+         * @param field
+         *            the string name of the field
+         * @return
+         */
+        public static String getPathFromField(Context context, Uri uri, String field) {
+            String path = null;
+            final String[] generalProjection = { JsonSyncableItem._ID, field };
+            final Cursor c = context.getContentResolver().query(uri, generalProjection, null, null,
+                    null);
+            try {
+                if (c.getCount() == 1 && c.moveToFirst()) {
+                    final String storedPath = c.getString(c.getColumnIndex(field));
+                    path = storedPath;
+                } else {
+                    throw new IllegalArgumentException("could not get path from field '" + field
+                            + "' in uri " + uri);
+                }
+            } finally {
+                c.close();
+            }
+            return path;
+        }
+
+        /**
          * A simple relationship where the local URI path is the relationship name. eg.
          *
          * Given the parent {@code content://itinerary/1} with a relationship of "casts", the child items are all at {@code content://itinerary/1/casts}
