@@ -75,7 +75,7 @@
   <string name="sync_menu">Sincronizar</string>
   <string name="sync_upload_success">Informe carregado.</string>
   <string name="sync_upload_success_message">\"%1$s\" foi carregado.</string>
-  <string name="error_uploading_cast_video">Falho no carregamento do vídeo do informe.</string>
+  <string name="error_uploading_cast_media">Falho no carregamento do mídia do informe.</string>
   <string name="sync_upload_fail">Falho no carregamento do informe.</string>
   <string name="sync_upload_fail_message">Falho no carregamento de \"%1$s\".</string>
   <string name="error_sync_canceled">Sincronização cancelada.</string>

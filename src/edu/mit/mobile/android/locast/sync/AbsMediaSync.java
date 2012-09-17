@@ -371,6 +371,11 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
     public void syncItemMedia(Uri castMediaUri) throws SyncException {
 
         final SyncableProvider provider = getSyncableProvider(castMediaUri);
+        if (provider == null) {
+            Log.e(TAG,
+                    "could not sync item media: could not get local binder for syncable provider");
+            return;
+        }
 
         final CastMedia castMedia = (CastMedia) provider.getWrappedContentItem(castMediaUri,
                 mCr.query(castMediaUri, CASTMEDIA_PROJECTION, null, null, null));
@@ -501,7 +506,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
             mCr.update(castMediaUri, cv, null, null);
         } catch (final Exception e) {
             final SyncException se = new SyncException(
-                    getString(R.string.error_uploading_cast_video));
+                    getString(R.string.error_uploading_cast_media));
             se.initCause(e);
             throw se;
         }

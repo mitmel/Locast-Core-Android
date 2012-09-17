@@ -73,7 +73,7 @@
   <string name="sync_menu">Sincronizza</string>
   <string name="sync_upload_success">Upload del cast effettuato.</string>
   <string name="sync_upload_success_message">\"%1$s\" è stato caricato.</string>
-  <string name="error_uploading_cast_video">Errore nell\'upload del cast video.</string>
+  <string name="error_uploading_cast_media">Errore nell\'upload del cast media.</string>
   <string name="sync_upload_fail">Errore nell\'upload del cast.</string>
   <string name="sync_upload_fail_message">\"%1$s\" non è riuscito a caricare.</string>
   <string name="error_sync_canceled">Sincronizzazione annullato.</string>

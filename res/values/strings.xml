@@ -25,7 +25,7 @@
 	<string name="sync_menu">Synchronize</string>
 	<string name="sync_upload_success">Cast uploaded successfully.</string>
 	<string name="sync_upload_success_message">\"%1$s\" has been uploaded.</string>
-    <string name="error_uploading_cast_video">Error uploading cast video.</string>
+    <string name="error_uploading_cast_media">Error uploading cast media.</string>
 	<string name="sync_upload_fail">Error uploading cast.</string>
 	<string name="sync_upload_fail_message">\"%1$s\" failed to upload.</string>
     <string name="error_sync_canceled">Sync canceled.</string>
