@@ -186,28 +186,31 @@ public abstract class CastMedia extends JsonSyncableItem {
 
             mediaPath = null; // XXX
         } else if ("file".equals(content.getScheme())) {
-            if (!new File(content.getPath()).exists()) {
+            final String path = content.getPath();
+            if (!new File(path).exists()) {
                 throw new MediaProcessingException("specified media file does not exist: "
                         + content);
             }
             mediaPath = content.toString();
             location = null;
+
+            if ("image/jpeg".equals(mimeType)) {
+                try {
+                    String exifDateTime = "";
+                    final ExifInterface exif = new ExifInterface(path);
+                    exifDateTime = exif.getAttribute(ExifInterface.TAG_DATETIME);
+                    cv.put(CastMedia.COL_CAPTURE_TIME, exifDateTime);
+
+                } catch (final IOException ioex) {
+                    Log.e(TAG, "EXIF: Couldn't find media: " + path);
+                }
+            }
         } else {
             throw new MediaProcessingException("Don't know how to process URI scheme "
                     + content.getScheme() + " for " + content);
         }
 
-        if ("image/jpeg".equals(mimeType)) {
-            try {
-                String exifDateTime = "";
-                final ExifInterface exif = new ExifInterface(mediaPath);
-                exifDateTime = exif.getAttribute(ExifInterface.TAG_DATETIME);
-                cv.put(CastMedia.COL_CAPTURE_TIME, exifDateTime);
 
-            } catch (final IOException ioex) {
-                Log.e(TAG, "EXIF: Couldn't find media: " + mediaPath);
-            }
-        }
 
         // ensure that there's always a capture time, even if it's faked.
         if (!cv.containsKey(CastMedia.COL_CAPTURE_TIME)) {
