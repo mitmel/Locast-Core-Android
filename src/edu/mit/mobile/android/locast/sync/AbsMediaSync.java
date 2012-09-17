@@ -210,8 +210,8 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
     public abstract void enqueueUnpublishedMedia() throws SyncException;
 
     private static final String SELECTION_UNPUBLISHED_CAST_MEDIA = CastMedia.COL_MEDIA_URL
-            + " ISNULL AND " + CastMedia.COL_PUBLIC_URL + " NOT NULL AND " + CastMedia.COL_LOCAL_URL
-            + " NOT NULL";
+            + " ISNULL AND " + CastMedia.COL_PUBLIC_URL + " NOT NULL AND "
+            + CastMedia.COL_LOCAL_URL + " NOT NULL";
 
     public void enqueueUnpublishedMedia(Uri castMedia) throws SyncException {
 
@@ -343,7 +343,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
         }
     }
 
-    abstract boolean getKeepOffline(Uri castMediaUri, CastMedia castMedia);
+    public abstract boolean getKeepOffline(Uri castMediaUri, CastMedia castMedia);
 
     /**
      * Implement this to retrieve the account to use to sync.
@@ -351,9 +351,9 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
      *
      * @return
      */
-    abstract Account getAccount();
+    public abstract Account getAccount();
 
-    abstract Uri getTitledItemForCastMedia(Uri castMedia);
+    public abstract Uri getTitledItemForCastMedia(Uri castMedia);
 
     final static String[] CASTMEDIA_PROJECTION = { CastMedia._ID, CastMedia.COL_MIME_TYPE,
             CastMedia.COL_LOCAL_URL, CastMedia.COL_MEDIA_URL, CastMedia.COL_KEEP_OFFLINE,
