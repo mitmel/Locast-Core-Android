@@ -494,8 +494,12 @@ public class SyncEngine {
                     // requeries to ensure that when it converts it to JSON, it has all the columns.
                     final Cursor uploadCursor = provider.query(localUri, null, null, null, null);
                     try {
-                        mNetworkClient.putJson(pubPath,
-                                JsonSyncableItem.toJSON(mContext, localUri, uploadCursor, syncMap));
+                        if (c.moveToFirst()) {
+                            mNetworkClient.putJson(pubPath, JsonSyncableItem.toJSON(mContext,
+                                    localUri, uploadCursor, syncMap));
+                        } else {
+                            throw new SyncException("couldn't find local item upon requerying");
+                        }
                     } finally {
                         uploadCursor.close();
                     }
