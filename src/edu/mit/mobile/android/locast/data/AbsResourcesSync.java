@@ -23,13 +23,14 @@ public abstract class AbsResourcesSync extends SyncCustom {
     public static final String DEFAULT_REMOTE_KEY = "resources";
     public static final String DEFAULT_REMOTE_MIME_TYPE_KEY = "mime_type";
     public static final String DEFAULT_REMOTE_URL_KEY = "url";
+    public static final int DEFAULT_FLAGS = FLAG_OPTIONAL;
 
     public AbsResourcesSync() {
-        super(DEFAULT_REMOTE_KEY);
+        super(DEFAULT_REMOTE_KEY, DEFAULT_FLAGS);
     }
 
     public AbsResourcesSync(String remoteKey) {
-        super(remoteKey);
+        super(remoteKey, DEFAULT_FLAGS);
     }
 
     public AbsResourcesSync(String remoteKey, int flags) {
