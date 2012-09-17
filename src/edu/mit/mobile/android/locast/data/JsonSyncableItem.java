@@ -87,8 +87,14 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         super(c);
     }
 
+    /**
+     * Using {@link #getContentUri()}, constructs a canonical URI representing the item under the
+     * cursor.
+     *
+     * @return the canonical URI for the item under the cursor
+     */
     public Uri getCanonicalUri() {
-        return ContentUris.withAppendedId(getContentUri(), getLong(getColumnIndex(_ID)));
+        return ContentUris.withAppendedId(getContentUri(), getLong(getColumnIndexOrThrow(_ID)));
     }
 
     /**

@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import edu.mit.mobile.android.locast.BuildConfig;
 import edu.mit.mobile.android.locast.Constants;
 
 /**
@@ -21,7 +22,7 @@ import edu.mit.mobile.android.locast.Constants;
 public abstract class LocastSyncService extends Service {
 
     private static final String TAG = LocastSyncService.class.getSimpleName();
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = BuildConfig.DEBUG;
     public static final String EXTRA_ACCOUNT = "edu.mit.mobile.android.locast.EXTRA_ACCOUNT";
 
     final String mAuthority;
@@ -166,6 +167,10 @@ public abstract class LocastSyncService extends Service {
      * @param extras
      */
     public static void startSync(Context context, Uri what, Bundle extras) {
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, "startSync(" + what + ", " + extras + ")");
+        }
         context.startService(new Intent(Intent.ACTION_SYNC, what).putExtras(extras));
+
     }
 }

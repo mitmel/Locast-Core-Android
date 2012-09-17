@@ -184,6 +184,9 @@ public class SyncEngine {
 
         // the sync map will convert the json data to ContentValues
         final SyncMap syncMap = mProvider.getSyncMap(provider, toSync);
+        if (DEBUG) {
+            Log.d(TAG, "using " + syncMap + " to sync " + toSync);
+        }
 
         final Uri toSyncWithoutQuerystring = toSync.buildUpon().query(null).build();
 
