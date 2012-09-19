@@ -70,6 +70,8 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
 
     private static final int DIALOG_PROGRESS = 100;
 
+    private static final int REQUEST_REGISTER = 200;
+
     /**
      * If set we are just checking that the user knows their credentials; this doesn't cause the
      * user's password to be changed on the device.
@@ -88,12 +90,15 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
 
     private Button mRegisterButton;
 
+    private Intent mRegistrationComplete;
+
     /**
      * {@inheritDoc}
      */
     @Override
     public void onCreate(Bundle icicle) {
         Log.i(TAG, "onCreate(" + icicle + ")");
+        requestWindowFeature(Window.FEATURE_ACTION_BAR);
         super.onCreate(icicle);
 
         mAccountManager = AccountManager.get(this);
@@ -131,7 +136,10 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
         findViewById(R.id.cancel).setOnClickListener(this);
         mRegisterButton = (Button) findViewById(R.id.register);
         mRegisterButton.setOnClickListener(this);
-        mRegisterButton.setText(getString(R.string.signup_text, appName));
+        final String regButton = getString(R.string.signup_text, appName);
+        if (regButton.length() < 24) {
+            mRegisterButton.setText(regButton);
+        }
 
         ((TextView) findViewById(R.id.username_label)).setText(getString(R.string.username_label,
                 appName));
@@ -182,8 +190,45 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
         } else if (v.getId() == R.id.cancel) {
             finish();
         } else if (v.getId() == R.id.register) {
-            startActivity(getSignupIntent());
+            startActivityForResult(getSignupIntent(), REQUEST_REGISTER);
         }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        switch (requestCode) {
+            case REQUEST_REGISTER:
+                if (resultCode == RESULT_OK) {
+                    mRegistrationComplete = data;
+                }
+                break;
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (mRegistrationComplete != null) {
+            onRegistrationComplete(mRegistrationComplete);
+            mRegistrationComplete = null;
+        }
+    }
+
+    /**
+     * Called when registration returns successfully. Intent results are straight from the server.
+     *
+     * @param data
+     *            this is an echo of the data sent to the server
+     */
+    protected void onRegistrationComplete(Intent data) {
+        final String username = data.getStringExtra(EXTRA_USERNAME);
+        final String password = data.getStringExtra(EXTRA_PASSWORD);
+        mUsernameEdit.setText(username);
+        mPasswordEdit.setText(password);
+
+        handleLogin();
     }
 
     /**

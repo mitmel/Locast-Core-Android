@@ -130,6 +130,10 @@ public class NetworkClient extends DefaultHttpClient {
 
     protected final Context mContext;
 
+    public static final String SERVER_KEY_EMAIL = "email";
+    public static final String SERVER_KEY_USERNAME = "username";
+    public static final String SERVER_KEY_PASSWORD = "password1";
+
     protected final static HttpRequestInterceptor PREEMPTIVE_AUTH = new HttpRequestInterceptor() {
         public void process(final HttpRequest request, final HttpContext context)
                 throws HttpException, IOException {
@@ -193,6 +197,7 @@ public class NetworkClient extends DefaultHttpClient {
     public static final String PREF_SERVER_URL = "server_url";
 
     public static final String PREF_LOCAST_SITE = "locast_site";
+    private static final String PATH_REGISTER = "register/";
 
     /**
      * Create a new NetworkClient, authenticating with the given account.
@@ -200,7 +205,7 @@ public class NetworkClient extends DefaultHttpClient {
      * @param context
      * @param account
      */
-    public NetworkClient(Context context, Account account) {
+    protected NetworkClient(Context context, Account account) {
         super();
         this.mContext = context;
 
@@ -276,6 +281,12 @@ public class NetworkClient extends DefaultHttpClient {
 
     /************************* credentials and pairing **********************/
 
+    /**
+     * @param context
+     * @param account
+     *            the account to use for authentication or null if there is no account
+     * @return a new NetworkClient
+     */
     public static NetworkClient getInstance(Context context, Account account) {
 
         if (account == null) {
@@ -321,6 +332,20 @@ public class NetworkClient extends DefaultHttpClient {
         final String baseUrl = metadata.getString(METADATA_KEY_BASE_URL);
 
         return baseUrl;
+    }
+
+    public Bundle register(String username, String realname, String email, String password)
+            throws JSONException, IllegalStateException, IOException, NetworkProtocolException,
+            ClientResponseException {
+        final JSONObject jo = new JSONObject();
+        jo.put(SERVER_KEY_USERNAME, username);
+        jo.put(SERVER_KEY_EMAIL, email);
+        jo.put(SERVER_KEY_PASSWORD, password);
+        jo.put("password2", password);
+
+        final JSONObject ret = postJson(PATH_REGISTER, jo);
+
+        return jsonObjectToBundle(ret, true);
     }
 
     /**

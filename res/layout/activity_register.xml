@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent" >
+
+        <TextView
+            android:id="@+id/your_name_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="20dp"
+            android:text="@string/your_name_label"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <EditText
+            android:id="@+id/your_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/your_name_label"
+            android:layout_below="@+id/your_name_label"
+            android:ems="10"
+            android:hint="@string/your_name_hint"
+            android:inputType="textPersonName|textCapWords" >
+
+            <requestFocus />
+
+            <requestFocus />
+        </EditText>
+
+        <TextView
+            android:id="@+id/email_address_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/your_name"
+            android:layout_below="@+id/your_name"
+            android:layout_marginTop="20dp"
+            android:text="@string/email_address"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <EditText
+            android:id="@+id/email_address"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/email_address_label"
+            android:layout_below="@+id/email_address_label"
+            android:ems="10"
+            android:hint="@string/email_address_hint"
+            android:inputType="textEmailAddress" >
+        </EditText>
+
+        <TextView
+            android:id="@+id/username_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/email_address"
+            android:layout_below="@+id/email_address"
+            android:layout_marginTop="20dp"
+            android:text="@string/username_label"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <EditText
+            android:id="@+id/username"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/username_label"
+            android:layout_below="@+id/username_label"
+            android:ems="10"
+            android:inputType="text|textNoSuggestions" />
+
+        <TextView
+            android:id="@+id/password_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/username"
+            android:layout_below="@+id/username"
+            android:layout_marginTop="20dp"
+            android:text="@string/password_label"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <EditText
+            android:id="@+id/password"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/password_label"
+            android:layout_below="@+id/password_label"
+            android:ems="10"
+            android:hint="@string/password_hint"
+            android:inputType="textPassword" />
+
+        <EditText
+            android:id="@+id/password_confirm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/password"
+            android:layout_below="@+id/password"
+            android:ems="10"
+            android:hint="@string/password_confirm_hint"
+            android:inputType="textPassword" />
+
+        <Button
+            android:id="@+id/register"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_below="@+id/password_confirm"
+            android:text="@string/register" />
+    </RelativeLayout>
+
+</ScrollView>

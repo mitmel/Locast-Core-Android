@@ -3,7 +3,6 @@
 <resources>
 
 	<string name="signup_text">Register to join %1$s</string>
-
 	
 	<!-- Generic user-facing error messages -->
 	<string name="error_no_providers">Error: no location providers</string>
@@ -136,4 +135,13 @@ reception, try standing in a clear area outside away from buildings.</string>
 	<string name="sync_locast_media">Sync %1$s Media</string>
 	<string name="powered_by_locast">powered by Locast</string>
 	<string name="edit">Edit</string>
+	<string name="your_name_label">Your name</string>
+	<string name="your_name_hint">Alice Carroll</string>
+	<string name="email_address">Email address</string>
+	<string name="email_address_hint">alice@example.org</string>
+	<string name="register">Register</string>
+	<string name="auth_register_title">%1$s Registration</string>
+	<string name="password_confirm_hint">confirm password</string>
+	<string name="password_hint">password</string>
+	<string name="error_network">Error communicating with server.</string>
 </resources>
