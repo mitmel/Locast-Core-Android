@@ -1,9 +1,7 @@
 package edu.mit.mobile.android.locast.sync;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
 
 import android.content.ContentProviderClient;
 import android.content.ContentValues;
@@ -41,27 +39,13 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
     @Override
     public SyncMap getSyncMap(ContentProviderClient provider, Uri toSync) throws RemoteException,
             SyncMapException {
-        final Class<? extends ContentItem> itemClass = getContentItem(toSync);
+        final JsonSyncableItem syncableItem = getWrappedContentItem(toSync, null);
 
-        try {
-            final Field syncMapField = itemClass.getField("SYNC_MAP");
-            if ((syncMapField.getModifiers() & Modifier.STATIC) == 0) {
-                throw new SyncMapException("SYNC_MAP field in " + itemClass + " is not static");
-            }
-            if ((syncMapField.getModifiers() & Modifier.PUBLIC) == 0) {
-                throw new SyncMapException("SYNC_MAP field in " + itemClass + " is not public");
-            }
-
-            return (SyncMap) syncMapField.get(null);
-
-        } catch (final NoSuchFieldException e) {
-            throw new SyncMapException(itemClass + " does not have a public static field SYNC_MAP",
-                    e);
-        } catch (final IllegalArgumentException e) {
-            throw new SyncMapException("programming error in Locast Core", e);
-        } catch (final IllegalAccessException e) {
-            throw new SyncMapException("programming error in Locast Core", e);
+        if (syncableItem == null) {
+            throw new SyncMapException("could not get wrapped content item for url " + toSync);
         }
+
+        return syncableItem.getSyncMap();
     }
 
     @Override
@@ -101,14 +85,23 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
         return super.update(uri, values, selection, selectionArgs);
     }
 
-
     @Override
     public JsonSyncableItem getWrappedContentItem(Uri item, Cursor c) {
-        final Class<? extends JsonSyncableItem> itemClass = (Class<? extends JsonSyncableItem>) getContentItem(item);
+        final Class<? extends ContentItem> contentItemClass = getContentItem(item);
 
-        if (itemClass == null) {
-            throw new RuntimeException("could not get content item; no mapping has been made");
+        if (contentItemClass == null) {
+            throw new RuntimeException(
+                    "could not get content item; no mapping has been made. Is its DBHelper implementing ContentItemRegisterable?");
         }
+
+        if (!JsonSyncableItem.class.isAssignableFrom(contentItemClass)) {
+            throw new IllegalArgumentException("ContentItem " + contentItemClass
+                    + " in mapping must extend JsonSyncableItem");
+        }
+
+        // checked above dynamically
+        @SuppressWarnings("unchecked")
+        final Class<? extends JsonSyncableItem> itemClass = (Class<? extends JsonSyncableItem>) contentItemClass;
 
         try {
             final Constructor<? extends JsonSyncableItem> cons = itemClass
