@@ -4,6 +4,7 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.ContentValues;
 import android.content.Context;
+import android.net.Uri;
 import edu.mit.mobile.android.content.column.DBColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticationService;
@@ -28,7 +29,7 @@ public abstract class Authorable {
 
     /**
      * Adds the author information from the provided account to the given ContentValues
-     * 
+     *
      * @param context
      * @param account
      * @param cv
@@ -47,6 +48,11 @@ public abstract class Authorable {
         cv.put(Columns.COL_AUTHOR_URI, userUri);
 
         return cv;
+    }
+
+    public static Uri getAuthoredBy(Uri queryableUri, String authorUri) {
+        return queryableUri.buildUpon().appendQueryParameter(Columns.COL_AUTHOR_URI, authorUri)
+                .build();
     }
 
     public static final SyncMap SYNC_MAP = new SyncMap();
