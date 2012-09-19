@@ -264,6 +264,9 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
             if (!map.isDirection(SyncItem.SYNC_TO)){
                 continue;
             }
+            if (c.isAfterLast() || c.isBeforeFirst()) {
+                throw new RuntimeException("Cursor passed to toJSON() isn't pointing to any rows");
+            }
 
             final int colIndex = c.getColumnIndex(lProp);
             // if it's a real property that's optional and is null on the local side
