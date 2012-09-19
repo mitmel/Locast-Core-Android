@@ -492,6 +492,24 @@ public class NetworkClient extends DefaultHttpClient {
 
             } else if (value instanceof Integer) {
                 b.putInt(key, (Integer) value);
+
+                // basic handling of JSONArrays when their contents are all strings.
+            } else if (value instanceof JSONArray) {
+                final JSONArray ja = (JSONArray) value;
+                final int len = ja.length();
+                boolean arrayAllStrings = true;
+                final String[] newVal = new String[len];
+                for (int j = 0; arrayAllStrings && j < len; j++) {
+                    final Object o = ja.opt(j);
+                    if (o == null || !(o instanceof String)) {
+                        arrayAllStrings = false;
+                    } else if (o instanceof String) {
+                        newVal[j] = (String) o;
+                    }
+                }
+                if (arrayAllStrings) {
+                    b.putStringArray(key, newVal);
+                }
             }
         }
         return b;
@@ -594,7 +612,7 @@ public class NetworkClient extends DefaultHttpClient {
      * @param res
      * @param createdOk
      *            true if a 201 (CREATED) code is ok. Otherwise, only 200 (OK) is allowed.
-     * @throws HttpResponseException
+     * @throws ClientResponseException
      *             if the status code is 400 series.
      * @throws NetworkProtocolException
      *             for all status codes errors.
@@ -602,20 +620,52 @@ public class NetworkClient extends DefaultHttpClient {
      * @return returns true upon success or throws an exception explaining what went wrong.
      */
     public boolean checkStatusCode(HttpResponse res, boolean createdOk)
-            throws HttpResponseException, NetworkProtocolException, IOException {
+            throws ClientResponseException, NetworkProtocolException, IOException {
         final int statusCode = res.getStatusLine().getStatusCode();
         if (statusCode == HttpStatus.SC_OK || (createdOk && statusCode == HttpStatus.SC_CREATED)) {
             return true;
+
+            // client error
         } else if (statusCode >= HttpStatus.SC_BAD_REQUEST
                 && statusCode < HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+            final ClientResponseException cre = new ClientResponseException(statusCode, res
+                    .getStatusLine().getReasonPhrase());
+
             final HttpEntity e = res.getEntity();
-            if (e.getContentType().getValue().equals("text/html") || e.getContentLength() > 40) {
+            final String contentType = e.getContentType().getValue();
+
+            if ("text/html".equals(contentType)) {
+                logDebug("Got HTML response body. Not showing.");
+
+                // The server will often encode client errors in JSON. This can be passed on for the
+                // requester to try and handle it.
+            } else if ("text/plain".equals(contentType) || JSON_MIME_TYPE.equals(contentType)) {
+                JSONObject jo;
+
+                // if text/plain, this forces all the machinery below to accept it
+                res.setHeader("Content-Type", JSON_MIME_TYPE);
+                try {
+                    jo = toJsonObject(res);
+                    final Bundle data = jsonObjectToBundle(jo, false);
+                    cre.setResponseData(data);
+
+                } catch (final IllegalStateException e1) {
+                    Log.w(TAG, "Could not parse server response.", e1);
+
+                } catch (final JSONException e1) {
+                    Log.w(TAG, "Could not parse server response.", e1);
+                }
+
+            } else if (e.getContentLength() > 40) {
                 logDebug("Got long response body. Not showing.");
+
             } else {
                 logDebug(StreamUtils.inputStreamToString(e.getContent()));
             }
             e.consumeContent();
-            throw new HttpResponseException(statusCode, res.getStatusLine().getReasonPhrase());
+
+            throw cre;
+
         } else {
             final HttpEntity e = res.getEntity();
             if (e.getContentType().getValue().equals("text/html") || e.getContentLength() > 40) {
@@ -660,10 +710,10 @@ public class NetworkClient extends DefaultHttpClient {
      * @throws IOException
      * @throws JSONException
      * @throws NetworkProtocolException
-     * @throws HttpResponseException
+     * @throws ClientResponseException
      */
     public HttpResponse get(String path) throws IOException, JSONException,
-            NetworkProtocolException, HttpResponseException {
+            NetworkProtocolException, ClientResponseException {
         final String fullUri = getFullUrlAsString(path);
         final HttpGet req = new HttpGet(fullUri);
         if (DEBUG) {
