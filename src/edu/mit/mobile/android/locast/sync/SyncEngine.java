@@ -362,7 +362,7 @@ public class SyncEngine {
                 }
 
                 final long id = check.getLong(idCol);
-                final Uri localUri = ContentUris.withAppendedId(toSync, id);
+                final Uri localUri = isDir ? ContentUris.withAppendedId(toSync, id) : toSync;
 
                 final String pubUri = check.getString(pubUriCol);
 
@@ -386,7 +386,8 @@ public class SyncEngine {
         try {
             final int pubUriCol = c.getColumnIndex(JsonSyncableItem.COL_PUBLIC_URL);
             final int localModifiedCol = c.getColumnIndex(JsonSyncableItem.COL_MODIFIED_DATE);
-            final int serverModifiedCol = c.getColumnIndex(JsonSyncableItem.COL_SERVER_MODIFIED_DATE);
+            final int serverModifiedCol = c
+                    .getColumnIndex(JsonSyncableItem.COL_SERVER_MODIFIED_DATE);
             final int idCol = c.getColumnIndex(JsonSyncableItem._ID);
 
             // All the items in this cursor should be found on both
@@ -397,7 +398,7 @@ public class SyncEngine {
                 }
 
                 final long id = c.getLong(idCol);
-                final Uri localUri = ContentUris.withAppendedId(toSync, id);
+                final Uri localUri = isDir ? ContentUris.withAppendedId(toSync, id) : toSync;
 
                 final String pubUri = c.getString(pubUriCol);
 
@@ -421,6 +422,9 @@ public class SyncEngine {
 
                 // last modified as stored in the DB, in server time
                 final long itemServerModified = c.getLong(serverModifiedCol);
+
+                // how long ago, in ms, the item was updated. This is normalized according to the
+                // local clock
                 final long localAge = localTime - itemLocalModified;
 
                 final long remoteAge = serverTime - itemStatus.remoteModifiedTime;
@@ -715,8 +719,9 @@ public class SyncEngine {
                             ss.state = SyncState.DELETED_REMOTELY;
                             final ContentProviderOperation deleteOp = ContentProviderOperation
                                     .newDelete(
-                                            ContentUris.withAppendedId(toSyncWithoutQuerystring,
-                                                    c.getLong(idCol))).build();
+                                            isDir ? ContentUris.withAppendedId(
+                                                    toSyncWithoutQuerystring, c.getLong(idCol))
+                                                    : toSyncWithoutQuerystring).build();
                             cpo.add(deleteOp);
 
                             break;
@@ -797,8 +802,7 @@ public class SyncEngine {
 
                 final long id = uploadMe.getLong(idCol);
 
-                final Uri localUri = isDir ? ContentUris.withAppendedId(toSync,
-                        id) : toSync;
+                final Uri localUri = isDir ? ContentUris.withAppendedId(toSync, id) : toSync;
                 final String postUri = mProvider.getPostPath(mContext, localUri);
 
                 Intent intent = new Intent(SYNC_STATUS_CHANGED);
@@ -807,8 +811,8 @@ public class SyncEngine {
                 mContext.sendStickyBroadcast(intent);
 
                 try {
-                    final JSONObject jo = JsonSyncableItem.toJSON(mContext,
-                            localUri, uploadMe, syncMap);
+                    final JSONObject jo = JsonSyncableItem.toJSON(mContext, localUri, uploadMe,
+                            syncMap);
 
                     if (DEBUG) {
                         Log.d(TAG, "uploading " + localUri + " to " + postUri);
@@ -816,8 +820,7 @@ public class SyncEngine {
 
                     // Upload! Any non-successful responses are handled by
                     // exceptions.
-                    final HttpResponse res = mNetworkClient.post(postUri,
-                            jo.toString());
+                    final HttpResponse res = mNetworkClient.post(postUri, jo.toString());
 
                     long serverTime;
                     try {
@@ -835,15 +838,13 @@ public class SyncEngine {
                     // reflect that.
                     final JSONObject newJo = NetworkClient.toJsonObject(res);
                     try {
-                        final SyncStatus ss = loadItemFromJsonObject(newJo,
-                                syncMap, serverTime);
+                        final SyncStatus ss = loadItemFromJsonObject(newJo, syncMap, serverTime);
 
                         // update immediately, so that any cancellation or
                         // interruption of the sync
                         // keeps the local state in sync with what's on the
                         // server
-                        final int updates = provider.update(localUri,
-                                ss.remoteCVs, null, null);
+                        final int updates = provider.update(localUri, ss.remoteCVs, null, null);
 
                         final String locUriString = localUri.toString();
 
@@ -854,8 +855,7 @@ public class SyncEngine {
                             // ensure that it's findable by local URI too
                             syncStatuses.put(locUriString, ss);
 
-                            syncMap.onPostSyncItem(mContext, account, ss.local,
-                                    ss.remoteJson, true);
+                            syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson, true);
 
                             count++;
                             syncResult.stats.numUpdates++;
