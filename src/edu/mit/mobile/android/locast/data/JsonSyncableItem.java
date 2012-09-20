@@ -122,9 +122,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
     /**
      * @return A mapping of server↔local DB items.
      */
-    public SyncMap getSyncMap(){
-        return SYNC_MAP;
-    };
+    public abstract SyncMap getSyncMap();
 
     public static class ItemSyncMap extends SyncMap {
         /**
