@@ -52,12 +52,6 @@ public abstract class AbsComment extends JsonSyncableItem {
         super(c);
     }
 
-    @Override
-    public SyncMap getSyncMap() {
-        return SYNC_MAP;
-    }
-
-
     public static final SyncMap SYNC_MAP = new ItemSyncMap();
 
     public static class ItemSyncMap extends JsonSyncableItem.ItemSyncMap {

@@ -87,11 +87,6 @@ public abstract class TaggableItem extends JsonSyncableItem {
         super(c);
     }
 
-    @Override
-    public SyncMap getSyncMap() {
-        return SYNC_MAP;
-    }
-
     public static class TagSyncField extends SyncCustom {
         final private String prefix;
 

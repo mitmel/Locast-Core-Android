@@ -77,12 +77,6 @@ public abstract class CastMedia extends JsonSyncableItem {
         super(c);
     }
 
-    @Override
-    public SyncMap getSyncMap() {
-
-        return SYNC_MAP;
-    }
-
     public Uri getMedia(int mediaCol, int mediaLocalCol) {
         Uri media;
         if (!isNull(mediaLocalCol)) {
