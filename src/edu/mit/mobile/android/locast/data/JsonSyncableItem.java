@@ -97,6 +97,28 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         return ContentUris.withAppendedId(getContentUri(), getLong(getColumnIndexOrThrow(_ID)));
     }
 
+    // some handy accessors
+
+    public long getModified() {
+        return getLong(getColumnIndexOrThrow(COL_MODIFIED_DATE));
+    }
+
+    public long getServerModified() {
+        return getLong(getColumnIndexOrThrow(COL_SERVER_MODIFIED_DATE));
+    }
+
+    public static boolean isDraft(Cursor c) {
+        final int col = c.getColumnIndexOrThrow(COL_DRAFT);
+        return c.isNull(col) || c.getInt(col) != 0;
+    }
+    public boolean isDraft() {
+        return isDraft(this);
+    }
+
+    public String getPublicUrl() {
+        return getString(getColumnIndexOrThrow(COL_PUBLIC_URL));
+    }
+
     /**
      * Given a public Uri fragment, finds the local item representing it. If there isn't any such item, null is returned.
      *
