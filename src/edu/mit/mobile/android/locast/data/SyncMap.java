@@ -30,7 +30,23 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncItem;
+import edu.mit.mobile.android.locast.sync.SyncEngine;
 
+/**
+ * <p>
+ * This class maps local database content to/from JSON so it can be sent to /retrieved from the
+ * server.
+ * </p>
+ * 
+ * <p>
+ * To use, {@link #put(String, SyncItem)} items, placing the local DB column in key. Keys that start
+ * with {@link JsonSyncableItem#PREFIX_IGNORE_KEY} will not be stored in/retrieved from the
+ * database, but will still be processed by the {@link SyncEngine}.
+ * </p>
+ * 
+ * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
+ * 
+ */
 public class SyncMap extends HashMap<String, SyncItem> {
     /**
      *

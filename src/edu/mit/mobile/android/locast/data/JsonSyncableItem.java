@@ -49,6 +49,7 @@ import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
+import edu.mit.mobile.android.locast.sync.SyncEngine;
 
 /**
  * This type of object row can be serialized to/from JSON and synchronized to a server.
@@ -58,20 +59,60 @@ import edu.mit.mobile.android.locast.sync.LocastSyncService;
  */
 public abstract class JsonSyncableItem extends CursorWrapper implements ContentItem {
 
-    @DBColumn(type = TextColumn.class)
+    /**
+     * The item's permanent, public identifier. This is also a link to the item's data within the
+     * API, so that it can be resolved to the get the server's data.
+     */
+    @DBColumn(type = TextColumn.class, unique = true)
     public static final String COL_PUBLIC_URL = "url";
 
+    /**
+     * The time that the item was last modified, in local time. This should be updated each time the
+     * item is modified locally.
+     */
     @DBColumn(type = DatetimeColumn.class, notnull = true, defaultValue = DatetimeColumn.NOW_IN_MILLISECONDS)
     public static final String COL_MODIFIED_DATE = "modified";
 
+    /**
+     * The date that the server last returned as the item's modified date. This is used to determine
+     * if the item has been modified at all on the server side. This value is relative to the
+     * server's clock and may need to be adjusted for the local clock skew ({@link SyncEngine} does
+     * this).
+     */
     @DBColumn(type = DatetimeColumn.class)
     public static final String COL_SERVER_MODIFIED_DATE = "server_modified";
 
+    /**
+     * The date that the item has been created. This is auto-set to the time of insertion.
+     */
     @DBColumn(type = DatetimeColumn.class, notnull = true, defaultValue = DatetimeColumn.NOW_IN_MILLISECONDS)
     public static final String COL_CREATED_DATE = "created";
 
+    /**
+     * <p>
+     * Set this to true to prevent the {@link SyncEngine} from propagating changes to the server.
+     * Items marked draft will be ignored until this column is false.
+     * </p>
+     *
+     * <p>
+     * 1 is true; 0 or null is false
+     * </p>
+     */
     @DBColumn(type = BooleanColumn.class)
     public static final String COL_DRAFT = "draft";
+
+    /**
+     * <p>
+     * Set this to true to mark that the item has been deleted locally by the user. Once the
+     * {@link SyncEngine} processes the item, it will take care of actually deleting the content
+     * both remotely and locally.
+     * </p>
+     * <p>
+     * 1 is true; 0 or null is false
+     * </p>
+     */
+    @DBColumn(type = BooleanColumn.class)
+    public static final String COL_DELETED = "deleted";
 
     /**
      * @return The URI for a given content directory.
@@ -80,9 +121,23 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
 
     private static String[] PUB_URI_PROJECTION = {_ID, COL_PUBLIC_URL};
 
-    public static final String SELECTION_NOT_DRAFT = "(" + TaggableItem.COL_DRAFT + " ISNULL OR "
-            + TaggableItem.COL_DRAFT + " = 0)";
+    public static final String SELECTION_NOT_DRAFT = "(" + COL_DRAFT + " ISNULL OR " + COL_DRAFT
+            + "=0)";
 
+    public static final String SELECTION_DRAFT = "(" + COL_DRAFT + "=1)";
+
+    public static final String SELECTION_NOT_DELETED = "(" + COL_DELETED + " ISNULL OR "
+            + COL_DELETED + "=0)";
+
+    public static final String SELECTION_DELETED = "(" + COL_DELETED + "=1" + ")";
+
+    /**
+     * Instantiate this and wrap a cursor pointing to this type of object in order to access
+     * convenient getters.
+     *
+     * @param c
+     *            the cursor to wrap
+     */
     public JsonSyncableItem(Cursor c) {
         super(c);
     }
@@ -97,7 +152,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         return ContentUris.withAppendedId(getContentUri(), getLong(getColumnIndexOrThrow(_ID)));
     }
 
-    // some handy accessors
+    // some handy getters
 
     public long getModified() {
         return getLong(getColumnIndexOrThrow(COL_MODIFIED_DATE));
@@ -111,6 +166,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         final int col = c.getColumnIndexOrThrow(COL_DRAFT);
         return c.isNull(col) || c.getInt(col) != 0;
     }
+
     public boolean isDraft() {
         return isDraft(this);
     }
@@ -166,6 +222,8 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
     public static final String LIST_DELIM = "|";
     // the below splits "tag1|tag2" but not "tag1\|tag2"
     public static final String LIST_SPLIT = "(?<!\\\\)\\|";
+
+    public static final String PREFIX_IGNORE_KEY = "_";
 
     /**
      * Gets a list for the current item in the cursor.
@@ -230,6 +288,30 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         return TextUtils.join(LIST_DELIM, tempList);
     }
 
+    /**
+     * Marks the given content item(s) as deleted. They will actually be deleted once the deletion
+     * is propagated to the server by way of the {@link SyncEngine}.
+     *
+     * @param cr
+     * @param item
+     *            item or dir to mark deleted
+     * @param deleted
+     *            if true, the item will be deleted on next sync
+     * @param selection
+     *            extra selection or null
+     * @param selectionArgs
+     *            extra selection arguments or null
+     * @return
+     */
+    public static final int markDeleted(ContentResolver cr, Uri item, boolean deleted,
+            String selection,
+            String[] selectionArgs) {
+        final ContentValues cv = new ContentValues();
+        cv.put(COL_DELETED, deleted);
+        return cr.update(item, cv, selection, selectionArgs);
+    }
+
+
     private static Pattern durationPattern = Pattern.compile("(\\d{1,2}):(\\d{1,2}):(\\d{1,2})");
     /**
      * Given a JSON item and a sync map, create a ContentValues map to be inserted into the DB.
@@ -290,7 +372,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
 
             final int colIndex = c.getColumnIndex(lProp);
             // if it's a real property that's optional and is null on the local side
-            if (!lProp.startsWith("_") && map.isOptional()){
+            if (!lProp.startsWith(PREFIX_IGNORE_KEY) && map.isOptional()) {
                 if (colIndex == -1){
                     throw new RuntimeException("Programming error: Cursor does not have column '"+lProp+"', though sync map says it should. Sync Map: "+mySyncMap );
                 }

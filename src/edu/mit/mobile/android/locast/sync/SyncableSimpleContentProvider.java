@@ -19,8 +19,8 @@ import edu.mit.mobile.android.locast.data.SyncMapException;
 
 /**
  * A {@link SimpleContentProvider} that implements the {@link SyncableProvider} interface. This
- * looks for public, static fields named SYNC_MAP in your {@link JsonSyncableItem} classes in order
- * to determine how to sync.
+ * instantiates your {@link JsonSyncableItem} classes with a null cursor to call the
+ * {@link JsonSyncableItem#getSyncMap()} method in order to determine how to sync.
  *
  */
 public abstract class SyncableSimpleContentProvider extends SimpleContentProvider implements

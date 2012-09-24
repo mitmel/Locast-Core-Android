@@ -35,6 +35,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.accounts.Account;
+import android.content.ContentProvider;
 import android.content.ContentProviderClient;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
@@ -56,7 +57,6 @@ import edu.mit.mobile.android.locast.data.JsonSyncableItem;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.SyncException;
 import edu.mit.mobile.android.locast.data.SyncMap;
-import edu.mit.mobile.android.locast.data.TaggableItem;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.utils.LastUpdatedMap;
@@ -109,12 +109,18 @@ public class SyncEngine {
 
     JsonSyncableItem.COL_SERVER_MODIFIED_DATE,
 
-    JsonSyncableItem.COL_CREATED_DATE
+    JsonSyncableItem.COL_CREATED_DATE,
+
+    JsonSyncableItem.COL_DELETED
 
     };
 
+    /**
+     * Items that are ready to publish, but haven't been published before.
+     */
     private static final String SELECTION_UNPUBLISHED = JsonSyncableItem.COL_PUBLIC_URL
-            + " ISNULL AND " + TaggableItem.SELECTION_NOT_DRAFT;
+            + " ISNULL AND " + JsonSyncableItem.SELECTION_NOT_DRAFT + " AND "
+            + JsonSyncableItem.SELECTION_NOT_DELETED;
 
     final String[] PUB_URI_PROJECTION = new String[] { JsonSyncableItem._ID,
             JsonSyncableItem.COL_PUBLIC_URL };
@@ -132,11 +138,27 @@ public class SyncEngine {
     }
 
     /**
+     * <p>
+     * This performs the data synchronization.
+     * </p>
+     * <p>
+     * Provide this method with a URL to synch from and it will do all the resolution and
+     * introspection necessary to make it happen. content:// URLs must have all the columns defined
+     * in {@link JsonSyncableItem} for sync to function properly. Additionally, the
+     * {@link ContentProvider} that backs them must implement {@link SyncableProvider}.
+     * <p>
+     * It starts off by sorting out all the URLs, determining if all the information is provided for
+     * synchronization.
+     *
      * @param toSync
+     *            a content:// , http:// , or https:// URL
      * @param account
+     *            the account that is used for synchronizing. This can be null if the sync is
+     *            anonymous.
      * @param extras
      * @param provider
      * @param syncResult
+     *            an interface to report back sync stats to the calling class
      * @return true if the item was sync'd successfully. Soft errors will cause this to return
      *         false.
      * @throws RemoteException
@@ -232,6 +254,11 @@ public class SyncEngine {
                 throw e;
             }
         }
+
+        //
+        // uploading unpublished content has been finished. Next, proceed to figuring out what needs
+        // to be done with the rest of the content.
+        //
 
         if (pubPath == null) {
 
@@ -1021,7 +1048,15 @@ public class SyncEngine {
          */
         REMOTE_ONLY,
 
-        DELETED_LOCALLY, DELETED_REMOTELY
+        /**
+         * The item's {@link JsonSyncableItem#COL_DELETED} is set
+         */
+        DELETED_LOCALLY,
+
+        /**
+         * The item is no longer found on the server.
+         */
+        DELETED_REMOTELY
     }
 
     private static class SyncStatus {
