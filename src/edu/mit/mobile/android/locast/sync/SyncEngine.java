@@ -520,20 +520,7 @@ public class SyncEngine {
                                                 serverModified, FORMAT_ARGS_DEBUG)
                                         + "); publishing to server...");
                     }
-                    itemStatus.state = SyncState.LOCAL_DIRTY;
-
-                    // requeries to ensure that when it converts it to JSON, it has all the columns.
-                    final Cursor uploadCursor = provider.query(localUri, null, null, null, null);
-                    try {
-                        if (c.moveToFirst()) {
-                            mNetworkClient.putJson(pubPath, JsonSyncableItem.toJSON(mContext,
-                                    localUri, uploadCursor, syncMap));
-                        } else {
-                            throw new SyncException("couldn't find local item upon requerying");
-                        }
-                    } finally {
-                        uploadCursor.close();
-                    }
+                    uploadUpdate(provider, pubPath, syncMap, localUri, itemStatus);
                 }
 
                 mLastUpdated.markUpdated(localUri);
@@ -782,6 +769,40 @@ public class SyncEngine {
         mLastUpdated.markUpdated(toSync);
 
         return true;
+    }
+
+    /**
+     * Publishes an update to the server.
+     *
+     * @param provider
+     * @param pubPath
+     * @param syncMap
+     * @param localUri
+     * @param itemStatus
+     * @throws RemoteException
+     * @throws IOException
+     * @throws NetworkProtocolException
+     * @throws JSONException
+     * @throws SyncException
+     */
+    private void uploadUpdate(ContentProviderClient provider, String pubPath,
+            final SyncMap syncMap, final Uri localUri, final SyncStatus itemStatus)
+            throws RemoteException, IOException, NetworkProtocolException, JSONException,
+            SyncException {
+        itemStatus.state = SyncState.LOCAL_DIRTY;
+
+        // requeries to ensure that when it converts it to JSON, it has all the columns.
+        final Cursor uploadCursor = provider.query(localUri, null, null, null, null);
+        try {
+            if (uploadCursor.moveToFirst()) {
+                mNetworkClient.putJson(pubPath,
+                        JsonSyncableItem.toJSON(mContext, localUri, uploadCursor, syncMap));
+            } else {
+                throw new SyncException("couldn't find local item upon requerying");
+            }
+        } finally {
+            uploadCursor.close();
+        }
     }
 
     /**
