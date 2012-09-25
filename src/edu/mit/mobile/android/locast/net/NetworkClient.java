@@ -634,6 +634,10 @@ public class NetworkClient extends DefaultHttpClient {
 
     }
 
+    private static int[] HTTP_CREATED_OK_STATUS_CODES = new int[] { HttpStatus.SC_OK,
+            HttpStatus.SC_CREATED };
+    private static int[] HTTP_OK_STATUS_CODES = new int[] { HttpStatus.SC_OK };
+
     /**
      * Verifies that the HttpResponse has a good status code. Throws exceptions if they are not.
      *
@@ -649,8 +653,32 @@ public class NetworkClient extends DefaultHttpClient {
      */
     public boolean checkStatusCode(HttpResponse res, boolean createdOk)
             throws ClientResponseException, NetworkProtocolException, IOException {
+        return checkStatusCode(res, createdOk ? HTTP_CREATED_OK_STATUS_CODES : HTTP_OK_STATUS_CODES);
+    }
+
+    /**
+     * Verifies that the HttpResponse has a good status code. Throws exceptions if they are not.
+     *
+     * @param res
+     * @param acceptableStatusCodes
+     *            a list of status codes that are acceptable for this response. See
+     *            {@link HttpStatus} for a list of status codes.
+     * @throws ClientResponseException
+     *             if the status code is 400 series.
+     * @throws NetworkProtocolException
+     *             for all status codes errors.
+     * @throws IOException
+     * @return returns true upon success or throws an exception explaining what went wrong.
+     */
+    public boolean checkStatusCode(HttpResponse res, int[] acceptableStatusCodes)
+            throws ClientResponseException, NetworkProtocolException, IOException {
         final int statusCode = res.getStatusLine().getStatusCode();
-        if (statusCode == HttpStatus.SC_OK || (createdOk && statusCode == HttpStatus.SC_CREATED)) {
+        boolean acceptableCode = false;
+        for (int i = 0; !acceptableCode && i < acceptableStatusCodes.length; i++) {
+            acceptableCode = statusCode == acceptableStatusCodes[i];
+
+        }
+        if (acceptableCode) {
             return true;
 
             // client error
