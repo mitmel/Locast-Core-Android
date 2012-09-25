@@ -441,7 +441,6 @@ public class SyncEngine {
             final int localModifiedCol = c.getColumnIndex(JsonSyncableItem.COL_MODIFIED_DATE);
             final int serverModifiedCol = c
                     .getColumnIndex(JsonSyncableItem.COL_SERVER_MODIFIED_DATE);
-            final int idCol = c.getColumnIndex(JsonSyncableItem._ID);
 
             // All the items in this cursor should be found on both
             // the client and the server.
@@ -450,12 +449,13 @@ public class SyncEngine {
                     throw new InterruptedException();
                 }
 
-                final long id = c.getLong(idCol);
-                final Uri localUri = isDir ? ContentUris.withAppendedId(toSync, id) : toSync;
-
+                // as public URLs are unique, we can key off them.
                 final String pubUri = c.getString(pubUriCol);
 
                 final SyncStatus itemStatus = syncStatuses.get(pubUri);
+                // itemStatus is guaranteed to not be null, as it was created in the check above
+
+                final Uri localUri = itemStatus.local;
 
                 if (itemStatus.state == SyncState.ALREADY_UP_TO_DATE
                         || itemStatus.state == SyncState.NOW_UP_TO_DATE) {
@@ -464,8 +464,6 @@ public class SyncEngine {
                     }
                     continue;
                 }
-
-                itemStatus.local = localUri;
 
                 // make the status searchable by both remote and local uri
                 syncStatuses.put(localUri.toString(), itemStatus);
