@@ -88,6 +88,7 @@ import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -316,15 +317,17 @@ public class NetworkClient extends DefaultHttpClient {
     }
 
     public static String getBaseUrlFromManifest(Context context) {
-        PackageInfo pkgInfo;
+        ApplicationInfo appInfo;
         try {
-            pkgInfo = context.getPackageManager().getPackageInfo(context.getPackageName(),
-                    PackageManager.GET_META_DATA);
+
+            final PackageManager pm = context.getPackageManager();
+            appInfo = pm.getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+
         } catch (final NameNotFoundException e) {
             throw new RuntimeException(e);
         }
 
-        final Bundle metadata = pkgInfo.applicationInfo.metaData;
+        final Bundle metadata = appInfo.metaData;
         if (metadata == null) {
             throw new RuntimeException(
                     "missing base URL metadata in application element of AndroidManifest");
