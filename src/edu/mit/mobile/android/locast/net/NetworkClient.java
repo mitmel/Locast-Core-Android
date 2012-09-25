@@ -48,9 +48,11 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.AuthState;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
@@ -608,6 +610,31 @@ public class NetworkClient extends DefaultHttpClient {
         final HttpHead req = new HttpHead(fullUrl);
 
         return this.execute(req);
+    }
+
+    private static final int[] HTTP_DELETE_ACCEPTABLE_CODES = new int[] { HttpStatus.SC_OK,
+            HttpStatus.SC_ACCEPTED, HttpStatus.SC_NO_CONTENT };
+
+    /**
+     * HTTP DELETE
+     *
+     * @param path
+     *            relative path
+     * @return
+     * @throws ClientProtocolException
+     * @throws IOException
+     * @throws NetworkProtocolException
+     */
+    public HttpResponse delete(String path) throws ClientProtocolException, IOException,
+            NetworkProtocolException {
+        final String fullUrl = getFullUrlAsString(path);
+        if (DEBUG) {
+            Log.d(TAG, "DELETE " + fullUrl);
+        }
+        final HttpDelete req = new HttpDelete(fullUrl);
+        final HttpResponse res = this.execute(req);
+        checkStatusCode(res, HTTP_DELETE_ACCEPTABLE_CODES);
+        return res;
     }
 
     /**

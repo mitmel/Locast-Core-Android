@@ -401,6 +401,7 @@ public class SyncEngine {
         try {
             final int pubUriCol = check.getColumnIndex(JsonSyncableItem.COL_PUBLIC_URL);
             final int idCol = check.getColumnIndex(JsonSyncableItem._ID);
+            final int deletedCol = check.getColumnIndex(JsonSyncableItem.COL_DELETED);
 
             // All the items in this cursor should be found on both
             // the client and the server.
@@ -410,13 +411,16 @@ public class SyncEngine {
                 }
 
                 final long id = check.getLong(idCol);
-                final Uri localUri = isDir ? ContentUris.withAppendedId(toSync, id) : toSync;
+                final Uri localUri = isDir ? ContentUris.withAppendedId(toSyncWithoutQuerystring,
+                        id) : toSync;
+                final boolean deletedLocally = check.getInt(deletedCol) == 1;
 
                 final String pubUri = check.getString(pubUriCol);
 
                 final SyncStatus itemStatus = syncStatuses.get(pubUri);
 
-                itemStatus.state = SyncState.BOTH_UNKNOWN;
+                itemStatus.state = deletedLocally ? SyncState.DELETED_LOCALLY
+                        : SyncState.BOTH_UNKNOWN;
 
                 itemStatus.local = localUri;
 
@@ -482,14 +486,33 @@ public class SyncEngine {
 
                 final long ageDifference = Math.abs(localAge - remoteAge);
 
+                if (SyncState.DELETED_LOCALLY == itemStatus.state) {
+                    if (DEBUG) {
+                        Log.i(TAG, pubUri + " was deleted locally. Deleting from server...");
+                    }
+                    mNetworkClient.delete(pubUri);
+                    // delete would have thrown an exception if there was an issue. Now tell the
+                    // engine to actually delete it locally.
+                    if (DEBUG) {
+                        Log.i(TAG, pubUri
+                                + " has been deleted on the server. Deleting from local DB...");
+                    }
+                    final ContentProviderOperation.Builder b = ContentProviderOperation
+                            .newDelete(localUri);
+
+                    b.withExpectedCount(1);
+
+                    cpo.add(b.build());
+                    cpoPubUris.add(pubUri);
+
                 // up to date, as far remote -> local goes
-                if (itemServerModified == itemStatus.remoteModifiedTime) {
+                } else if (itemServerModified == itemStatus.remoteModifiedTime) {
                     itemStatus.state = SyncState.ALREADY_UP_TO_DATE;
                     if (DEBUG) {
-                        Log.d(TAG, pubUri + " is up to date.");
+                        Log.i(TAG, pubUri + " is up to date.");
                     }
 
-                    // need to download
+                    // local is older; need to load from remote
                 } else if (localAge > remoteAge) {
                     if (DEBUG) {
                         final long serverModified = itemStatus.remoteModifiedTime;
@@ -579,6 +602,12 @@ public class SyncEngine {
                     Log.e(TAG, "can't get sync status for " + res);
                     continue;
                 }
+
+                if (ss.state == SyncState.DELETED_LOCALLY) {
+                    ss.state = SyncState.NOW_UP_TO_DATE;
+                    continue;
+                }
+
                 syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson,
                         res.count != null ? res.count == 1 : true);
 
