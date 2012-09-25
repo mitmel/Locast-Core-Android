@@ -927,6 +927,34 @@ public class NetworkClient extends DefaultHttpClient {
         return c;
     }
 
+    /**
+     * Resolves a path using the base URL that's stored in the application's manifest.
+     * 
+     * @param context
+     * @param path
+     *            the relative URL to be resolved
+     * @return a full URL
+     * @see #getBaseUrlFromManifest(Context)
+     * @see #getFullUrlAsString(Context, String)
+     */
+    public static Uri getFullUrl(Context context, String path) {
+        return Uri.parse(getFullUrlAsString(context, path));
+    }
+
+    /**
+     * Resolves a path using the base URL that's stored in the application's manifest.
+     *
+     * @param context
+     * @param path
+     *            the relative URL to be resolved
+     * @return a full URL
+     * @see #getBaseUrlFromManifest(Context)
+     */
+    public static String getFullUrlAsString(Context context, String path) {
+        final String baseUrl = getBaseUrlFromManifest(context);
+        return URI.create(baseUrl).resolve(path).normalize().toASCIIString();
+    }
+
     public synchronized Uri getFullUrl(String path) {
         Uri fullUri;
         if (path.startsWith("http")) {
