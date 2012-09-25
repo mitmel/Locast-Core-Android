@@ -215,6 +215,8 @@ public class SyncEngine {
 
         final HashMap<String, SyncStatus> syncStatuses = new HashMap<String, SyncEngine.SyncStatus>();
         final ArrayList<ContentProviderOperation> cpo = new ArrayList<ContentProviderOperation>();
+
+        // this will be in lockstep with the cpo above
         final LinkedList<String> cpoPubUris = new LinkedList<String>();
 
         //
@@ -273,6 +275,9 @@ public class SyncEngine {
             Log.d(TAG, "pubPath: " + pubPath);
         }
 
+        // Retrieve the content from the server using the public path. This also times it, for
+        // reporting as well as computing offsets for time-based synchronization.
+
         final long request_time = System.currentTimeMillis();
 
         HttpResponse hr = mNetworkClient.get(pubPath);
@@ -306,6 +311,10 @@ public class SyncEngine {
         // add this to the server time to get the local time
         final long localOffset = (localTime - serverTime);
 
+        // Sometimes local clocks are way off. This happens most often on dev phones that don't have
+        // time synch working properly, but there are many other reasons why the local clock may be
+        // wrong.
+
         if (Math.abs(localOffset) > 30 * 60 * 1000) {
             Log.w(TAG, "local clock is off by " + localOffset + "ms");
         }
@@ -316,10 +325,16 @@ public class SyncEngine {
 
         final HttpEntity ent = hr.getEntity();
 
+        // The JSON loaders below constructs a selection which matches all the public URLs retrieved
+        // from server. It also constructs an inverse selection which matches all the items that are
+        // NOT on the server (at least according to the results from the provided public URL).
         String selection;
         String selectionInverse;
         String[] selectionArgs;
 
+        // The JSON type (object or list) is processed based on what the local content URL is.
+        // Eventually, this should detect the JSON type from the server's response (perhaps MIME
+        // type) and handle it accordingly.
         if (isDir) {
 
             final JSONArray ja = new JSONArray(StreamUtils.inputStreamToString(ent.getContent()));
@@ -358,6 +373,8 @@ public class SyncEngine {
             final String placeholders = sb.toString();
             selection = JsonSyncableItem.COL_PUBLIC_URL + " IN " + placeholders;
             selectionInverse = JsonSyncableItem.COL_PUBLIC_URL + " NOT IN " + placeholders;
+
+            // handle individual content items.
         } else {
 
             final JSONObject jo = new JSONObject(StreamUtils.inputStreamToString(ent.getContent()));
@@ -371,12 +388,16 @@ public class SyncEngine {
             selectionArgs = new String[] { syncStatus.remote };
         }
 
-        // first check without the querystring. This will ensure that we
-        // properly mark things that we already have in the database.
+        // At this point, all the data is loaded from the server into the syncStatuses data
+        // structure. Now it needs to be processed to determine what to do with it.
+
+        // first check without the querystring. This will ensure that we properly mark things that
+        // we already have in the database for items that could potentially match the query string,
+        // but haven't been added to the local DB yet. All the items matching here are known to have
+        // a public URL matching the data that were just received from the server.
         final Cursor check = provider.query(toSyncWithoutQuerystring, SYNC_PROJECTION, selection,
                 selectionArgs, null);
 
-        // these items are on both sides
         try {
             final int pubUriCol = check.getColumnIndex(JsonSyncableItem.COL_PUBLIC_URL);
             final int idCol = check.getColumnIndex(JsonSyncableItem._ID);
@@ -407,9 +428,14 @@ public class SyncEngine {
             check.close();
         }
 
+        // at this point, everything that was loaded from the server will have a matching local
+        // content item (if it exists) whose state is stored in syncStatuses. New content has not
+        // yet been stored locally and only exists in the JSON objects stored in the syncStatuses.
+
+        // The selection below still only matches items that have already been stored locally.
+
         Cursor c = provider.query(toSync, SYNC_PROJECTION, selection, selectionArgs, null);
 
-        // these items are on both sides
         try {
             final int pubUriCol = c.getColumnIndex(JsonSyncableItem.COL_PUBLIC_URL);
             final int localModifiedCol = c.getColumnIndex(JsonSyncableItem.COL_MODIFIED_DATE);
@@ -503,7 +529,7 @@ public class SyncEngine {
 
                     syncResult.stats.numUpdates++;
 
-                    // need to upload
+                    // local is younger; need to upload
                 } else if (localAge < remoteAge) {
                     if (DEBUG) {
                         final long serverModified = itemStatus.remoteModifiedTime;
@@ -520,6 +546,7 @@ public class SyncEngine {
                                                 serverModified, FORMAT_ARGS_DEBUG)
                                         + "); publishing to server...");
                     }
+
                     uploadUpdate(provider, pubPath, syncMap, localUri, itemStatus);
                 }
 
@@ -540,6 +567,8 @@ public class SyncEngine {
                 Log.d(TAG, "applying " + cpo.size() + " bulk updates...");
             }
 
+            // due to all the withExpectedCount() above, this will throw an
+            // OperationApplicationException if there's a problem
             final ContentProviderResult[] r = provider.applyBatch(cpo);
             if (DEBUG) {
                 Log.d(TAG, "Done applying updates. Running postSync handler...");
@@ -549,7 +578,7 @@ public class SyncEngine {
                 final ContentProviderResult res = r[i];
                 final SyncStatus ss = syncStatuses.get(cpoPubUris.get(i));
                 if (ss == null) {
-                    Log.e(TAG, "can't get sync status for " + res.uri);
+                    Log.e(TAG, "can't get sync status for " + res);
                     continue;
                 }
                 syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson,
@@ -712,6 +741,7 @@ public class SyncEngine {
                             Log.w(TAG, "got an unexpected state for " + item + ": " + ss);
                     }
 
+                    // Up to this point, SyncStatus was created by loading from JSON.
                 } else {
                     ss = new SyncStatus(pubUri, SyncState.LOCAL_ONLY);
                     ss.local = item;
