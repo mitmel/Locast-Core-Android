@@ -258,6 +258,10 @@ public abstract class AbsLocastAccountSyncService extends LocastSyncService {
                         syncResult.stats.numAuthExceptions++;
                         break;
 
+                    case HttpStatus.SC_METHOD_NOT_ALLOWED:
+                        syncResult.stats.numSkippedEntries++;
+                        break;
+
                     case HttpStatus.SC_BAD_REQUEST:
                         syncResult.stats.numSkippedEntries++;
                         break;
