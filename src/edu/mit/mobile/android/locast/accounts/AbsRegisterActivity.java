@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 
 import org.json.JSONException;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -27,6 +28,21 @@ import edu.mit.mobile.android.locast.net.ClientResponseException;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 
+/**
+ * <p>
+ * A generic registration form, so that users can create a new account.
+ * </p>
+ * 
+ * <p>
+ * This activity should be started with {@link Activity#startActivityForResult(Intent, int)} if you
+ * wish to get the result of registration. The data passed back is a Bundle version of the JSON data
+ * returned from the server. This generally includes the username, password, user URL, ID, and
+ * display name.
+ * </p>
+ *
+ * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
+ * 
+ */
 public abstract class AbsRegisterActivity extends FragmentActivity {
 
     private static final String TAG = AbsRegisterActivity.class.getSimpleName();
@@ -155,7 +171,6 @@ public abstract class AbsRegisterActivity extends FragmentActivity {
             if (!mUserEditedUsername) {
                 setUsername(generateUsername(getYourName(), getEmail()));
             }
-
         }
 
         @Override
@@ -171,7 +186,6 @@ public abstract class AbsRegisterActivity extends FragmentActivity {
 
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            // TODO Auto-generated method stub
 
         }
 
