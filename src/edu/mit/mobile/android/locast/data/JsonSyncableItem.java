@@ -70,7 +70,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
      * The time that the item was last modified, in local time. This should be updated each time the
      * item is modified locally.
      */
-    @DBColumn(type = DatetimeColumn.class, notnull = true, defaultValue = DatetimeColumn.NOW_IN_MILLISECONDS)
+    @DBColumn(type = DatetimeColumn.class, notnull = true, defaultValue = DatetimeColumn.NOW_IN_MILLISECONDS, flags = DatetimeColumn.FLAG_AUTO_NOW)
     public static final String COL_MODIFIED_DATE = "modified";
 
     /**
