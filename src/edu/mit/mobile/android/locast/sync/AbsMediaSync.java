@@ -209,6 +209,10 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
 
     public abstract void enqueueUnpublishedMedia() throws SyncException;
 
+    public String[] getCastMediaProjection() {
+        return CASTMEDIA_PROJECTION;
+    }
+
     private static final String SELECTION_UNPUBLISHED_CAST_MEDIA = CastMedia.COL_MEDIA_URL
             + " ISNULL AND " + CastMedia.COL_PUBLIC_URL + " NOT NULL AND "
             + CastMedia.COL_LOCAL_URL + " NOT NULL";
@@ -222,7 +226,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
         }
 
         final JsonSyncableItem c = provider.getWrappedContentItem(castMedia, mCr.query(castMedia,
-                CASTMEDIA_PROJECTION, SELECTION_UNPUBLISHED_CAST_MEDIA, null, null));
+                getCastMediaProjection(), SELECTION_UNPUBLISHED_CAST_MEDIA, null, null));
 
         try {
             if (!(c instanceof CastMedia)) {
@@ -378,7 +382,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
         }
 
         final CastMedia castMedia = (CastMedia) provider.getWrappedContentItem(castMediaUri,
-                mCr.query(castMediaUri, CASTMEDIA_PROJECTION, null, null, null));
+                mCr.query(castMediaUri, getCastMediaProjection(), null, null, null));
 
         try {
             if (!castMedia.moveToFirst()) {
