@@ -4,10 +4,12 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
 import edu.mit.mobile.android.content.column.DBColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticationService;
+import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticator;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncFieldMap;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncItem;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncMapChain;
@@ -49,6 +51,26 @@ public abstract class Authorable {
 
         return cv;
     }
+
+    /**
+     * The current user can be gotten using {@link AbsLocastAuthenticator#getUserUri(Context)}. This
+     * requires that the cursor has loaded {@link Columns#COL_AUTHOR_URI}.
+     * 
+     * @param userUri
+     *            the user in question
+     * @param c
+     *            a cursor pointing at an item's row
+     * @return true if the item is editable by the specified user.
+     */
+    public static boolean canEdit(String userUri, Cursor c) {
+        if (userUri == null || userUri.length() == 0) {
+            throw new IllegalArgumentException("userUri must not be null or empty");
+        }
+
+        final String itemAuthor = c.getString(c.getColumnIndexOrThrow(Columns.COL_AUTHOR_URI));
+
+        return userUri.equals(itemAuthor);
+    };
 
     public static Uri getAuthoredBy(Uri queryableUri, String authorUri) {
         return queryableUri.buildUpon().appendQueryParameter(Columns.COL_AUTHOR_URI, authorUri)
