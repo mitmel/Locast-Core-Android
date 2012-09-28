@@ -27,7 +27,14 @@ Server Communication
 The application communicates with the server using a public RESTful API,
 allowing both authenticated an unauthenticated API requests.
 
-The API's base URL is stored in the key `default_api_url` in
+The API's base URL is stored in your application's manifest. You can add it in
+by adding a block similar to this to your `<application />` section of your
+`AndroidManifest.xml`:
+
+        <meta-data
+            android:name="edu.mit.mobile.android.locast.base_url"
+            android:value="http://example.com/openlocast/api/" />
+
 [strings.xml](res/values/strings.xml#default_api_url).
 
 Dependencies
