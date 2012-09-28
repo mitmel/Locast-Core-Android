@@ -567,8 +567,10 @@ public class SyncEngine {
                                                 serverModified, FORMAT_ARGS_DEBUG)
                                         + "); publishing to server...");
                     }
+                    final String itemPubPath = itemStatus.remote != null ? itemStatus.remote
+                            : mProvider.getPublicPath(mContext, localUri);
 
-                    uploadUpdate(provider, pubPath, syncMap, localUri, itemStatus);
+                    uploadUpdate(provider, itemPubPath, syncMap, localUri, itemStatus);
                 }
 
                 mLastUpdated.markUpdated(localUri);
@@ -1143,11 +1145,23 @@ public class SyncEngine {
             this.state = state;
         }
 
+        /**
+         * local content URL
+         */
         Uri local;
+        /**
+         * public URL
+         */
         String remote;
         SyncState state;
+        /**
+         * The last modified time in the server's time scale
+         */
         long remoteModifiedTime;
         JSONObject remoteJson;
+        /**
+         * The remoteJson as CV
+         */
         ContentValues remoteCVs;
 
         public boolean isUpToDate() {
