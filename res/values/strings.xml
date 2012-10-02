@@ -2,146 +2,63 @@
 <!-- Default, English -->
 <resources>
 
-	<string name="signup_text">Register to join %1$s</string>
-	
-	<!-- Generic user-facing error messages -->
-	<string name="error_no_providers">Error: no location providers</string>
-
-    <!-- Generic user-facing notices -->
-    <string name="notice_databases_reset">Local database reset.</string>
-
-   	<string name="wipe_database">Wipe Database</string>
-    
-    <!-- privacy -->
-	<string name="privacy_header">Privacy:</string>
-	<string name="privacy_spinner">Privacy level</string>
-    <string name="refresh">Refresh</string>
-    
-	<!-- Sync -->
-	<string name="sync_first">No local content detected. Starting first sync…</string>
-	<string name="sync_notification">Synchronizing %1$s…</string>
-	<string name="sync_success">Sync successful.</string>
-	<string name="sync_menu">Synchronize</string>
-	<string name="sync_upload_success">Cast uploaded successfully.</string>
-	<string name="sync_upload_success_message">\"%1$s\" has been uploaded.</string>
-    <string name="error_uploading_cast_media">Error uploading cast media.</string>
-	<string name="sync_upload_fail">Error uploading cast.</string>
-	<string name="sync_upload_fail_message">\"%1$s\" failed to upload.</string>
-    <string name="error_sync_canceled">Sync canceled.</string>
-	<string name="error_sync">Could not synchronize with server. Do you have a network connection?</string>
-	<string name="error_sync_no_post">Sorry, there was a problem uploading your media to the server. Please try synchronizing again.</string>
+    <!-- Sync -->
+    <string name="sync">Synchronize</string>
+    <string name="sync_notification">Synchronizing %1$s…</string>
+    <string name="sync_upload_success">Uploaded successfully.</string>
+    <string name="sync_upload_success_message">“%1$s” has been uploaded.</string>
+    <!-- placeholder 1 is the item title -->
+    <string name="sync_downloading">Downloading “%1$s”…</string>
+    <!-- placeholder 1 is the item title -->
+    <string name="sync_uploading">Uploading “%1$s”…</string>
+    <string name="error_uploading_media">Error uploading media.</string>
+    <string name="error_sync_upload_fail">Error uploading.</string>
+    <!-- placeholder 1 is the item title -->
+    <string name="error_sync_upload_fail_message">“%1$s” failed to upload.</string>
+    <!-- placeholder 1 is the item title -->
     <string name="error_sync_no_data_network">Cannot sync %1$s: no data network. Please check your connection and try again.</string>
-    <string name="sync_downloading_cast">Downloading \"%1$s\"…</string>
-    <string name="sync_uploading_cast">Uploading \"%1$s\"…</string>
-    
-    <!-- Android Sync -->
     <string name="username_label">%1$s username</string>
     <string name="password_label">Password</string>
     <string name="login_message_authenticating">authenticating…</string>
     <string name="login_message_loginfail">Invalid username or password.</string>
     <string name="login_message_login_empty_password">Please enter a password.</string>
     <string name="login_message_login_empty_username">Please enter your %1$s username and password.</string>
-     <!-- Placeholder here is for application name -->
+
+    <!-- Placeholder here is for application name -->
+    <string name="signup_text">Register to join %1$s</string>
+    <!-- Placeholder here is for application name -->
     <string name="login_title">%1$s Login</string>
-    <string name="logout">Logout</string>
-    <string name="are_you_sure_you_want_to_logout">Are you sure you want to logout?\nAll unsynced casts will be lost.</string>
-    <string name="sync">Synchronize</string>
-    <string name="syncing">Synchronizing…</string>
-    <string name="no_pending_casts_to_sync">No pending casts to synchronize</string>
-	
-	<!-- Moments -->
-   	<string name="moment_description_hint">Briefly describe this moment (optional)</string>
-	<string name="save_moment">Save Moment</string>
-    <string name="error_moment_saving_moment">Error saving moment :-(</string>
-    <string name="moment_saved">Moment saved.</string>
-	
-	<string name="welcome_message">Welcome to %1$s.</string>
-	
-	<string name="auth_signin_or_skip_notice">You\'ll need an account to upload photos and videos to %1$s</string>
-	<string name="auth_signin_for_favorites">In order to save your favorite casts, you\'ll need an %1$s account.</string>
-	
-	<string name="auth_signin_register">Sign In / Register</string>
-	
-	<string name="auth_skip">Skip</string>
+    <string name="auth_username_hint">alice@example.org</string>
+    <string name="auth_password_hint">password</string>
+    <string name="auth_login">Login</string>
+    <string name="auth_logout">Logout</string>
 
-	
-	<string name="title_casts">Casts</string>
-	
-	<string name="title_nearby">%1$s Nearby</string>
-	<string name="title_favorited">Favorite %1$s</string>
-	<string name="title_unfavorited">Non-favorite %1$s</string>
-	<string name="collection_no_casts">There are no casts in this collection.</string>
-	<string name="list_empty">No items in this list.</string>
+    <!-- placeholder 1 is app name -->
+    <string name="auth_logout_title">%1$s Logout</string>
+    <!-- placeholder 1 is app name -->
+    <string name="auth_logout_message">This will log you out of %1$s and delete all synchronized content from your device.</string>
 
-	<string name="auth_username_hint">alice@example.org</string>
-	<string name="auth_password_hint">password</string>
-	<string name="auth_login">Login</string>
-	<string name="auth_logout">Logout</string>
-	<!-- placeholder 1 is app name -->
-	<string name="auth_logout_title">%1$s Logout</string>
-	<!-- placeholder 1 is app name -->
-	<string name="auth_logout_message">This will log you out of %1$s and delete all synchronized content from your device.</string>
-	<string name="auth_logout_error">There was an error logging you out.</string>
-	<string name="empty_castmedia">There are no media in this cast.</string>
-	<string name="error_cast_media_no_activities">We\'re sorry, but there doesn\'t seem to be a way to play this media on your device.</string>
-	<string name="collections">Collections</string>
-	<string name="nearby">Nearby</string>
-	<string name="favorites">Favorites</string>
-	<string name="error_no_featured_casts">There are no featured casts.</string>
-	<string name="error_no_items_in_this_list">No items in this list.</string>
-	<string name="featured_casts">Featured Casts</string>
-	<string name="follow">Follow</string>
-	<string name="unfollow">Unfollow</string>
-	<string name="notice_finding_your_location">Finding your location…</string>
-	<string name="auth_error_could_not_contact_server">Could not contact server.</string>
-	<string name="auth_error_server_returned_invalid_data">Server returned invalid data.</string>
-	<string name="auth_error_network_protocol_error">Network protocol error: %1$s</string>
-	<string name="collection_detail_collection_by">Collection by %1$s</string>
-	<string name="videoplayer_notice_loading_video">Loading video…</string>
-	<string name="reset_database">Reset Database</string>
-	<string name="cast_description_hint">Briefly describe the cast</string>
-	<string name="tab_location">Location</string>
-	<string name="tab_media">Media</string>
-	<string name="tab_details">Details</string>
-	<string name="cast_edit_select_media_type">Select media type</string>
+    <!-- Generic user-facing notices -->
+    <string name="notice_databases_reset">Local database reset.</string>
 
-	<string-array name="cast_edit_pick">
-		<item >Video</item>
-		<item >Picture</item>
-	</string-array>
-		<string name="auth_set_site">Set %1$s Site</string>
-		<string name="cast_edit_error_camera_did_not_return_image">Error: camera did not return an image. Please try again.</string>
-		<string name="cast_edit_media_empty">Tap the buttons below to add photos and videos</string>
-	<string name="loading_data">Loading data…</string>
-	<string name="wait_location">Please wait while we add your current location to the cast you are creating. To improve GPS
-reception, try standing in a clear area outside away from buildings.</string>
-	<string name="need_more_time_to_retrieve_location">We need more time to retrieve your location. Press \'Continue\' to keep waiting or \'Stop\' to cancel the cast creation and try again later.</string>
-	<string name="location_service_not_working">Location service not working</string>
-	<string name="continue_res">Continue</string>
-	<string name="stop">Stop</string>
-	<string name="location_unknown">Location: Finding…</string>
-	<string name="location_known">Location: Found!</string>
-	<string name="activity_unsynced_casts">Unsynced Casts</string>
-	<string name="no_title">(no title)</string>
-	<string name="home">home</string>
-	<string name="draft">draft</string>
-	<string name="thumbnail_content_description">thumbnail of item</string>
-	<string name="location_center_on_current_location">center on current location</string>
-	<string name="new_photo">New Photo</string>
-	<string name="new_video">New Video</string>
-	<string name="pick_media_from_gallery">Pick Media from Gallery</string>
-	<string name="remove_media">remove media from cast</string>
-	<string name="media_title_hint">media title</string>
-	<string name="sync_locast_media">Sync %1$s Media</string>
-	<string name="powered_by_locast">powered by Locast</string>
-	<string name="edit">Edit</string>
-	<string name="your_name_label">Your name</string>
-	<string name="your_name_hint">Alice Carroll</string>
-	<string name="email_address">Email address</string>
-	<string name="email_address_hint">alice@example.org</string>
-	<string name="register">Register</string>
-	<string name="auth_register_title">%1$s Registration</string>
-	<string name="password_confirm_hint">confirm password</string>
-	<string name="password_hint">password</string>
-	<string name="error_network">Error communicating with server.</string>
+    <!-- placeholder 1 is app name -->
+    <string name="auth_register_title">%1$s Registration</string>
+    <string name="register_your_name_label">Your name</string>
+    <string name="register_your_name_hint">Alice Carroll</string>
+    <string name="register_email_address">Email address</string>
+    <string name="register_email_address_hint">alice@example.org</string>
+    <string name="register">Register</string>
+    <string name="register_password_confirm_hint">confirm password</string>
+    <string name="auth_error_could_not_contact_server">Could not contact server.</string>
+    <string name="auth_error_server_returned_invalid_data">Server returned invalid data.</string>
+    <string name="auth_error_network_protocol_error">Network protocol error: %1$s</string>
+    <string name="register_message_empty_name">Please enter your name</string>
+    <string name="register_message_empty_email_address">Please enter your email address</string>
+    <string name="register_message_empty_username">Please enter your desired username</string>
+    <string name="register_message_empty_password">Please enter a password</string>
+    <string name="register_message_password_mismatch">This does not match your first password</string>
+
+    <!-- Incremental locator -->
+    <string name="error_no_providers">Error: no location providers</string>
+
 </resources>

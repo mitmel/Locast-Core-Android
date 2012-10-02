@@ -505,8 +505,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
 
             mCr.update(castMediaUri, cv, null, null);
         } catch (final Exception e) {
-            final SyncException se = new SyncException(
-                    getString(R.string.error_uploading_cast_media));
+            final SyncException se = new SyncException(getString(R.string.error_uploading_media));
             se.initCause(e);
             throw se;
         }
@@ -627,7 +626,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
                 final HttpResponse res = nc.get(pubUri);
                 final HttpEntity ent = res.getEntity();
                 final ProgressNotification notification = new ProgressNotification(this, getString(
-                        R.string.sync_downloading_cast, castTitle),
+                        R.string.sync_downloading, castTitle),
                         ProgressNotification.TYPE_DOWNLOAD, PendingIntent.getActivity(this, 0,
                                 new Intent(Intent.ACTION_VIEW, titledItem)
                                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0), false);

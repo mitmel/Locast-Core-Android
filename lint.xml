@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lint>
-    <issue id="MissingTranslation" severity="ignore" />
+    <issue id="ExtraTranslation" severity="warning" />
+    <issue id="IconExpectedSize" severity="warning" />
+    <issue id="TypographyQuotes" severity="informational" />
+    <issue id="UnusedIds" severity="informational" />
 </lint>

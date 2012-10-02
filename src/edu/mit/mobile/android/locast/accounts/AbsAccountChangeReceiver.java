@@ -16,17 +16,20 @@ package edu.mit.mobile.android.locast.accounts;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import java.io.File;
 import java.util.Arrays;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
+import android.widget.Toast;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.home.ResetActivity;
+import edu.mit.mobile.android.locast.R;
 
 public abstract class AbsAccountChangeReceiver extends BroadcastReceiver {
     private static final String TAG = AbsAccountChangeReceiver.class.getSimpleName();
@@ -97,7 +100,7 @@ public abstract class AbsAccountChangeReceiver extends BroadcastReceiver {
 
         // only delete the database when it was a real account
         if (AbsLocastAuthenticator.hasRealAccount(context, getAccountType())) {
-            ResetActivity.resetEverything(context, getAccountType(), false, false);
+            resetEverything(context, getAccountType(), false, false);
         }
     }
 
@@ -107,6 +110,44 @@ public abstract class AbsAccountChangeReceiver extends BroadcastReceiver {
             Log.d(TAG, "Locast account added: " + account);
         }
     }
+
+    protected void resetEverything(Context context, String accountType, boolean showNotice,
+            boolean removeAccounts) {
+        if (Constants.DEBUG) {
+            Log.d(TAG, "erasing all data...");
+        }
+
+        if (removeAccounts) {
+            final AccountManager am = (AccountManager) context
+                    .getSystemService(Context.ACCOUNT_SERVICE);
+
+            for (final Account account : AbsLocastAuthenticator.getAccounts(context, accountType)) {
+                am.removeAccount(account, null, null);
+            }
+        }
+
+        // clear cache
+        for (final File file : context.getCacheDir().listFiles()) {
+            file.delete();
+        }
+
+        final ContentResolver cr = context.getContentResolver();
+
+        deleteAllData(cr);
+
+        if (showNotice) {
+            Toast.makeText(context.getApplicationContext(), R.string.notice_databases_reset,
+                    Toast.LENGTH_LONG).show();
+        }
+        if (Constants.DEBUG) {
+            Log.d(TAG, "All Locast data has been erased.");
+        }
+    }
+
+    /**
+     * implement this to erase all the data in your content provider.
+     */
+    protected abstract void deleteAllData(ContentResolver cr);
 
     protected abstract String getAccountType();
 

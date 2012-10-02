@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu
-  xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:title="@string/auth_set_site" android:id="@+id/set_base_url" android:icon="@android:drawable/ic_menu_preferences" android:visible="false"/>
-    
-</menu>

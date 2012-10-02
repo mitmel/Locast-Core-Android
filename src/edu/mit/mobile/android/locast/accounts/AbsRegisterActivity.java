@@ -32,7 +32,7 @@ import edu.mit.mobile.android.locast.net.NetworkProtocolException;
  * <p>
  * A generic registration form, so that users can create a new account.
  * </p>
- * 
+ *
  * <p>
  * This activity should be started with {@link Activity#startActivityForResult(Intent, int)} if you
  * wish to get the result of registration. The data passed back is a Bundle version of the JSON data
@@ -41,7 +41,7 @@ import edu.mit.mobile.android.locast.net.NetworkProtocolException;
  * </p>
  *
  * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
- * 
+ *
  */
 public abstract class AbsRegisterActivity extends FragmentActivity {
 
@@ -208,21 +208,21 @@ public abstract class AbsRegisterActivity extends FragmentActivity {
     protected boolean validateForm() {
         final CharSequence yourName = trimEntry(getYourName());
         if (yourName.length() == 0) {
-            setYourNameError("please enter your name");
+            setYourNameError(getString(R.string.register_message_empty_name));
             return false;
         }
 
         final CharSequence email = trimEntry(getEmail());
 
         if (email.length() == 0) {
-            setEmailError("Please enter your email address");
+            setEmailError(getString(R.string.register_message_empty_email_address));
             return false;
         }
 
         final CharSequence username = trimEntry(getUsername());
 
         if (username.length() == 0) {
-            setUsernameError("Please enter your desired username");
+            setUsernameError(getString(R.string.register_message_empty_username));
             return false;
         }
 
@@ -230,12 +230,12 @@ public abstract class AbsRegisterActivity extends FragmentActivity {
         final String passwordConfirm = getPasswordConfirm().toString();
 
         if (password.length() == 0) {
-            setPasswordError("Please enter a password");
+            setPasswordError(getString(R.string.register_message_empty_password));
             return false;
         }
 
         if (!passwordConfirm.equals(password)) {
-            setPasswordConfirmError("This does not match your password");
+            setPasswordConfirmError(getString(R.string.register_message_password_mismatch));
             return false;
         }
 
@@ -289,7 +289,9 @@ public abstract class AbsRegisterActivity extends FragmentActivity {
                 setPasswordError(getErrorText(data, NetworkClient.SERVER_KEY_PASSWORD));
             }
         } else {
-            Toast.makeText(this, R.string.error_network, Toast.LENGTH_LONG).show();
+            Toast.makeText(this,
+                    getString(R.string.auth_error_network_protocol_error, e.getLocalizedMessage()),
+                    Toast.LENGTH_LONG).show();
             Log.e(TAG, "Client error on registration", e);
         }
     }
@@ -302,8 +304,21 @@ public abstract class AbsRegisterActivity extends FragmentActivity {
      * @param e
      */
     protected void onNetworkError(Exception e) {
-        Toast.makeText(this, R.string.error_network, Toast.LENGTH_LONG).show();
         Log.e(TAG, "Network error while registering", e);
+
+        if (e instanceof JSONException) {
+            Toast.makeText(this, R.string.auth_error_server_returned_invalid_data,
+                    Toast.LENGTH_LONG).show();
+
+        } else if (e instanceof NetworkProtocolException) {
+            Toast.makeText(this,
+                    getString(R.string.auth_error_network_protocol_error, e.getLocalizedMessage()),
+                    Toast.LENGTH_LONG).show();
+
+        } else {
+            Toast.makeText(this, R.string.auth_error_could_not_contact_server, Toast.LENGTH_LONG)
+                    .show();
+        }
     }
 
     protected void onRegisterComplete(Bundle result) {

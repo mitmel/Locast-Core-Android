@@ -9,6 +9,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.RemoteException;
+import android.util.Log;
 import edu.mit.mobile.android.content.ContentItem;
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.SimpleContentProvider;
@@ -35,6 +36,7 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
     }
 
     static final String[] PUBLIC_PATH_PROJECTION = new String[] { JsonSyncableItem.COL_PUBLIC_URL };
+    private static final String TAG = SyncableSimpleContentProvider.class.getSimpleName();
 
     @Override
     public SyncMap getSyncMap(ContentProviderClient provider, Uri toSync) throws RemoteException,
@@ -109,20 +111,19 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
             return cons.newInstance(c);
 
         } catch (final NoSuchMethodException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Log.e(TAG, "Error getting wrapped content item", e);
+
         } catch (final IllegalArgumentException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Log.e(TAG, "Error getting wrapped content item", e);
+
         } catch (final InstantiationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Log.e(TAG, "Error getting wrapped content item", e);
+
         } catch (final IllegalAccessException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Log.e(TAG, "Error getting wrapped content item", e);
+
         } catch (final InvocationTargetException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            Log.e(TAG, "Error getting wrapped content item", e);
         }
         return null;
     }

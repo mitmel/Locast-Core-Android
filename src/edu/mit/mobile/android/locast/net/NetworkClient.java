@@ -929,7 +929,7 @@ public class NetworkClient extends DefaultHttpClient {
 
     /**
      * Resolves a path using the base URL that's stored in the application's manifest.
-     * 
+     *
      * @param context
      * @param path
      *            the relative URL to be resolved
@@ -1393,14 +1393,15 @@ public class NetworkClient extends DefaultHttpClient {
         }
         JSONObject updatedCastMedia;
         final ProgressNotification notification = new ProgressNotification(context,
-                context.getString(R.string.sync_uploading_cast, itemTitle),
+                context.getString(R.string.sync_uploading, itemTitle),
                 ProgressNotification.TYPE_UPLOAD, PendingIntent.getActivity(context, 0, new Intent(
                         Intent.ACTION_VIEW, titled).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0), true);
 
         // assume fail: when successful, all will be reset.
         notification.successful = false;
-        notification.doneTitle = context.getString(R.string.sync_upload_fail);
-        notification.doneText = context.getString(R.string.sync_upload_fail_message, itemTitle);
+        notification.doneTitle = context.getString(R.string.error_sync_upload_fail);
+        notification.doneText = context.getString(R.string.error_sync_upload_fail_message,
+                itemTitle);
 
         notification.doneIntent = PendingIntent.getActivity(context, 0, new Intent(
                 Intent.ACTION_VIEW, titled).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0);
