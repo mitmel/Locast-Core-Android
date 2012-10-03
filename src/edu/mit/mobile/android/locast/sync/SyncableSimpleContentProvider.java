@@ -84,6 +84,10 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
         final boolean dirty = !values.containsKey(CV_FLAG_DO_NOT_MARK_DIRTY);
         ProviderUtils.extractContentValueItem(values, CV_FLAG_DO_NOT_MARK_DIRTY);
 
+        if (dirty && !values.containsKey(JsonSyncableItem.COL_MODIFIED_DATE)) {
+            values.put(JsonSyncableItem.COL_MODIFIED_DATE, System.currentTimeMillis());
+        }
+
         return super.update(uri, values, selection, selectionArgs);
     }
 

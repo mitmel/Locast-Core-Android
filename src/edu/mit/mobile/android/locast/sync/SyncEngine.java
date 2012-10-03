@@ -542,6 +542,8 @@ public class SyncEngine {
                             JsonSyncableItem.COL_SERVER_MODIFIED_DATE,
                             JsonSyncableItem.COL_MODIFIED_DATE, localOffset);
 
+                    // mark the item not dirty so it won't be considered locally modified
+                    itemStatus.remoteCVs.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
                     b.withValues(itemStatus.remoteCVs);
                     b.withExpectedCount(1);
 
@@ -946,6 +948,8 @@ public class SyncEngine {
                     final JSONObject newJo = NetworkClient.toJsonObject(res);
                     try {
                         final SyncStatus ss = loadItemFromJsonObject(newJo, syncMap, serverTime);
+
+                        ss.remoteCVs.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
 
                         // update immediately, so that any cancellation or
                         // interruption of the sync
