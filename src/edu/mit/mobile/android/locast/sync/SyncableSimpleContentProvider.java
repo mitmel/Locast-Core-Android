@@ -11,8 +11,8 @@ import android.net.Uri;
 import android.os.RemoteException;
 import android.util.Log;
 import edu.mit.mobile.android.content.ContentItem;
-import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.SimpleContentProvider;
+import edu.mit.mobile.android.locast.BuildConfig;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.SyncMap;
@@ -72,7 +72,7 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         final boolean dirty = !values.containsKey(CV_FLAG_DO_NOT_MARK_DIRTY);
-        ProviderUtils.extractContentValueItem(values, CV_FLAG_DO_NOT_MARK_DIRTY);
+        values.remove(CV_FLAG_DO_NOT_MARK_DIRTY);
 
         final Uri newItem = super.insert(uri, values);
 
@@ -82,9 +82,12 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         final boolean dirty = !values.containsKey(CV_FLAG_DO_NOT_MARK_DIRTY);
-        ProviderUtils.extractContentValueItem(values, CV_FLAG_DO_NOT_MARK_DIRTY);
+        values.remove(CV_FLAG_DO_NOT_MARK_DIRTY);
 
         if (dirty && !values.containsKey(JsonSyncableItem.COL_MODIFIED_DATE)) {
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "auto-updating modified date of " + uri);
+            }
             values.put(JsonSyncableItem.COL_MODIFIED_DATE, System.currentTimeMillis());
         }
 

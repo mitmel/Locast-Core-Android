@@ -23,6 +23,9 @@ public class ClientResponseException extends HttpResponseException {
         mData = data;
     }
 
+    /**
+     * @return response data from server translated to a bundle or null if none was set
+     */
     public Bundle getData() {
         return mData;
     }

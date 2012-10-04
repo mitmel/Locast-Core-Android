@@ -57,6 +57,7 @@ import edu.mit.mobile.android.locast.data.JsonSyncableItem;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.SyncException;
 import edu.mit.mobile.android.locast.data.SyncMap;
+import edu.mit.mobile.android.locast.net.ClientResponseException;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.utils.LastUpdatedMap;
@@ -289,16 +290,7 @@ public class SyncEngine {
         // all are compared relative to the respective clock reference. Any data that's stored on
         // the mobile should be stored relative to the local clock and the server will respect the
         // same.
-        long serverTime;
-
-        try {
-            serverTime = getServerTime(hr);
-        } catch (final DateParseException e) {
-            Log.w(TAG,
-                    "could not retrieve date from server. Using local time, which may be incorrect.",
-                    e);
-            serverTime = System.currentTimeMillis();
-        }
+        final long serverTime = getServerTime(hr);
 
         // TODO check out
         // http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html
@@ -505,7 +497,7 @@ public class SyncEngine {
                     cpo.add(b.build());
                     cpoPubUris.add(pubUri);
 
-                // up to date, as far remote -> local goes
+                    // up to date, as far remote -> local goes
                 } else if (itemServerModified == itemStatus.remoteModifiedTime) {
                     itemStatus.state = SyncState.ALREADY_UP_TO_DATE;
                     if (DEBUG) {
@@ -919,9 +911,9 @@ public class SyncEngine {
                 intent.putExtra(EXTRA_SYNC_ID, id);
                 mContext.sendStickyBroadcast(intent);
 
+                JSONObject jo;
                 try {
-                    final JSONObject jo = JsonSyncableItem.toJSON(mContext, localUri, uploadMe,
-                            syncMap);
+                    jo = JsonSyncableItem.toJSON(mContext, localUri, uploadMe, syncMap);
 
                     if (DEBUG) {
                         Log.d(TAG, "uploading " + localUri + " to " + postUri);
@@ -931,15 +923,7 @@ public class SyncEngine {
                     // exceptions.
                     final HttpResponse res = mNetworkClient.post(postUri, jo.toString());
 
-                    long serverTime;
-                    try {
-                        serverTime = getServerTime(res);
-                        // We should never get a corrupted date from the server,
-                        // but if it does happen,
-                        // using the local time is a sane fallback.
-                    } catch (final DateParseException e) {
-                        serverTime = System.currentTimeMillis();
-                    }
+                    final long serverTime = getServerTime(res);
 
                     // newly-created items return the JSON serialization of the
                     // object as the server
@@ -985,8 +969,12 @@ public class SyncEngine {
                         }
                         throw e;
                     }
-                } catch (final HttpResponseException e) {
-                    if (HttpStatus.SC_BAD_REQUEST == e.getStatusCode()) {
+
+                    // the client can handle some 400-series errors gracefully.
+                } catch (final ClientResponseException e) {
+                    if (HttpStatus.SC_CONFLICT == e.getStatusCode()) {
+                        handleConflict(provider, syncMap, syncStatuses, syncResult, localUri, e);
+                    } else if (HttpStatus.SC_BAD_REQUEST == e.getStatusCode()) {
                         if (DEBUG) {
                             Log.w(TAG, "Got bad request from server when uploading " + postUri
                                     + " skipping...");
@@ -1010,19 +998,90 @@ public class SyncEngine {
     }
 
     /**
-     * Gets the server's time.
+     * Handles a 409 conflict.
+     *
+     * @param provider
+     * @param syncMap
+     * @param syncStatuses
+     * @param syncResult
+     * @param localUri
+     *            the local URI of the item
+     * @param e
+     *            the 409 conflict exception returned
+     * @throws IOException
+     * @throws JSONException
+     * @throws NetworkProtocolException
+     * @throws ClientResponseException
+     * @throws RemoteException
+     */
+    private void handleConflict(ContentProviderClient provider, SyncMap syncMap,
+            HashMap<String, SyncEngine.SyncStatus> syncStatuses, SyncResult syncResult,
+            final Uri localUri, final ClientResponseException e) throws IOException, JSONException,
+            NetworkProtocolException, ClientResponseException, RemoteException {
+        final Bundle data = e.getData();
+
+        if (DEBUG) {
+            Log.w(TAG, "Got a CONFLICT response from server. Attempting to recover...");
+        }
+
+        // if it's a conflict in the uuid, we can handle it.
+        if (data != null && data.containsKey("uuid") && data.containsKey("uri")) {
+
+            // at this point, the client has an item it thinks hasn't been posted,
+            // but apparently it had posted it before and never updated its local
+            // database. This means that it doesn't know which side is more up to
+            // date (either could have been modified between when the first POST
+            // happened). What *is* known is that the local item now maps to a given
+            // public URI.
+
+            final ContentValues cv = new ContentValues();
+            final String pubUri = data.getString("uri");
+
+            final HttpResponse res = mNetworkClient.get(pubUri);
+
+            final SyncStatus ss = loadItemFromJsonObject(mNetworkClient.getObject(pubUri), syncMap,
+                    getServerTime(res));
+
+            // update the database. The SyncStatus will be updated when it loads the
+            // content from the server
+            cv.put(JsonSyncableItem.COL_PUBLIC_URL, pubUri);
+            cv.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
+            provider.update(localUri, cv, null, null);
+
+            ss.local = localUri;
+            ss.state = SyncState.BOTH_UNKNOWN;
+
+            syncStatuses.put(pubUri, ss);
+
+        } else {
+            if (DEBUG) {
+                Log.d(TAG, "there is not enough information in the CONFLICT response to recover.");
+            }
+            syncResult.stats.numConflictDetectedExceptions++;
+        }
+    }
+
+    /**
+     * Gets the server's time. If the time is missing, the local time will be returned.
      *
      * @param hr
-     * @return the time that the response was generated, according to the server
-     * @throws DateParseException
-     *             if the header is missing or if it can't be parsed.
+     * @return the time that the response was generated, according to the server or the current
+     *         system time
      */
-    private long getServerTime(HttpResponse hr) throws DateParseException {
+    private long getServerTime(HttpResponse hr) {
         final Header hDate = hr.getFirstHeader("Date");
-        if (hDate == null) {
-            throw new DateParseException("No Date header in http response");
+        try {
+            if (hDate == null) {
+                throw new DateParseException("No Date header in http response");
+            }
+            return DateUtils.parseDate(hDate.getValue()).getTime();
+
+        } catch (final DateParseException e) {
+            Log.w(TAG,
+                    "could not retrieve date from server. Using local time, which may be incorrect.",
+                    e);
+            return System.currentTimeMillis();
         }
-        return DateUtils.parseDate(hDate.getValue()).getTime();
     }
 
     /**
