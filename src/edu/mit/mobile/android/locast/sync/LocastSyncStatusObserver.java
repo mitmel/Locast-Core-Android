@@ -57,22 +57,18 @@ public class LocastSyncStatusObserver implements SyncStatusObserver {
     }
 
     private void notifySyncStatusToHandler(Context context, Handler handler) {
-        if (Constants.USE_ACCOUNT_FRAMEWORK) {
-            final Account a = mAccount;
-            if (!ContentResolver.isSyncActive(a, mAuthority)
-                    && !ContentResolver.isSyncPending(a, mAuthority)) {
-                if (Constants.DEBUG) {
-                    Log.d(TAG, "Sync finished, should refresh now!!");
-                }
-                handler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
-            } else {
-                if (Constants.DEBUG) {
-                    Log.d(TAG, "Sync Active or Pending!!");
-                }
-                handler.sendEmptyMessage(MSG_SET_REFRESHING);
+        final Account a = mAccount;
+        if (!ContentResolver.isSyncActive(a, mAuthority)
+                && !ContentResolver.isSyncPending(a, mAuthority)) {
+            if (Constants.DEBUG) {
+                Log.d(TAG, "Sync finished, should refresh now!!");
             }
+            handler.sendEmptyMessage(MSG_SET_NOT_REFRESHING);
         } else {
-            Log.e(TAG, "need to implement sync status listening");
+            if (Constants.DEBUG) {
+                Log.d(TAG, "Sync Active or Pending!!");
+            }
+            handler.sendEmptyMessage(MSG_SET_REFRESHING);
         }
     }
 }
