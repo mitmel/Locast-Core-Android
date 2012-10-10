@@ -1234,6 +1234,7 @@ public class SyncEngine {
             Log.w(TAG, "Got a CONFLICT response from server. Attempting to recover...");
         }
 
+        // TODO codify uuid somehow
         // if it's a conflict in the uuid, we can handle it.
         if (data != null && data.containsKey("uuid") && data.containsKey("uri")) {
 
