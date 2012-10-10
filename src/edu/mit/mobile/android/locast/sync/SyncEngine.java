@@ -27,6 +27,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.impl.cookie.DateParseException;
 import org.apache.http.impl.cookie.DateUtils;
@@ -96,10 +97,6 @@ public class SyncEngine {
     private final LastUpdatedMap<Uri> mLastUpdated = new LastUpdatedMap<Uri>(
             TIMEOUT_AUTO_SYNC_MINIMUM);
 
-    // the amount of time by which an age can differ and still be considered
-    // equal
-    private static final long AGE_EQUALITY_SLOP = 1000; // ms
-
     private static final String[] SYNC_PROJECTION = new String[] {
 
     JsonSyncableItem._ID,
@@ -112,7 +109,9 @@ public class SyncEngine {
 
     JsonSyncableItem.COL_CREATED_DATE,
 
-    JsonSyncableItem.COL_DELETED
+    JsonSyncableItem.COL_DELETED,
+
+    JsonSyncableItem.COL_DIRTY
 
     };
 
@@ -215,10 +214,6 @@ public class SyncEngine {
         final Uri toSyncWithoutQuerystring = toSync.buildUpon().query(null).build();
 
         final HashMap<String, SyncStatus> syncStatuses = new HashMap<String, SyncEngine.SyncStatus>();
-        final ArrayList<ContentProviderOperation> cpo = new ArrayList<ContentProviderOperation>();
-
-        // this will be in lockstep with the cpo above
-        final LinkedList<String> cpoPubUris = new LinkedList<String>();
 
         //
         // first things first, upload any content that needs to be
@@ -281,7 +276,7 @@ public class SyncEngine {
 
         final long request_time = System.currentTimeMillis();
 
-        HttpResponse hr = mNetworkClient.get(pubPath);
+        final HttpResponse hr = mNetworkClient.get(pubPath);
 
         final long response_time = System.currentTimeMillis();
 
@@ -382,332 +377,59 @@ public class SyncEngine {
 
         // At this point, all the data is loaded from the server into the syncStatuses data
         // structure. Now it needs to be processed to determine what to do with it.
+        checkForExistingItems(provider, toSyncWithoutQuerystring, isDir, selection, selectionArgs,
+                syncStatuses);
 
-        // first check without the querystring. This will ensure that we properly mark things that
-        // we already have in the database for items that could potentially match the query string,
-        // but haven't been added to the local DB yet. All the items matching here are known to have
-        // a public URL matching the data that were just received from the server.
-        final Cursor check = provider.query(toSyncWithoutQuerystring, SYNC_PROJECTION, selection,
-                selectionArgs, null);
-
-        try {
-            final int pubUriCol = check.getColumnIndex(JsonSyncableItem.COL_PUBLIC_URL);
-            final int idCol = check.getColumnIndex(JsonSyncableItem._ID);
-            final int deletedCol = check.getColumnIndex(JsonSyncableItem.COL_DELETED);
-
-            // All the items in this cursor should be found on both
-            // the client and the server.
-            for (check.moveToFirst(); !check.isAfterLast(); check.moveToNext()) {
-                if (Thread.interrupted()) {
-                    throw new InterruptedException();
-                }
-
-                final long id = check.getLong(idCol);
-                final Uri localUri = isDir ? ContentUris.withAppendedId(toSyncWithoutQuerystring,
-                        id) : toSync;
-                final boolean deletedLocally = check.getInt(deletedCol) == 1;
-
-                final String pubUri = check.getString(pubUriCol);
-
-                final SyncStatus itemStatus = syncStatuses.get(pubUri);
-
-                itemStatus.state = deletedLocally ? SyncState.DELETED_LOCALLY
-                        : SyncState.BOTH_UNKNOWN;
-
-                itemStatus.local = localUri;
-
-                // make the status searchable by both remote and
-                // local uri
-                syncStatuses.put(localUri.toString(), itemStatus);
-            }
-        } finally {
-            check.close();
-        }
-
-        // at this point, everything that was loaded from the server will have a matching local
-        // content item (if it exists) whose state is stored in syncStatuses. New content has not
-        // yet been stored locally and only exists in the JSON objects stored in the syncStatuses.
-
-        // The selection below still only matches items that have already been stored locally.
-
-        Cursor c = provider.query(toSync, SYNC_PROJECTION, selection, selectionArgs, null);
-
-        try {
-            final int pubUriCol = c.getColumnIndex(JsonSyncableItem.COL_PUBLIC_URL);
-            final int localModifiedCol = c.getColumnIndex(JsonSyncableItem.COL_MODIFIED_DATE);
-            final int serverModifiedCol = c
-                    .getColumnIndex(JsonSyncableItem.COL_SERVER_MODIFIED_DATE);
-
-            // All the items in this cursor should be found on both
-            // the client and the server.
-            for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
-                if (Thread.interrupted()) {
-                    throw new InterruptedException();
-                }
-
-                // as public URLs are unique, we can key off them.
-                final String pubUri = c.getString(pubUriCol);
-
-                final SyncStatus itemStatus = syncStatuses.get(pubUri);
-                // itemStatus is guaranteed to not be null, as it was created in the check above
-
-                final Uri localUri = itemStatus.local;
-
-                if (itemStatus.state == SyncState.ALREADY_UP_TO_DATE
-                        || itemStatus.state == SyncState.NOW_UP_TO_DATE) {
-                    if (DEBUG) {
-                        Log.d(TAG, localUri + "(" + pubUri + ")" + " is already up to date.");
-                    }
-                    continue;
-                }
-
-                // make the status searchable by both remote and local uri
-                syncStatuses.put(localUri.toString(), itemStatus);
-
-                // last modified as stored in the DB, in phone time
-                final long itemLocalModified = c.getLong(localModifiedCol);
-
-                // last modified as stored in the DB, in server time
-                final long itemServerModified = c.getLong(serverModifiedCol);
-
-                // how long ago, in ms, the item was updated. This is normalized according to the
-                // local clock
-                final long localAge = localTime - itemLocalModified;
-
-                final long remoteAge = serverTime - itemStatus.remoteModifiedTime;
-
-                final long ageDifference = Math.abs(localAge - remoteAge);
-
-                if (SyncState.DELETED_LOCALLY == itemStatus.state) {
-                    if (DEBUG) {
-                        Log.i(TAG, pubUri + " was deleted locally. Deleting from server...");
-                    }
-                    mNetworkClient.delete(pubUri);
-                    // delete would have thrown an exception if there was an issue. Now tell the
-                    // engine to actually delete it locally.
-                    if (DEBUG) {
-                        Log.i(TAG, pubUri
-                                + " has been deleted on the server. Deleting from local DB...");
-                    }
-                    final ContentProviderOperation.Builder b = ContentProviderOperation
-                            .newDelete(localUri);
-
-                    b.withExpectedCount(1);
-
-                    cpo.add(b.build());
-                    cpoPubUris.add(pubUri);
-
-                    // up to date, as far remote -> local goes
-                } else if (itemServerModified == itemStatus.remoteModifiedTime) {
-                    itemStatus.state = SyncState.ALREADY_UP_TO_DATE;
-                    if (DEBUG) {
-                        Log.i(TAG, pubUri + " is up to date.");
-                    }
-
-                    // local is older; need to load from remote
-                } else if (localAge > remoteAge) {
-                    if (DEBUG) {
-                        final long serverModified = itemStatus.remoteModifiedTime;
-
-                        Log.d(TAG,
-                                pubUri
-                                        + " : local is "
-                                        + ageDifference
-                                        + "ms older ("
-                                        + android.text.format.DateUtils.formatDateTime(mContext,
-                                                itemLocalModified, FORMAT_ARGS_DEBUG)
-                                        + ") than remote ("
-                                        + android.text.format.DateUtils.formatDateTime(mContext,
-                                                serverModified, FORMAT_ARGS_DEBUG)
-                                        + "); updating local copy...");
-                    }
-
-                    itemStatus.state = SyncState.REMOTE_DIRTY;
-
-                    final ContentProviderOperation.Builder b = ContentProviderOperation
-                            .newUpdate(localUri);
-
-                    // update this so it's in the local timescale
-                    correctServerOffset(itemStatus.remoteCVs, JsonSyncableItem.COL_CREATED_DATE,
-                            JsonSyncableItem.COL_CREATED_DATE, localOffset);
-                    correctServerOffset(itemStatus.remoteCVs,
-                            JsonSyncableItem.COL_SERVER_MODIFIED_DATE,
-                            JsonSyncableItem.COL_MODIFIED_DATE, localOffset);
-
-                    // mark the item not dirty so it won't be considered locally modified
-                    itemStatus.remoteCVs.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
-                    b.withValues(itemStatus.remoteCVs);
-                    b.withExpectedCount(1);
-
-                    cpo.add(b.build());
-                    cpoPubUris.add(pubUri);
-
-                    syncResult.stats.numUpdates++;
-
-                    // local is younger; need to upload
-                } else if (localAge < remoteAge) {
-                    if (DEBUG) {
-                        final long serverModified = itemStatus.remoteModifiedTime;
-
-                        Log.d(TAG,
-                                pubUri
-                                        + " : local is "
-                                        + ageDifference
-                                        + "ms newer ("
-                                        + android.text.format.DateUtils.formatDateTime(mContext,
-                                                itemLocalModified, FORMAT_ARGS_DEBUG)
-                                        + ") than remote ("
-                                        + android.text.format.DateUtils.formatDateTime(mContext,
-                                                serverModified, FORMAT_ARGS_DEBUG)
-                                        + "); publishing to server...");
-                    }
-                    final String itemPubPath = itemStatus.remote != null ? itemStatus.remote
-                            : mProvider.getPublicPath(mContext, localUri);
-
-                    uploadUpdate(provider, itemPubPath, syncMap, localUri, itemStatus);
-                }
-
-                mLastUpdated.markUpdated(localUri);
-
-                syncResult.stats.numEntries++;
-            } // end for
-        } finally {
-
-            c.close();
-        }
-
-        /*
-         * Apply updates in bulk
-         */
-        if (cpo.size() > 0) {
-            if (DEBUG) {
-                Log.d(TAG, "applying " + cpo.size() + " bulk updates...");
-            }
-
-            // due to all the withExpectedCount() above, this will throw an
-            // OperationApplicationException if there's a problem
-            final ContentProviderResult[] r = provider.applyBatch(cpo);
-            if (DEBUG) {
-                Log.d(TAG, "Done applying updates. Running postSync handler...");
-            }
-
-            for (int i = 0; i < r.length; i++) {
-                final ContentProviderResult res = r[i];
-                final SyncStatus ss = syncStatuses.get(cpoPubUris.get(i));
-                if (ss == null) {
-                    Log.e(TAG, "can't get sync status for " + res);
-                    continue;
-                }
-
-                if (ss.state == SyncState.DELETED_LOCALLY) {
-                    ss.state = SyncState.NOW_UP_TO_DATE;
-                    continue;
-                }
-
-                syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson,
-                        res.count != null ? res.count == 1 : true);
-
-                ss.state = SyncState.NOW_UP_TO_DATE;
-            }
-
-            if (DEBUG) {
-                Log.d(TAG, "done running postSync handler.");
-            }
-
-            cpo.clear();
-            cpoPubUris.clear();
-        }
+        processUpdates(toSync, provider, account, syncMap, selection, serverTime, localTime,
+                localOffset, selectionArgs, syncStatuses, syncResult);
 
         if (Thread.interrupted()) {
             throw new InterruptedException();
         }
 
-        /*
-         * Look through the SyncState.state values and find ones that need to be stored.
-         */
+        processInserts(toSync, provider, account, syncMap, localOffset, syncStatuses, syncResult);
 
-        for (final Map.Entry<String, SyncStatus> entry : syncStatuses.entrySet()) {
-            if (Thread.interrupted()) {
-                throw new InterruptedException();
-            }
+        processDeletes(provider, toSync, toSyncWithoutQuerystring, selectionArgs, selectionInverse,
+                pubPath, isDir, syncStatuses, syncResult);
 
-            final String pubUri = entry.getKey();
-            final SyncStatus status = entry.getValue();
-            if (status.state == SyncState.REMOTE_ONLY) {
-                if (DEBUG) {
-                    Log.d(TAG, pubUri + " is not yet stored locally, adding...");
-                }
+        syncStatuses.clear();
 
-                // update this so it's in the local timescale
-                correctServerOffset(status.remoteCVs, JsonSyncableItem.COL_CREATED_DATE,
-                        JsonSyncableItem.COL_CREATED_DATE, localOffset);
-                correctServerOffset(status.remoteCVs, JsonSyncableItem.COL_SERVER_MODIFIED_DATE,
-                        JsonSyncableItem.COL_MODIFIED_DATE, localOffset);
+        mLastUpdated.markUpdated(toSync);
 
-                final ContentProviderOperation.Builder b = ContentProviderOperation
-                        .newInsert(toSync);
-                b.withValues(status.remoteCVs);
+        return true;
+    }
 
-                cpo.add(b.build());
-                cpoPubUris.add(pubUri);
-                syncResult.stats.numInserts++;
+    /**
+     * Look through all the items that we didn't already find on the server side, but which still
+     * have a public uri. They should be checked to make sure they're not deleted.
+     *
+     * @param provider
+     * @param toSync
+     * @param toSyncWithoutQuerystring
+     * @param selectionArgs
+     * @param selectionInverse
+     * @param pubPath
+     * @param isDir
+     * @param cpo
+     * @param syncStatuses
+     * @param syncResult
+     * @throws RemoteException
+     * @throws IOException
+     * @throws JSONException
+     * @throws NetworkProtocolException
+     * @throws OperationApplicationException
+     * @throws SyncException
+     */
+    private void processDeletes(ContentProviderClient provider, Uri toSync,
+            final Uri toSyncWithoutQuerystring, String[] selectionArgs, String selectionInverse,
+            String pubPath, final boolean isDir, final HashMap<String, SyncStatus> syncStatuses,
+            SyncResult syncResult) throws RemoteException, IOException, JSONException,
+            NetworkProtocolException, OperationApplicationException, SyncException {
+        final ArrayList<ContentProviderOperation> cpo = new ArrayList<ContentProviderOperation>();
 
-            }
-        }
+        HttpResponse hr;
+        Cursor c;
 
-        /*
-         * Execute the content provider operations in bulk.
-         */
-        if (cpo.size() > 0) {
-            if (DEBUG) {
-                Log.d(TAG, "bulk inserting " + cpo.size() + " items...");
-            }
-            final ContentProviderResult[] r = provider.applyBatch(cpo);
-            if (DEBUG) {
-                Log.d(TAG, "applyBatch completed. Processing results...");
-            }
-
-            int successful = 0;
-            for (int i = 0; i < r.length; i++) {
-                final ContentProviderResult res = r[i];
-                if (res.uri == null) {
-                    syncResult.stats.numSkippedEntries++;
-                    Log.e(TAG, "result from content provider bulk operation returned null");
-                    continue;
-                }
-                final String pubUri = cpoPubUris.get(i);
-                final SyncStatus ss = syncStatuses.get(pubUri);
-
-                if (ss == null) {
-                    syncResult.stats.numSkippedEntries++;
-                    Log.e(TAG, "could not find sync status for " + cpoPubUris.get(i));
-                    continue;
-                }
-
-                ss.local = res.uri;
-                if (DEBUG) {
-                    Log.d(TAG, "onPostSyncItem(" + res.uri + ", ...); pubUri: " + pubUri);
-                }
-
-                syncMap.onPostSyncItem(mContext, account, res.uri, ss.remoteJson,
-                        res.count != null ? res.count == 1 : true);
-
-                ss.state = SyncState.NOW_UP_TO_DATE;
-                successful++;
-            }
-            if (DEBUG) {
-                Log.d(TAG, successful + " batch inserts successfully applied.");
-            }
-        } else {
-            if (DEBUG) {
-                Log.d(TAG, "no updates to perform.");
-            }
-        }
-
-        /**
-         * Look through all the items that we didn't already find on the server side, but which
-         * still have a public uri. They should be checked to make sure they're not deleted.
-         */
         c = provider.query(
                 toSync,
                 SYNC_PROJECTION,
@@ -816,40 +538,528 @@ public class SyncEngine {
         } finally {
             c.close();
         }
+    }
 
-        syncStatuses.clear();
+    /**
+     * @param toSync
+     * @param provider
+     * @param account
+     * @param syncMap
+     * @param localOffset
+     * @param cpo
+     * @param cpoPubUris
+     * @param syncStatuses
+     * @param syncResult
+     * @throws InterruptedException
+     * @throws RemoteException
+     * @throws OperationApplicationException
+     * @throws SyncException
+     * @throws IOException
+     */
+    private void processInserts(Uri toSync, ContentProviderClient provider, Account account,
+            final SyncMap syncMap, final long localOffset,
+            final HashMap<String, SyncStatus> syncStatuses, SyncResult syncResult)
+            throws InterruptedException, RemoteException, OperationApplicationException,
+            SyncException, IOException {
 
-        mLastUpdated.markUpdated(toSync);
+        final ArrayList<ContentProviderOperation> cpo = new ArrayList<ContentProviderOperation>();
 
-        return true;
+        // this will be in lockstep with the cpo above
+        final LinkedList<String> cpoPubUris = new LinkedList<String>();
+
+        /*
+         * Look through the SyncState.state values and find ones that need to be stored.
+         */
+
+        for (final Map.Entry<String, SyncStatus> entry : syncStatuses.entrySet()) {
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
+
+            final String pubUri = entry.getKey();
+            final SyncStatus status = entry.getValue();
+            if (status.state == SyncState.REMOTE_ONLY) {
+                if (DEBUG) {
+                    Log.d(TAG, pubUri + " is not yet stored locally, adding...");
+                }
+
+                // update this so it's in the local timescale
+                correctServerOffset(status.remoteCVs, JsonSyncableItem.COL_CREATED_DATE,
+                        JsonSyncableItem.COL_CREATED_DATE, localOffset);
+                correctServerOffset(status.remoteCVs, JsonSyncableItem.COL_SERVER_MODIFIED_DATE,
+                        JsonSyncableItem.COL_MODIFIED_DATE, localOffset);
+
+                status.remoteCVs.put(JsonSyncableItem.COL_DIRTY,
+                        SyncableProvider.FLAG_DO_NOT_CHANGE_DIRTY);
+
+                final ContentProviderOperation.Builder b = ContentProviderOperation
+                        .newInsert(toSync);
+                b.withValues(status.remoteCVs);
+
+                cpo.add(b.build());
+                cpoPubUris.add(pubUri);
+                syncResult.stats.numInserts++;
+
+            }
+        }
+
+        /*
+         * Execute the content provider operations in bulk.
+         */
+        if (cpo.size() > 0) {
+            if (DEBUG) {
+                Log.d(TAG, "bulk inserting " + cpo.size() + " items...");
+            }
+            final ContentProviderResult[] r = provider.applyBatch(cpo);
+            if (DEBUG) {
+                Log.d(TAG, "applyBatch completed. Processing results...");
+            }
+
+            int successful = 0;
+            for (int i = 0; i < r.length; i++) {
+                final ContentProviderResult res = r[i];
+                if (res.uri == null) {
+                    syncResult.stats.numSkippedEntries++;
+                    Log.e(TAG, "result from content provider bulk operation returned null");
+                    continue;
+                }
+                final String pubUri = cpoPubUris.get(i);
+                final SyncStatus ss = syncStatuses.get(pubUri);
+
+                if (ss == null) {
+                    syncResult.stats.numSkippedEntries++;
+                    Log.e(TAG, "could not find sync status for " + cpoPubUris.get(i));
+                    continue;
+                }
+
+                ss.local = res.uri;
+                if (DEBUG) {
+                    Log.d(TAG, "onPostSyncItem(" + res.uri + ", ...); pubUri: " + pubUri);
+                }
+
+                syncMap.onPostSyncItem(mContext, account, res.uri, ss.remoteJson,
+                        res.count != null ? res.count == 1 : true);
+
+                ss.state = SyncState.NOW_UP_TO_DATE;
+                successful++;
+            }
+            if (DEBUG) {
+                Log.d(TAG, successful + " batch inserts successfully applied.");
+            }
+        } else {
+            if (DEBUG) {
+                Log.d(TAG, "no updates to perform.");
+            }
+        }
+    }
+
+    /**
+     * @param toSync
+     * @param provider
+     * @param account
+     * @param syncMap
+     * @param selection
+     * @param serverTime
+     * @param localTime
+     * @param localOffset
+     * @param cpo
+     * @param cpoPubUris
+     * @param selectionArgs
+     * @param syncStatuses
+     * @param syncResult
+     * @throws RemoteException
+     * @throws InterruptedException
+     * @throws ClientProtocolException
+     * @throws IOException
+     * @throws NetworkProtocolException
+     * @throws JSONException
+     * @throws SyncException
+     * @throws NoPublicPath
+     * @throws OperationApplicationException
+     */
+    private void processUpdates(Uri toSync, ContentProviderClient provider, Account account,
+            final SyncMap syncMap, String selection, final long serverTime, final long localTime,
+            final long localOffset, String[] selectionArgs,
+            final HashMap<String, SyncStatus> syncStatuses, SyncResult syncResult)
+            throws RemoteException, InterruptedException, ClientProtocolException, IOException,
+            NetworkProtocolException, JSONException, SyncException, NoPublicPath,
+            OperationApplicationException {
+        final ArrayList<ContentProviderOperation> cpo = new ArrayList<ContentProviderOperation>();
+
+        // this will be in lockstep with the cpo above
+        final LinkedList<String> cpoPubUris = new LinkedList<String>();
+
+        // at this point, everything that was loaded from the server will have a matching local
+        // content item (if it exists) whose state is stored in syncStatuses. New content has not
+        // yet been stored locally and only exists in the JSON objects stored in the syncStatuses.
+
+        // The selection below still only matches items that have already been stored locally.
+
+        final Cursor c = provider.query(toSync, SYNC_PROJECTION, selection, selectionArgs, null);
+
+        try {
+            final int pubUriCol = c.getColumnIndex(JsonSyncableItem.COL_PUBLIC_URL);
+            final int localModifiedCol = c.getColumnIndex(JsonSyncableItem.COL_MODIFIED_DATE);
+            final int serverModifiedCol = c
+                    .getColumnIndex(JsonSyncableItem.COL_SERVER_MODIFIED_DATE);
+            final int dirtyCol = c.getColumnIndex(JsonSyncableItem.COL_DIRTY);
+
+            // All the items in this cursor should be found on both
+            // the client and the server.
+            for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
+                }
+
+                // as public URLs are unique, we can key off them.
+                final String pubUri = c.getString(pubUriCol);
+
+                final SyncStatus itemStatus = syncStatuses.get(pubUri);
+                // itemStatus is guaranteed to not be null, as it was created in the check above
+
+                final Uri localUri = itemStatus.local;
+
+                if (itemStatus.state == SyncState.ALREADY_UP_TO_DATE
+                        || itemStatus.state == SyncState.NOW_UP_TO_DATE) {
+                    if (DEBUG) {
+                        Log.d(TAG, localUri + "(" + pubUri + ")" + " is already up to date.");
+                    }
+                    continue;
+                }
+
+                // make the status searchable by both remote and local uri
+                syncStatuses.put(localUri.toString(), itemStatus);
+
+                // last modified as stored in the DB, in phone time
+                final long itemLocalModified = c.getLong(localModifiedCol);
+
+                // last modified as stored in the DB, in server time
+                final long itemServerModified = c.getLong(serverModifiedCol);
+
+                // how long ago, in ms, the item was updated. This is normalized according to the
+                // local clock
+                final long localAge = localTime - itemLocalModified;
+
+                final long remoteAge = serverTime - itemStatus.remoteModifiedTime;
+
+                final long ageDifference = Math.abs(localAge - remoteAge);
+
+                final boolean localDirty = !c.isNull(dirtyCol) && (c.getInt(dirtyCol) != 0);
+
+                if (itemStatus.state == SyncState.BOTH_UNKNOWN) {
+                    if (itemServerModified != itemStatus.remoteModifiedTime) {
+                        itemStatus.state = SyncState.REMOTE_DIRTY;
+                    }
+
+                    if (localDirty) {
+                        itemStatus.state = itemStatus.state == SyncState.REMOTE_DIRTY ? SyncState.BOTH_DIRTY
+                                : SyncState.LOCAL_DIRTY;
+                    }
+
+                    if (itemStatus.state == SyncState.BOTH_UNKNOWN) {
+                        itemStatus.state = SyncState.ALREADY_UP_TO_DATE;
+                    }
+                }
+
+                // after this point, there should be no instances of BOTH_UNKNOWN
+
+                switch (itemStatus.state) {
+                    case ALREADY_UP_TO_DATE:
+                    case NOW_UP_TO_DATE:
+                        // yeeeeeeeaaaaaahh
+                        break;
+
+                    case DELETED_LOCALLY:
+                        deleteItem(localUri, pubUri, cpo, cpoPubUris);
+
+                        break;
+
+                    case REMOTE_DIRTY:
+                        updateLocalItem(localUri, pubUri, cpo, cpoPubUris, localOffset, itemStatus,
+                                syncResult);
+                        break;
+
+                    case LOCAL_DIRTY:
+                        uploadUpdate(provider, syncMap, localUri, itemStatus, cpo, cpoPubUris);
+
+                        break;
+
+                    case BOTH_DIRTY: {
+                        Log.w(TAG,
+                                pubUri
+                                        + " seems to have been modified both locally and remotely. Resolvingy by comparing age...");
+
+                        // local is older; need to load from remote
+                        if (localAge > remoteAge) {
+                            if (DEBUG) {
+                                final long serverModified = itemStatus.remoteModifiedTime;
+
+                                Log.d(TAG,
+                                        pubUri
+                                                + " : local is "
+                                                + ageDifference
+                                                + "ms older ("
+                                                + android.text.format.DateUtils.formatDateTime(
+                                                        mContext, itemLocalModified,
+                                                        FORMAT_ARGS_DEBUG)
+                                                + ") than remote ("
+                                                + android.text.format.DateUtils
+                                                        .formatDateTime(mContext, serverModified,
+                                                                FORMAT_ARGS_DEBUG)
+                                                + "); updating local copy...");
+                            }
+
+                            updateLocalItem(localUri, pubUri, cpo, cpoPubUris, localOffset,
+                                    itemStatus, syncResult);
+
+                            // local is younger; need to upload
+                        } else if (localAge < remoteAge) {
+                            if (DEBUG) {
+                                final long serverModified = itemStatus.remoteModifiedTime;
+
+                                Log.d(TAG,
+                                        pubUri
+                                                + " : local is "
+                                                + ageDifference
+                                                + "ms newer ("
+                                                + android.text.format.DateUtils.formatDateTime(
+                                                        mContext, itemLocalModified,
+                                                        FORMAT_ARGS_DEBUG)
+                                                + ") than remote ("
+                                                + android.text.format.DateUtils
+                                                        .formatDateTime(mContext, serverModified,
+                                                                FORMAT_ARGS_DEBUG)
+                                                + "); publishing to server...");
+                            }
+
+                            uploadUpdate(provider, syncMap, localUri, itemStatus, cpo, cpoPubUris);
+
+                        }
+                    }
+                        break;
+
+                    default:
+                        Log.w(TAG, "sync state for " + localUri + " is " + itemStatus.state
+                                + " when it shouldn't have been");
+                        break;
+                }
+
+                mLastUpdated.markUpdated(localUri);
+
+                syncResult.stats.numEntries++;
+            } // end for
+        } finally {
+
+            c.close();
+        }
+
+        /*
+         * Apply updates in bulk
+         */
+        if (cpo.size() > 0) {
+            if (DEBUG) {
+                Log.d(TAG, "applying " + cpo.size() + " bulk updates...");
+            }
+
+            // due to all the withExpectedCount() above, this will throw an
+            // OperationApplicationException if there's a problem
+            final ContentProviderResult[] r = provider.applyBatch(cpo);
+            if (DEBUG) {
+                Log.d(TAG, "Done applying updates. Running postSync handler...");
+            }
+
+            for (int i = 0; i < r.length; i++) {
+                final ContentProviderResult res = r[i];
+                final SyncStatus ss = syncStatuses.get(cpoPubUris.get(i));
+                if (ss == null) {
+                    Log.e(TAG, "can't get sync status for " + res);
+                    continue;
+                }
+
+                if (ss.state == SyncState.DELETED_LOCALLY) {
+                    ss.state = SyncState.NOW_UP_TO_DATE;
+                    continue;
+                }
+
+                syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson,
+                        res.count != null ? res.count == 1 : true);
+
+                ss.state = SyncState.NOW_UP_TO_DATE;
+            }
+
+            if (DEBUG) {
+                Log.d(TAG, "done running postSync handler.");
+            }
+
+            cpo.clear();
+            cpoPubUris.clear();
+        }
+    }
+
+    /**
+     * Checks without the querystring. This will ensure that we properly mark things that we already
+     * have in the database for items that could potentially match the query string, but haven't
+     * been added to the local DB yet. All the items matching here are known to have a public URL
+     * matching the data that were just received from the server.
+     *
+     * @param provider
+     * @param toSyncWithoutQuerystring
+     * @param isDir
+     * @param selection
+     * @param selectionArgs
+     * @param syncStatuses
+     * @throws RemoteException
+     * @throws InterruptedException
+     */
+    private void checkForExistingItems(ContentProviderClient provider,
+            final Uri toSyncWithoutQuerystring, final boolean isDir, String selection,
+            String[] selectionArgs, final HashMap<String, SyncStatus> syncStatuses)
+            throws RemoteException, InterruptedException {
+
+        final Cursor check = provider.query(toSyncWithoutQuerystring, SYNC_PROJECTION, selection,
+                selectionArgs, null);
+
+        try {
+            final int pubUriCol = check.getColumnIndex(JsonSyncableItem.COL_PUBLIC_URL);
+            final int idCol = check.getColumnIndex(JsonSyncableItem._ID);
+            final int deletedCol = check.getColumnIndex(JsonSyncableItem.COL_DELETED);
+
+            // All the items in this cursor should be found on both
+            // the client and the server.
+            for (check.moveToFirst(); !check.isAfterLast(); check.moveToNext()) {
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
+                }
+
+                final long id = check.getLong(idCol);
+                final Uri localUri = isDir ? ContentUris.withAppendedId(toSyncWithoutQuerystring,
+                        id) : toSyncWithoutQuerystring;
+                final boolean deletedLocally = check.getInt(deletedCol) == 1;
+
+                final String pubUri = check.getString(pubUriCol);
+
+                final SyncStatus itemStatus = syncStatuses.get(pubUri);
+
+                itemStatus.state = deletedLocally ? SyncState.DELETED_LOCALLY
+                        : SyncState.BOTH_UNKNOWN;
+
+                itemStatus.local = localUri;
+
+                // make the status searchable by both remote and
+                // local uri
+                syncStatuses.put(localUri.toString(), itemStatus);
+            }
+        } finally {
+            check.close();
+        }
+    }
+
+    /**
+     * Deletes an item from the server and then actually deletes it from the local store (instead of
+     * just marking it deleted).
+     *
+     * @param localUri
+     * @param pubUri
+     * @param cpo
+     * @param cpoPubUris
+     * @throws ClientProtocolException
+     * @throws IOException
+     * @throws NetworkProtocolException
+     */
+    private void deleteItem(final Uri localUri, final String pubUri,
+            final ArrayList<ContentProviderOperation> cpo, final LinkedList<String> cpoPubUris)
+            throws ClientProtocolException, IOException, NetworkProtocolException {
+        if (DEBUG) {
+            Log.i(TAG, pubUri + " was deleted locally. Deleting from server...");
+        }
+        mNetworkClient.delete(pubUri);
+        // delete would have thrown an exception if there was an issue. Now tell the
+        // engine to actually delete it locally.
+        if (DEBUG) {
+            Log.i(TAG, pubUri + " has been deleted on the server. Deleting from local DB...");
+        }
+        final ContentProviderOperation.Builder b = ContentProviderOperation.newDelete(localUri);
+
+        b.withExpectedCount(1);
+
+        cpo.add(b.build());
+        cpoPubUris.add(pubUri);
+    }
+
+    /**
+     * Updates the local item with the information from the server.
+     *
+     * @param localUri
+     * @param pubUri
+     * @param cpo
+     * @param cpoPubUris
+     * @param localOffset
+     * @param itemStatus
+     * @param syncResult
+     */
+    private void updateLocalItem(final Uri localUri, final String pubUri,
+            final ArrayList<ContentProviderOperation> cpo, final LinkedList<String> cpoPubUris,
+            final long localOffset, final SyncStatus itemStatus, SyncResult syncResult) {
+        itemStatus.state = SyncState.REMOTE_DIRTY;
+
+        final ContentProviderOperation.Builder b = ContentProviderOperation.newUpdate(localUri);
+
+        // update this so it's in the local timescale
+        correctServerOffset(itemStatus.remoteCVs, JsonSyncableItem.COL_CREATED_DATE,
+                JsonSyncableItem.COL_CREATED_DATE, localOffset);
+        correctServerOffset(itemStatus.remoteCVs, JsonSyncableItem.COL_SERVER_MODIFIED_DATE,
+                JsonSyncableItem.COL_MODIFIED_DATE, localOffset);
+
+        // mark the item not dirty so it won't be considered locally modified
+        itemStatus.remoteCVs.put(JsonSyncableItem.COL_DIRTY, false);
+        b.withValues(itemStatus.remoteCVs);
+        b.withExpectedCount(1);
+
+        cpo.add(b.build());
+        cpoPubUris.add(pubUri);
+
+        syncResult.stats.numUpdates++;
     }
 
     /**
      * Publishes an update to the server.
      *
      * @param provider
-     * @param pubPath
      * @param syncMap
      * @param localUri
      * @param itemStatus
+     * @param cpo
+     *            TODO
+     * @param cpoPubUris
+     *            TODO
+     * @param pubPath
      * @throws RemoteException
      * @throws IOException
      * @throws NetworkProtocolException
      * @throws JSONException
      * @throws SyncException
+     * @throws NoPublicPath
      */
-    private void uploadUpdate(ContentProviderClient provider, String pubPath,
-            final SyncMap syncMap, final Uri localUri, final SyncStatus itemStatus)
+    private void uploadUpdate(ContentProviderClient provider, final SyncMap syncMap,
+            final Uri localUri, final SyncStatus itemStatus,
+            ArrayList<ContentProviderOperation> cpo, LinkedList<String> cpoPubUris)
             throws RemoteException, IOException, NetworkProtocolException, JSONException,
-            SyncException {
-        itemStatus.state = SyncState.LOCAL_DIRTY;
+            SyncException, NoPublicPath {
+
+        final String itemPubPath = itemStatus.remote != null ? itemStatus.remote : mProvider
+                .getPublicPath(mContext, localUri);
 
         // requeries to ensure that when it converts it to JSON, it has all the columns.
         final Cursor uploadCursor = provider.query(localUri, null, null, null, null);
         try {
             if (uploadCursor.moveToFirst()) {
-                mNetworkClient.putJson(pubPath,
+                mNetworkClient.putJson(itemPubPath,
                         JsonSyncableItem.toJSON(mContext, localUri, uploadCursor, syncMap));
+
+                // now that the local content has been published, clear the dirty bit.
+                cpo.add(ContentProviderOperation.newUpdate(localUri)
+                        .withValue(JsonSyncableItem.COL_DIRTY, false).build());
+                cpoPubUris.add(itemPubPath);
             } else {
                 throw new SyncException("couldn't find local item upon requerying");
             }
@@ -933,7 +1143,7 @@ public class SyncEngine {
                     try {
                         final SyncStatus ss = loadItemFromJsonObject(newJo, syncMap, serverTime);
 
-                        ss.remoteCVs.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
+                        ss.remoteCVs.put(JsonSyncableItem.COL_DIRTY, false);
 
                         // update immediately, so that any cancellation or
                         // interruption of the sync
@@ -1045,7 +1255,7 @@ public class SyncEngine {
             // update the database. The SyncStatus will be updated when it loads the
             // content from the server
             cv.put(JsonSyncableItem.COL_PUBLIC_URL, pubUri);
-            cv.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
+            cv.put(JsonSyncableItem.COL_DIRTY, SyncableProvider.FLAG_DO_NOT_CHANGE_DIRTY);
             provider.update(localUri, cv, null, null);
 
             ss.local = localUri;
@@ -1169,6 +1379,9 @@ public class SyncEngine {
          */
         NOW_UP_TO_DATE,
 
+        /**
+         * Initial state. Both need to be resolved.
+         */
         BOTH_UNKNOWN,
 
         /**
@@ -1180,6 +1393,11 @@ public class SyncEngine {
          * The item exists both remotely and locally, but has been changed on the remote side.
          */
         REMOTE_DIRTY,
+
+        /**
+         * Both local and remote were determined to be dirty. Resolve somehow.
+         */
+        BOTH_DIRTY,
 
         /**
          * The item is only stored locally.

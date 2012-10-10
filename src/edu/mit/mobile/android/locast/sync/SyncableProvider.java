@@ -30,7 +30,7 @@ import edu.mit.mobile.android.locast.net.NetworkClient;
  */
 public interface SyncableProvider {
 
-    public static final String CV_FLAG_DO_NOT_MARK_DIRTY = "edu.mit.mobile.android.locast.flag.NOT_DIRTY";
+    public static final int FLAG_DO_NOT_CHANGE_DIRTY = -1;
 
     /**
      * Retrieves the sync map from the class that maps to the given URL.
@@ -83,7 +83,7 @@ public interface SyncableProvider {
 
     /**
      * Create an appropriate subclass of {@link JsonSyncableItem} and wrap the given cursor with it.
-     * 
+     *
      * @param item
      * @param c
      * @return

@@ -50,6 +50,7 @@ import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
 import edu.mit.mobile.android.locast.sync.SyncEngine;
+import edu.mit.mobile.android.locast.sync.SyncableSimpleContentProvider;
 
 /**
  * This type of object row can be serialized to/from JSON and synchronized to a server.
@@ -113,6 +114,13 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
      */
     @DBColumn(type = BooleanColumn.class)
     public static final String COL_DELETED = "deleted";
+
+    /**
+     * This should be set to true when an item is locally modified.
+     * {@link SyncableSimpleContentProvider} will do this automatically.
+     */
+    @DBColumn(type = BooleanColumn.class)
+    public static final String COL_DIRTY = "dirty";
 
     /**
      * @return The URI for a given content directory.

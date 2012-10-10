@@ -472,7 +472,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
         if (localThumbnail != null) {
             cv.put(CastMedia.COL_THUMB_LOCAL, Uri.fromFile(localFile).toString());
         }
-        cv.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
+        cv.put(JsonSyncableItem.COL_DIRTY, SyncableProvider.FLAG_DO_NOT_CHANGE_DIRTY);
 
         getContentResolver().update(castMediaUri, cv, null, null);
 
@@ -501,7 +501,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
             final ContentValues cv = CastMedia.fromJSON(this, castMediaUri, updatedCastMedia,
                     CastMedia.SYNC_MAP);
 
-            cv.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
+            cv.put(JsonSyncableItem.COL_DIRTY, SyncableProvider.FLAG_DO_NOT_CHANGE_DIRTY);
 
             mCr.update(castMediaUri, cv, null, null);
         } catch (final Exception e) {
@@ -811,7 +811,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
 
         final ContentValues cvCastMedia = new ContentValues();
         cvCastMedia.put(CastMedia.COL_LOCAL_URL, locMedia);
-        cvCastMedia.put(SyncableProvider.CV_FLAG_DO_NOT_MARK_DIRTY, true);
+        cvCastMedia.put(JsonSyncableItem.COL_DIRTY, SyncableProvider.FLAG_DO_NOT_CHANGE_DIRTY);
 
         try {
             final String locThumb = generateThumbnail(castMedia, mimeType, locMedia);
