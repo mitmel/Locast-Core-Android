@@ -703,6 +703,7 @@ public class SyncEngine {
             final int serverModifiedCol = c
                     .getColumnIndex(JsonSyncableItem.COL_SERVER_MODIFIED_DATE);
             final int dirtyCol = c.getColumnIndex(JsonSyncableItem.COL_DIRTY);
+            final int deletedCol = c.getColumnIndexOrThrow(JsonSyncableItem.COL_DELETED);
 
             // All the items in this cursor should be found on both
             // the client and the server.
@@ -744,7 +745,8 @@ public class SyncEngine {
 
                 final long ageDifference = Math.abs(localAge - remoteAge);
 
-                final boolean localDirty = !c.isNull(dirtyCol) && (c.getInt(dirtyCol) != 0);
+                final boolean localDirty = (!c.isNull(dirtyCol) && (c.getInt(dirtyCol) != 0))
+                        || c.getInt(deletedCol) == 1;
 
                 if (itemStatus.state == SyncState.BOTH_UNKNOWN) {
                     if (itemServerModified != itemStatus.remoteModifiedTime) {
