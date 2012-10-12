@@ -213,7 +213,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
      */
     public static boolean isDraft(Cursor c) {
         final int col = c.getColumnIndexOrThrow(COL_DRAFT);
-        return c.isNull(col) || c.getInt(col) != 0;
+        return !c.isNull(col) && c.getInt(col) != 0;
     }
 
     /**
