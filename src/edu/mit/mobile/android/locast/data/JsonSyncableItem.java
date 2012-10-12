@@ -33,6 +33,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.accounts.Account;
+import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -96,8 +97,11 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
      * </p>
      *
      * <p>
-     * 1 is true; 0 or null is false
+     * 1 is true; 0 or {@code null} is false
      * </p>
+     *
+     * @see #isDraft()
+     * @see #isDraft(Cursor)
      */
     @DBColumn(type = BooleanColumn.class)
     public static final String COL_DRAFT = "draft";
@@ -109,8 +113,11 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
      * both remotely and locally.
      * </p>
      * <p>
-     * 1 is true; 0 or null is false
+     * 1 is true; 0 or {@code null} is false
      * </p>
+     *
+     * @see #isDeleted()
+     * @see #isDeleted(Cursor)
      */
     @DBColumn(type = BooleanColumn.class)
     public static final String COL_DELETED = "deleted";
@@ -127,17 +134,45 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
      */
     public abstract Uri getContentUri();
 
-    private static String[] PUB_URI_PROJECTION = {_ID, COL_PUBLIC_URL};
+    private static String[] PUB_URI_PROJECTION = { _ID, COL_PUBLIC_URL };
 
+    /**
+     * A selection that matches items that items that are not draft.
+     *
+     * @see #COL_DELETED
+     * @see #isDraft()
+     * @see #isDraft(Cursor)
+     */
     public static final String SELECTION_NOT_DRAFT = "(" + COL_DRAFT + " ISNULL OR " + COL_DRAFT
             + "=0)";
 
+    /**
+     * A selection that matches items that are marked draft.
+     *
+     * @see #COL_DRAFT
+     * @see #isDraft()
+     * @see #isDraft(Cursor)
+     */
     public static final String SELECTION_DRAFT = "(" + COL_DRAFT + "=1)";
 
+    /**
+     * A selection that matches items that aren't deleted locally.
+     *
+     * @see #COL_DELETED
+     * @see #isDeleted()
+     * @see #isDeleted(Cursor)
+     */
     public static final String SELECTION_NOT_DELETED = "(" + COL_DELETED + " ISNULL OR "
             + COL_DELETED + "=0)";
 
-    public static final String SELECTION_DELETED = "(" + COL_DELETED + "=1" + ")";
+    /**
+     * A selection that matches items that have been marked deleted locally.
+     *
+     * @see #COL_DELETED
+     * @see #isDeleted()
+     * @see #isDeleted(Cursor)
+     */
+    public static final String SELECTION_DELETED = "(" + COL_DELETED + "=1)";
 
     /**
      * Instantiate this and wrap a cursor pointing to this type of object in order to access
@@ -170,13 +205,44 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         return getLong(getColumnIndexOrThrow(COL_SERVER_MODIFIED_DATE));
     }
 
+    /**
+     * @param c
+     *            a cursor pointing to the desired item
+     * @return true if the item is a draft
+     * @see #COL_DRAFT
+     */
     public static boolean isDraft(Cursor c) {
         final int col = c.getColumnIndexOrThrow(COL_DRAFT);
         return c.isNull(col) || c.getInt(col) != 0;
     }
 
+    /**
+     * @return true if currently selected item is a draft
+     * @see #isDraft(Cursor)
+     * @see #COL_DRAFT
+     */
     public boolean isDraft() {
         return isDraft(this);
+    }
+
+    /**
+     * @param c
+     *            a cursor pointing to the desired item, containing the column {@link #COL_DELETED}
+     * @return true if the item has been deleted locally
+     * @see #COL_DELETED
+     */
+    public static boolean isDeleted(Cursor c) {
+        final int col = c.getColumnIndexOrThrow(COL_DELETED);
+        return !c.isNull(col) && c.getInt(col) != 0;
+    }
+
+    /**
+     * @return true if the currently selected item has been deleted locally
+     * @see #isDeleted(Cursor)
+     * @see #COL_DELETED
+     */
+    public boolean isDeleted() {
+        return isDeleted(this);
     }
 
     public String getPublicUrl() {
@@ -184,20 +250,25 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
     }
 
     /**
-     * Given a public Uri fragment, finds the local item representing it. If there isn't any such item, null is returned.
+     * Given a public Uri fragment, finds the local item representing it. If there isn't any such
+     * item, null is returned.
      *
      * @param context
-     * @param dirUri the base local URI to search.
-     * @param pubUri A public URI fragment that represents the given item. This must match the result from the API.
+     * @param dirUri
+     *            the base local URI to search.
+     * @param pubUri
+     *            A public URI fragment that represents the given item. This must match the result
+     *            from the API.
      * @return a local URI matching the item or null if none were found.
      */
-    public static Uri getItemByPubIUri(Context context, Uri dirUri, String pubUri){
+    public static Uri getItemByPubIUri(Context context, Uri dirUri, String pubUri) {
         Uri uri = null;
         final ContentResolver cr = context.getContentResolver();
 
-        final String[] selectionArgs = {pubUri};
-        final Cursor c = cr.query(dirUri, PUB_URI_PROJECTION, COL_PUBLIC_URL+"=?", selectionArgs, null);
-        if (c.moveToFirst()){
+        final String[] selectionArgs = { pubUri };
+        final Cursor c = cr.query(dirUri, PUB_URI_PROJECTION, COL_PUBLIC_URL + "=?", selectionArgs,
+                null);
+        if (c.moveToFirst()) {
             uri = ContentUris.withAppendedId(dirUri, c.getLong(c.getColumnIndex(_ID)));
         }
 
@@ -210,6 +281,13 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
      */
     public abstract SyncMap getSyncMap();
 
+    /**
+     * The base {@link SyncMap} which is required by the {@link SyncEngine}. This synchronizes
+     * {@link #COL_PUBLIC_URL}, {@link #COL_SERVER_MODIFIED_DATE}, and {@link #COL_CREATED_DATE}.
+     *
+     * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
+     *
+     */
     public static class ItemSyncMap extends SyncMap {
         /**
          *
@@ -219,60 +297,77 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         public ItemSyncMap() {
             super();
 
-            put(COL_PUBLIC_URL,        new SyncFieldMap("uri", SyncFieldMap.STRING, SyncItem.SYNC_FROM));
-            put(COL_SERVER_MODIFIED_DATE,  new SyncFieldMap("modified", SyncFieldMap.DATE, SyncItem.SYNC_FROM));
-            put(COL_CREATED_DATE,      new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM | SyncItem.FLAG_OPTIONAL));
+            put(COL_PUBLIC_URL, new SyncFieldMap("uri", SyncFieldMap.STRING, SyncItem.SYNC_FROM));
+            put(COL_SERVER_MODIFIED_DATE, new SyncFieldMap("modified", SyncFieldMap.DATE,
+                    SyncItem.SYNC_FROM));
+            put(COL_CREATED_DATE, new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM
+                    | SyncItem.FLAG_OPTIONAL));
         }
     }
 
+    /**
+     * The base {@link SyncMap} for an item that can be sync'd with the {@link SyncEngine}. All sync
+     * maps should include all the items in this.
+     *
+     * @see {@link #ItemSyncMap}
+     */
     public static final ItemSyncMap SYNC_MAP = new ItemSyncMap();
 
     public static final String LIST_DELIM = "|";
     // the below splits "tag1|tag2" but not "tag1\|tag2"
     public static final String LIST_SPLIT = "(?<!\\\\)\\|";
 
+    /**
+     * In a {@link SyncItem}, prefix your key with this string in order to cause the engine to skip
+     * attempting to find a JSON key in the JSON object. The item will still be processed, so this
+     * can be used for containers that descend into complex JSON objects.
+     */
     public static final String PREFIX_IGNORE_KEY = "_";
 
     /**
      * Gets a list for the current item in the cursor.
      *
-     * @param column column number
-     * @param c cursor pointing to a row
+     * @param column
+     *            column number
+     * @param c
+     *            cursor pointing to a row
      * @return
      */
-    public static List<String> getList(int column, Cursor c){
+    public static List<String> getList(int column, Cursor c) {
         final String t = c.getString(column);
         return getList(t);
     }
 
     /**
-     * Given a string made by {@link JsonSyncableItem#putList(String, ContentValues, Collection) putList()},
-     * return a List containing all the items.
+     * Given a string made by {@link JsonSyncableItem#putList(String, ContentValues, Collection)
+     * putList()}, return a List containing all the items.
      *
      * @param listString
      * @return a new list representing all the items in the list
      * @see #putList(String, ContentValues, Collection)
      */
-    public static List<String> getList(String listString){
-        if (listString != null && listString.length() > 0){
+    public static List<String> getList(String listString) {
+        if (listString != null && listString.length() > 0) {
             final String[] split = listString.split(LIST_SPLIT);
-            for (int i = 0; i < split.length; i++){
-                split[i] = split[i].replace("\\"+LIST_DELIM, LIST_DELIM);
+            for (int i = 0; i < split.length; i++) {
+                split[i] = split[i].replace("\\" + LIST_DELIM, LIST_DELIM);
             }
             return Arrays.asList(split);
-        }else{
+        } else {
             return new Vector<String>();
         }
     }
 
     /**
-     * @param columnName the name of the key in cv to store the resulting list
-     * @param cv a {@link ContentValues} to store the resulting list in
+     * @param columnName
+     *            the name of the key in cv to store the resulting list
+     * @param cv
+     *            a {@link ContentValues} to store the resulting list in
      * @param list
      * @return the same ContentValues that were passed in
      * @see #toListString(Collection)
      */
-    public static ContentValues putList(String columnName, ContentValues cv, Collection<String> list){
+    public static ContentValues putList(String columnName, ContentValues cv, Collection<String> list) {
         cv.put(columnName, toListString(list));
         return cv;
     }
@@ -280,14 +375,16 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
     /**
      * Turns a collection of strings into a delimited string
      *
-     * @param list a list of strings
-     * @return a string representing the list, delimited by LIST_DELIM with any existing instances escaped.
+     * @param list
+     *            a list of strings
+     * @return a string representing the list, delimited by LIST_DELIM with any existing instances
+     *         escaped.
      * @see #getList(String)
      */
-    public static String toListString(Collection<String> list){
+    public static String toListString(Collection<String> list) {
         final List<String> tempList = new Vector<String>(list.size());
 
-        for (String s : list){
+        for (String s : list) {
             // escape all of the delimiters in the individual strings
             s = s.replace(LIST_DELIM, "\\" + LIST_DELIM);
             tempList.add(s);
@@ -312,42 +409,44 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
      * @return
      */
     public static final int markDeleted(ContentResolver cr, Uri item, boolean deleted,
-            String selection,
-            String[] selectionArgs) {
+            String selection, String[] selectionArgs) {
         final ContentValues cv = new ContentValues();
         cv.put(COL_DELETED, deleted);
         return cr.update(item, cv, selection, selectionArgs);
     }
 
-
     private static Pattern durationPattern = Pattern.compile("(\\d{1,2}):(\\d{1,2}):(\\d{1,2})");
+
     /**
      * Given a JSON item and a sync map, create a ContentValues map to be inserted into the DB.
      *
      * @param context
-     * @param localItem will be null if item is new to mobile. If it's been sync'd before, will point to local entry.
-     * @param item incoming JSON item.
-     * @param mySyncMap A mapping between the JSON object and the content values.
+     * @param localItem
+     *            will be null if item is new to mobile. If it's been sync'd before, will point to
+     *            local entry.
+     * @param item
+     *            incoming JSON item.
+     * @param mySyncMap
+     *            A mapping between the JSON object and the content values.
      * @return new ContentValues, ready to be inserted into the database.
      * @throws JSONException
      * @throws IOException
      * @throws NetworkProtocolException
      */
-    public final static ContentValues fromJSON(Context context, Uri localItem, JSONObject item, SyncMap mySyncMap) throws JSONException, IOException,
-            NetworkProtocolException {
+    public final static ContentValues fromJSON(Context context, Uri localItem, JSONObject item,
+            SyncMap mySyncMap) throws JSONException, IOException, NetworkProtocolException {
         final ContentValues cv = new ContentValues();
 
-        for (final String propName: mySyncMap.keySet()){
+        for (final String propName : mySyncMap.keySet()) {
             final SyncItem map = mySyncMap.get(propName);
-            if (!map.isDirection(SyncItem.SYNC_FROM)){
+            if (!map.isDirection(SyncItem.SYNC_FROM)) {
                 continue;
             }
-            if (map.isOptional() &&
-                    (!item.has(map.remoteKey) || item.isNull(map.remoteKey))){
+            if (map.isOptional() && (!item.has(map.remoteKey) || item.isNull(map.remoteKey))) {
                 continue;
             }
             final ContentValues cv2 = map.fromJSON(context, localItem, item, propName);
-            if (cv2 != null){
+            if (cv2 != null) {
                 cv.putAll(cv2);
             }
 
@@ -357,21 +456,24 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
 
     /**
      * @param context
-     * @param localItem Will contain the URI of the local item being referenced in the cursor
-     * @param c active cursor with the item to sync selected.
+     * @param localItem
+     *            Will contain the URI of the local item being referenced in the cursor
+     * @param c
+     *            active cursor with the item to sync selected.
      * @param mySyncMap
      * @return a new JSONObject representing the item
      * @throws JSONException
      * @throws NetworkProtocolException
      * @throws IOException
      */
-    public final static JSONObject toJSON(Context context, Uri localItem, Cursor c, SyncMap mySyncMap) throws JSONException, NetworkProtocolException, IOException {
+    public final static JSONObject toJSON(Context context, Uri localItem, Cursor c,
+            SyncMap mySyncMap) throws JSONException, NetworkProtocolException, IOException {
         final JSONObject jo = new JSONObject();
 
-        for (final String lProp: mySyncMap.keySet()){
+        for (final String lProp : mySyncMap.keySet()) {
             final SyncItem map = mySyncMap.get(lProp);
 
-            if (!map.isDirection(SyncItem.SYNC_TO)){
+            if (!map.isDirection(SyncItem.SYNC_TO)) {
                 continue;
             }
             if (c.isAfterLast() || c.isBeforeFirst()) {
@@ -381,21 +483,23 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
             final int colIndex = c.getColumnIndex(lProp);
             // if it's a real property that's optional and is null on the local side
             if (!lProp.startsWith(PREFIX_IGNORE_KEY) && map.isOptional()) {
-                if (colIndex == -1){
-                    throw new RuntimeException("Programming error: Cursor does not have column '"+lProp+"', though sync map says it should. Sync Map: "+mySyncMap );
+                if (colIndex == -1) {
+                    throw new RuntimeException("Programming error: Cursor does not have column '"
+                            + lProp + "', though sync map says it should. Sync Map: " + mySyncMap);
                 }
-                if (c.isNull(colIndex)){
+                if (c.isNull(colIndex)) {
                     continue;
                 }
             }
 
             final Object jsonObject = map.toJSON(context, localItem, c, lProp);
-            if (jsonObject instanceof MultipleJsonObjectKeys){
-                for (final Entry<String, Object> entry :((MultipleJsonObjectKeys) jsonObject).entrySet()){
+            if (jsonObject instanceof MultipleJsonObjectKeys) {
+                for (final Entry<String, Object> entry : ((MultipleJsonObjectKeys) jsonObject)
+                        .entrySet()) {
                     jo.put(entry.getKey(), entry.getValue());
                 }
 
-            }else{
+            } else {
                 jo.put(map.remoteKey, jsonObject);
             }
         }
@@ -403,13 +507,13 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
     }
 
     /**
-     * Return this from the toJson() method in order to have the mapper insert multiple
-     * keys into the parent JSON object. Use the standard put() method to add keys.
+     * Return this from the toJson() method in order to have the mapper insert multiple keys into
+     * the parent JSON object. Use the standard put() method to add keys.
      *
-     * @author steve
+     * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
      *
      */
-    public static class MultipleJsonObjectKeys extends HashMap<String, Object>{
+    public static class MultipleJsonObjectKeys extends HashMap<String, Object> {
 
         /**
          *
@@ -418,47 +522,104 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
 
     }
 
+    /**
+     * An item in a {@link SyncMap} which translates from JSON to a local {@link ContentProvider}
+     * and vice versa. By building a {@link SyncMap} and using the subclasses of this class, JSON
+     * objects of arbitrary complexity can be translated to local database columns.
+     *
+     * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
+     *
+     */
     public static abstract class SyncItem {
 
         protected final String remoteKey;
-        public static final int SYNC_BOTH = 0x3,
-                                SYNC_TO   = 0x1,
-                                SYNC_FROM = 0x2,
-                                SYNC_NONE = 0x4,
-                                FLAG_OPTIONAL = 0x10;
 
-        private static final int DEFAULT_SYNC_DIRECTION = SYNC_BOTH;
+        /**
+         * Flag indicating that the item will sync in both directions.
+         */
+        public static final int SYNC_BOTH = 0x3;
+
+        /**
+         * Flag indicating that the item will sync to the server.
+         */
+        public static final int SYNC_TO = 0x1;
+
+        /**
+         * Flag indicating that the item will sync from the server.
+         */
+        public static final int SYNC_FROM = 0x2;
+
+        /**
+         * Flag indicating that the item won't sync in either direction.
+         */
+        public static final int SYNC_NONE = 0x4;
+
+        /**
+         * Flag for to indicate that the given item is optional. By default, an item is required and
+         * the sync will fail if it's missing.
+         */
+        public static final int FLAG_OPTIONAL = 0x10;
+
+        /**
+         * The default sync direction: {@link #SYNC_BOTH}.
+         */
+        public static final int DEFAULT_SYNC_DIRECTION = SYNC_BOTH;
 
         private final int flags;
 
+        /**
+         * Creates a SyncItem with the default flag of {@link #DEFAULT_SYNC_DIRECTION}
+         *
+         * @param remoteKey
+         *            the key in the remote JSON
+         */
         public SyncItem(String remoteKey) {
             this(remoteKey, DEFAULT_SYNC_DIRECTION);
         }
-        public SyncItem(String remoteKey, int flags){
+
+        /**
+         * @param remoteKey
+         *            the key in the remote JSON object
+         * @param flags
+         *            one of {@link #SYNC_BOTH}, {@link #SYNC_FROM}, {@link #SYNC_TO},
+         *            {@link #SYNC_NONE}, or {@link #FLAG_OPTIONAL}
+         */
+        public SyncItem(String remoteKey, int flags) {
             this.remoteKey = remoteKey;
             this.flags = flags;
         }
-        public String getRemoteKey(){
+
+        public String getRemoteKey() {
             return remoteKey;
         }
+
         /**
-         * @return SYNC_BOTH, SYNC_NONE, SYNC_TO, or SYNC_FROM
+         * Gets the direction that the item will sync in. If unspecified, will return
+         * {@link #DEFAULT_SYNC_DIRECTION}.
+         *
+         * @return {@link #SYNC_BOTH}, {@link #SYNC_NONE}, {@link #SYNC_TO}, or {@link #SYNC_FROM}
          */
         public int getDirection() {
             final int directionFlags = flags & 0x3;
 
-            if ((flags & SYNC_NONE) != 0){
+            if ((flags & SYNC_NONE) != 0) {
                 return SYNC_NONE;
             }
 
-            if (directionFlags == 0){
+            if (directionFlags == 0) {
                 return DEFAULT_SYNC_DIRECTION;
             }
 
             return directionFlags;
         }
 
-        public boolean isDirection(int syncDirection){
+        /**
+         * @param syncDirection
+         *            one of {@link #SYNC_BOTH}, {@link #SYNC_FROM}, {@link #SYNC_TO}, or
+         *            {@link #SYNC_NONE}
+         * @return true if the item will sync in the given direction.
+         */
+        public boolean isDirection(int syncDirection) {
             return (getDirection() & syncDirection) != 0;
         }
 
@@ -474,60 +635,90 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
             sb.append('"');
 
             sb.append("; direction: ");
-            switch (getDirection()){
-            case SYNC_BOTH:
-                sb.append("SYNC_BOTH");
-                break;
-            case SYNC_FROM:
-                sb.append("SYNC_FROM");
-                break;
-            case SYNC_TO:
-                sb.append("SYNC_TO");
-                break;
-            case SYNC_NONE:
-                sb.append("SYNC_NONE");
-                break;
+            switch (getDirection()) {
+                case SYNC_BOTH:
+                    sb.append("SYNC_BOTH");
+                    break;
+                case SYNC_FROM:
+                    sb.append("SYNC_FROM");
+                    break;
+                case SYNC_TO:
+                    sb.append("SYNC_TO");
+                    break;
+                case SYNC_NONE:
+                    sb.append("SYNC_NONE");
+                    break;
             }
-            sb.append(isOptional() ? "; optional ": "; not optional ");
+            sb.append(isOptional() ? "; optional " : "; not optional ");
             sb.append(String.format("(flags %x)", flags));
             return sb.toString();
         }
 
         /**
          * Translate a local database entry into JSON.
-         * @param context Android context
-         * @param localItem uri of the local item
-         * @param c cursor pointing to the item
-         * @param lProp the local property where the data should be stored in the CV
+         *
+         * @param context
+         *            Android context
+         * @param localItem
+         *            uri of the local item
+         * @param c
+         *            cursor pointing to the item
+         * @param lProp
+         *            the local property where the data should be stored in the CV
          * @return JSONObject, JSONArray or any other type that JSONObject.put() supports.
          * @throws JSONException
          * @throws NetworkProtocolException
          * @throws IOException
          */
-        public abstract Object toJSON(Context context, Uri localItem, Cursor c, String lProp) throws JSONException, NetworkProtocolException, IOException;
+        public abstract Object toJSON(Context context, Uri localItem, Cursor c, String lProp)
+                throws JSONException, NetworkProtocolException, IOException;
+
         /**
-         * @param context Android context
-         * @param localItem uri of the local item or null if it is new
-         * @param item the JSONObject of the item. It's your job to pull out the desired field(s) here.
-         * @param lProp the local property where the data should be stored in the CV
+         * Translate a JSON object into a set of ContentValues that will be inserted/updated into
+         * the local item.
+         *
+         * @param context
+         *            Android context
+         * @param localItem
+         *            uri of the local item or null if it is new
+         * @param item
+         *            the JSONObject of the item. It's your job to pull out the desired field(s)
+         *            here.
+         * @param lProp
+         *            the local property where the data should be stored in the CV
          * @return a new ContentValues, that will be merged into the new ContentValues object
          * @throws JSONException
          * @throws NetworkProtocolException
          * @throws IOException
          */
-        public abstract ContentValues fromJSON(Context context, Uri localItem, JSONObject item, String lProp) throws JSONException, NetworkProtocolException, IOException;
+        public abstract ContentValues fromJSON(Context context, Uri localItem, JSONObject item,
+                String lProp) throws JSONException, NetworkProtocolException, IOException;
 
-        public void onPostSyncItem(Context context, Account account, Uri uri, JSONObject item,
-                boolean updated)
-            throws SyncException, IOException {}
+        /**
+         * This method is called after an item has been successfully synchronized with the server.
+         *
+         * @param context
+         * @param account
+         * @param localItem
+         *            the local item's URI. This will never be null.
+         * @param item
+         *            the original JSON from the server
+         * @param updated
+         *            true if the item has been updated; false if no changes have been made
+         * @throws SyncException
+         * @throws IOException
+         */
+        public void onPostSyncItem(Context context, Account account, Uri localItem,
+                JSONObject item, boolean updated) throws SyncException, IOException {
+        }
 
     }
 
     /**
-     * A custom sync item. Use this if the automatic field mappers aren't
-     * flexible enough to read/write from JSON.
+     * A custom sync item. Use this if the automatic field mappers aren't flexible enough to
+     * read/write from JSON.
      *
-     * @author steve
+     * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
      *
      */
     public static abstract class SyncCustom extends SyncItem {
@@ -535,199 +726,203 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         public SyncCustom(String remoteKey) {
             super(remoteKey);
         }
-        public SyncCustom(String remoteKey, int flags){
+
+        public SyncCustom(String remoteKey, int flags) {
             super(remoteKey, flags);
         }
     }
 
     /**
      * A simple field mapper. This maps a JSON object key to a local DB field.
-     * @author steve
+     *
+     * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
      *
      */
     public static class SyncFieldMap extends SyncItem {
         private final int type;
+
         public SyncFieldMap(String remoteKey, int type) {
             this(remoteKey, type, SyncItem.SYNC_BOTH);
         }
+
         public SyncFieldMap(String remoteKey, int type, int flags) {
             super(remoteKey, flags);
             this.type = type;
         }
 
-        public int getType(){
+        public int getType() {
             return type;
         }
 
-        public final static int
-            STRING  = 0,
-            INTEGER = 1,
-            BOOLEAN = 2,
-            LIST_STRING    = 3,
-            DATE    = 4,
-            DOUBLE  = 5,
-            LIST_DOUBLE = 6,
-            LIST_INTEGER = 7,
-            LOCATION = 8,
-            DURATION = 9;
+        public final static int STRING = 0, INTEGER = 1, BOOLEAN = 2, LIST_STRING = 3, DATE = 4,
+                DOUBLE = 5, LIST_DOUBLE = 6, LIST_INTEGER = 7, LOCATION = 8, DURATION = 9;
 
         @Override
-        public ContentValues fromJSON(Context context, Uri localItem,
-                JSONObject item, String lProp) throws JSONException,
-                NetworkProtocolException, IOException {
+        public ContentValues fromJSON(Context context, Uri localItem, JSONObject item, String lProp)
+                throws JSONException, NetworkProtocolException, IOException {
             final ContentValues cv = new ContentValues();
 
-            switch (getType()){
-            case SyncFieldMap.STRING:
-                cv.put(lProp, item.getString(remoteKey));
-                break;
+            switch (getType()) {
+                case SyncFieldMap.STRING:
+                    cv.put(lProp, item.getString(remoteKey));
+                    break;
 
-            case SyncFieldMap.INTEGER:
-                cv.put(lProp, item.getInt(remoteKey));
-                break;
+                case SyncFieldMap.INTEGER:
+                    cv.put(lProp, item.getInt(remoteKey));
+                    break;
 
-            case SyncFieldMap.DOUBLE:
-                cv.put(lProp, item.getDouble(remoteKey));
-                break;
+                case SyncFieldMap.DOUBLE:
+                    cv.put(lProp, item.getDouble(remoteKey));
+                    break;
 
-            case SyncFieldMap.BOOLEAN:
-                cv.put(lProp, item.getBoolean(remoteKey));
-                break;
+                case SyncFieldMap.BOOLEAN:
+                    cv.put(lProp, item.getBoolean(remoteKey));
+                    break;
 
-            case SyncFieldMap.LIST_INTEGER:
-            case SyncFieldMap.LIST_STRING:
-            case SyncFieldMap.LIST_DOUBLE:{
-                final JSONArray ar = item.getJSONArray(remoteKey);
-                final List<String> l = new Vector<String>(ar.length());
-                for (int i = 0; i < ar.length(); i++){
-                    switch (getType()){
-                    case SyncFieldMap.LIST_STRING:
-                        l.add(ar.getString(i));
-                        break;
+                case SyncFieldMap.LIST_INTEGER:
+                case SyncFieldMap.LIST_STRING:
+                case SyncFieldMap.LIST_DOUBLE: {
+                    final JSONArray ar = item.getJSONArray(remoteKey);
+                    final List<String> l = new Vector<String>(ar.length());
+                    for (int i = 0; i < ar.length(); i++) {
+                        switch (getType()) {
+                            case SyncFieldMap.LIST_STRING:
+                                l.add(ar.getString(i));
+                                break;
 
-                    case SyncFieldMap.LIST_DOUBLE:
-                        l.add(String.valueOf(ar.getDouble(i)));
-                        break;
+                            case SyncFieldMap.LIST_DOUBLE:
+                                l.add(String.valueOf(ar.getDouble(i)));
+                                break;
 
-                    case SyncFieldMap.LIST_INTEGER:
-                        l.add(String.valueOf(ar.getInt(i)));
-                        break;
+                            case SyncFieldMap.LIST_INTEGER:
+                                l.add(String.valueOf(ar.getInt(i)));
+                                break;
+                        }
                     }
-                }
                     cv.put(lProp, TextUtils.join(LIST_DELIM, l));
-            }
-                break;
-
-            case SyncFieldMap.DATE:
-                try {
-                    cv.put(lProp, NetworkClient.parseDate(item.getString(remoteKey)).getTime());
-                } catch (final ParseException e) {
-                    final NetworkProtocolException ne = new NetworkProtocolException("bad date format");
-                    ne.initCause(e);
-                    throw ne;
                 }
-                break;
+                    break;
 
-            case SyncFieldMap.DURATION:{
-                final Matcher m = durationPattern.matcher(item.getString(remoteKey));
-                if (! m.matches()){
-                    throw new NetworkProtocolException("bad duration format");
+                case SyncFieldMap.DATE:
+                    try {
+                        cv.put(lProp, NetworkClient.parseDate(item.getString(remoteKey)).getTime());
+                    } catch (final ParseException e) {
+                        final NetworkProtocolException ne = new NetworkProtocolException(
+                                "bad date format");
+                        ne.initCause(e);
+                        throw ne;
+                    }
+                    break;
+
+                case SyncFieldMap.DURATION: {
+                    final Matcher m = durationPattern.matcher(item.getString(remoteKey));
+                    if (!m.matches()) {
+                        throw new NetworkProtocolException("bad duration format");
+                    }
+                    final int durationSeconds = 1200 * Integer.parseInt(m.group(1)) + 60
+                            * Integer.parseInt(m.group(2)) + Integer.parseInt(m.group(3));
+                    cv.put(lProp, durationSeconds);
                 }
-                final int durationSeconds = 1200 * Integer.parseInt(m.group(1)) + 60 * Integer.parseInt(m.group(2)) + Integer.parseInt(m.group(3));
-                cv.put(lProp, durationSeconds);
-            } break;
+                    break;
             }
             return cv;
         }
+
         @Override
         public Object toJSON(Context context, Uri localItem, Cursor c, String lProp)
                 throws JSONException, NetworkProtocolException, IOException {
 
             Object retval;
             final int columnIndex = c.getColumnIndex(lProp);
-            switch (getType()){
-            case SyncFieldMap.STRING:
-                retval = c.getString(columnIndex);
-                break;
+            switch (getType()) {
+                case SyncFieldMap.STRING:
+                    retval = c.getString(columnIndex);
+                    break;
 
-            case SyncFieldMap.INTEGER:
-                retval = c.getInt(columnIndex);
-                break;
+                case SyncFieldMap.INTEGER:
+                    retval = c.getInt(columnIndex);
+                    break;
 
-            case SyncFieldMap.DOUBLE:
-                retval = c.getDouble(columnIndex);
-                break;
+                case SyncFieldMap.DOUBLE:
+                    retval = c.getDouble(columnIndex);
+                    break;
 
-            case SyncFieldMap.BOOLEAN:
-            retval = c.getInt(columnIndex) != 0;
-            break;
+                case SyncFieldMap.BOOLEAN:
+                    retval = c.getInt(columnIndex) != 0;
+                    break;
 
-            case SyncFieldMap.LIST_STRING:
-            case SyncFieldMap.LIST_DOUBLE:
-            case SyncFieldMap.LIST_INTEGER:
-            {
-                final JSONArray ar = new JSONArray();
-                final String joined = c.getString(columnIndex);
-                if (joined == null){
-                    throw new NullPointerException("Local value for '" + lProp + "' cannot be null.");
-                }
-                if (joined.length() > 0){
-                    for (final String s : joined.split(TaggableItem.LIST_SPLIT)){
-                        switch (getType()){
-                        case SyncFieldMap.LIST_STRING:
-                            ar.put(s);
-                            break;
-                        case SyncFieldMap.LIST_DOUBLE:
-                            ar.put(Double.valueOf(s));
-                            break;
-                        case SyncFieldMap.LIST_INTEGER:
-                            ar.put(Integer.valueOf(s));
-                            break;
+                case SyncFieldMap.LIST_STRING:
+                case SyncFieldMap.LIST_DOUBLE:
+                case SyncFieldMap.LIST_INTEGER: {
+                    final JSONArray ar = new JSONArray();
+                    final String joined = c.getString(columnIndex);
+                    if (joined == null) {
+                        throw new NullPointerException("Local value for '" + lProp
+                                + "' cannot be null.");
+                    }
+                    if (joined.length() > 0) {
+                        for (final String s : joined.split(TaggableItem.LIST_SPLIT)) {
+                            switch (getType()) {
+                                case SyncFieldMap.LIST_STRING:
+                                    ar.put(s);
+                                    break;
+                                case SyncFieldMap.LIST_DOUBLE:
+                                    ar.put(Double.valueOf(s));
+                                    break;
+                                case SyncFieldMap.LIST_INTEGER:
+                                    ar.put(Integer.valueOf(s));
+                                    break;
+                            }
                         }
                     }
+                    retval = ar;
                 }
-                retval = ar;
-            }
-            break;
+                    break;
 
-            case SyncFieldMap.DATE:
+                case SyncFieldMap.DATE:
 
-                retval =
-                    NetworkClient.dateFormat.format(new Date(c.getLong(columnIndex)));
-            break;
+                    retval = NetworkClient.dateFormat.format(new Date(c.getLong(columnIndex)));
+                    break;
 
-            case SyncFieldMap.DURATION:{
-                final int durationSeconds = c.getInt(columnIndex);
-                // hh:mm:ss
-                retval = String.format("%02d:%02d:%02d", durationSeconds / 1200, (durationSeconds / 60) % 60, durationSeconds % 60);
-            }break;
-            default:
-                throw new IllegalArgumentException(this.toString() + " has an invalid type.");
+                case SyncFieldMap.DURATION: {
+                    final int durationSeconds = c.getInt(columnIndex);
+                    // hh:mm:ss
+                    retval = String.format("%02d:%02d:%02d", durationSeconds / 1200,
+                            (durationSeconds / 60) % 60, durationSeconds % 60);
+                }
+                    break;
+                default:
+                    throw new IllegalArgumentException(this.toString() + " has an invalid type.");
             }
             return retval;
         }
     }
 
     /**
-     * Given a URI as the value, resolves the item(s) and stores the relations in the database.
-     * Each URI represents a list of items that should be related to the parent object.
+     * Given a URI as the value, resolves the item(s) and stores the relations in the database. Each
+     * URI represents a list of items that should be related to the parent object.
      *
      * The type of the child is defined by the type of the URI that is returned in the Relationship.
-     * Synchronization of this field simply stores the public URI in the given local field as a string
-     * and then calls a synchronization on that URI with the context of the destination URI (as defined
-     * by the Relationship).
+     * Synchronization of this field simply stores the public URI in the given local field as a
+     * string and then calls a synchronization on that URI with the context of the destination URI
+     * (as defined by the Relationship).
      *
-     * For example, one could define a simple comment system to allow commenting on a Cast. In the Cast's sync map,
+     * For example, one could define a simple comment system to allow commenting on a Cast. In the
+     * Cast's sync map,
+     *
      * <pre>
-     * SYNC_MAP.put(_COMMENTS_URI, new SyncChildRelation("comments", new SyncChildRelation.SimpleRelationship("castcomments"), SyncFieldMap.SYNC_FROM | SyncFieldMap.FLAG_OPTIONAL));
+     * SYNC_MAP.put(_COMMENTS_URI, new SyncChildRelation(&quot;comments&quot;,
+     *         new SyncChildRelation.SimpleRelationship(&quot;castcomments&quot;), SyncFieldMap.SYNC_FROM
+     *                 | SyncFieldMap.FLAG_OPTIONAL));
      * </pre>
      *
-     * This stores the public URI that's in the JSON object's "comments" value in the Cast's _COMMENTS_URI field.
-     * Additionally, it starts a sync on that same public URI with the extra information of {@code content://casts/1/castcomments}
-     * so that the results of the public URI sync will be stored in the local URI provided. The type of the child object is entirely
+     * This stores the public URI that's in the JSON object's "comments" value in the Cast's
+     * _COMMENTS_URI field. Additionally, it starts a sync on that same public URI with the extra
+     * information of {@code content://casts/1/castcomments} so that the results of the public URI
+     * sync will be stored in the local URI provided. The type of the child object is entirely
      * determined by the type of the local URI.
      *
-     * @author steve
+     * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
      *
      */
     public static class SyncChildRelation extends SyncItem {
@@ -736,12 +931,18 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
 
         /**
          *
-         * @param remoteKey the key in the JSON
-         * @param relationship how this field relates to the local database
-         * @param startChildSync if true, requests that the child be sync'd when the parent is sync'd. Defaults to true.
-         * @param flags standard {@link SyncItem} flags
+         * @param remoteKey
+         *            the key in the JSON
+         * @param relationship
+         *            how this field relates to the local database
+         * @param startChildSync
+         *            if true, requests that the child be sync'd when the parent is sync'd. Defaults
+         *            to true.
+         * @param flags
+         *            standard {@link SyncItem} flags
          */
-        public SyncChildRelation(String remoteKey, Relationship relationship, boolean startChildSync, int flags) {
+        public SyncChildRelation(String remoteKey, Relationship relationship,
+                boolean startChildSync, int flags) {
             super(remoteKey, flags);
             mRelationship = relationship;
             mStartChildSync = startChildSync;
@@ -750,26 +951,28 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         /**
          * By default, starts a child sync.
          *
-         * @param remoteKey the key in the JSON
-         * @param relationship how this field relates to the local database
-         * @param flags standard {@link SyncItem} flags
+         * @param remoteKey
+         *            the key in the JSON
+         * @param relationship
+         *            how this field relates to the local database
+         * @param flags
+         *            standard {@link SyncItem} flags
          */
         public SyncChildRelation(String remoteKey, Relationship relationship, int flags) {
             this(remoteKey, relationship, true, flags);
         }
 
         @Override
-        public Object toJSON(Context context, Uri localItem, Cursor c,
-                String lProp) throws JSONException, NetworkProtocolException,
-                IOException {
-            // This doesn't need to do anything, as the sync framework will automatically handle JSON creation.
+        public Object toJSON(Context context, Uri localItem, Cursor c, String lProp)
+                throws JSONException, NetworkProtocolException, IOException {
+            // This doesn't need to do anything, as the sync framework will automatically handle
+            // JSON creation.
             return null;
         }
 
         @Override
-        public ContentValues fromJSON(Context context, Uri localItem,
-                JSONObject item, String lProp) throws JSONException,
-                NetworkProtocolException, IOException {
+        public ContentValues fromJSON(Context context, Uri localItem, JSONObject item, String lProp)
+                throws JSONException, NetworkProtocolException, IOException {
             final ContentValues cv = new ContentValues();
             final String childPubUri = item.getString(remoteKey);
             // store the URI so we can refresh from it later
@@ -781,7 +984,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         @Override
         public void onPostSyncItem(Context context, Account account, Uri uri, JSONObject item,
                 boolean updated) throws SyncException, IOException {
-            if (!mStartChildSync){
+            if (!mStartChildSync) {
                 return;
             }
             final Uri childDir = mRelationship.getChildDirUri(uri);
@@ -830,9 +1033,10 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         /**
          * A simple relationship where the local URI path is the relationship name. eg.
          *
-         * Given the parent {@code content://itinerary/1} with a relationship of "casts", the child items are all at {@code content://itinerary/1/casts}
+         * Given the parent {@code content://itinerary/1} with a relationship of "casts", the child
+         * items are all at {@code content://itinerary/1/casts}
          *
-         * @author steve
+         * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
          *
          */
         public static class SimpleRelationship extends Relationship {
@@ -840,7 +1044,8 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
             /**
              * Create a new simple relationship.
              *
-             * @param relationship local uri path suffix for the item.
+             * @param relationship
+             *            local uri path suffix for the item.
              */
             public SimpleRelationship(String relationship) {
                 super(relationship);
@@ -853,31 +1058,32 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         }
 
         /**
-         * Defines a relationship between one object and another.
-         * For most cases, you'll want to use {@link SimpleRelationship}.
+         * Defines a relationship between one object and another. For most cases, you'll want to use
+         * {@link SimpleRelationship}.
          *
-         * @author steve
+         * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
          *
          */
         public static abstract class Relationship {
             private final String mRelation;
+
             public Relationship(String relationship) {
                 mRelation = relationship;
             }
 
             public abstract Uri getChildDirUri(Uri parent);
-            public String getRelation(){
+
+            public String getRelation() {
                 return mRelation;
             }
         }
     }
 
     /**
-     * An item that recursively goes into a JSON object and can map
-     * properties from that. When outputting JSON, will create the object
-     * again.
+     * An item that recursively goes into a JSON object and can map properties from that. When
+     * outputting JSON, will create the object again.
      *
-     * @author stevep
+     * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
      *
      */
     public static class SyncMapChain extends SyncItem {
@@ -887,24 +1093,27 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
             super(remoteKey);
             this.chain = chain;
         }
+
         public SyncMapChain(String remoteKey, SyncMap chain, int direction) {
             super(remoteKey, direction);
             this.chain = chain;
         }
+
         public SyncMap getChain() {
             return chain;
         }
-        @Override
-        public ContentValues fromJSON(Context context, Uri localItem,
-                JSONObject item, String lProp) throws JSONException,
-                NetworkProtocolException, IOException {
 
-            return JsonSyncableItem.fromJSON(context, localItem, item.getJSONObject(remoteKey), getChain());
-        }
         @Override
-        public Object toJSON(Context context, Uri localItem, Cursor c,
-                String lProp) throws JSONException, NetworkProtocolException,
-                IOException {
+        public ContentValues fromJSON(Context context, Uri localItem, JSONObject item, String lProp)
+                throws JSONException, NetworkProtocolException, IOException {
+
+            return JsonSyncableItem.fromJSON(context, localItem, item.getJSONObject(remoteKey),
+                    getChain());
+        }
+
+        @Override
+        public Object toJSON(Context context, Uri localItem, Cursor c, String lProp)
+                throws JSONException, NetworkProtocolException, IOException {
 
             return JsonSyncableItem.toJSON(context, localItem, c, getChain());
         }
@@ -919,7 +1128,8 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
 
     /**
      * One-directional sync of a child item.
-     * @author steve
+     *
+     * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
      *
      */
     public static class SyncChildField extends SyncMapChain {
@@ -928,7 +1138,8 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
 
         }
 
-        public SyncChildField(String localKey, String remoteKey, String remoteField, int fieldType, int fieldFlags) {
+        public SyncChildField(String localKey, String remoteKey, String remoteField, int fieldType,
+                int fieldFlags) {
             super(remoteKey, new SyncMap(), SyncMapChain.SYNC_FROM);
 
             getChain().put(localKey, new SyncFieldMap(remoteField, fieldType, fieldFlags));
@@ -938,39 +1149,38 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
     /**
      * Store multiple remote fields into one local field.
      *
-     * @author steve
+     * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
      *
      */
     public static abstract class SyncMapJoiner extends SyncItem {
         private final SyncItem[] children;
 
-
-
         /**
-         * @param children The SyncItems that you wish to join. These should probably be of the same type,
-         * but don't need to be. You'll have to figure out how to join them by defining your joinContentValues().
+         * @param children
+         *            The SyncItems that you wish to join. These should probably be of the same
+         *            type, but don't need to be. You'll have to figure out how to join them by
+         *            defining your joinContentValues().
          */
-        public SyncMapJoiner(SyncItem ... children) {
+        public SyncMapJoiner(SyncItem... children) {
             super("_syncMapJoiner", SyncItem.SYNC_BOTH);
             this.children = children;
 
         }
 
-        public SyncItem getChild(int index){
+        public SyncItem getChild(int index) {
             return children[index];
         }
 
-        public int getChildCount(){
+        public int getChildCount() {
             return children.length;
         }
 
         @Override
-        public ContentValues fromJSON(Context context, Uri localItem,
-                JSONObject item, String lProp) throws JSONException,
-                NetworkProtocolException, IOException {
+        public ContentValues fromJSON(Context context, Uri localItem, JSONObject item, String lProp)
+                throws JSONException, NetworkProtocolException, IOException {
             final ContentValues[] cvArray = new ContentValues[children.length];
-            for (int i = 0; i < children.length; i++){
-                if (children[i].isDirection(SYNC_FROM)){
+            for (int i = 0; i < children.length; i++) {
+                if (children[i].isDirection(SYNC_FROM)) {
                     cvArray[i] = children[i].fromJSON(context, localItem, item, lProp);
                 }
             }
@@ -978,12 +1188,11 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         }
 
         @Override
-        public Object toJSON(Context context, Uri localItem, Cursor c,
-                String lProp) throws JSONException, NetworkProtocolException,
-                IOException {
+        public Object toJSON(Context context, Uri localItem, Cursor c, String lProp)
+                throws JSONException, NetworkProtocolException, IOException {
             final Object[] jsonObjects = new Object[children.length];
-            for (int i = 0; i < children.length; i++){
-                if (children[i].isDirection(SYNC_TO)){
+            for (int i = 0; i < children.length; i++) {
+                if (children[i].isDirection(SYNC_TO)) {
                     jsonObjects[i] = children[i].toJSON(context, localItem, c, lProp);
                 }
             }
@@ -994,7 +1203,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         public void onPostSyncItem(Context context, Account account, Uri uri, JSONObject item,
                 boolean updated) throws SyncException, IOException {
             super.onPostSyncItem(context, account, uri, item, updated);
-            for (final SyncItem child : children){
+            for (final SyncItem child : children) {
                 child.onPostSyncItem(context, account, uri, item, updated);
             }
         }
@@ -1002,14 +1211,16 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         /**
          * Implement this to tell the joiner how to join the result of the children's fromJson()
          * into the same ContentValues object.
-         * @param cv all results from fromJson()
+         *
+         * @param cv
+         *            all results from fromJson()
          * @return a joined version of the ContentValues
          */
         public abstract ContentValues joinContentValues(ContentValues[] cv);
 
         public Object joinJson(Object[] jsonObjects) {
             final MultipleJsonObjectKeys multKeys = new MultipleJsonObjectKeys();
-            for (int i = 0; i < getChildCount(); i++){
+            for (int i = 0; i < getChildCount(); i++) {
                 multKeys.put(getChild(i).remoteKey, jsonObjects[i]);
             }
             return multKeys;
@@ -1017,17 +1228,14 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
     }
 
     /**
-     * Used for outputting a literal into a JSON object. If the format requires
-     * some strange literal, like
-     *   "type": "point"
-     * this can add it.
+     * Used for outputting a literal into a JSON object. If the format requires some strange
+     * literal, like "type": "point" this can add it.
      *
-     * @author steve
+     * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
      *
      */
     public static class SyncLiteral extends SyncItem {
         private final Object literal;
-
 
         public SyncLiteral(String remoteKey, Object literal) {
             super(remoteKey);
@@ -1039,16 +1247,14 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
         }
 
         @Override
-        public ContentValues fromJSON(Context context, Uri localItem,
-                JSONObject item, String lProp) throws JSONException,
-                NetworkProtocolException, IOException {
+        public ContentValues fromJSON(Context context, Uri localItem, JSONObject item, String lProp)
+                throws JSONException, NetworkProtocolException, IOException {
             return null;
         }
 
         @Override
-        public Object toJSON(Context context, Uri localItem, Cursor c,
-                String lProp) throws JSONException, NetworkProtocolException,
-                IOException {
+        public Object toJSON(Context context, Uri localItem, Cursor c, String lProp)
+                throws JSONException, NetworkProtocolException, IOException {
             return literal;
         }
 
