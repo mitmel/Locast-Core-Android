@@ -111,16 +111,18 @@ public class SyncEngine {
 
     JsonSyncableItem.COL_DELETED,
 
-    JsonSyncableItem.COL_DIRTY
+    JsonSyncableItem.COL_DIRTY,
+
+    SyncableProvider.QUERY_RETURN_DELETED
 
     };
 
     /**
-     * Items that are ready to publish, but haven't been published before.
+     * Items that are ready to publish, but haven't been published before. The selection for items
+     * that aren't deleted is implied by the underlying content provider.
      */
     private static final String SELECTION_UNPUBLISHED = JsonSyncableItem.COL_PUBLIC_URL
-            + " ISNULL AND " + JsonSyncableItem.SELECTION_NOT_DRAFT + " AND "
-            + JsonSyncableItem.SELECTION_NOT_DELETED;
+            + " ISNULL AND " + JsonSyncableItem.SELECTION_NOT_DRAFT;
 
     final String[] PUB_URI_PROJECTION = new String[] { JsonSyncableItem._ID,
             JsonSyncableItem.COL_PUBLIC_URL };
@@ -1052,7 +1054,10 @@ public class SyncEngine {
                 .getPublicPath(mContext, localUri);
 
         // requeries to ensure that when it converts it to JSON, it has all the columns.
-        final Cursor uploadCursor = provider.query(localUri, null, null, null, null);
+        // The QUERY_RETURN_DELETED flag will be removed and this will be treated as a null
+        // projection.
+        final Cursor uploadCursor = provider.query(localUri,
+                new String[] { SyncableProvider.QUERY_RETURN_DELETED }, null, null, null);
         try {
             if (uploadCursor.moveToFirst()) {
                 mNetworkClient.putJson(itemPubPath,

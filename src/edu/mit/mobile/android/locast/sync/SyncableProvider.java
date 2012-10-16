@@ -18,19 +18,57 @@ import edu.mit.mobile.android.locast.net.NetworkClient;
  * This interface is intended for a {@link ContentProvider} to make its content syncable with the
  * {@link SyncEngine}.
  * </p>
- *
+ * 
  * <p>
  * If using {@link SimpleContentProvider}, you can instead use {@link SyncableSimpleContentProvider}
  * to gain sync functionality.
- *
- *
+ * </p>
+ * 
+ * <p>
+ * Other classes implementing this interface have a few special details to handle in order to
+ * interface with the {@link SyncEngine}.
+ * </p>
+ * 
+ * <p>
+ * On {@link ContentProvider#insert(Uri, android.content.ContentValues)} and
+ * {@link ContentProvider#update(Uri, android.content.ContentValues, String, String[])}
+ * <ul>
+ * <li>Handle {@link JsonSyncableItem#COL_DIRTY} and {@link JsonSyncableItem#COL_MODIFIED_DATE}. See
+ * also {@link #FLAG_DO_NOT_CHANGE_DIRTY} for details on what needs to be handled and how.</li>
+ * <li>Handle {@link JsonSyncableItem#COL_DELETED}. See also {@link #QUERY_RETURN_DELETED}.
+ * </ul>
+ * 
  * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
  * @see SyncableSimpleContentProvider
- *
+ * 
  */
 public interface SyncableProvider {
 
+    /**
+     * The {@link SyncEngine} will add this in as the value of {@link JsonSyncableItem#COL_DIRTY} to
+     * {@link ContentProvider#insert(Uri, android.content.ContentValues)} and
+     * {@link ContentProvider#update(Uri, android.content.ContentValues, String, String[])} calls
+     * when the underlying provider should not update the modified date of the content item. When
+     * this flag is missing, however, it's the responsibility of the {@link SyncableProvider} to
+     * bump the {@link JsonSyncableItem#COL_MODIFIED_DATE} date.
+     */
     public static final int FLAG_DO_NOT_CHANGE_DIRTY = -1;
+
+    /**
+     * <p>
+     * Pass this in when querying a {@link SyncableProvider} in order to prevent it from
+     * automatically filter out deleted items. This is passed to
+     * {@link ContentProvider#query(Uri, String[], String, String[], String)} by adding it in as a
+     * value in the {@code projection}. It will be removed from the {@code projection} if present.
+     * If it is the only item in the {@code projection}, {@code projection} will be set to
+     * {@code null}.
+     * </p>
+     * <p>
+     * The {@link SyncEngine} will add this when querying the provider when it's processing the
+     * local items.
+     * </p>
+     */
+    public static final String QUERY_RETURN_DELETED = "edu.mit.mobile.android.locast.sync.query_return_deleted";
 
     /**
      * Retrieves the sync map from the class that maps to the given URL.

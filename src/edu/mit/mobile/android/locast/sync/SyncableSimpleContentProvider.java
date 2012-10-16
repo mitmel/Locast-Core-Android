@@ -2,6 +2,9 @@ package edu.mit.mobile.android.locast.sync;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import android.content.ContentProviderClient;
 import android.content.ContentValues;
@@ -11,6 +14,7 @@ import android.net.Uri;
 import android.os.RemoteException;
 import android.util.Log;
 import edu.mit.mobile.android.content.ContentItem;
+import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.SimpleContentProvider;
 import edu.mit.mobile.android.locast.BuildConfig;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem;
@@ -35,7 +39,8 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
         super(authority, dbVersion);
     }
 
-    static final String[] PUBLIC_PATH_PROJECTION = new String[] { JsonSyncableItem.COL_PUBLIC_URL };
+    static final String[] PUBLIC_PATH_PROJECTION = new String[] { JsonSyncableItem.COL_PUBLIC_URL,
+            SyncableProvider.QUERY_RETURN_DELETED };
     private static final String TAG = SyncableSimpleContentProvider.class.getSimpleName();
 
     @Override
@@ -67,6 +72,54 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
             c.close();
         }
         return publicPath;
+    }
+
+    /**
+     * <p>
+     * Overrides the standard behavior to add a flag that's passed in through the projection
+     * variable. If {@link SyncableProvider#QUERY_RETURN_DELETED} is an item in the projection, the
+     * query will be unmodified. Otherwise, by default, a this will add in a selection that filters
+     * out entries whose {@link JsonSyncableItem#COL_DELETED} is set to 1.
+     * </p>
+     * <p>
+     * The flag will be removed before passing it on to the subclass.
+     * </p>
+     *
+     * @see edu.mit.mobile.android.content.SimpleContentProvider#query(android.net.Uri,
+     *      java.lang.String[], java.lang.String, java.lang.String[], java.lang.String)
+     */
+    @Override
+    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+            String sortOrder) {
+
+        final boolean queryReturnDeleted;
+        // process the flag
+        if (projection != null) {
+            // TODO not very efficient, but this isn't used very frequently so it shouldn't matter.
+            // Rework if it is.
+            List<String> projectionList = Arrays.asList(projection);
+            queryReturnDeleted = projectionList.contains(QUERY_RETURN_DELETED);
+
+            // only modify the array if necessary
+            if (queryReturnDeleted) {
+                projectionList = new ArrayList<String>(projectionList);
+                projectionList.remove(QUERY_RETURN_DELETED);
+                if (projectionList.size() == 0) {
+                    projection = null;
+                } else {
+                    projection = projectionList.toArray(new String[] {});
+                }
+            }
+        } else {
+            queryReturnDeleted = false;
+        }
+
+        if (!queryReturnDeleted) {
+            selection = ProviderUtils.addExtraWhere(selection, JsonSyncableItem.COL_DELETED
+                    + " IS NOT 1");
+        }
+
+        return super.query(uri, projection, selection, selectionArgs, sortOrder);
     }
 
     @Override
