@@ -55,8 +55,7 @@ import edu.mit.mobile.android.locast.net.NetworkProtocolException;
  * Activity which displays login screen to the user.
  */
 public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticatorActivity implements
-        OnClickListener,
-        OnEditorActionListener {
+        OnClickListener, OnEditorActionListener {
     private static final String TAG = AbsLocastAuthenticatorActivity.class.getSimpleName();
 
     public static final String EXTRA_CONFIRMCREDENTIALS = "confirmCredentials";
@@ -130,6 +129,8 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
 
         mMessage = (TextView) findViewById(R.id.message);
         mUsernameEdit = (EditText) findViewById(R.id.username);
+        mUsernameEdit.setHint(isEmailAddressLogin() ? R.string.auth_email_login_hint
+                : R.string.auth_username_hint);
         mPasswordEdit = (EditText) findViewById(R.id.password);
         mPasswordEdit.setOnEditorActionListener(this);
         findViewById(R.id.login).setOnClickListener(this);
@@ -152,7 +153,15 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
         }
     }
 
+    /**
+     * @return the app's name
+     */
     protected abstract CharSequence getAppName();
+
+    /**
+     * @return true if the user's email address is their login.
+     */
+    protected abstract boolean isEmailAddressLogin();
 
     /*
      * {@inheritDoc}
@@ -526,7 +535,6 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
          *            true if the account was successfully removed.
          */
         public abstract void onAccountRemoved(boolean success);
-
 
     };
 

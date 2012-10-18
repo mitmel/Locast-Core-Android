@@ -26,7 +26,8 @@
     <string name="signup_text">"Katılmak için kayıt olun %1$s"</string>
     <!-- Placeholder here is for application name -->
     <string name="login_title">"%1$s Giriş"</string>
-    <string name="auth_username_hint">"ali@example.com"</string>
+    <string name="auth_email_login_hint">"ali@example.com"</string>
+    <string name="auth_username_hint">"akara"</string>
     <string name="auth_password_hint">"şifre"</string>
     <string name="auth_login">"Oturumu aç"</string>
     <string name="auth_logout">"Oturumu kapat"</string>
