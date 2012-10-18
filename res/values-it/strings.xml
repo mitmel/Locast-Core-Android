@@ -1,26 +1,25 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-  <string name="signup_text">Registrati per utilizzare %1$s</string>
-  <string name="error_no_providers">Errore: non ci sono location providers</string>
-  <string name="notice_databases_reset">Risistemazione di database locale.</string>
   <string name="sync_upload_success">Upload del cast effettuato.</string>
   <string name="sync_upload_success_message">“%1$s” è stato caricato.</string>
+  <string name="sync_downloading">Sto caricando “%1$s”…</string>
+  <string name="sync_uploading">Uploading “%1$s”…</string>
   <string name="error_uploading_media">Errore nell\'upload del media.</string>
   <string name="error_sync_upload_fail">Errore nell\'upload.</string>
   <string name="error_sync_upload_fail_message">“%1$s” non è riuscito a caricare.</string>
-  <string name="sync_downloading">Sto caricando “%1$s”…</string>
-  <string name="sync_uploading">Uploading “%1$s”…</string>
   <string name="password_label">Password</string>
   <string name="login_message_authenticating">autenticando…</string>
   <string name="login_message_loginfail">Nome utente o password non valida.</string>
   <string name="login_message_login_empty_password">Per cortesia inserisci la password.</string>
+  <string name="signup_text">Registrati per utilizzare %1$s</string>
   <string name="login_title">%1$s Login</string>
   <string name="auth_email_login_hint">alice\@example.org</string>
   <string name="auth_username_hint">acarroll</string>
   <string name="auth_password_hint">password</string>
   <string name="auth_login">Login</string>
+  <string name="notice_databases_reset">Risistemazione di database locale.</string>
   <string name="auth_error_could_not_contact_server">Impossibile contattare il server.</string>
   <string name="auth_error_server_returned_invalid_data">Il server ha comunicato dati non corretti.</string>
   <string name="auth_error_network_protocol_error">Errore di protocollo Network: %1$s</string>
- 
+  <string name="error_no_providers">Errore: non ci sono location providers</string>
 </resources>

@@ -1,0 +1,223 @@
+# Turkish translations for PROJECT.
+# Copyright (C) 2012 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2012.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2012-10-18 13:23-0400\n"
+"PO-Revision-Date: 2012-10-18 13:23-0400\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: tr <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=(0)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 1.0dev\n"
+
+#. Sync
+msgctxt "sync"
+msgid "Synchronize"
+msgstr "Senkronize Et"
+
+#, c-format
+msgctxt "sync_notification"
+msgid "Synchronizing %1$s…"
+msgstr "%1$s Senkronize ediliyor..."
+
+msgctxt "sync_upload_success"
+msgid "Uploaded successfully."
+msgstr "Başarıyla yüklendi."
+
+#, c-format
+msgctxt "sync_upload_success_message"
+msgid "“%1$s” has been uploaded."
+msgstr "\"%1$s\" yüklendi."
+
+#. placeholder 1 is the item title
+#, c-format
+msgctxt "sync_downloading"
+msgid "Downloading “%1$s”…"
+msgstr "“%1$s” İndiriliyor..."
+
+#. placeholder 1 is the item title
+#, c-format
+msgctxt "sync_uploading"
+msgid "Uploading “%1$s”…"
+msgstr "“%1$s” Yükleniyor..."
+
+msgctxt "error_uploading_media"
+msgid "Error uploading media."
+msgstr "Medya yüklemede hata."
+
+msgctxt "error_sync_upload_fail"
+msgid "Error uploading."
+msgstr "Yükleme Hatası."
+
+#. placeholder 1 is the item title
+#, c-format
+msgctxt "error_sync_upload_fail_message"
+msgid "“%1$s” failed to upload."
+msgstr "“%1$s” yüklenemedi."
+
+#. placeholder 1 is the item title
+#, c-format
+msgctxt "error_sync_no_data_network"
+msgid ""
+"Cannot sync %1$s: no data network. Please check your connection and try "
+"again."
+msgstr ""
+"Senkronize olamiyor %1$s  Veri ağı yok. Lütfen bağlantınızı kontrol edip "
+"tekrar deneyin."
+
+#, c-format
+msgctxt "username_label"
+msgid "%1$s username"
+msgstr "%1$s kullanıcı adı"
+
+msgctxt "password_label"
+msgid "Password"
+msgstr "Şifre"
+
+msgctxt "login_message_authenticating"
+msgid "authenticating…"
+msgstr "Kimlik doğrulanıyor…"
+
+msgctxt "login_message_loginfail"
+msgid "Invalid username or password."
+msgstr "Geçersiz kullanıcı adı veya şifre."
+
+msgctxt "login_message_login_empty_password"
+msgid "Please enter a password."
+msgstr "Lütfen bir şifre girin."
+
+#, c-format
+msgctxt "login_message_login_empty_username"
+msgid "Please enter your %1$s username and password."
+msgstr "Lütfen %1$s kullanıcı adı ve parola girin."
+
+#. Placeholder here is for application name
+#, c-format
+msgctxt "signup_text"
+msgid "Register to join %1$s"
+msgstr "Katılmak için kayıt olun %1$s"
+
+#. Placeholder here is for application name
+#, c-format
+msgctxt "login_title"
+msgid "%1$s Login"
+msgstr "%1$s Giriş"
+
+#. Hint for when the email address is the user's login
+msgctxt "auth_email_login_hint"
+msgid "alice@example.org"
+msgstr "ali@example.com"
+
+msgctxt "auth_username_hint"
+msgid "acarroll"
+msgstr "akara"
+
+msgctxt "auth_password_hint"
+msgid "password"
+msgstr "şifre"
+
+msgctxt "auth_login"
+msgid "Login"
+msgstr "Oturumu aç"
+
+msgctxt "auth_logout"
+msgid "Logout"
+msgstr "Oturumu kapat"
+
+#. placeholder 1 is app name
+#, c-format
+msgctxt "auth_logout_title"
+msgid "%1$s Logout"
+msgstr "%1$s Oturumu kapat"
+
+#. placeholder 1 is app name
+#, c-format
+msgctxt "auth_logout_message"
+msgid ""
+"This will log you out of %1$s and delete all synchronized content from "
+"your device."
+msgstr ""
+"Bu sizin oturumunuzu kapatıcak %1$s ve cihazınızdaki tüm senkronize "
+"içeriği silecek."
+
+#. Generic user-facing notices
+msgctxt "notice_databases_reset"
+msgid "Local database reset."
+msgstr "Yerel veritabanı sıfırlama."
+
+#. placeholder 1 is app name
+#, c-format
+msgctxt "auth_register_title"
+msgid "%1$s Registration"
+msgstr "%1$s Kayıt"
+
+msgctxt "register_your_name_label"
+msgid "Your name"
+msgstr "Adınız"
+
+msgctxt "register_your_name_hint"
+msgid "Alice Carroll"
+msgstr "Ali Kara"
+
+msgctxt "register_email_address"
+msgid "Email address"
+msgstr "E-Posta Adresi"
+
+msgctxt "register_email_address_hint"
+msgid "alice@example.org"
+msgstr "ali@example.com"
+
+msgctxt "register"
+msgid "Register"
+msgstr "Kayıt ol"
+
+msgctxt "register_password_confirm_hint"
+msgid "confirm password"
+msgstr "Şifreyi onayla"
+
+msgctxt "auth_error_could_not_contact_server"
+msgid "Could not contact server."
+msgstr "Sunucu ile iletişim kurulamadı."
+
+msgctxt "auth_error_server_returned_invalid_data"
+msgid "Server returned invalid data."
+msgstr "Sunucu geçersiz veri döndü."
+
+#, c-format
+msgctxt "auth_error_network_protocol_error"
+msgid "Network protocol error: %1$s"
+msgstr "Ağ protokol hatası: %1$s"
+
+msgctxt "register_message_empty_name"
+msgid "Please enter your name"
+msgstr "Lütfen adınızı girin"
+
+msgctxt "register_message_empty_email_address"
+msgid "Please enter your email address"
+msgstr "E-posta adresinizi girin"
+
+msgctxt "register_message_empty_username"
+msgid "Please enter your desired username"
+msgstr "İstediğiniz kullanıcı adını girin"
+
+msgctxt "register_message_empty_password"
+msgid "Please enter a password"
+msgstr "Lütfen bir şifre girin"
+
+msgctxt "register_message_password_mismatch"
+msgid "This does not match your first password"
+msgstr "Bu sizin ilk şifreniz ile eşleşmiyor"
+
+#. Incremental locator
+msgctxt "error_no_providers"
+msgid "Error: no location providers"
+msgstr "Hata: Yer sağlayıcıları yok"
+

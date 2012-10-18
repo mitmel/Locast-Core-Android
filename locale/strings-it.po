@@ -1,0 +1,219 @@
+# Italian translations for PROJECT.
+# Copyright (C) 2012 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2012.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2012-10-18 15:23-0400\n"
+"PO-Revision-Date: 2012-10-18 13:23-0400\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=((n == 1) ? 0 : 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 1.0dev\n"
+
+#. Sync
+msgctxt "sync"
+msgid "Synchronize"
+msgstr ""
+
+#, c-format
+msgctxt "sync_notification"
+msgid "Synchronizing %1$s…"
+msgstr ""
+
+msgctxt "sync_upload_success"
+msgid "Uploaded successfully."
+msgstr "Upload del cast effettuato."
+
+#, c-format
+msgctxt "sync_upload_success_message"
+msgid "“%1$s” has been uploaded."
+msgstr "“%1$s” è stato caricato."
+
+#. placeholder 1 is the item title
+#, c-format
+msgctxt "sync_downloading"
+msgid "Downloading “%1$s”…"
+msgstr "Sto caricando “%1$s”…"
+
+#. placeholder 1 is the item title
+#, c-format
+msgctxt "sync_uploading"
+msgid "Uploading “%1$s”…"
+msgstr "Uploading “%1$s”…"
+
+msgctxt "error_uploading_media"
+msgid "Error uploading media."
+msgstr "Errore nell'upload del media."
+
+msgctxt "error_sync_upload_fail"
+msgid "Error uploading."
+msgstr "Errore nell'upload."
+
+#. placeholder 1 is the item title
+#, c-format
+msgctxt "error_sync_upload_fail_message"
+msgid "“%1$s” failed to upload."
+msgstr "“%1$s” non è riuscito a caricare."
+
+#. placeholder 1 is the item title
+#, c-format
+msgctxt "error_sync_no_data_network"
+msgid ""
+"Cannot sync %1$s: no data network. Please check your connection and try "
+"again."
+msgstr ""
+
+#, c-format
+msgctxt "username_label"
+msgid "%1$s username"
+msgstr ""
+
+msgctxt "password_label"
+msgid "Password"
+msgstr "Password"
+
+msgctxt "login_message_authenticating"
+msgid "authenticating…"
+msgstr "autenticando…"
+
+msgctxt "login_message_loginfail"
+msgid "Invalid username or password."
+msgstr "Nome utente o password non valida."
+
+msgctxt "login_message_login_empty_password"
+msgid "Please enter a password."
+msgstr "Per cortesia inserisci la password."
+
+#, c-format
+msgctxt "login_message_login_empty_username"
+msgid "Please enter your %1$s username and password."
+msgstr ""
+
+#. Placeholder here is for application name
+#, c-format
+msgctxt "signup_text"
+msgid "Register to join %1$s"
+msgstr "Registrati per utilizzare %1$s"
+
+#. Placeholder here is for application name
+#, c-format
+msgctxt "login_title"
+msgid "%1$s Login"
+msgstr "%1$s Login"
+
+#. Hint for when the email address is the user's login
+msgctxt "auth_email_login_hint"
+msgid "alice@example.org"
+msgstr "alice@example.org"
+
+msgctxt "auth_username_hint"
+msgid "acarroll"
+msgstr "acarroll"
+
+msgctxt "auth_password_hint"
+msgid "password"
+msgstr "password"
+
+msgctxt "auth_login"
+msgid "Login"
+msgstr "Login"
+
+msgctxt "auth_logout"
+msgid "Logout"
+msgstr ""
+
+#. placeholder 1 is app name
+#, c-format
+msgctxt "auth_logout_title"
+msgid "%1$s Logout"
+msgstr ""
+
+#. placeholder 1 is app name
+#, c-format
+msgctxt "auth_logout_message"
+msgid ""
+"This will log you out of %1$s and delete all synchronized content from "
+"your device."
+msgstr ""
+
+#. Generic user-facing notices
+msgctxt "notice_databases_reset"
+msgid "Local database reset."
+msgstr "Risistemazione di database locale."
+
+#. placeholder 1 is app name
+#, c-format
+msgctxt "auth_register_title"
+msgid "%1$s Registration"
+msgstr ""
+
+msgctxt "register_your_name_label"
+msgid "Your name"
+msgstr ""
+
+msgctxt "register_your_name_hint"
+msgid "Alice Carroll"
+msgstr ""
+
+msgctxt "register_email_address"
+msgid "Email address"
+msgstr ""
+
+msgctxt "register_email_address_hint"
+msgid "alice@example.org"
+msgstr ""
+
+msgctxt "register"
+msgid "Register"
+msgstr ""
+
+msgctxt "register_password_confirm_hint"
+msgid "confirm password"
+msgstr ""
+
+msgctxt "auth_error_could_not_contact_server"
+msgid "Could not contact server."
+msgstr "Impossibile contattare il server."
+
+msgctxt "auth_error_server_returned_invalid_data"
+msgid "Server returned invalid data."
+msgstr "Il server ha comunicato dati non corretti."
+
+#, c-format
+msgctxt "auth_error_network_protocol_error"
+msgid "Network protocol error: %1$s"
+msgstr "Errore di protocollo Network: %1$s"
+
+msgctxt "register_message_empty_name"
+msgid "Please enter your name"
+msgstr ""
+
+msgctxt "register_message_empty_email_address"
+msgid "Please enter your email address"
+msgstr ""
+
+msgctxt "register_message_empty_username"
+msgid "Please enter your desired username"
+msgstr ""
+
+msgctxt "register_message_empty_password"
+msgid "Please enter a password"
+msgstr ""
+
+msgctxt "register_message_password_mismatch"
+msgid "This does not match your first password"
+msgstr ""
+
+#. Incremental locator
+msgctxt "error_no_providers"
+msgid "Error: no location providers"
+msgstr "Errore: non ci sono location providers"
+
