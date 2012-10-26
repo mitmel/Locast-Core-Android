@@ -31,7 +31,7 @@ public class Commentable {
     public static final SyncMap SYNC_MAP = new SyncMap();
 
     static {
-        SYNC_MAP.put(Columns.COL_COMMENT_DIR_URI, new JsonSyncableItem.SyncFieldMap("comments_uri",
+        SYNC_MAP.put(Columns.COL_COMMENT_DIR_URI, new JsonSyncableItem.SyncFieldMap("comments",
                 SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));
     }
 }
