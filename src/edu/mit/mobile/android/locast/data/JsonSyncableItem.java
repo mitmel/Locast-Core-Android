@@ -47,6 +47,7 @@ import edu.mit.mobile.android.content.column.BooleanColumn;
 import edu.mit.mobile.android.content.column.DBColumn;
 import edu.mit.mobile.android.content.column.DatetimeColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
+import edu.mit.mobile.android.locast.net.LocastApplicationCallbacks;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.sync.LocastSyncService;
@@ -991,7 +992,8 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
             try {
                 final String childPubUri = item.getString(remoteKey);
                 // TODO optimize so it doesn't need to create a whole new instance
-                final NetworkClient nc = NetworkClient.getInstance(context, account);
+                final NetworkClient nc = ((LocastApplicationCallbacks) context
+                        .getApplicationContext()).getNetworkClient(context, account);
                 final Uri serverUri = nc.getFullUrl(childPubUri);
 
                 LocastSyncService.startSync(context, serverUri, childDir, false);

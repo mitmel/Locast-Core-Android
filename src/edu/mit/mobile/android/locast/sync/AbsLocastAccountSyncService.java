@@ -45,6 +45,7 @@ import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.SyncException;
+import edu.mit.mobile.android.locast.net.LocastApplicationCallbacks;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 
@@ -115,6 +116,11 @@ public abstract class AbsLocastAccountSyncService extends LocastSyncService {
         if (mSyncAdapter != null) {
             AccountManager.get(this).removeOnAccountsUpdatedListener(mSyncAdapter);
         }
+    }
+
+    protected NetworkClient getNetworkClient(Account account) {
+        return ((LocastApplicationCallbacks) this.getApplication()).getNetworkClient(this,
+                account);
     }
 
     private static class LocastSyncAdapter extends AbstractThreadedSyncAdapter implements
@@ -189,7 +195,7 @@ public abstract class AbsLocastAccountSyncService extends LocastSyncService {
             mCurrentlySyncing = account;
             SyncEngine syncEngine = mSyncEngines.get(account);
             if (syncEngine == null) {
-                syncEngine = new SyncEngine(mContext, NetworkClient.getInstance(mContext, account),
+                syncEngine = new SyncEngine(mContext, mContext.getNetworkClient(account),
                         mProvider);
                 mSyncEngines.put(account, syncEngine);
             }

@@ -23,6 +23,7 @@ import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.SyncException;
+import edu.mit.mobile.android.locast.net.LocastApplicationCallbacks;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;
@@ -70,7 +71,8 @@ public abstract class LocastSimpleSyncService extends LocastSyncService {
     @Override
     public void onCreate() {
         super.onCreate();
-        mNetworkClient = NetworkClient.getInstance(this, null);
+        mNetworkClient = ((LocastApplicationCallbacks) getApplication()).getNetworkClient(this,
+                null);
 
         mContentProviderClient = getContentResolver().acquireContentProviderClient(mAuthority);
 

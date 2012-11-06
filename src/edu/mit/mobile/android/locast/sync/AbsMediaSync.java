@@ -69,6 +69,7 @@ import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem;
 import edu.mit.mobile.android.locast.data.SyncException;
 import edu.mit.mobile.android.locast.data.Titled;
+import edu.mit.mobile.android.locast.net.LocastApplicationCallbacks;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient.InputStreamWatcher;
 import edu.mit.mobile.android.locast.net.NotificationProgressListener;
@@ -349,6 +350,11 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
 
     public abstract boolean getKeepOffline(Uri castMediaUri, CastMedia castMedia);
 
+
+    protected NetworkClient getNetworkClient(Account account) {
+        return ((LocastApplicationCallbacks) this.getApplication()).getNetworkClient(this, account);
+    }
+
     /**
      * Implement this to retrieve the account to use to sync.
      * {@link AbsLocastAuthenticator#getFirstAccount(Context, String)} may be useful here.
@@ -493,7 +499,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
         // upload
         try {
             // TODO this should get the account info from something else.
-            final NetworkClient nc = NetworkClient.getInstance(this, getAccount());
+            final NetworkClient nc = getNetworkClient(getAccount());
 
             final JSONObject updatedCastMedia = nc.uploadContentWithNotification(this, titledItem,
                     uploadPath, locMedia, contentType, NetworkClient.UploadType.RAW_POST);
@@ -579,7 +585,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
      */
     public boolean downloadMediaFile(String pubUri, File saveFile, Uri castMediaUri)
             throws SyncException {
-        final NetworkClient nc = NetworkClient.getInstance(this, getAccount());
+        final NetworkClient nc = getNetworkClient(getAccount());
         try {
             boolean dirty = true;
             // String contentType = null;

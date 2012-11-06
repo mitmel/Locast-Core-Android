@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 import org.json.JSONException;
 
 import android.app.Activity;
-import android.content.Context;
+import android.app.Application;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -25,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.net.ClientResponseException;
+import edu.mit.mobile.android.locast.net.LocastApplicationCallbacks;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 
@@ -262,7 +263,7 @@ public abstract class AbsRegisterActivity extends FragmentActivity {
             return;
         }
 
-        new RegisterTask(this).execute();
+        new RegisterTask(this.getApplication()).execute();
     }
 
     private String getErrorText(Bundle data, String key) {
@@ -335,11 +336,11 @@ public abstract class AbsRegisterActivity extends FragmentActivity {
 
     private class RegisterTask extends AsyncTask<Void, Integer, Bundle> {
 
-        private final Context mContext;
+        private final Application mContext;
 
         private Exception mException;
 
-        public RegisterTask(Context context) {
+        public RegisterTask(Application context) {
             mContext = context;
         }
 
@@ -350,7 +351,9 @@ public abstract class AbsRegisterActivity extends FragmentActivity {
 
         @Override
         protected Bundle doInBackground(Void... params) {
-            final NetworkClient nc = NetworkClient.getInstance(mContext, null);
+
+            final NetworkClient nc = ((LocastApplicationCallbacks) mContext).getNetworkClient(
+                    mContext, null);
             try {
                 final String username = trimEntry(getUsername());
                 final String password = getPassword().toString();
