@@ -48,6 +48,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import edu.mit.mobile.android.locast.R;
+import edu.mit.mobile.android.locast.net.LocastApplicationCallbacks;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 
@@ -267,9 +268,8 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
         }
         mPassword = mPasswordEdit.getText().toString();
         if (validateEntry()) {
-            final String baseUrl = getApiUrl();
             mAuthenticationTask = new AuthenticationTask(this);
-            mAuthenticationTask.execute(baseUrl, mUsername, mPassword);
+            mAuthenticationTask.execute(mUsername, mPassword);
         }
     }
 
@@ -279,7 +279,9 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
      * @return the base URL for the Locast API
      */
     public String getApiUrl() {
-        return NetworkClient.getBaseUrlFromManifest(getApplicationContext());
+        final NetworkClient nc = ((LocastApplicationCallbacks) getApplication()).getNetworkClient(
+                this, null);
+        return nc.getBaseUrl();
     }
 
     /**
@@ -440,8 +442,9 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
         protected Bundle doInBackground(String... userPass) {
 
             try {
-                return NetworkClient.authenticate(AbsLocastAuthenticatorActivity.this, userPass[0],
-                        userPass[1], userPass[2]);
+                final NetworkClient nc = ((LocastApplicationCallbacks) getApplication())
+                        .getNetworkClient(AbsLocastAuthenticatorActivity.this, null);
+                return nc.authenticate(userPass[0], userPass[1]);
 
             } catch (final IOException e) {
                 reason = mActivity.getString(R.string.auth_error_could_not_contact_server);

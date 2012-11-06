@@ -318,7 +318,7 @@ public class NetworkClient extends DefaultHttpClient {
         }
     }
 
-    public static String getBaseUrlFromManifest(Context context) {
+    private static String getBaseUrlFromManifest(Context context) {
         ApplicationInfo appInfo;
         try {
 
@@ -455,20 +455,9 @@ public class NetworkClient extends DefaultHttpClient {
 
     }
 
-    /**
-     * @param context
-     * @param baseUrl
-     * @param username
-     * @param password
-     * @return
-     * @throws IOException
-     * @throws JSONException
-     * @throws NetworkProtocolException
-     */
-    public static Bundle authenticate(Context context, String baseUrl, String username,
-            String password) throws IOException, JSONException, NetworkProtocolException {
-        return authenticate(context, new NetworkClient(context, baseUrl), username, password);
-
+    public Bundle authenticate(String username, String password) throws IOException, JSONException,
+            NetworkProtocolException {
+        return authenticate(mContext, this, username, password);
     }
 
     private static Bundle authenticate(Context context, NetworkClient nc, String username,
