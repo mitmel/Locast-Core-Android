@@ -30,6 +30,7 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.media.ExifInterface;
 import android.net.Uri;
@@ -89,7 +90,17 @@ public abstract class CastMedia extends JsonSyncableItem {
         return media;
     }
 
-    public static Intent showMedia(Context context, Cursor c, Uri castMediaUri) {
+    /**
+     * Given a cursor pointing to a cast media item, attempt to resolve an intent that will show it.
+     * 
+     * @param context
+     * @param c
+     *            a cast media cursor pointing to the desired item
+     * @param castMediaDir
+     * @return an intent that will show the media or null if there are none found
+     */
+    public static Intent showMedia(Context context, Cursor c, Uri castMediaDir)
+ {
         final String mediaString = c.getString(c.getColumnIndex(CastMedia.COL_MEDIA_URL));
         final String locMediaString = c.getString(c.getColumnIndex(CastMedia.COL_LOCAL_URL));
         String mimeType = null;
@@ -111,32 +122,42 @@ public abstract class CastMedia extends JsonSyncableItem {
                 mimeType = null;
             }
         } else {
-            Log.e(TAG, "asked to show media for " + castMediaUri + " but there was nothing to show");
+            Log.e(TAG, "asked to show media for " + castMediaDir + " but there was nothing to show");
             return null;
         }
 
         final Intent i = new Intent(Intent.ACTION_VIEW);
         i.setDataAndType(media, mimeType);
 
+        final PackageManager pm = context.getPackageManager();
+
+        // if we are set up to play back the content locally and it's a video, do such...
         if (mimeType != null && mimeType.startsWith("video/")) {
-            return new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(castMediaUri,
-                    c.getLong(c.getColumnIndex(CastMedia._ID))));
-        } else {
-            // setting the MIME type for URLs doesn't work.
-            if (i.resolveActivity(context.getPackageManager()) != null) {
-                return i;
-            } else {
-                // try it again, but without a mime type.
-                if (mimeType != null) {
-                    i.setDataAndType(media, null);
-                }
-                if (i.resolveActivity(context.getPackageManager()) != null) {
-                    return i;
-                } else {
-                    return null;
-                }
+            final Intent localPlayback = new Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(
+                    castMediaDir, c.getLong(c.getColumnIndex(CastMedia._ID))));
+
+            if (localPlayback.resolveActivity(pm) != null) {
+                return localPlayback;
             }
         }
+
+        // setting the MIME type for URLs doesn't work.
+        if (i.resolveActivity(pm) != null) {
+            return i;
+        }
+
+        // try it again, but without a mime type.
+        if (mimeType != null) {
+            i.setDataAndType(media, null);
+        }
+
+        if (i.resolveActivity(pm) != null) {
+            return i;
+        }
+
+        // Oh bother, nothing worked.
+        return null;
+
     }
 
     /**
@@ -203,8 +224,6 @@ public abstract class CastMedia extends JsonSyncableItem {
             throw new MediaProcessingException("Don't know how to process URI scheme "
                     + content.getScheme() + " for " + content);
         }
-
-
 
         // ensure that there's always a capture time, even if it's faked.
         if (!cv.containsKey(CastMedia.COL_CAPTURE_TIME)) {
