@@ -35,8 +35,6 @@ by adding a block similar to this to your `<application />` section of your
             android:name="edu.mit.mobile.android.locast.base_url"
             android:value="http://example.com/openlocast/api/" />
 
-[strings.xml](res/values/strings.xml#default_api_url).
-
 Dependencies
 ------------
 
