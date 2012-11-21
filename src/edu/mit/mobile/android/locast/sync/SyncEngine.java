@@ -1123,6 +1123,11 @@ public class SyncEngine {
                 final Uri localUri = isDir ? ContentUris.withAppendedId(toSync, id) : toSync;
                 final String postUri = mProvider.getPostPath(mContext, localUri);
 
+                if (postUri == null) {
+                    throw new SyncException(
+                            "Error: no post path provided. Perhaps a child is being sync'd before its parent.");
+                }
+
                 Intent intent = new Intent(SYNC_STATUS_CHANGED);
                 intent.putExtra(EXTRA_SYNC_STATUS, "castBegin");
                 intent.putExtra(EXTRA_SYNC_ID, id);

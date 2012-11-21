@@ -208,6 +208,16 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
         return (SyncableProvider) mCr.acquireContentProviderClient(uri).getLocalContentProvider();
     }
 
+    /**
+     * Implement this and call {@link #enqueueUnpublishedMedia(Uri)} with a uri pointing to all the
+     * items you wish to enqueue. Unpublished items will be selected from that uri. This will be
+     * called at the start of a sync, to ensure media gets published quickly. Usually this can be as
+     * simple as something like this:
+     *
+     * {@code enqueueUnpublishedMedia(Cast.CAST_MEDIA.getAll(Cast.CONTENT_URI));}
+     *
+     * @throws SyncException
+     */
     public abstract void enqueueUnpublishedMedia() throws SyncException;
 
     public String[] getCastMediaProjection() {
@@ -349,7 +359,6 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
     }
 
     public abstract boolean getKeepOffline(Uri castMediaUri, CastMedia castMedia);
-
 
     protected NetworkClient getNetworkClient(Account account) {
         return ((LocastApplicationCallbacks) this.getApplication()).getNetworkClient(this, account);
@@ -632,10 +641,9 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
                 final HttpResponse res = nc.get(pubUri);
                 final HttpEntity ent = res.getEntity();
                 final ProgressNotification notification = new ProgressNotification(this, getString(
-                        R.string.sync_downloading, castTitle),
-                        ProgressNotification.TYPE_DOWNLOAD, PendingIntent.getActivity(this, 0,
-                                new Intent(Intent.ACTION_VIEW, titledItem)
-                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0), false);
+                        R.string.sync_downloading, castTitle), ProgressNotification.TYPE_DOWNLOAD,
+                        PendingIntent.getActivity(this, 0, new Intent(Intent.ACTION_VIEW,
+                                titledItem).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0), false);
 
                 final NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                 final NotificationProgressListener npl = new NotificationProgressListener(nm,
