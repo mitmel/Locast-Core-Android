@@ -30,7 +30,10 @@ import edu.mit.mobile.android.locast.R;
 
 /**
  * A wrapper for a LocationManager that incrementally gets location for you, starting with a coarse
- * locator then moving to a more accurate one.
+ * locator then moving to a more accurate one. This also incorporates the recommended
+ * currentBestLocation system described in
+ * http://developer.android.com/intl/de/guide/topics/location/strategies.html and will only return
+ * locations that are the current best location.
  *
  * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
  *
@@ -40,20 +43,18 @@ public class IncrementalLocator {
 
     private final LocationManager lm;
 
-    static final Criteria initialCriteria = new Criteria();
     static final Criteria sustainedCriteria = new Criteria();
-
-    private boolean gotLocation = false;
-
-    private String currentProvider;
 
     private LocationListener mWrappedLocationListener;
 
     private final Context mContext;
 
     public static final int PROVIDER_TYPE_LAST_KNOWN = 1;
-    public static final int PROVIDER_TYPE_COARSE = 2;
-    public static final int PROVIDER_TYPE_FINE = 3;
+    public static final int PROVIDER_TYPE_SENSED = 2;
+
+    private static final long MIN_UPDATE_TIME = 5000; // ms
+
+    private static final float MIN_UPDATE_DISTANCE = 100; // m
 
     private int mProviderType;
 
@@ -62,8 +63,6 @@ public class IncrementalLocator {
     private long mMaxAge = NO_MAX_AGE;
 
     static {
-
-        initialCriteria.setAccuracy(Criteria.ACCURACY_COARSE);
         sustainedCriteria.setAccuracy(Criteria.ACCURACY_FINE);
     }
 
@@ -103,11 +102,12 @@ public class IncrementalLocator {
         }
 
         mWrappedLocationListener = locationListener;
-        final String roughProvider = lm.getBestProvider(initialCriteria, true);
+        final String roughProvider = LocationManager.NETWORK_PROVIDER;
 
-        if (roughProvider == null) {
-            Toast.makeText(mContext, mContext.getString(R.string.error_no_providers),
-                    Toast.LENGTH_LONG).show();
+        final String fineProvider = lm.getBestProvider(sustainedCriteria, true);
+
+        if (!lm.isProviderEnabled(fineProvider) || !lm.isProviderEnabled(roughProvider)) {
+            Toast.makeText(mContext, R.string.error_no_providers, Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -116,26 +116,14 @@ public class IncrementalLocator {
 
         notifyWrappedListener(loc);
 
-        mProviderType = PROVIDER_TYPE_COARSE;
-
-        requestLocationUpdates(roughProvider);
-
-        if (currentProvider != null) {
-            requestLocationUpdates(currentProvider);
-        } else {
-            Toast.makeText(mContext, R.string.error_no_providers, Toast.LENGTH_LONG).show();
-        }
-    }
-
-    private void requestLocationUpdates(String provider) {
-        if (currentProvider != null) {
-            lm.removeUpdates(mLocationListener);
-        }
-        currentProvider = provider;
-        lm.requestLocationUpdates(provider, 5000, 100, mLocationListener);
-        mProviderType = PROVIDER_TYPE_FINE;
-        lm.requestLocationUpdates(lm.getBestProvider(sustainedCriteria, true), 1000, 100,
+        lm.requestLocationUpdates(roughProvider, MIN_UPDATE_TIME, MIN_UPDATE_DISTANCE,
                 mLocationListener);
+
+        mProviderType = PROVIDER_TYPE_SENSED;
+
+        lm.requestLocationUpdates(fineProvider, MIN_UPDATE_TIME, MIN_UPDATE_DISTANCE,
+                mLocationListener);
+
     }
 
     /**
@@ -172,6 +160,22 @@ public class IncrementalLocator {
         }
     }
 
+    /**
+     * Gets the time of the fix. This will be either in time since 1970 or time since boot,
+     * depending on Android version. It's mostly useful for comparing times.
+     *
+     * @param loc
+     * @return fix time, in ms
+     */
+    private long getLocationTime(Location loc) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            return loc.getElapsedRealtimeNanos() / 1000000;
+        } else {
+            // this isn't recommended, but it's all there is.
+            return loc.getTime();
+        }
+    }
+
     public boolean isListenerRegistered(LocationListener locListener) {
         return mWrappedLocationListener != null && mWrappedLocationListener == locListener;
     }
@@ -186,16 +190,14 @@ public class IncrementalLocator {
         mWrappedLocationListener = null;
     }
 
+    private Location mCurrentBestLocation;
+
     private final LocationListener mLocationListener = new LocationListener() {
 
         public void onLocationChanged(Location location) {
-            notifyWrappedListener(location);
-
-            if (!gotLocation) {
-                mProviderType = PROVIDER_TYPE_FINE;
-                final String accurateProvider = lm.getBestProvider(sustainedCriteria, true);
-                requestLocationUpdates(accurateProvider);
-                gotLocation = true;
+            if (mCurrentBestLocation == null || isBetterLocation(location, mCurrentBestLocation)) {
+                notifyWrappedListener(location);
+                mCurrentBestLocation = location;
             }
         }
 
@@ -218,11 +220,90 @@ public class IncrementalLocator {
         }
     };
 
-    public Location getLastKnownLocation() {
-        if (currentProvider == null) {
-            return null;
+    // from http://developer.android.com/intl/de/guide/topics/location/strategies.html
+
+    private static final int TWO_MINUTES = 1000 * 60 * 2;
+
+    /**
+     * Determines whether one Location reading is better than the current Location fix
+     *
+     * @param location
+     *            The new Location that you want to evaluate
+     * @param currentBestLocation
+     *            The current Location fix, to which you want to compare the new one
+     */
+    protected boolean isBetterLocation(Location location, Location currentBestLocation) {
+        if (currentBestLocation == null) {
+            // A new location is always better than no location
+            return true;
         }
-        return lm.getLastKnownLocation(currentProvider);
+
+        // Check whether the new location fix is newer or older
+        final long timeDelta = getLocationTime(location) - getLocationTime(currentBestLocation);
+        final boolean isSignificantlyNewer = timeDelta > TWO_MINUTES;
+        final boolean isSignificantlyOlder = timeDelta < -TWO_MINUTES;
+        final boolean isNewer = timeDelta > 0;
+
+        // If it's been more than two minutes since the current location, use the new location
+        // because the user has likely moved
+        if (isSignificantlyNewer) {
+            return true;
+            // If the new location is more than two minutes older, it must be worse
+        } else if (isSignificantlyOlder) {
+            return false;
+        }
+
+        // Check whether the new location fix is more or less accurate
+        final int accuracyDelta = (int) (location.getAccuracy() - currentBestLocation.getAccuracy());
+        final boolean isLessAccurate = accuracyDelta > 0;
+        final boolean isMoreAccurate = accuracyDelta < 0;
+        final boolean isSignificantlyLessAccurate = accuracyDelta > 200;
+
+        // Check if the old and new location are from the same provider
+        final boolean isFromSameProvider = isSameProvider(location.getProvider(),
+                currentBestLocation.getProvider());
+
+        // Determine location quality using a combination of timeliness and accuracy
+        if (isMoreAccurate) {
+            return true;
+        } else if (isNewer && !isLessAccurate) {
+            return true;
+        } else if (isNewer && !isSignificantlyLessAccurate && isFromSameProvider) {
+            return true;
+        }
+        return false;
+    }
+
+    /** Checks whether two providers are the same */
+    private boolean isSameProvider(String provider1, String provider2) {
+        if (provider1 == null) {
+            return provider2 == null;
+        }
+        return provider1.equals(provider2);
+    }
+
+    // end of section from developer.android.com
+
+    /**
+     * Checks all providers to find the best last known location.
+     *
+     * @return the best last known location
+     */
+    public Location getLastKnownLocation() {
+        Location best = null;
+        Location loc;
+
+        for (final String provider : lm.getAllProviders()) {
+
+            loc = lm.getLastKnownLocation(provider);
+            if (loc == null) {
+                continue;
+            }
+
+            best = (best == null || isBetterLocation(loc, best)) ? loc : best;
+        }
+
+        return best;
     }
 
     public static interface OnIncrementalLocationListener extends LocationListener {
