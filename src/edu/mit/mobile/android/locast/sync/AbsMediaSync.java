@@ -361,7 +361,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
     public abstract boolean getKeepOffline(Uri castMediaUri, CastMedia castMedia);
 
     protected NetworkClient getNetworkClient(Account account) {
-        return ((LocastApplicationCallbacks) this.getApplication()).getNetworkClient(this, account);
+        return ((LocastApplicationCallbacks) this.getApplication()).getNetworkClientForAccount(this, account);
     }
 
     /**

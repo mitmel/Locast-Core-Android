@@ -926,7 +926,7 @@ public class NetworkClient extends DefaultHttpClient {
      * @see #getBaseUrlFromManifest(Context)
      * @see #getFullUrlAsString(Context, String)
      */
-    public static Uri getFullUrl(Context context, String path) {
+    protected static Uri getFullUrl(Context context, String path) {
         return Uri.parse(getFullUrlAsString(context, path));
     }
 
@@ -939,7 +939,7 @@ public class NetworkClient extends DefaultHttpClient {
      * @return a full URL
      * @see #getBaseUrlFromManifest(Context)
      */
-    public static String getFullUrlAsString(Context context, String path) {
+    protected static String getFullUrlAsString(Context context, String path) {
         final String baseUrl = getBaseUrlFromManifest(context);
         return URI.create(baseUrl).resolve(path).normalize().toASCIIString();
     }

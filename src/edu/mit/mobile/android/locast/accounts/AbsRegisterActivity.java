@@ -352,7 +352,7 @@ public abstract class AbsRegisterActivity extends FragmentActivity {
         @Override
         protected Bundle doInBackground(Void... params) {
 
-            final NetworkClient nc = ((LocastApplicationCallbacks) mContext).getNetworkClient(
+            final NetworkClient nc = ((LocastApplicationCallbacks) mContext).getNetworkClientForAccount(
                     mContext, null);
             try {
                 final String username = trimEntry(getUsername());

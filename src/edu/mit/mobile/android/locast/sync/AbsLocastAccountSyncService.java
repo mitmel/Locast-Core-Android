@@ -119,7 +119,7 @@ public abstract class AbsLocastAccountSyncService extends LocastSyncService {
     }
 
     protected NetworkClient getNetworkClient(Account account) {
-        return ((LocastApplicationCallbacks) this.getApplication()).getNetworkClient(this,
+        return ((LocastApplicationCallbacks) this.getApplication()).getNetworkClientForAccount(this,
                 account);
     }
 

@@ -5,5 +5,12 @@ import android.content.Context;
 
 public interface LocastApplicationCallbacks {
 
-    public NetworkClient getNetworkClient(Context context, Account account);
+    /**
+     * Implement this to get the network client that will be used for the given account.
+     * 
+     * @param context
+     * @param account
+     * @return
+     */
+    public NetworkClient getNetworkClientForAccount(Context context, Account account);
 }

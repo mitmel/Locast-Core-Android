@@ -279,7 +279,7 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
      * @return the base URL for the Locast API
      */
     public String getApiUrl() {
-        final NetworkClient nc = ((LocastApplicationCallbacks) getApplication()).getNetworkClient(
+        final NetworkClient nc = ((LocastApplicationCallbacks) getApplication()).getNetworkClientForAccount(
                 this, null);
         return nc.getBaseUrl();
     }
@@ -443,7 +443,7 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
 
             try {
                 final NetworkClient nc = ((LocastApplicationCallbacks) getApplication())
-                        .getNetworkClient(AbsLocastAuthenticatorActivity.this, null);
+                        .getNetworkClientForAccount(AbsLocastAuthenticatorActivity.this, null);
                 return nc.authenticate(userPass[0], userPass[1]);
 
             } catch (final IOException e) {

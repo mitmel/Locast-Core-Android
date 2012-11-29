@@ -993,7 +993,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
                 final String childPubUri = item.getString(remoteKey);
                 // TODO optimize so it doesn't need to create a whole new instance
                 final NetworkClient nc = ((LocastApplicationCallbacks) context
-                        .getApplicationContext()).getNetworkClient(context, account);
+                        .getApplicationContext()).getNetworkClientForAccount(context, account);
                 final Uri serverUri = nc.getFullUrl(childPubUri);
 
                 LocastSyncService.startSync(context, serverUri, childDir, false);
