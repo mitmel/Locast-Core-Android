@@ -285,13 +285,16 @@ public class NetworkClient extends DefaultHttpClient {
     /************************* credentials and pairing **********************/
 
     /**
+     * Gets the instance of the Network Client for this process.
+     *
      * @param context
      * @param account
      *            the account to use for authentication or null if there is no account
      * @return a new NetworkClient
      */
     public static NetworkClient getInstance(Context context, Account account) {
-
+        // ensure that we don't hold on to activities here
+        context = context.getApplicationContext();
         if (account == null) {
             try {
 
