@@ -54,6 +54,7 @@ import com.beoui.geocell.model.Tuple;
  * @author (java portage) Alexandre Gellibert
  *
  */
+@SuppressWarnings("deprecation")
 public final class GeocellUtils {
 
     // Geocell algorithm constants.

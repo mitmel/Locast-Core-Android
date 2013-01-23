@@ -35,9 +35,6 @@ public class MediaUtils {
     }
 
     private static final String TMP_SD_LOCATION_JPG = TMP_SD_LOCATION + ".jpg";
-    private static final String TMP_SD_LOCATION_MP4 = TMP_SD_LOCATION + ".mp4";
-
-
 
     private static boolean hasImageCaptureBug() {
         final ArrayList<String> devices = new ArrayList<String>();

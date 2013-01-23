@@ -87,11 +87,6 @@ public class SyncEngine {
     /**
      * in nanoseconds
      */
-    private static final long TIMEOUT_MAX_ITEM_WAIT = (long) (30 * 1e9);
-
-    /**
-     * in nanoseconds
-     */
     static final long TIMEOUT_AUTO_SYNC_MINIMUM = (long) (60 * 1e9);
 
     private final LastUpdatedMap<Uri> mLastUpdated = new LastUpdatedMap<Uri>(
@@ -1457,10 +1452,6 @@ public class SyncEngine {
          * The remoteJson as CV
          */
         ContentValues remoteCVs;
-
-        public boolean isUpToDate() {
-            return state == SyncState.ALREADY_UP_TO_DATE || state == SyncState.NOW_UP_TO_DATE;
-        }
 
         @Override
         public String toString() {

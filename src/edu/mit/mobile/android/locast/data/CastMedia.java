@@ -192,7 +192,6 @@ public abstract class CastMedia extends JsonSyncableItem {
         // details
 
         final CastMediaInfo castMediaInfo = new CastMediaInfo();
-        GeoPoint location;
 
         if ("content".equals(content.getScheme())) {
             // XXX figure out how to make this work with a static method. Maybe make this method
@@ -207,7 +206,6 @@ public abstract class CastMedia extends JsonSyncableItem {
                         + content);
             }
             mediaPath = content.toString();
-            location = null;
 
             if ("image/jpeg".equals(mimeType)) {
                 try {

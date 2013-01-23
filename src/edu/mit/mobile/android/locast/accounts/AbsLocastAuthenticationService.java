@@ -25,7 +25,6 @@ import android.os.IBinder;
  * IBinder.
  */
 public abstract class AbsLocastAuthenticationService extends Service {
-    private static final String TAG = AbsLocastAuthenticationService.class.getSimpleName();
     private AbsLocastAuthenticator mAbsLocastAuthenticator;
 
     public static final String USERDATA_USERID = "id";

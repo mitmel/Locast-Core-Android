@@ -144,6 +144,7 @@ public abstract class Locatable {
     private static final Pattern LOC_STRING_REGEX = Pattern
             .compile("^([\\d\\.-]+),([\\d\\.-]+)(?:,([\\d\\.]+))?");
 
+    // TODO finish this query. Currently ignores distance parameter
     public Cursor queryByLocation(SQLiteQueryBuilder qb, SQLiteDatabase db, String locString,
             String locatableItemTable, String[] projection, String selection,
             String[] selectionArgs, String sortOrder) {
@@ -170,7 +171,7 @@ public abstract class Locatable {
         final StringBuilder selSb = new StringBuilder();
 
         boolean join = false;
-        for (final String adj : adjacent) {
+        for (int i = 0; i < adjacent.size(); i++) {
             if (join) {
                 selSb.append(" OR ");
             } else {
