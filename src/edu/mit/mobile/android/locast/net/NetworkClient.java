@@ -1465,7 +1465,7 @@ public class NetworkClient extends DefaultHttpClient {
                 throw new RuntimeException("provider for " + favoritable
                         + " must be in the same process as the calling class");
             }
-            final HttpResponse hr = post(provider.getPublicPath(mContext, favoritable)
+            final HttpResponse hr = post(provider.getPublicPath(mContext, favoritable, this)
                     + "favorite/", newStateString);
             final JSONObject serverStateObj = toJsonObject(hr);
             final boolean serverState = serverStateObj.getBoolean("is_favorite");

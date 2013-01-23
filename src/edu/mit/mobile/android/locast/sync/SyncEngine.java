@@ -235,7 +235,7 @@ public class SyncEngine {
             if (pubPath == null) {
                 // we should avoid calling this too much as it
                 // can be expensive
-                pubPath = mProvider.getPublicPath(mContext, toSync);
+                pubPath = mProvider.getPublicPath(mContext, toSync, mNetworkClient);
             }
         } catch (final NoPublicPath e) {
             // TODO this is a special case and this is probably not the best place to handle this.
@@ -1051,7 +1051,7 @@ public class SyncEngine {
             SyncException, NoPublicPath {
 
         final String itemPubPath = itemStatus.remote != null ? itemStatus.remote : mProvider
-                .getPublicPath(mContext, localUri);
+                .getPublicPath(mContext, localUri, mNetworkClient);
 
         // requeries to ensure that when it converts it to JSON, it has all the columns.
         // The QUERY_RETURN_DELETED flag will be removed and this will be treated as a null
@@ -1121,7 +1121,7 @@ public class SyncEngine {
                 final long id = uploadMe.getLong(idCol);
 
                 final Uri localUri = isDir ? ContentUris.withAppendedId(toSync, id) : toSync;
-                final String postUri = mProvider.getPostPath(mContext, localUri);
+                final String postUri = mProvider.getPostPath(mContext, localUri, mNetworkClient);
 
                 if (postUri == null) {
                     throw new SyncException(

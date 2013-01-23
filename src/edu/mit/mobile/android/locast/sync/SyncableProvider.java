@@ -18,17 +18,17 @@ import edu.mit.mobile.android.locast.net.NetworkClient;
  * This interface is intended for a {@link ContentProvider} to make its content syncable with the
  * {@link SyncEngine}.
  * </p>
- * 
+ *
  * <p>
  * If using {@link SimpleContentProvider}, you can instead use {@link SyncableSimpleContentProvider}
  * to gain sync functionality.
  * </p>
- * 
+ *
  * <p>
  * Other classes implementing this interface have a few special details to handle in order to
  * interface with the {@link SyncEngine}.
  * </p>
- * 
+ *
  * <p>
  * On {@link ContentProvider#insert(Uri, android.content.ContentValues)} and
  * {@link ContentProvider#update(Uri, android.content.ContentValues, String, String[])}
@@ -37,10 +37,10 @@ import edu.mit.mobile.android.locast.net.NetworkClient;
  * also {@link #FLAG_DO_NOT_CHANGE_DIRTY} for details on what needs to be handled and how.</li>
  * <li>Handle {@link JsonSyncableItem#COL_DELETED}. See also {@link #QUERY_RETURN_DELETED}.
  * </ul>
- * 
+ *
  * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
  * @see SyncableSimpleContentProvider
- * 
+ *
  */
 public interface SyncableProvider {
 
@@ -89,12 +89,14 @@ public interface SyncableProvider {
      * @param context
      * @param uri
      *            local content URL
+     * @param networkClient
+     *            a instance of the network client
      * @return a URL or relative URL (based on the {@link NetworkClient} base URL) which represents
      *         the local URL
      * @throws NoPublicPath
      *             if there is no public path
      */
-    public String getPublicPath(Context context, Uri uri) throws NoPublicPath;
+    public String getPublicPath(Context context, Uri uri, NetworkClient networkClient) throws NoPublicPath;
 
     /**
      * If this method returns true, the {@link SyncEngine} will attempt to sync it. If false, it
@@ -106,13 +108,15 @@ public interface SyncableProvider {
     public boolean canSync(Uri uri);
 
     /**
-     * @param cr
      * @param uri
+     * @param networkClient
+     *            a instance of the network client
+     * @param cr
      * @return The path that one should POST to for the given content item. Should always point to
      *         an item, not a dir.
      * @throws NoPublicPath
      */
-    public String getPostPath(Context context, Uri uri) throws NoPublicPath;
+    public String getPostPath(Context context, Uri uri, NetworkClient networkClient) throws NoPublicPath;
 
     /**
      * @return the authority that this provider handles

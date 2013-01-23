@@ -21,6 +21,7 @@ import edu.mit.mobile.android.locast.data.JsonSyncableItem;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.SyncMap;
 import edu.mit.mobile.android.locast.data.SyncMapException;
+import edu.mit.mobile.android.locast.net.NetworkClient;
 
 /**
  * A {@link SimpleContentProvider} that implements the {@link SyncableProvider} interface. This
@@ -56,7 +57,7 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
     }
 
     @Override
-    public String getPublicPath(Context context, Uri uri) throws NoPublicPath {
+    public String getPublicPath(Context context, Uri uri, NetworkClient networkClient) throws NoPublicPath {
         final Cursor c = query(uri, PUBLIC_PATH_PROJECTION, null, null, null);
         String publicPath;
         try {
