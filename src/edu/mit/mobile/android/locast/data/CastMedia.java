@@ -92,7 +92,7 @@ public abstract class CastMedia extends JsonSyncableItem {
 
     /**
      * Given a cursor pointing to a cast media item, attempt to resolve an intent that will show it.
-     * 
+     *
      * @param context
      * @param c
      *            a cast media cursor pointing to the desired item
@@ -346,7 +346,7 @@ public abstract class CastMedia extends JsonSyncableItem {
         public ItemSyncMap() {
             super();
 
-            this.addFlag(FLAG_PARENT_MUST_SYNC_FIRST);
+            addFlag(FLAG_PARENT_MUST_SYNC_FIRST);
 
             // put("_resources", );
 

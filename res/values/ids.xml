@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <item name="locast_core__sync_download" type="id"/>
+    <item name="locast_core__sync" type="id"/>
+
+</resources>

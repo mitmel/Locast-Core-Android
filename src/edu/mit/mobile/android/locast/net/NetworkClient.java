@@ -85,11 +85,8 @@ import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -100,11 +97,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
-import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticationService;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
 import edu.mit.mobile.android.locast.data.Titled;
-import edu.mit.mobile.android.locast.notifications.ProgressNotification;
+import edu.mit.mobile.android.locast.sync.NotificationProgressListener;
 import edu.mit.mobile.android.locast.sync.SyncableProvider;
 import edu.mit.mobile.android.utils.StreamUtils;
 
@@ -1068,6 +1064,13 @@ public class NetworkClient extends DefaultHttpClient {
         public void publish(long bytes);
     }
 
+    /**
+     * Wraps an InputStream and periodically publishes to a callback indicating how much has been
+     * transferred.
+     *
+     * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
+     *
+     */
     public static class InputStreamWatcher extends InputStream {
         private static final int GRANULARITY = 1024 * 100; // bytes; number needed to trigger a
                                                             // publish()
@@ -1359,10 +1362,51 @@ public class NetworkClient extends DefaultHttpClient {
         RAW_PUT, FORM_POST, RAW_POST
     }
 
+    public static interface FileTransferProgressListener {
+        /**
+         * Called when the transfer first starts.
+         *
+         * @param contentItem
+         *            the contentItem uri of the item being transferred
+         * @param contentType
+         *            the content type of the media being transferred.
+         * @param totalBytes
+         *            total number of bytes to be transferred.
+         */
+        public void onTransferStart(Uri contentItem, CharSequence title, String contentType,
+                long totalBytes);
+
+        /**
+         * Called periodically while the transfer is ongoing to report progress.
+         *
+         * @param contentItem
+         * @param transferredBytes
+         * @param totalBytes
+         */
+        public void onTransferProgress(Uri contentItem, long transferredBytes, long totalBytes);
+
+        /**
+         * Called when a transfer finishes successfully.
+         *
+         * @param contentItem
+         * @param success
+         *            true if the transfer was successful
+         */
+        public void onTransferComplete(Uri contentItem);
+    }
+
     /**
-     * Uploads the content, displaying a notification in the system tray. The notification will show
-     * a progress bar as the upload goes on and will show a message when finished indicating whether
-     * or not it was successful.
+     * <p>
+     * Uploads the content, calling callbacks on the notification listener.
+     * </p>
+     *
+     * <p>
+     * This will call
+     * {@link NotificationProgressListener#onTransferStart(Uri, CharSequence, String, long)},
+     * {@link NotificationProgressListener#onTransferProgress(Uri, long, long)}, and
+     * {@link NotificationProgressListener#onTransferComplete(Uri)}. If there are errors in the
+     * transfer, they will be delivered as exceptions.
+     * </p>
      *
      * @param context
      * @param titled
@@ -1376,39 +1420,27 @@ public class NetworkClient extends DefaultHttpClient {
      * @throws IOException
      * @throws JSONException
      */
-    public JSONObject uploadContentWithNotification(Context context, Uri titled, String serverPath,
-            Uri localFile, String contentType, UploadType uploadType)
+    public JSONObject uploadContentWithProgressListener(Context context, final Uri titled,
+            String serverPath, Uri localFile, String contentType, UploadType uploadType,
+            final FileTransferProgressListener listener)
             throws NetworkProtocolException, IOException, JSONException {
-        String itemTitle = Titled.getTitle(context, titled);
-        if (itemTitle == null) {
-            itemTitle = "untitled (item #" + titled.getLastPathSegment() + ")";
-        }
+
         JSONObject updatedCastMedia;
-        final ProgressNotification notification = new ProgressNotification(context,
-                context.getString(R.string.sync_uploading, itemTitle),
-                ProgressNotification.TYPE_UPLOAD, PendingIntent.getActivity(context, 0, new Intent(
-                        Intent.ACTION_VIEW, titled).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0), true);
 
-        // assume fail: when successful, all will be reset.
-        notification.successful = false;
-        notification.doneTitle = context.getString(R.string.error_sync_upload_fail);
-        notification.doneText = context.getString(R.string.error_sync_upload_fail_message,
-                itemTitle);
-
-        notification.doneIntent = PendingIntent.getActivity(context, 0, new Intent(
-                Intent.ACTION_VIEW, titled).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0);
-
-        final NotificationManager nm = (NotificationManager) context
-                .getSystemService(Context.NOTIFICATION_SERVICE);
-        final NotificationProgressListener tpl = new NotificationProgressListener(nm, notification,
-                0, titled.hashCode());
-
-        try {
             final AssetFileDescriptor afd = context.getContentResolver().openAssetFileDescriptor(
                     localFile, "r");
             final long max = afd.getLength();
 
-            tpl.setSize(max);
+        listener.onTransferStart(titled, Titled.getTitle(mContext, titled), contentType, max);
+
+            final TransferProgressListener tpl = new TransferProgressListener() {
+
+                @Override
+                public void publish(long bytes) {
+                    listener.onTransferProgress(titled, bytes, max);
+
+                }
+            };
 
             switch (uploadType) {
                 case RAW_PUT:
@@ -1428,20 +1460,8 @@ public class NetworkClient extends DefaultHttpClient {
                     throw new IllegalArgumentException("unhandled upload type: " + uploadType);
             }
 
-            notification.doneTitle = context.getString(R.string.sync_upload_success);
-            notification.doneText = context.getString(R.string.sync_upload_success_message,
-                    itemTitle);
-            notification.successful = true;
+        listener.onTransferComplete(titled);
 
-        } catch (final NetworkProtocolException e) {
-            notification.setUnsuccessful(e.getLocalizedMessage());
-            throw e;
-        } catch (final IOException e) {
-            notification.setUnsuccessful(e.getLocalizedMessage());
-            throw e;
-        } finally {
-            tpl.done();
-        }
         return updatedCastMedia;
     }
 

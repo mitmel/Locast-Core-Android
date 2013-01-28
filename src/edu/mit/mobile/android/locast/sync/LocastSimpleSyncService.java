@@ -1,10 +1,27 @@
 package edu.mit.mobile.android.locast.sync;
 
+/*
+ * Copyright (C) 2011-2013  MIT Mobile Experience Lab
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 import java.io.IOException;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import org.json.JSONException;
 
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentProviderClient;
@@ -18,6 +35,7 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.R;
@@ -26,8 +44,6 @@ import edu.mit.mobile.android.locast.data.SyncException;
 import edu.mit.mobile.android.locast.net.LocastApplicationCallbacks;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
-import edu.mit.mobile.android.locast.net.NotificationProgressListener;
-import edu.mit.mobile.android.locast.notifications.ProgressNotification;
 
 /**
  * <p>
@@ -71,8 +87,8 @@ public abstract class LocastSimpleSyncService extends LocastSyncService {
     @Override
     public void onCreate() {
         super.onCreate();
-        mNetworkClient = ((LocastApplicationCallbacks) getApplication()).getNetworkClientForAccount(this,
-                null);
+        mNetworkClient = ((LocastApplicationCallbacks) getApplication())
+                .getNetworkClientForAccount(this, null);
 
         mContentProviderClient = getContentResolver().acquireContentProviderClient(mAuthority);
 
@@ -130,27 +146,25 @@ public abstract class LocastSimpleSyncService extends LocastSyncService {
         }
     }
 
-    private NotificationProgressListener showNotification() {
-        final ProgressNotification notification = new ProgressNotification(this,
-                getString(R.string.sync_notification), ProgressNotification.TYPE_GENERIC,
-                PendingIntent.getActivity(
-                        this,
-                        0,
-                        getPackageManager().getLaunchIntentForPackage(getPackageName()).addFlags(
-                                Intent.FLAG_ACTIVITY_NEW_TASK), 0), false);
-
+    private void showNotification() {
+        final Notification n = new NotificationCompat.Builder(this)
+                .setContentTitle(getString(R.string.sync_notification))
+                .setTicker(getString(R.string.sync_notification))
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setOngoing(true)
+                .setContentIntent(
+                        PendingIntent.getActivity(this, 0,
+                                getPackageManager().getLaunchIntentForPackage(getPackageName())
+                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), 0)).build();
         final NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        final NotificationProgressListener npl = new NotificationProgressListener(nm, notification,
-                100, 0);
 
-        nm.notify(R.string.sync, notification);
+        nm.notify(R.id.locast_core__sync, n);
 
-        return npl;
     }
 
     private void clearNotification() {
         final NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        nm.cancel(R.string.sync);
+        nm.cancel(R.id.locast_core__sync);
     }
 
     private class SyncQueueProcessor implements Runnable {
@@ -203,10 +217,6 @@ public abstract class LocastSimpleSyncService extends LocastSyncService {
         final Bundle extras;
         final int priority; // higher priority is more likely to occur
         final long creationTime = System.currentTimeMillis();
-
-        public SyncItem(Uri uri, Bundle extras) {
-            this(uri, extras, 0);
-        }
 
         public SyncItem(Uri uri, Bundle extras, int priority) {
             this.uri = uri;
