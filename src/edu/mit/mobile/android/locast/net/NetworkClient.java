@@ -374,8 +374,10 @@ public class NetworkClient extends DefaultHttpClient {
 
         final AccountManager am = AccountManager.get(mContext);
         baseUrlString = am.getUserData(account, AbsLocastAuthenticationService.USERDATA_LOCAST_API_URL);
-        if (baseUrlString == null) {
+        if (baseUrlString == null || baseUrlString.length() == 0) {
             Log.e(TAG, "no Locast API information associated with account metadata");
+
+            baseUrlString = getBaseUrlFromManifest(mContext);
 
             // if it's null in the userdata, then it must be an account from before this feature
             // was added.
