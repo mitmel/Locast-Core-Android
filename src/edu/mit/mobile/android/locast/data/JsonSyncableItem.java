@@ -70,6 +70,14 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
     public static final String COL_PUBLIC_URL = "url";
 
     /**
+     * A UUID for the item, created when the item is first saved (either on the client or on the
+     * server). This will help prevent accidentally creating duplicates even if there's an error in
+     * network communication.
+     */
+    @DBColumn(type = TextColumn.class, unique = true, notnull = true)
+    public static final String COL_UUID = "uuid";
+
+    /**
      * The time that the item was last modified, in local time. This should be updated each time the
      * item is modified locally.
      */
@@ -184,6 +192,29 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
      */
     public JsonSyncableItem(Cursor c) {
         super(c);
+
+    }
+
+    /**
+     * Adds a randomly-generated UUID to the content values item.
+     *
+     * @param cv
+     */
+    public static void addUuid(final ContentValues cv) {
+        cv.put(COL_UUID, java.util.UUID.randomUUID().toString());
+    }
+
+    /**
+     * Creates a new ContentValues item and gives it a UUID by way of
+     * {@link #addUuid(ContentValues)}.
+     *
+     * @return a new, almost-empty ContentValues (which contains a UUID)
+     */
+    public static ContentValues newContentItem() {
+        final ContentValues cv = new ContentValues();
+        addUuid(cv);
+
+        return cv;
     }
 
     /**
@@ -299,10 +330,14 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
             super();
 
             put(COL_PUBLIC_URL, new SyncFieldMap("uri", SyncFieldMap.STRING, SyncItem.SYNC_FROM));
+
+            put(COL_UUID, new SyncFieldMap("uuid", SyncFieldMap.STRING));
+
             put(COL_SERVER_MODIFIED_DATE, new SyncFieldMap("modified", SyncFieldMap.DATE,
                     SyncItem.SYNC_FROM));
             put(COL_CREATED_DATE, new SyncFieldMap("created", SyncFieldMap.DATE, SyncItem.SYNC_FROM
                     | SyncItem.FLAG_OPTIONAL));
+
         }
     }
 
