@@ -212,7 +212,9 @@ public abstract class CastMedia extends JsonSyncableItem {
                     String exifDateTime = "";
                     final ExifInterface exif = new ExifInterface(path);
                     exifDateTime = exif.getAttribute(ExifInterface.TAG_DATETIME);
-                    cv.put(CastMedia.COL_CAPTURE_TIME, exifDateTime);
+                    if (exifDateTime != null) {
+                        cv.put(CastMedia.COL_CAPTURE_TIME, exifDateTime);
+                    }
 
                 } catch (final IOException ioex) {
                     Log.e(TAG, "EXIF: Couldn't find media: " + path);
