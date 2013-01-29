@@ -231,7 +231,10 @@ public abstract class CastMedia extends JsonSyncableItem {
             cv.put(CastMedia.COL_CAPTURE_TIME, now);
         }
 
-        cv.put(CastMedia.COL_THUMB_LOCAL, mediaPath);
+        // if it's an image, we can use the source file for the thumbnail.
+        if (mimeType.startsWith("image/")) {
+            cv.put(CastMedia.COL_THUMB_LOCAL, mediaPath);
+        }
         cv.put(CastMedia.COL_LOCAL_URL, mediaPath);
 
         Log.d(TAG, "addMedia(" + castMedia + ", " + cv + ")");
