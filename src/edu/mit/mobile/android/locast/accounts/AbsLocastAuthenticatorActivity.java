@@ -286,13 +286,13 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
     }
 
     /**
-     * Implement this to inform the Authenticator about the API URL.
-     *
+     * @deprecated this will be retrieved using {@code LocastApplicationCallbacks}
      * @return the base URL for the Locast API
      */
+    @Deprecated
     public String getApiUrl() {
-        final NetworkClient nc = ((LocastApplicationCallbacks) getApplication()).getNetworkClientForAccount(
-                this, null);
+        final NetworkClient nc = ((LocastApplicationCallbacks) getApplication())
+                .getNetworkClientForAccount(this, null);
         return nc.getBaseUrl();
     }
 
@@ -503,6 +503,13 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
         return false;
     }
 
+    /**
+     * Handles the removal of an account when the logout button is pressed. Also provides a callback
+     * for when an account is successfully removed.
+     *
+     * @author <a href="mailto:spomeroy@mit.edu">Steve Pomeroy</a>
+     *
+     */
     public static abstract class LogoutHandler implements DialogInterface.OnClickListener {
 
         private final Context mContext;
@@ -528,22 +535,40 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
             }
         };
         private final String mAccountType;
+        private final Account mAccount;
 
+        /**
+         * @param context
+         * @param accountType
+         * @deprecated please pass in the account using {@link #LogoutHandler(Context, Account)}
+         */
+        @Deprecated
         public LogoutHandler(Context context, String accountType) {
             mContext = context;
             mAccountType = accountType;
+            mAccount = null;
 
+        }
+
+        public LogoutHandler(Context context, Account account) {
+            mContext = context;
+            mAccount = account;
+            mAccountType = null;
+        }
+
+        private Account getAccount() {
+            return mAccount != null ? mAccount : AbsLocastAuthenticator.getFirstAccount(mContext,
+                    mAccountType);
         }
 
         @Override
         public void onClick(DialogInterface dialog, int which) {
-
             switch (which) {
                 case AlertDialog.BUTTON_POSITIVE:
 
-                    AccountManager.get(mContext).removeAccount(
-                            AbsLocastAuthenticator.getFirstAccount(mContext, mAccountType),
-                            mAccountManagerCallback, null);
+                    AccountManager.get(mContext).removeAccount(getAccount(),
+                            mAccountManagerCallback,
+                            null);
                     break;
             }
         }
@@ -559,6 +584,17 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
 
     };
 
+    /**
+     * Given a logout handler and information about the app, create a standard logout dialog box
+     * that prompts the user if they want to logout.
+     *
+     * @param context
+     * @param appName
+     *            the name of your app. This is integrated into the text using the
+     *            {@code auth_logout_title} and {@code auth_logout_message} string resources.
+     * @param onLogoutHandler
+     * @return
+     */
     public static Dialog createLogoutDialog(Context context, CharSequence appName,
             LogoutHandler onLogoutHandler) {
 

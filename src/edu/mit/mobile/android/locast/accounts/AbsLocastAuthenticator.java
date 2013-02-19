@@ -217,6 +217,13 @@ public abstract class AbsLocastAuthenticator extends AbstractAccountAuthenticato
                 AbsLocastAuthenticationService.USERDATA_USER_URI);
     }
 
+    /**
+     * @param context
+     * @param accountType
+     * @deprecated the first account shouldn't be assumed to be the active account
+     * @return
+     */
+    @Deprecated
     public static Account getFirstAccount(Context context, String accountType) {
         final Account[] accounts = AbsLocastAuthenticator.getAccounts(context, accountType);
         if (accounts.length > 0){
@@ -225,8 +232,23 @@ public abstract class AbsLocastAuthenticator extends AbstractAccountAuthenticato
         return null;
     }
 
+    /**
+     * @param context
+     * @param accountType
+     * @param key
+     * @deprecated the first account shouldn't be assumed to be the active account
+     * @return
+     */
+    @Deprecated
     public static String getUserData(Context context, String accountType, String key) {
         final Account account = getFirstAccount(context, accountType);
+        if (account == null){
+            throw new RuntimeException("no accounts registered");
+        }
+        return AccountManager.get(context).getUserData(account, key);
+    }
+
+    public static String getUserData(Context context, Account account, String key) {
         if (account == null){
             throw new RuntimeException("no accounts registered");
         }
