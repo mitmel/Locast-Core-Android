@@ -148,6 +148,7 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
 
         mUsernameEdit.setText(mUsername);
 
+        // this will be unnecessary with fragments
         mAuthenticationTask = (AuthenticationTask) getLastNonConfigurationInstance();
         if (mAuthenticationTask != null) {
             mAuthenticationTask.attach(this);
@@ -355,12 +356,6 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
         mMessage.setText(text);
         mMessage.setVisibility(View.VISIBLE);
 
-    }
-
-    private void setLoginNoticeInfo(int textResID) {
-        mMessage.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_info, 0, 0, 0);
-        mMessage.setText(textResID);
-        mMessage.setVisibility(View.VISIBLE);
     }
 
     /**
