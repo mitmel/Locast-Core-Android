@@ -36,6 +36,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -47,6 +48,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
+import edu.mit.mobile.android.locast.BuildConfig;
 import edu.mit.mobile.android.locast.R;
 import edu.mit.mobile.android.locast.net.LocastApplicationCallbacks;
 import edu.mit.mobile.android.locast.net.NetworkClient;
@@ -97,12 +99,18 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
      */
     @Override
     public void onCreate(Bundle icicle) {
-        Log.i(TAG, "onCreate(" + icicle + ")");
-        requestWindowFeature(Window.FEATURE_ACTION_BAR);
+        if (BuildConfig.DEBUG) {
+            Log.i(TAG, "onCreate(" + icicle + ")");
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            requestWindowFeature(Window.FEATURE_ACTION_BAR);
+        }
         super.onCreate(icicle);
 
         mAccountManager = AccountManager.get(this);
-        Log.i(TAG, "loading data from Intent");
+        if (BuildConfig.DEBUG) {
+            Log.i(TAG, "loading data from Intent");
+        }
 
         final Intent intent = getIntent();
         mUsername = intent.getStringExtra(EXTRA_USERNAME);
@@ -110,7 +118,9 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
         mRequestNewAccount = mUsername == null;
         mConfirmCredentials = intent.getBooleanExtra(EXTRA_CONFIRMCREDENTIALS, false);
 
-        Log.i(TAG, "    request new: " + mRequestNewAccount);
+        if (BuildConfig.DEBUG) {
+            Log.i(TAG, "    request new: " + mRequestNewAccount);
+        }
         requestWindowFeature(Window.FEATURE_LEFT_ICON);
 
         final CharSequence appName = getAppName();
@@ -178,7 +188,9 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
                 dialog.setCancelable(true);
                 dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
                     public void onCancel(DialogInterface dialog) {
-                        Log.i(TAG, "dialog cancel has been invoked");
+                        if (BuildConfig.DEBUG) {
+                            Log.i(TAG, "dialog cancel has been invoked");
+                        }
                         if (mAuthenticationTask != null) {
                             mAuthenticationTask.cancel(true);
                             mAuthenticationTask = null;
@@ -293,7 +305,9 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
      *            confirmCredentials result.
      */
     protected void finishConfirmCredentials(boolean result) {
-        Log.i(TAG, "finishConfirmCredentials()");
+        if (BuildConfig.DEBUG) {
+            Log.i(TAG, "finishConfirmCredentials()");
+        }
         final Account account = createAccount(mUsername);
         mAccountManager.setPassword(account, mPassword);
         final Intent intent = new Intent();
@@ -316,7 +330,9 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
      */
 
     protected void finishLogin(Bundle userData) {
-        Log.i(TAG, "finishLogin()");
+        if (BuildConfig.DEBUG) {
+            Log.i(TAG, "finishLogin()");
+        }
 
         final Account account = createAccount(mUsername);
 
@@ -364,10 +380,12 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
     }
 
     /**
-     * Called when the authentication process completes (see attemptLogin()).
+     * Called when the authentication process completes.
      */
     public void onAuthenticationResult(Bundle userData, String reason) {
-        Log.i(TAG, "onAuthenticationResult(" + userData + ")");
+        if (BuildConfig.DEBUG) {
+            Log.i(TAG, "onAuthenticationResult(" + userData + ")");
+        }
 
         if (userData != null) {
             if (!mConfirmCredentials) {
