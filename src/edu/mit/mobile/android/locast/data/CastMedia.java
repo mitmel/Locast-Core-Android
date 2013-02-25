@@ -51,15 +51,28 @@ public abstract class CastMedia extends JsonSyncableItem {
     @DBColumn(type = DatetimeColumn.class)
     public final static String COL_CAPTURE_TIME = "capture_time";
 
+    /**
+     * The main content. This is a public URL.
+     */
     @DBColumn(type = TextColumn.class)
-    public final static String COL_MEDIA_URL = "media_url"; // the body of the object
+    public final static String COL_MEDIA_URL = "media_url";
 
+    /**
+     * The main content. This links to an optional local copy of the media.
+     */
     @DBColumn(type = TextColumn.class)
-    public final static String COL_LOCAL_URL = "local_url"; // any local copy of the main media
+    public final static String COL_LOCAL_URL = "local_url";
 
+    /**
+     * The content type of the media.
+     */
     @DBColumn(type = TextColumn.class)
-    public final static String COL_MIME_TYPE = "mimetype"; // type of the media
+    public final static String COL_MIME_TYPE = "mimetype";
 
+    /**
+     * Whether or not to keep an offline copy. If set to true, the media sync engine will download a
+     * copy.
+     */
     @DBColumn(type = BooleanColumn.class)
     public final static String COL_KEEP_OFFLINE = "offline";
 
