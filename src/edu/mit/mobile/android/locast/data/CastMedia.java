@@ -48,6 +48,12 @@ import edu.mit.mobile.android.locast.sync.AbsMediaSync;
 public abstract class CastMedia extends JsonSyncableItem {
     private static final String TAG = CastMedia.class.getSimpleName();
 
+    /**
+     * A textual caption for the media. Optional.
+     */
+    @DBColumn(type = TextColumn.class)
+    public final static String COL_CAPTION = "caption";
+
     @DBColumn(type = DatetimeColumn.class)
     public final static String COL_CAPTURE_TIME = "capture_time";
 
@@ -415,6 +421,9 @@ public abstract class CastMedia extends JsonSyncableItem {
             });
 
             put(COL_CAPTURE_TIME, new SyncFieldMap("capture_time", SyncFieldMap.DATE,
+                    SyncItem.FLAG_OPTIONAL));
+
+            put(COL_CAPTION, new SyncFieldMap("caption", SyncFieldMap.STRING,
                     SyncItem.FLAG_OPTIONAL));
         }
 
