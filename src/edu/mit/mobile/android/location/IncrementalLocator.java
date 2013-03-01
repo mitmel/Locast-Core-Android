@@ -25,7 +25,9 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.util.Log;
 import android.widget.Toast;
+import edu.mit.mobile.android.locast.BuildConfig;
 import edu.mit.mobile.android.locast.R;
 
 /**
@@ -198,7 +200,12 @@ public class IncrementalLocator {
         public void onLocationChanged(Location location) {
             if (mCurrentBestLocation == null || isBetterLocation(location, mCurrentBestLocation)) {
                 notifyWrappedListener(location);
+
                 mCurrentBestLocation = location;
+
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "new current best location: " + mCurrentBestLocation);
+                }
             }
         }
 
