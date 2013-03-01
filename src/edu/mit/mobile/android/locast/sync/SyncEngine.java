@@ -143,12 +143,15 @@ public class SyncEngine {
      * introspection necessary to make it happen. content:// URLs must have all the columns defined
      * in {@link JsonSyncableItem} for sync to function properly. Additionally, the
      * {@link ContentProvider} that backs them must implement {@link SyncableProvider}.
+     * </p>
+     * 
      * <p>
      * It starts off by sorting out all the URLs, determining if all the information is provided for
      * synchronization.
+     * </p>
      *
      * @param toSync
-     *            a content:// , http:// , or https:// URL
+     *            a {@code content://}, {@code http://}, or {@code https://} URL
      * @param account
      *            the account that is used for synchronizing. This can be null if the sync is
      *            anonymous.
