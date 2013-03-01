@@ -59,7 +59,6 @@ public class NotificationProgressListener implements FileTransferProgressListene
 
         mNotificationBuilder = new NotificationCompat.Builder(context)
 
-
         .setOngoing(true)
 
         .setOnlyAlertOnce(true)
@@ -99,6 +98,7 @@ public class NotificationProgressListener implements FileTransferProgressListene
 
         mNotificationBuilder.setContentTitle(getTitle(title));
         mNotificationBuilder.setTicker(getTitle(title));
+        mNotificationBuilder.setContentIntent(getPendingContentIntent(contentItem));
 
         mShown = true;
         mNotificationManager.notify(mId, mNotificationBuilder.build());
@@ -191,9 +191,7 @@ public class NotificationProgressListener implements FileTransferProgressListene
                 .setWhen(System.currentTimeMillis())
                 .setProgress(0, 0, false)
 
-                .setContentIntent(
-                        PendingIntent.getActivity(mContext, 0, new Intent(Intent.ACTION_VIEW,
-                                mLastContentItem), PendingIntent.FLAG_CANCEL_CURRENT))
+                .setContentIntent(getPendingContentIntent(mLastContentItem))
                 .setContentTitle(
                         mContext.getString(R.string.sync_upload_success_message, mLastTitle))
                 .setSmallIcon(getIcon(true))
@@ -201,5 +199,10 @@ public class NotificationProgressListener implements FileTransferProgressListene
 
         mNotificationManager.notify(mId, n);
 
+    }
+
+    private PendingIntent getPendingContentIntent(Uri lastContentItem) {
+        return PendingIntent.getActivity(mContext, 0, new Intent(Intent.ACTION_VIEW,
+                lastContentItem), PendingIntent.FLAG_CANCEL_CURRENT);
     }
 }
