@@ -106,7 +106,8 @@ public class IncrementalLocator {
 
         final String fineProvider = lm.getBestProvider(sustainedCriteria, true);
 
-        if (!lm.isProviderEnabled(fineProvider) || !lm.isProviderEnabled(roughProvider)) {
+        if (fineProvider == null || !lm.isProviderEnabled(fineProvider)
+                || !lm.isProviderEnabled(roughProvider)) {
             Toast.makeText(mContext, R.string.error_no_providers, Toast.LENGTH_LONG).show();
             return;
         }
