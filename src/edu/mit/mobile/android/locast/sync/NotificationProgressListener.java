@@ -42,6 +42,7 @@ public class NotificationProgressListener implements FileTransferProgressListene
     private final int mId;
     private Uri mLastContentItem;
     private CharSequence mLastTitle;
+    private boolean mSuccessful = false;
 
     // ///////////////////////////////
 
@@ -105,6 +106,10 @@ public class NotificationProgressListener implements FileTransferProgressListene
     }
 
     private int getIcon(boolean complete) {
+        if (complete && !mSuccessful) {
+            return android.R.drawable.stat_sys_warning;
+        }
+
         switch (mType) {
             case TYPE_UPLOAD:
                 return complete ? android.R.drawable.stat_sys_upload_done
@@ -184,6 +189,12 @@ public class NotificationProgressListener implements FileTransferProgressListene
         mContext = null;
     }
 
+    public void onTransfersSuccessful() {
+        if (mShown) {
+            mSuccessful = true;
+        }
+    }
+
     private void replaceWithCompleteNotification() {
         final Notification n = mNotificationBuilder
                 .setOngoing(false)
@@ -193,9 +204,12 @@ public class NotificationProgressListener implements FileTransferProgressListene
 
                 .setContentIntent(getPendingContentIntent(mLastContentItem))
                 .setContentTitle(
-                        mContext.getString(R.string.sync_upload_success_message, mLastTitle))
+                        mContext.getString(mSuccessful ? R.string.sync_upload_success_message
+                                : R.string.error_sync_upload_fail_message, mLastTitle))
                 .setSmallIcon(getIcon(true))
-                .setTicker(mContext.getText(R.string.sync_upload_success)).build();
+                .setTicker(
+                        mContext.getText(mSuccessful ? R.string.sync_upload_success
+                                : R.string.error_sync_upload_fail)).build();
 
         mNotificationManager.notify(mId, n);
 

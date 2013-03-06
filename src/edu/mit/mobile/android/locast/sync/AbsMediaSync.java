@@ -382,28 +382,28 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
 
     final static String[] CASTMEDIA_PROJECTION = { CastMedia._ID, CastMedia.COL_MIME_TYPE,
             CastMedia.COL_LOCAL_URL, CastMedia.COL_MEDIA_URL, CastMedia.COL_KEEP_OFFLINE,
-            CastMedia.COL_PUBLIC_URL, CastMedia.COL_THUMB_LOCAL };
+            CastMedia.COL_PUBLIC_URL, CastMedia.COL_THUMB_LOCAL, CastMedia.COL_MEDIA_DIRTY };
 
     /**
      * Synchronize the media of the given castMedia. It will download or upload as needed.
      *
      * Blocks until the sync is complete.
      *
-     * @param castMediaUri
+     * @param castMediaDir
      *            a {@link CastMedia} item uri
      * @throws SyncException
      */
-    public void syncItemMedia(Uri castMediaUri) throws SyncException {
+    public void syncItemMedia(Uri castMediaDir) throws SyncException {
 
-        final SyncableProvider provider = getSyncableProvider(castMediaUri);
+        final SyncableProvider provider = getSyncableProvider(castMediaDir);
         if (provider == null) {
             Log.e(TAG,
                     "could not sync item media: could not get local binder for syncable provider");
             return;
         }
 
-        final CastMedia castMedia = (CastMedia) provider.getWrappedContentItem(castMediaUri,
-                mCr.query(castMediaUri, getCastMediaProjection(), null, null, null));
+        final CastMedia castMedia = (CastMedia) provider.getWrappedContentItem(castMediaDir,
+                mCr.query(castMediaDir, getCastMediaProjection(), null, null, null));
 
         final NotificationProgressListener downloadListener = new NotificationProgressListener(
                 this, NotificationProgressListener.TYPE_DOWNLOAD, R.id.locast_core__sync_download);
@@ -413,11 +413,13 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
 
             downloadListener.setTotalItems(totalItems);
 
-            while (castMedia.moveToNext()) {
+            // cache the column numbers
+            final int mediaUrlCol = castMedia.getColumnIndex(CastMedia.COL_MEDIA_URL);
+            final int localUriCol = castMedia.getColumnIndex(CastMedia.COL_LOCAL_URL);
+            final int idCol = castMedia.getColumnIndex(CastMedia._ID);
+            final int mediaDirtyCol = castMedia.getColumnIndex(CastMedia.COL_MEDIA_DIRTY);
 
-                // cache the column numbers
-                final int mediaUrlCol = castMedia.getColumnIndex(CastMedia.COL_MEDIA_URL);
-                final int localUriCol = castMedia.getColumnIndex(CastMedia.COL_LOCAL_URL);
+            while (castMedia.moveToNext()) {
 
                 final boolean keepOffline = castMedia.getInt(castMedia
                         .getColumnIndex(CastMedia.COL_KEEP_OFFLINE)) != 0;
@@ -442,21 +444,33 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
                 final String localThumb = castMedia.getString(castMedia
                         .getColumnIndex(CastMedia.COL_THUMB_LOCAL));
 
-                if (hasLocMedia && !hasPubMedia) {
+                final Uri castMediaItem = ContentUris.withAppendedId(castMediaDir,
+                        castMedia.getLong(idCol));
+
+                final boolean isLocalDirty = castMedia.isNull(mediaDirtyCol)
+                        || castMedia.getInt(mediaDirtyCol) != 0;
+
+                if (hasLocMedia && isLocalDirty) {
+
                     final String uploadPath = castMedia.getString(castMedia
                             .getColumnIndex(CastMedia.COL_PUBLIC_URL));
                     if (uploadPath == null) {
-                        Log.w(TAG, "attempted to sync " + castMediaUri
+                        Log.w(TAG, "attempted to sync " + castMediaItem
                                 + " which has a null uploadPath");
                         return;
                     }
 
+                    final Uri titledItem = getTitledItemForCastMedia(castMediaItem);
                     final NotificationProgressListener uploadListener = new NotificationProgressListener(
-                            this, NotificationProgressListener.TYPE_UPLOAD, castMediaUri.hashCode());
+                            this, NotificationProgressListener.TYPE_UPLOAD, titledItem.hashCode());
 
-                    uploadMedia(uploadPath, castMediaUri, getTitledItemForCastMedia(castMediaUri),
-                            mimeType, locMedia, uploadListener);
-                    uploadListener.onAllTransfersComplete();
+                    try {
+                        uploadMedia(uploadPath, castMediaItem, titledItem, mimeType, locMedia,
+                                uploadListener);
+                        uploadListener.onTransfersSuccessful();
+                    } finally {
+                        uploadListener.onAllTransfersComplete();
+                    }
 
                 } else if (!hasLocMedia && hasPubMedia) {
                     // only have a public copy, so download it and store locally.
@@ -464,10 +478,10 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
                     final File destfile = getFilePath(pubMediaUri);
 
                     // the following conditions indicate that the cast media should be downloaded.
-                    if (keepOffline || getKeepOffline(castMediaUri, castMedia)) {
+                    if (keepOffline || getKeepOffline(castMediaItem, castMedia)) {
 
                         final boolean anythingChanged = downloadMediaFile(pubMedia, destfile,
-                                castMediaUri, downloadListener);
+                                castMediaItem, downloadListener);
 
                         // the below is inverted from what seems logical, because
                         // downloadMediaFile()
@@ -481,7 +495,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
                             if (isImage && localThumb == null) {
                                 thumb = destfile;
                             }
-                            updateLocalFile(castMediaUri, destfile, thumb);
+                            updateLocalFile(castMediaDir, destfile, thumb);
                             // disabled to avoid spamming the user with downloaded
                             // items.
                             // checkForMediaEntry(castMediaUri, pubMediaUri, mimeType);
@@ -489,9 +503,10 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
                     }
                 } else {
                     // ensure we tell the listener that we finished
-                    downloadListener.onTransferComplete(castMediaUri);
+                    downloadListener.onTransferComplete(castMediaItem);
                 }
             }
+            downloadListener.onTransfersSuccessful();
         } finally {
             downloadListener.onAllTransfersComplete();
             castMedia.close();
@@ -526,12 +541,12 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
      *
      * @param uploadPath
      *            the relative path to upload
-     * @param castMediaUri
+     * @param castMediaItem
      * @param contentType
      * @param locMedia
      * @throws SyncException
      */
-    private void uploadMedia(String uploadPath, Uri castMediaUri, Uri titledItem,
+    private void uploadMedia(String uploadPath, Uri castMediaItem, Uri titledItem,
             String contentType, final Uri locMedia, FileTransferProgressListener listener)
             throws SyncException {
         // upload
@@ -543,12 +558,14 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
                     titledItem, uploadPath, locMedia, contentType,
                     NetworkClient.UploadType.RAW_POST, listener);
 
-            final ContentValues cv = CastMedia.fromJSON(this, castMediaUri, updatedCastMedia,
+            final ContentValues cv = CastMedia.fromJSON(this, castMediaItem, updatedCastMedia,
                     CastMedia.SYNC_MAP);
+
+            cv.put(CastMedia.COL_MEDIA_DIRTY, false);
 
             cv.put(JsonSyncableItem.COL_DIRTY, SyncableProvider.FLAG_DO_NOT_CHANGE_DIRTY);
 
-            mCr.update(castMediaUri, cv, null, null);
+            mCr.update(castMediaItem, cv, null, null);
         } catch (final Exception e) {
             final SyncException se = new SyncException(getString(R.string.error_uploading_media));
             se.initCause(e);

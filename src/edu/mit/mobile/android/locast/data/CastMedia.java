@@ -1,7 +1,7 @@
 package edu.mit.mobile.android.locast.data;
 
 /*
- * Copyright (C) 2011  MIT Mobile Experience Lab
+ * Copyright (C) 2011-2013  MIT Mobile Experience Lab
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -38,10 +38,12 @@ import android.util.Log;
 
 import com.google.android.maps.GeoPoint;
 
+import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.column.BooleanColumn;
 import edu.mit.mobile.android.content.column.DBColumn;
 import edu.mit.mobile.android.content.column.DatetimeColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
+import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.net.NetworkProtocolException;
 import edu.mit.mobile.android.locast.sync.AbsMediaSync;
 
@@ -86,6 +88,12 @@ public abstract class CastMedia extends JsonSyncableItem {
     @DBColumn(type = TextColumn.class)
     public final static String COL_THUMB_LOCAL = "local_thumb"; // filename of the local thumbnail
 
+    /**
+     * If true, the media has been changed locally and should be re-uploaded.
+     */
+    @DBColumn(type = BooleanColumn.class, defaultValueInt = 0)
+    public final static String COL_MEDIA_DIRTY = "media_dirty";
+
     //@formatter:off
     public static final String
         MIMETYPE_HTML = "text/html",
@@ -118,8 +126,7 @@ public abstract class CastMedia extends JsonSyncableItem {
      * @param castMediaDir
      * @return an intent that will show the media or null if there are none found
      */
-    public static Intent showMedia(Context context, Cursor c, Uri castMediaDir)
- {
+    public static Intent showMedia(Context context, Cursor c, Uri castMediaDir) {
         final String mediaString = c.getString(c.getColumnIndex(CastMedia.COL_MEDIA_URL));
         final String locMediaString = c.getString(c.getColumnIndex(CastMedia.COL_LOCAL_URL));
         String mimeType = null;
@@ -197,10 +204,74 @@ public abstract class CastMedia extends JsonSyncableItem {
 
         final ContentResolver cr = context.getContentResolver();
 
-        final long now = System.currentTimeMillis();
+        final CastMediaInfo castMediaInfo = toMediaInfo(context, content, cv);
 
-        cv.put(CastMedia.COL_MODIFIED_DATE, now);
-        cv.put(CastMedia.COL_CREATED_DATE, now);
+        if (Constants.DEBUG) {
+            Log.d(TAG, "addMedia(" + castMedia + ", " + cv + ")");
+        }
+
+        cv.put(COL_MEDIA_DIRTY, true);
+
+        castMediaInfo.castMediaItem = cr.insert(castMedia, cv);
+
+        return castMediaInfo;
+    }
+
+    /**
+     * <p>
+     * Updates the cast media item to use a new media item.
+     * </p>
+     *
+     * <p>
+     * If the media is a content:// uri, queries the content resolver to get the needed information.
+     * </p>
+     *
+     * @param context
+     * @param castMediaItem
+     *            uri of the castMedia item to update
+     * @param content
+     *            uri of the local media file to update
+     * @return a summary of the information discovered from the content uri
+     * @throws MediaProcessingException
+     */
+    public static CastMediaInfo updateMedia(Context context, Account me, Uri castMediaItem,
+            Uri content, ContentValues cv) throws MediaProcessingException {
+
+        final ContentResolver cr = context.getContentResolver();
+
+        final CastMediaInfo castMediaInfo = toMediaInfo(context, content, cv);
+        castMediaInfo.castMediaItem = castMediaItem;
+
+        if (Constants.DEBUG) {
+            Log.d(TAG, "addMedia(" + castMediaItem + ", " + cv + ")");
+        }
+
+        cv.put(COL_MEDIA_DIRTY, true);
+
+        final int updates = cr.update(castMediaItem, cv, null, null);
+
+        return castMediaInfo;
+    }
+
+    /**
+     * Turns the given content into a new or updated cast media.
+     *
+     * If the media is a content:// uri, queries the content resolver to get the needed information.
+     *
+     * @param context
+     * @param castMedia
+     *            uri of the cast media dir to insert into
+     * @param content
+     *            uri of the media to add
+     * @return a summary of the information discovered from the content uri
+     * @throws MediaProcessingException
+     */
+    protected static CastMediaInfo toMediaInfo(Context context, Uri content, ContentValues cv)
+            throws MediaProcessingException {
+
+        final ContentResolver cr = context.getContentResolver();
+
+        final long now = System.currentTimeMillis();
 
         final String mimeType = getContentType(cr, content);
         cv.put(CastMedia.COL_MIME_TYPE, mimeType);
@@ -231,7 +302,7 @@ public abstract class CastMedia extends JsonSyncableItem {
                     String exifDateTime = "";
                     final ExifInterface exif = new ExifInterface(path);
                     exifDateTime = exif.getAttribute(ExifInterface.TAG_DATETIME);
-                    if (exifDateTime != null) {
+                    if (exifDateTime != null && exifDateTime.length() > 0) {
                         cv.put(CastMedia.COL_CAPTURE_TIME, exifDateTime);
                     }
 
@@ -255,9 +326,6 @@ public abstract class CastMedia extends JsonSyncableItem {
             cv.put(CastMedia.COL_THUMB_LOCAL, mediaPath);
         }
         cv.put(CastMedia.COL_LOCAL_URL, mediaPath);
-
-        Log.d(TAG, "addMedia(" + castMedia + ", " + cv + ")");
-        castMediaInfo.castMediaItem = cr.insert(castMedia, cv);
 
         return castMediaInfo;
 
@@ -432,8 +500,12 @@ public abstract class CastMedia extends JsonSyncableItem {
                 boolean updated) throws SyncException, IOException {
             super.onPostSyncItem(context, account, uri, item, updated);
             if (uri != null) {
-                Log.d(TAG, "Starting media sync for " + uri);
-                context.startService(new Intent(AbsMediaSync.ACTION_SYNC_RESOURCES, uri));
+                final Uri parent = ProviderUtils.removeLastPathSegment(uri);
+
+                if (Constants.DEBUG) {
+                    Log.d(TAG, "Starting media sync for " + parent);
+                }
+                context.startService(new Intent(AbsMediaSync.ACTION_SYNC_RESOURCES, parent));
             }
         }
     }
