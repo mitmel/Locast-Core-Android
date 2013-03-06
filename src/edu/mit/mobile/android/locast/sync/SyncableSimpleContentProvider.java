@@ -93,31 +93,34 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
             String sortOrder) {
 
-        final boolean queryReturnDeleted;
-        // process the flag
-        if (projection != null) {
-            // TODO not very efficient, but this isn't used very frequently so it shouldn't matter.
-            // Rework if it is.
-            List<String> projectionList = Arrays.asList(projection);
-            queryReturnDeleted = projectionList.contains(QUERY_RETURN_DELETED);
+        if (canSync(uri)) {
+            final boolean queryReturnDeleted;
+            // process the flag
+            if (projection != null) {
+                // TODO not very efficient, but this isn't used very frequently so it shouldn't
+                // matter.
+                // Rework if it is.
+                List<String> projectionList = Arrays.asList(projection);
+                queryReturnDeleted = projectionList.contains(QUERY_RETURN_DELETED);
 
-            // only modify the array if necessary
-            if (queryReturnDeleted) {
-                projectionList = new ArrayList<String>(projectionList);
-                projectionList.remove(QUERY_RETURN_DELETED);
-                if (projectionList.size() == 0) {
-                    projection = null;
-                } else {
-                    projection = projectionList.toArray(new String[] {});
+                // only modify the array if necessary
+                if (queryReturnDeleted) {
+                    projectionList = new ArrayList<String>(projectionList);
+                    projectionList.remove(QUERY_RETURN_DELETED);
+                    if (projectionList.size() == 0) {
+                        projection = null;
+                    } else {
+                        projection = projectionList.toArray(new String[] {});
+                    }
                 }
+            } else {
+                queryReturnDeleted = false;
             }
-        } else {
-            queryReturnDeleted = false;
-        }
 
-        if (!queryReturnDeleted) {
-            selection = ProviderUtils.addExtraWhere(selection, JsonSyncableItem.COL_DELETED
-                    + " IS NOT 1");
+            if (!queryReturnDeleted) {
+                selection = ProviderUtils.addExtraWhere(selection, JsonSyncableItem.COL_DELETED
+                        + " IS NOT 1");
+            }
         }
 
         return super.query(uri, projection, selection, selectionArgs, sortOrder);
@@ -125,13 +128,15 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        final Object dirty = values.get(JsonSyncableItem.COL_DIRTY);
-        if (dirty == null) {
-            values.put(JsonSyncableItem.COL_DIRTY, true);
+        if (canSync(uri)) {
+            final Object dirty = values.get(JsonSyncableItem.COL_DIRTY);
+            if (dirty == null) {
+                values.put(JsonSyncableItem.COL_DIRTY, true);
 
-        } else if (dirty instanceof Integer
-                && (Integer) dirty == SyncableProvider.FLAG_DO_NOT_CHANGE_DIRTY) {
-            values.remove(JsonSyncableItem.COL_DIRTY);
+            } else if (dirty instanceof Integer
+                    && (Integer) dirty == SyncableProvider.FLAG_DO_NOT_CHANGE_DIRTY) {
+                values.remove(JsonSyncableItem.COL_DIRTY);
+            }
         }
 
         final Uri newItem = super.insert(uri, values);
@@ -141,17 +146,19 @@ public abstract class SyncableSimpleContentProvider extends SimpleContentProvide
 
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
-        final Object dirty = values.get(JsonSyncableItem.COL_DIRTY);
-        if (dirty == null) {
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "auto-updating modified date of " + uri);
-            }
-            values.put(JsonSyncableItem.COL_MODIFIED_DATE, System.currentTimeMillis());
-            values.put(JsonSyncableItem.COL_DIRTY, true);
+        if (canSync(uri)) {
+            final Object dirty = values.get(JsonSyncableItem.COL_DIRTY);
+            if (dirty == null) {
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "auto-updating modified date of " + uri);
+                }
+                values.put(JsonSyncableItem.COL_MODIFIED_DATE, System.currentTimeMillis());
+                values.put(JsonSyncableItem.COL_DIRTY, true);
 
-        } else if (dirty instanceof Integer
-                && (Integer) dirty == SyncableProvider.FLAG_DO_NOT_CHANGE_DIRTY) {
-            values.remove(JsonSyncableItem.COL_DIRTY);
+            } else if (dirty instanceof Integer
+                    && (Integer) dirty == SyncableProvider.FLAG_DO_NOT_CHANGE_DIRTY) {
+                values.remove(JsonSyncableItem.COL_DIRTY);
+            }
         }
 
         return super.update(uri, values, selection, selectionArgs);
