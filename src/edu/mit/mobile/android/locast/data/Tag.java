@@ -19,25 +19,36 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.Vector;
+import java.util.regex.Pattern;
 
 import android.net.Uri;
-import android.provider.BaseColumns;
 import android.text.TextUtils;
+import edu.mit.mobile.android.content.ContentItem;
+import edu.mit.mobile.android.content.UriPath;
+import edu.mit.mobile.android.content.column.BooleanColumn;
 import edu.mit.mobile.android.content.column.DBColumn;
+import edu.mit.mobile.android.content.column.DBColumn.OnConflict;
 import edu.mit.mobile.android.content.column.TextColumn;
 
-public abstract class AbsTag implements BaseColumns {
+@UriPath(Tag.PATH)
+public class Tag implements ContentItem {
 
-    @DBColumn(type = TextColumn.class, unique = true, notnull = true)
+    @DBColumn(type = TextColumn.class, unique = true, notnull = true, onConflict = OnConflict.IGNORE)
     public static final String COL_NAME = "name";
+
+    @DBColumn(type = BooleanColumn.class, defaultValueInt = 0)
+    public static final String COL_SYSTEM = "system";
 
     public static final String[] DEFAULT_PROJECTION = new String[] { _ID, COL_NAME };
 
     public final static String TAG_DELIM = ",";
 
     public final static String TAGS_SPECIAL_CV_KEY = "tags";
+
+    public static final String PATH = "tags";
 
     /**
      * Given a tag query string, return the set of tags it represents.
@@ -52,6 +63,13 @@ public abstract class AbsTag implements BaseColumns {
             tmpList[i] = Uri.decode(tmpList[i]);
         }
         return new HashSet<String>(Arrays.asList(tmpList));
+    }
+
+    private static final Pattern NON_TAG_CHARS = Pattern.compile("[^\\w\\s]+");
+
+    public static String filterTag(String rawText){
+        final String tag = rawText.trim().toLowerCase(Locale.US);
+        return NON_TAG_CHARS.matcher(tag).replaceAll("");
     }
 
     /**
