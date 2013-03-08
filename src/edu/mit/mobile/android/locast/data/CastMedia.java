@@ -506,6 +506,8 @@ public abstract class CastMedia extends JsonSyncableItem {
                     Log.d(TAG, "Starting media sync for " + parent);
                 }
                 context.startService(new Intent(AbsMediaSync.ACTION_SYNC_RESOURCES, parent));
+            } else if (Constants.DEBUG) {
+                Log.w(TAG, "no uri provided when calling onPostSyncItem()");
             }
         }
     }

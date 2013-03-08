@@ -402,6 +402,10 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
             return;
         }
 
+        if (DEBUG) {
+            Log.d(TAG, "syncing " + castMediaDir);
+        }
+
         final CastMedia castMedia = (CastMedia) provider.getWrappedContentItem(castMediaDir,
                 mCr.query(castMediaDir, getCastMediaProjection(), null, null, null));
 
@@ -451,6 +455,9 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
                         || castMedia.getInt(mediaDirtyCol) != 0;
 
                 if (hasLocMedia && isLocalDirty) {
+                    if (DEBUG) {
+                        Log.d(TAG, castMediaItem + " has local media and it's dirty");
+                    }
 
                     final String uploadPath = castMedia.getString(castMedia
                             .getColumnIndex(CastMedia.COL_PUBLIC_URL));
@@ -473,6 +480,11 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
                     }
 
                 } else if (!hasLocMedia && hasPubMedia) {
+                    if (DEBUG) {
+                        Log.d(TAG, castMediaItem
+                                + " doesn't have local media, but has public media url");
+                    }
+
                     // only have a public copy, so download it and store locally.
                     final Uri pubMediaUri = Uri.parse(pubMedia);
                     final File destfile = getFilePath(pubMediaUri);
