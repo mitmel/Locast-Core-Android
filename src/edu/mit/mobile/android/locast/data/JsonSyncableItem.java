@@ -897,7 +897,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
                                 + "' cannot be null.");
                     }
                     if (joined.length() > 0) {
-                        for (final String s : joined.split(TaggableItem.LIST_SPLIT)) {
+                        for (final String s : joined.split(LIST_DELIM)) {
                             switch (getType()) {
                                 case SyncFieldMap.LIST_STRING:
                                     ar.put(s);
