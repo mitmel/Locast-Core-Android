@@ -144,7 +144,7 @@ public class SyncEngine {
      * in {@link JsonSyncableItem} for sync to function properly. Additionally, the
      * {@link ContentProvider} that backs them must implement {@link SyncableProvider}.
      * </p>
-     * 
+     *
      * <p>
      * It starts off by sorting out all the URLs, determining if all the information is provided for
      * synchronization.
@@ -392,11 +392,40 @@ public class SyncEngine {
         processDeletes(provider, toSync, toSyncWithoutQuerystring, selectionArgs, selectionInverse,
                 pubPath, isDir, syncStatuses, syncResult);
 
+        processRemainingOnPostSync(provider, toSync, account, syncMap, selection, selectionArgs,
+                syncStatuses);
+
         syncStatuses.clear();
 
         mLastUpdated.markUpdated(toSync);
 
         return true;
+    }
+
+    private void processRemainingOnPostSync(ContentProviderClient provider, Uri toSync,
+            Account account, SyncMap syncMap, String selection, String[] selectionArgs,
+            HashMap<String, SyncStatus> syncStatuses) throws SyncException, IOException,
+            RemoteException, JSONException, NetworkProtocolException {
+
+        final Cursor c = provider.query(toSync, SYNC_PROJECTION, selection, selectionArgs, null);
+        final int pubUriCol = c.getColumnIndex(JsonSyncableItem.COL_PUBLIC_URL);
+
+        try {
+            while (c.moveToNext()) {
+                final String pubUri = c.getString(pubUriCol);
+                final SyncStatus ss = syncStatuses.get(pubUri);
+
+                if (!ss.onPostSyncComplete) {
+                    if (ss.remoteJson == null) {
+                        ss.remoteJson = JsonSyncableItem.toJSON(mContext, ss.local, c, syncMap);
+                    }
+                    syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson, false);
+                    ss.onPostSyncComplete = true;
+                }
+            }
+        } finally {
+            c.close();
+        }
     }
 
     /**
@@ -639,6 +668,8 @@ public class SyncEngine {
 
                 syncMap.onPostSyncItem(mContext, account, res.uri, ss.remoteJson,
                         res.count != null ? res.count == 1 : true);
+
+                ss.onPostSyncComplete = true;
 
                 ss.state = SyncState.NOW_UP_TO_DATE;
                 successful++;
@@ -885,6 +916,8 @@ public class SyncEngine {
 
                 syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson,
                         res.count != null ? res.count == 1 : true);
+
+                ss.onPostSyncComplete = true;
 
                 ss.state = SyncState.NOW_UP_TO_DATE;
             }
@@ -1172,6 +1205,8 @@ public class SyncEngine {
 
                             syncMap.onPostSyncItem(mContext, account, ss.local, ss.remoteJson, true);
 
+                            ss.onPostSyncComplete = true;
+
                             count++;
                             syncResult.stats.numUpdates++;
 
@@ -1455,6 +1490,8 @@ public class SyncEngine {
          * The remoteJson as CV
          */
         ContentValues remoteCVs;
+
+        boolean onPostSyncComplete = false;
 
         @Override
         public String toString() {

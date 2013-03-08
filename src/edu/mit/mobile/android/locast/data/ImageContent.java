@@ -82,7 +82,6 @@ public abstract class ImageContent extends CastMedia {
         private static final long serialVersionUID = 7045578635861708298L;
 
         public ItemSyncMap() {
-            super();
             put(RESOURCES_KEY, new ResourcesSync());
         }
 

@@ -1031,7 +1031,7 @@ public abstract class JsonSyncableItem extends CursorWrapper implements ContentI
                         .getApplicationContext()).getNetworkClientForAccount(context, account);
                 final Uri serverUri = nc.getFullUrl(childPubUri);
 
-                LocastSyncService.startSync(context, serverUri, childDir, false);
+                LocastSyncService.startSync(context, serverUri, childDir, updated);
 
             } catch (final JSONException e) {
                 final IOException ioe = new IOException("JSON encoding error");
