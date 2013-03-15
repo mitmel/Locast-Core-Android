@@ -507,7 +507,6 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
      */
     public static abstract class LogoutHandler implements DialogInterface.OnClickListener {
 
-        private final Context mContext;
         private final AccountManagerCallback<Boolean> mAccountManagerCallback = new AccountManagerCallback<Boolean>() {
 
             @Override
@@ -526,44 +525,40 @@ public abstract class AbsLocastAuthenticatorActivity extends AccountAuthenticato
                 }
 
                 onAccountRemoved(success);
-
             }
         };
-        private final String mAccountType;
-        private final Account mAccount;
 
-        /**
-         * @param context
-         * @param accountType
-         * @deprecated please pass in the account using {@link #LogoutHandler(Context, Account)}
-         */
-        @Deprecated
-        public LogoutHandler(Context context, String accountType) {
-            mContext = context;
-            mAccountType = accountType;
-            mAccount = null;
+        private final AccountManager mAccountManager;
 
+        private Account mAccount;
+
+        public LogoutHandler(Context context) {
+            mAccountManager = AccountManager.get(context);
         }
 
-        public LogoutHandler(Context context, Account account) {
-            mContext = context;
+        public void setAccount(Account account) {
             mAccount = account;
-            mAccountType = null;
         }
 
         private Account getAccount() {
-            return mAccount != null ? mAccount : AbsLocastAuthenticator.getFirstAccount(mContext,
-                    mAccountType);
+            return mAccount;
+        }
+
+        private void removeAccount(Account account) {
+            if (account == null) {
+                Log.e(TAG, "null was passed in, so no accounts were removed");
+                onAccountRemoved(false);
+                return;
+            }
+
+            mAccountManager.removeAccount(account, mAccountManagerCallback, null);
         }
 
         @Override
         public void onClick(DialogInterface dialog, int which) {
             switch (which) {
                 case AlertDialog.BUTTON_POSITIVE:
-
-                    AccountManager.get(mContext).removeAccount(getAccount(),
-                            mAccountManagerCallback,
-                            null);
+                    removeAccount(getAccount());
                     break;
             }
         }

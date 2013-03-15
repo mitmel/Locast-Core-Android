@@ -225,6 +225,11 @@ public abstract class AbsLocastAuthenticator extends AbstractAccountAuthenticato
      */
     @Deprecated
     public static Account getFirstAccount(Context context, String accountType) {
+        // null check to prevent accidental getting of all accounts
+        if (accountType == null) {
+            return null;
+        }
+
         final Account[] accounts = AbsLocastAuthenticator.getAccounts(context, accountType);
         if (accounts.length > 0){
             return accounts[0];
