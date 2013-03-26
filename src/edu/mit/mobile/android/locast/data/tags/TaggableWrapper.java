@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.data;
+package edu.mit.mobile.android.locast.data.tags;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,27 +14,21 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import edu.mit.mobile.android.content.ContentItem;
-import edu.mit.mobile.android.content.ContentItemRegisterable;
-import edu.mit.mobile.android.content.DBHelper;
-import edu.mit.mobile.android.content.GenericDBHelper;
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.SQLGenerationException;
+import edu.mit.mobile.android.content.dbhelper.ContentItemDBHelper;
 import edu.mit.mobile.android.content.m2m.M2MColumns;
 import edu.mit.mobile.android.content.m2m.M2MDBHelper;
 
-public class TaggableWrapper extends DBHelper implements ContentItemRegisterable {
+public class TaggableWrapper extends ContentItemDBHelper {
 
-    private final GenericDBHelper mWrapped;
+    private final ContentItemDBHelper mWrapped;
     private final M2MDBHelper mTags;
 
-    public TaggableWrapper(GenericDBHelper wrapped, M2MDBHelper tags) {
+    public TaggableWrapper(ContentItemDBHelper wrapped, M2MDBHelper tags) {
+        super(wrapped.getContentItem(false), wrapped.getContentItem(true));
         mWrapped = wrapped;
         mTags = tags;
-    }
-
-    @Override
-    public Class<? extends ContentItem> getContentItem(boolean isItem) {
-        return mWrapped.getContentItem(isItem);
     }
 
     @Override
@@ -96,6 +90,11 @@ public class TaggableWrapper extends DBHelper implements ContentItemRegisterable
             Uri itemTags, Set<String> tags) {
         for (String tag : tags) {
             tag = Tag.filterTag(tag);
+
+            if (tag.length() == 0) {
+                continue;
+            }
+
             cpos.add(ContentProviderOperation.newInsert(itemTags).withValue(Tag.COL_NAME, tag)
                     .build());
         }
@@ -191,7 +190,7 @@ public class TaggableWrapper extends DBHelper implements ContentItemRegisterable
             return mWrapped.queryDir(db, uri, projection, selection, selectionArgs, sortOrder);
         }
 
-        final String mWrappedTable = mWrapped.getTable();
+        final String mWrappedTable = mWrapped.getTargetTable();
 
         final String joinTable = mTags.getJoinTableName();
 
@@ -212,12 +211,12 @@ public class TaggableWrapper extends DBHelper implements ContentItemRegisterable
                 joinTable + " jt, " + mWrappedTable + " f, " + mTags.getToTable() + " t",
 
                 /* prefix the wrapped table in the projection to avoid conflicts */
-                ProviderUtils.addPrefixToProjection(mWrappedTable, projection),
+                ProviderUtils.addPrefixToProjection("f", projection),
 
                 /* from http://tagging.pui.ch/post/37027745720/tags-database-schemas#toxi */
                 ProviderUtils.addExtraWhere(selection, "jt." + M2MColumns.TO_ID + "=t."
                         + BaseColumns._ID, "t." + Tag.COL_NAME + " IN (" + placeholders.toString()
-                        + ")"),
+                        + ") AND (" + "f." + BaseColumns._ID + "=jt." + M2MColumns.FROM_ID + ")"),
 
                 /* selection arguments, with tags added in */
                 ProviderUtils.addExtraWhereArgs(selectionArgs, tags),
@@ -227,13 +226,6 @@ public class TaggableWrapper extends DBHelper implements ContentItemRegisterable
 
                 /* having */
                 "COUNT(f." + BaseColumns._ID + ")=" + tags.length, sortOrder);
-
-        // return db.query(mWrappedTable + " JOIN " + joinTable + " ON (" + M2MColumns.TO_ID + "="
-        // + mWrappedTable + "." + BaseColumns._ID + ") JOIN " + mTags.getToTable() + " ON ("
-        // + joinTable + "." + M2MColumns.TO_ID + "=" + mTags.getToTable() + "."
-        // + BaseColumns._ID + ")", projection, selection != null ? "DISTINCT " + selection
-        // : "DISTINCT *", selectionArgs, null, null, sortOrder);
-        // return mWrapped.queryDir(db, uri, projection, selection, selectionArgs, sortOrder);
     }
 
     @Override
@@ -263,5 +255,15 @@ public class TaggableWrapper extends DBHelper implements ContentItemRegisterable
     public void upgradeTables(SQLiteDatabase db, int oldVersion, int newVersion)
             throws SQLGenerationException {
         mWrapped.upgradeTables(db, oldVersion, newVersion);
+    }
+
+    @Override
+    public String getTargetTable() {
+        return mWrapped.getTargetTable();
+    }
+
+    @Override
+    public Class<? extends ContentItem> getContentItem(boolean isItem) {
+        return mWrapped.getContentItem(isItem);
     }
 }

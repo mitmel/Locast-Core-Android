@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.data;
+package edu.mit.mobile.android.locast.data.tags;
 /*
  * Copyright (C) 2010  MIT Mobile Experience Lab
  *
@@ -46,7 +46,7 @@ public class Tag implements ContentItem {
 
     public final static String TAG_DELIM = ",";
 
-    public final static String TAGS_SPECIAL_CV_KEY = "tags";
+    public final static String TAGS_SPECIAL_CV_KEY = "_tags";
 
     public static final String PATH = "tags";
 
