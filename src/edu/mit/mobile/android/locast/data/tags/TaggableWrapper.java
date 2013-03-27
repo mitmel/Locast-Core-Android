@@ -27,6 +27,8 @@ public class TaggableWrapper extends ContentItemDBHelper {
         super(wrapped.getContentItem(false), wrapped.getContentItem(true));
         mWrapped = wrapped;
         mTags = tags;
+        mTags.setTableConstraint("CONSTRAINT unique_pair UNIQUE (" + M2MColumns.FROM_ID + ","
+                + M2MColumns.TO_ID + ") ON CONFLICT IGNORE");
     }
 
     @Override
