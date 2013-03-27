@@ -1,13 +1,11 @@
 package edu.mit.mobile.android.locast.data.tags;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 import android.content.ContentProvider;
-import android.content.ContentProviderOperation;
+import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
@@ -51,16 +49,12 @@ public class TaggableWrapper extends ContentItemDBHelper {
 
             final Uri itemTags = Taggable.getTagPath(item);
 
-            addTags(provider, itemTags, Tag.toSet(tags));
+            addTags(db, provider, itemTags, Tag.toSet(tags));
 
             db.setTransactionSuccessful();
 
             return item;
 
-        } catch (final OperationApplicationException e) {
-            final SQLException sqle = new SQLException("Error bulk-adding tags");
-            sqle.initCause(e);
-            throw sqle;
         } finally {
             db.endTransaction();
         }
@@ -73,49 +67,71 @@ public class TaggableWrapper extends ContentItemDBHelper {
      * @param provider
      * @param item
      * @param tags
-     * @throws OperationApplicationException
      */
-    public void addTags(ContentProvider provider, Uri itemTags, Set<String> tags)
-            throws OperationApplicationException {
+    public void addTags(SQLiteDatabase db, ContentProvider provider, Uri itemTags, Set<String> tags) {
 
-        final ArrayList<ContentProviderOperation> cpos = new ArrayList<ContentProviderOperation>(
-                tags.size());
+        db.beginTransaction();
 
-        addTags(cpos, itemTags, tags);
+        try {
+            final ContentValues cv = new ContentValues();
 
-        provider.applyBatch(cpos);
-    }
-
-    private ArrayList<ContentProviderOperation> addTags(ArrayList<ContentProviderOperation> cpos,
-            Uri itemTags, Set<String> tags) {
-        for (String tag : tags) {
-            tag = Tag.filterTag(tag);
-
-            if (tag.length() == 0) {
-                continue;
+            for (String tag : tags) {
+                tag = Tag.filterTag(tag);
+                if (tag.length() == 0) {
+                    continue;
+                }
+                cv.put(Tag.COL_NAME, tag);
+                mTags.insertDir(db, provider, itemTags, cv);
             }
-
-            cpos.add(ContentProviderOperation.newInsert(itemTags).withValue(Tag.COL_NAME, tag)
-                    .build());
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
         }
-        return cpos;
     }
 
-    private ArrayList<ContentProviderOperation> deleteTags(
-            ArrayList<ContentProviderOperation> cpos, Uri itemTags, Set<String> tags) {
-        for (String tag : tags) {
-            tag = Tag.filterTag(tag);
-            cpos.add(ContentProviderOperation.newDelete(itemTags)
-                    .withSelection(Tag.COL_NAME + "=?", new String[] { tag }).build());
+    /**
+     * Removes tags from a given item. Doesn't verify that they're present, nor does it add other
+     * tags. Tags will be filtered before insertion using {@link Tag#filterTag(String)}.
+     *
+     * @param provider
+     * @param item
+     * @param tags
+     */
+    public void deleteTags(SQLiteDatabase db, ContentProvider provider, Uri itemTags,
+            Set<String> tags) {
+
+        final Uri parent = ProviderUtils.removeLastPathSegment(itemTags);
+
+        final long id = ContentUris.parseId(parent);
+
+        final String tagTable = mTags.getToTable();
+
+        db.beginTransaction();
+
+        try {
+            for (String tag : tags) {
+                tag = Tag.filterTag(tag);
+                if (tag.length() == 0) {
+                    continue;
+                }
+
+                mTags.removeRelation(db, id, mTags.getJoinTableName() + "." + M2MColumns.TO_ID
+                        + " IN (SELECT " + Tag._ID + " FROM " + tagTable + " WHERE " + tagTable
+                        + "." + Tag.COL_NAME + "=?" + ")", new String[] { tag });
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
         }
-        return cpos;
     }
 
-    public void updateTags(ContentProvider provider, Uri item, Set<String> tags)
-            throws OperationApplicationException {
-        final Uri itemTags = Taggable.getTagPath(item);
+    private void updateTags(SQLiteDatabase db, ContentProvider provider, Uri itemTags,
+            Set<String> tags) {
+        updateTags(db, provider, itemTags, tags, getTags(db, itemTags));
+    }
 
-        final Set<String> existingTags = getTags(provider, itemTags);
+    private void updateTags(SQLiteDatabase db, ContentProvider provider, Uri itemTags,
+            Set<String> tags, Set<String> existingTags) {
 
         // tags that need to be removed.
         final Set<String> toDelete = new HashSet<String>(existingTags);
@@ -129,12 +145,18 @@ public class TaggableWrapper extends ContentItemDBHelper {
             return;
         }
 
-        final ArrayList<ContentProviderOperation> cpos = new ArrayList<ContentProviderOperation>();
+        db.beginTransaction();
 
-        addTags(cpos, itemTags, toAdd);
+        try {
+            addTags(db, provider, itemTags, toAdd);
 
-        provider.applyBatch(cpos);
+            deleteTags(db, provider, itemTags, toDelete);
 
+            db.setTransactionSuccessful();
+
+        } finally {
+            db.endTransaction();
+        }
     }
 
     public Set<String> getTags(ContentProvider provider, Uri itemTags) {
@@ -152,10 +174,51 @@ public class TaggableWrapper extends ContentItemDBHelper {
         return tags;
     }
 
+    public Set<String> getTags(SQLiteDatabase db, Uri itemTags) {
+        final Cursor c = mTags.queryDir(db, itemTags, Tag.DEFAULT_PROJECTION, null, null, null);
+        final HashSet<String> tags = new HashSet<String>();
+
+        try {
+            final int nameCol = c.getColumnIndex(Tag.COL_NAME);
+            while (c.moveToNext()) {
+                tags.add(c.getString(nameCol));
+            }
+        } finally {
+            c.close();
+        }
+        return tags;
+    }
+
     @Override
     public int updateItem(SQLiteDatabase db, ContentProvider provider, Uri uri,
             ContentValues values, String where, String[] whereArgs) {
-        return mWrapped.updateItem(db, provider, uri, values, where, whereArgs);
+
+        // short-circuit when there are no tags
+        if (!values.containsKey(Tag.TAGS_SPECIAL_CV_KEY)) {
+            return mWrapped.updateItem(db, provider, uri, values, where, whereArgs);
+        }
+
+        db.beginTransaction();
+
+        try {
+
+            final String tags = ProviderUtils.extractContentValueItem(values,
+                    Tag.TAGS_SPECIAL_CV_KEY).toString();
+
+            final int updateCount = mWrapped
+                    .updateItem(db, provider, uri, values, where, whereArgs);
+
+            final Uri itemTags = Taggable.getTagPath(uri);
+
+            updateTags(db, provider, itemTags, Tag.toSet(tags));
+
+            db.setTransactionSuccessful();
+
+            return updateCount;
+
+        } finally {
+            db.endTransaction();
+        }
     }
 
     @Override
