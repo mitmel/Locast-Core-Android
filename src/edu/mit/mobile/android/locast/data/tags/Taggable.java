@@ -1,17 +1,4 @@
 package edu.mit.mobile.android.locast.data.tags;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-
-import android.content.ContentProviderClient;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.RemoteException;
-import edu.mit.mobile.android.content.m2m.M2MManager;
 /*
  * Copyright (C) 2010  MIT Mobile Experience Lab
  *
@@ -28,6 +15,19 @@ import edu.mit.mobile.android.content.m2m.M2MManager;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
+import java.util.HashSet;
+import java.util.Set;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+
+import android.content.ContentProviderClient;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.RemoteException;
+import android.text.TextUtils;
+import edu.mit.mobile.android.content.m2m.M2MManager;
 import edu.mit.mobile.android.locast.data.SyncMap;
 
 /**
@@ -36,17 +36,26 @@ import edu.mit.mobile.android.locast.data.SyncMap;
  * @author stevep
  *
  */
-public abstract class Taggable {
+public class Taggable {
 
     public static final String PATH = "tags";
+    public static final String QUERY_PARAMETER_TAGS = PATH;
+
     private static final String[] TAG_PROJECTION = new String[] { Tag.COL_NAME };
 
     public interface Columns {
-        // no columns needed
+        public static final M2MManager TAGS = new M2MManager(Tag.class);
     }
 
     public static Uri getTagPath(Uri item) {
         return item.buildUpon().appendPath(PATH).build();
+    }
+
+    public static Uri getItemMatchingTags(Uri contentDir, String... tag) {
+
+        return contentDir.buildUpon()
+                .appendQueryParameter(QUERY_PARAMETER_TAGS, TextUtils.join(",", tag))
+                .build();
     }
 
     public static Set<String> getTags(ContentProviderClient cpc, Uri tagDir) throws RemoteException {
@@ -65,10 +74,6 @@ public abstract class Taggable {
         }
 
         return tags;
-    }
-
-    public static void putTags(ContentProviderClient cpc, Uri tagDir, Collection<String> tags) {
-
     }
 
     public static class TaggableSyncMap extends SyncMap {
