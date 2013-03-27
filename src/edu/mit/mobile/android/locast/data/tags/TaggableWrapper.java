@@ -47,7 +47,7 @@ public class TaggableWrapper extends ContentItemDBHelper {
 
             final Uri item = mWrapped.insertDir(db, provider, uri, values);
 
-            final Uri itemTags = Taggable.getTagPath(item);
+            final Uri itemTags = TaggableUtils.getTagPath(item);
 
             addTags(db, provider, itemTags, Tag.toSet(tags));
 
@@ -208,7 +208,7 @@ public class TaggableWrapper extends ContentItemDBHelper {
             final int updateCount = mWrapped
                     .updateItem(db, provider, uri, values, where, whereArgs);
 
-            final Uri itemTags = Taggable.getTagPath(uri);
+            final Uri itemTags = TaggableUtils.getTagPath(uri);
 
             updateTags(db, provider, itemTags, Tag.toSet(tags));
 

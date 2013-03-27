@@ -99,7 +99,7 @@ import android.util.Log;
 import edu.mit.mobile.android.locast.Constants;
 import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticationService;
 import edu.mit.mobile.android.locast.data.NoPublicPath;
-import edu.mit.mobile.android.locast.data.Titled;
+import edu.mit.mobile.android.locast.data.interfaces.TitledUtils;
 import edu.mit.mobile.android.locast.sync.NotificationProgressListener;
 import edu.mit.mobile.android.locast.sync.SyncableProvider;
 import edu.mit.mobile.android.utils.StreamUtils;
@@ -1433,7 +1433,7 @@ public class NetworkClient extends DefaultHttpClient {
                     localFile, "r");
             final long max = afd.getLength();
 
-        listener.onTransferStart(titled, Titled.getTitle(mContext, titled), contentType, max);
+        listener.onTransferStart(titled, TitledUtils.getTitle(mContext, titled), contentType, max);
 
             final TransferProgressListener tpl = new TransferProgressListener() {
 

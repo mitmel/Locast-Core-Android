@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.data;
+package edu.mit.mobile.android.locast.data.interfaces;
 
 /*
  * Copyright (C) 2010  MIT Mobile Experience Lab
@@ -37,57 +37,37 @@ import com.beoui.geocell.model.Point;
 import com.google.android.maps.GeoPoint;
 
 import edu.mit.mobile.android.content.ProviderUtils;
-import edu.mit.mobile.android.content.column.DBColumn;
-import edu.mit.mobile.android.content.column.FloatColumn;
-import edu.mit.mobile.android.content.column.TextColumn;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncCustom;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncItem;
+import edu.mit.mobile.android.locast.data.SyncMap;
 
 /**
- * A helper for things that are locatable. Implement Locatable.Columns to use.
+ * A helper for things that are locatable. Implement {@link Locatable} to use.
  *
  * @author steve
  *
  */
-public abstract class Locatable {
-
-    /**
-     * implement this in order to inherit columns needed for becoming locatable.
-     *
-     * @author steve
-     *
-     */
-    public static interface Columns {
-        @DBColumn(type = FloatColumn.class)
-        public static final String COL_LATITUDE = "lat";
-
-        @DBColumn(type = FloatColumn.class)
-        public static final String COL_LONGITUDE = "lon";
-
-        @DBColumn(type = TextColumn.class)
-        public static final String COL_GEOCELL = "geocell";
-
-    };
+public class LocatableUtils {
 
     public static final String SERVER_QUERY_PARAMETER = "dist";
 
-    public static final String SELECTION_LAT_LON = "abs(" + Columns.COL_LATITUDE
-            + " - ?) < 1 and abs(" + Columns.COL_LONGITUDE + " - ?) < 1";
+    public static final String SELECTION_LAT_LON = "abs(" + Locatable.COL_LATITUDE
+            + " - ?) < 1 and abs(" + Locatable.COL_LONGITUDE + " - ?) < 1";
 
     public static Uri toGeoUri(Cursor c) {
-        if (c.isNull(c.getColumnIndex(Columns.COL_LATITUDE))
-                || c.isNull(c.getColumnIndex(Columns.COL_LONGITUDE))) {
+        if (c.isNull(c.getColumnIndex(Locatable.COL_LATITUDE))
+                || c.isNull(c.getColumnIndex(Locatable.COL_LONGITUDE))) {
             return null;
         }
-        return Uri.parse("geo:" + c.getDouble(c.getColumnIndex(Columns.COL_LATITUDE)) + ","
-                + c.getDouble(c.getColumnIndex(Columns.COL_LONGITUDE)));
+        return Uri.parse("geo:" + c.getDouble(c.getColumnIndex(Locatable.COL_LATITUDE)) + ","
+                + c.getDouble(c.getColumnIndex(Locatable.COL_LONGITUDE)));
     }
 
     /**
      * Makes a URI that queries the locatable item by distance.
      *
      * @param contentUri
-     *            the Locatable content URI to build upon. Must be a dir, not an item.
+     *            the LocatableUtils content URI to build upon. Must be a dir, not an item.
      * @param location
      *            center point
      * @param distance
@@ -124,14 +104,14 @@ public abstract class Locatable {
 
     /**
      * Get the latitude/longitude from the row currently selected in the cursor. Requires
-     * Locatable.Columns._LATITUDE and Locatable.Columns._LONGITUDE to be selected.
+     * LocatableUtils.Locatable._LATITUDE and LocatableUtils.Locatable._LONGITUDE to be selected.
      *
      * @param c
      * @return
      */
     public static Location toLocation(Cursor c) {
-        final int lat_idx = c.getColumnIndex(Columns.COL_LATITUDE);
-        final int lon_idx = c.getColumnIndex(Columns.COL_LONGITUDE);
+        final int lat_idx = c.getColumnIndex(Locatable.COL_LATITUDE);
+        final int lon_idx = c.getColumnIndex(Locatable.COL_LONGITUDE);
         if (c.isNull(lat_idx) || c.isNull(lon_idx)) {
             return null;
         }
@@ -178,7 +158,7 @@ public abstract class Locatable {
                 join = true;
             }
 
-            selSb.append(Locatable.Columns.COL_GEOCELL);
+            selSb.append(Locatable.COL_GEOCELL);
             selSb.append(" LIKE ? || '%'");
 
         }
@@ -194,13 +174,14 @@ public abstract class Locatable {
 
         // final String[] extraArgs = {lat, lon};
         // return qb.query(db, projection, ProviderUtils.addExtraWhere(selection,
-        // Locatable.SELECTION_LAT_LON), ProviderUtils.addExtraWhereArgs(selectionArgs, extraArgs),
+        // LocatableUtils.SELECTION_LAT_LON), ProviderUtils.addExtraWhereArgs(selectionArgs,
+        // extraArgs),
         // null, null, sortOrder);
     }
 
     /**
      * Get the latitude/longitude from the row currently selected in the cursor. Requires
-     * Locatable.Columns._LATITUDE and Locatable.Columns._LONGITUDE to be selected.
+     * LocatableUtils.Locatable._LATITUDE and LocatableUtils.Locatable._LONGITUDE to be selected.
      *
      * @param c
      * @return
@@ -232,55 +213,63 @@ public abstract class Locatable {
     }
 
     /**
-     * Adds the appropriate {@link Columns#COL_LATITUDE}, {@link Columns#COL_LONGITUDE} columns to the
-     * given {@link ContentValues} for the given location.
+     * Adds the appropriate {@link Authorable#COL_LATITUDE}, {@link Authorable#COL_LONGITUDE}
+     * columns to the given {@link ContentValues} for the given location.
      *
      * @param cv
      * @param location
      * @return the same {@link ContentValues} that was passed in.
      */
     public static ContentValues toContentValues(ContentValues cv, GeoPoint location) {
-        cv.put(Columns.COL_LATITUDE, location.getLatitudeE6() / 1E6d);
-        cv.put(Columns.COL_LONGITUDE, location.getLongitudeE6() / 1E6d);
+        cv.put(Locatable.COL_LATITUDE, location.getLatitudeE6() / 1E6d);
+        cv.put(Locatable.COL_LONGITUDE, location.getLongitudeE6() / 1E6d);
 
         return cv;
     }
 
-    public static final SyncMap SYNC_MAP = new SyncMap();
+    public static final SyncMap SYNC_MAP = new LocatableSyncMap();
 
-    static {
-        SYNC_MAP.put("_location", new SyncCustom("location", SyncItem.FLAG_OPTIONAL
-                | SyncItem.SYNC_BOTH) {
+    public static class LocatableSyncMap extends SyncMap {
+        /**
+         *
+         */
+        private static final long serialVersionUID = 6568225507008227781L;
 
-            @Override
-            public JSONArray toJSON(Context context, Uri localItem, Cursor c, String lProp)
-                    throws JSONException {
+        public LocatableSyncMap() {
+            put("_location",
+                    new SyncCustom("location", SyncItem.FLAG_OPTIONAL | SyncItem.SYNC_BOTH) {
 
-                final int latCol = c.getColumnIndex(Columns.COL_LATITUDE);
-                final int lonCol = c.getColumnIndex(Columns.COL_LONGITUDE);
+                        @Override
+                        public JSONArray toJSON(Context context, Uri localItem, Cursor c,
+                                String lProp) throws JSONException {
 
-                if (c.isNull(latCol) || c.isNull(lonCol)) {
-                    return null;
-                }
+                            final int latCol = c.getColumnIndex(Locatable.COL_LATITUDE);
+                            final int lonCol = c.getColumnIndex(Locatable.COL_LONGITUDE);
 
-                final JSONArray coords = new JSONArray();
-                coords.put(c.getDouble(lonCol));
-                coords.put(c.getDouble(latCol));
-                return coords;
-            }
+                            if (c.isNull(latCol) || c.isNull(lonCol)) {
+                                return null;
+                            }
 
-            @Override
-            public ContentValues fromJSON(Context context, Uri localItem, JSONObject item,
-                    String lProp) throws JSONException {
-                final JSONArray ja = item.getJSONArray(remoteKey);
-                final ContentValues cv = new ContentValues();
-                final double lon = ja.getDouble(0);
-                final double lat = ja.getDouble(1);
-                cv.put(Columns.COL_LONGITUDE, lon);
-                cv.put(Columns.COL_LATITUDE, lat);
-                cv.put(Columns.COL_GEOCELL, GeocellUtils.compute(new Point(lat, lon), 13));
-                return cv;
-            }
-        });
+                            final JSONArray coords = new JSONArray();
+                            coords.put(c.getDouble(lonCol));
+                            coords.put(c.getDouble(latCol));
+                            return coords;
+                        }
+
+                        @Override
+                        public ContentValues fromJSON(Context context, Uri localItem,
+                                JSONObject item, String lProp) throws JSONException {
+                            final JSONArray ja = item.getJSONArray(remoteKey);
+                            final ContentValues cv = new ContentValues();
+                            final double lon = ja.getDouble(0);
+                            final double lat = ja.getDouble(1);
+                            cv.put(Locatable.COL_LONGITUDE, lon);
+                            cv.put(Locatable.COL_LATITUDE, lat);
+                            cv.put(Locatable.COL_GEOCELL,
+                                    GeocellUtils.compute(new Point(lat, lon), 13));
+                            return cv;
+                        }
+                    });
+        }
     }
 }

@@ -66,7 +66,7 @@ import edu.mit.mobile.android.locast.accounts.AbsLocastAuthenticator;
 import edu.mit.mobile.android.locast.data.CastMedia;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem;
 import edu.mit.mobile.android.locast.data.SyncException;
-import edu.mit.mobile.android.locast.data.Titled;
+import edu.mit.mobile.android.locast.data.interfaces.TitledUtils;
 import edu.mit.mobile.android.locast.net.LocastApplicationCallbacks;
 import edu.mit.mobile.android.locast.net.NetworkClient;
 import edu.mit.mobile.android.locast.net.NetworkClient.FileTransferProgressListener;
@@ -695,7 +695,7 @@ public abstract class AbsMediaSync extends Service implements MediaScannerConnec
             }
             if (dirty) {
                 final Uri titledItem = getTitledItemForCastMedia(castMediaUri);
-                String castTitle = Titled.getTitle(this, titledItem);
+                String castTitle = TitledUtils.getTitle(this, titledItem);
                 if (castTitle == null) {
                     castTitle = "untitled";
                 }

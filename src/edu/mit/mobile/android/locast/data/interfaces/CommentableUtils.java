@@ -1,4 +1,4 @@
-package edu.mit.mobile.android.locast.data;
+package edu.mit.mobile.android.locast.data.interfaces;
 
 /*
  * Copyright (C) 2011  MIT Mobile Experience Lab
@@ -17,21 +17,23 @@ package edu.mit.mobile.android.locast.data;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import edu.mit.mobile.android.content.column.DBColumn;
-import edu.mit.mobile.android.content.column.TextColumn;
+import edu.mit.mobile.android.locast.data.JsonSyncableItem;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncFieldMap;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncItem;
+import edu.mit.mobile.android.locast.data.SyncMap;
 
-public class Commentable {
-    public interface Columns {
-        @DBColumn(type = TextColumn.class)
-        public static final String COL_COMMENT_DIR_URI = "comment_dir_uri";
-    }
+public class CommentableUtils {
+    public static final SyncMap SYNC_MAP = new CommentableSyncMap();
 
-    public static final SyncMap SYNC_MAP = new SyncMap();
+    public static class CommentableSyncMap extends SyncMap{
+        /**
+         *
+         */
+        private static final long serialVersionUID = 5427496798582473851L;
 
-    static {
-        SYNC_MAP.put(Columns.COL_COMMENT_DIR_URI, new JsonSyncableItem.SyncFieldMap("comments",
-                SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));
+        public CommentableSyncMap() {
+            put(Commentable.COL_COMMENT_DIR_URI, new JsonSyncableItem.SyncFieldMap("comments",
+                    SyncFieldMap.STRING, SyncItem.FLAG_OPTIONAL | SyncFieldMap.SYNC_FROM));
+        }
     }
 }

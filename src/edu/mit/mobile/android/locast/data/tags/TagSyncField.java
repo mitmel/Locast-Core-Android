@@ -32,7 +32,7 @@ public class TagSyncField extends SyncCustom {
         final JSONArray ja = new JSONArray();
 
         try {
-            final Set<String> tags = Taggable.getTags(context.getContentResolver()
+            final Set<String> tags = TaggableUtils.getTags(context.getContentResolver()
                     .acquireContentProviderClient(localItem), mTarget.getUri(localItem));
             for (final String tag : tags) {
                 ja.put(tag);
@@ -50,7 +50,7 @@ public class TagSyncField extends SyncCustom {
 
         final ContentValues cv = new ContentValues();
 
-        cv.put(lProp, Taggable.toFlattenedString(item.getJSONArray(remoteKey)));
+        cv.put(lProp, TaggableUtils.toFlattenedString(item.getJSONArray(remoteKey)));
 
         return cv;
     }
