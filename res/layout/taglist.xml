@@ -39,11 +39,12 @@
             android:singleLine="true" />
 
         <ImageButton
+            style="?attr/taglist_add_button_style"
             android:id="@+id/tag_add_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:contentDescription="@string/tag_add_tag"
-            android:src="@android:drawable/ic_input_add" />
+             />
     </LinearLayout>
 
     <TextView

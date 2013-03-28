@@ -143,7 +143,11 @@ public class TagListView extends LinearLayout {
     }
 
     TagButton getTagView(String tag, boolean added) {
-        final TagButton b = new TagButton(getContext(), tag, added, false);
+        final TagButton b = (TagButton) LayoutInflater.from(getContext()).inflate(
+                R.layout.tagbutton, null);
+
+        b.setAdded(added);
+        b.setTagName(tag);
         b.setOnClickListener(tagHandler);
         return b;
     }

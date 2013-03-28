@@ -1,26 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <declare-styleable name="Gallery1">
-        <attr name="android:galleryItemBackground" />
-    </declare-styleable>
-    <declare-styleable name="OutlinedTextView"></declare-styleable>
+    <attr name="taglist_type">
+        <enum name="full" value="0" />
+        <enum name="selector" value="1" />
+    </attr>
+    <attr name="taglist_tagbutton_style" format="reference" />
+    <attr name="taglist_add_button_style" format="reference" />
+
     <declare-styleable name="TagList">
-        <attr name="taglist_type">
-            <enum name="full" value="0" />
-            <enum name="selector" value="1" />
-        </attr>
+        <attr name="taglist_type" />
     </declare-styleable>
-    <declare-styleable name="PointerShadow">
-        <attr name="orientation">
-            <enum name="top" value="0" />
-            <enum name="right" value="1" />
-        </attr>
-    </declare-styleable>
-
-    <item name="viewtag_item_position" type="id"/>
-    <item name="viewtag_item_adapter" type="id"/>
-
     <declare-styleable name="NotificationProgressBar">
         <attr name="android:text" />
         <attr name="android:id" />

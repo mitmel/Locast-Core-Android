@@ -29,7 +29,6 @@ import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.View.OnFocusChangeListener;
 import android.view.ViewGroup;
 import android.widget.AutoCompleteTextView;
@@ -45,8 +44,7 @@ import edu.mit.mobile.android.locast.R;
  * @author stevep
  *
  */
-public class TagList extends TagListView implements OnEditorActionListener, OnClickListener,
-        OnFocusChangeListener {
+public class TagList extends TagListView implements OnEditorActionListener, OnFocusChangeListener {
     private ViewGroup recommendedTagView;
     private TextView recommendedTagLabel;
     private AutoCompleteTextView addTagEditText;
@@ -57,6 +55,7 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
     private int style;
 
     private RemoteTagsAdapter acAdapter;
+    private int mTagButtonStyle;
 
     public TagList(Context context) {
         super(context);
@@ -76,9 +75,10 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
         recommendedTagLabel = (TextView) findViewById(R.id.tag_recommended_label);
         addTagEditText = (AutoCompleteTextView) findViewById(R.id.tag_add_text);
 
-        ((ImageButton) findViewById(R.id.tag_add_button)).setOnClickListener(this);
+        ((ImageButton) findViewById(R.id.tag_add_button))
+                .setOnClickListener(mDefaultOnClickListener);
 
-        setOnTagClickListener(this);
+        setOnTagClickListener(mDefaultOnClickListener);
 
         addTagEditText.setOnFocusChangeListener(this);
         addTagEditText.setAdapter(acAdapter);
@@ -94,7 +94,6 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
         if (style == R.id.selector) {
             findViewById(R.id.tag_manual_entry).setVisibility(View.GONE);
             findViewById(R.id.tag_recommended_label).setVisibility(View.GONE);
-
         }
     }
 
@@ -182,38 +181,6 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
         shownRecs.clear();
         recommendedTagView.removeAllViews();
         recommendedTagLabel.setVisibility(TextView.GONE);
-    }
-
-    @Override
-    TagButton getTagView(String tag, boolean added) {
-        final TagButton b = new TagButton(getContext(), tag, added, true);
-        b.setOnClickListener(this);
-        return b;
-    }
-
-    /**
-     * Listener to handle the act of clicking on a tag button.
-     */
-    public void onClick(View v) {
-        boolean changed = false;
-
-        final int id = v.getId();
-        if (id == R.id.tag_add_button) {
-            changed = addEditTextTag();
-        } else {
-            if (v instanceof TagButton) {
-                final TagButton tagButton = (TagButton) v;
-                if (tagButton.isAdded()) {
-                    changed = removeTag((String) tagButton.getTag());
-                } else {
-                    changed = addTag((String) tagButton.getTag());
-                }
-            }
-        }
-
-        if (changed && listener != null) {
-            listener.onTagListChange(this);
-        }
     }
 
     private boolean addEditTextTag() {
@@ -317,4 +284,32 @@ public class TagList extends TagListView implements OnEditorActionListener, OnCl
             }
         }
     }
+
+    private final OnClickListener mDefaultOnClickListener = new OnClickListener() {
+
+        /**
+         * Listener to handle the act of clicking on a tag button.
+         */
+        public void onClick(View v) {
+            boolean changed = false;
+
+            final int id = v.getId();
+            if (id == R.id.tag_add_button) {
+                changed = addEditTextTag();
+            } else {
+                if (v instanceof TagButton) {
+                    final TagButton tagButton = (TagButton) v;
+                    if (tagButton.isAdded()) {
+                        changed = removeTag((String) tagButton.getTag(R.id.locast_core__tag));
+                    } else {
+                        changed = addTag((String) tagButton.getTag(R.id.locast_core__tag));
+                    }
+                }
+            }
+
+            if (changed && listener != null) {
+                listener.onTagListChange(TagList.this);
+            }
+        }
+    };
 }

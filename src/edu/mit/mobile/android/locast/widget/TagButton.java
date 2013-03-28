@@ -27,35 +27,20 @@ import edu.mit.mobile.android.locast.R;
  */
 public class TagButton extends Button {
 	private boolean added;
-	private boolean editable = false;
+	private final boolean editable = false;
 
 	public TagButton(Context context) {
-		this(context, null, false, true);
+        this(context, null);
 	}
 
+
+    public TagButton(Context context, AttributeSet attrs) {
+        this(context, attrs, R.attr.taglist_tagbutton_style);
+    }
 
     public TagButton(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        updateResource();
     }
-
-    public TagButton(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        updateResource();
-    }
-
-
-	public TagButton(Context context, String text, boolean added, boolean editable){
-		super(context);
-		this.setText(text);
-        // this.setTextColor(Color.BLACK);
-        this.setTag(R.id.tag_add_button, text);
-
-		this.editable = editable;
-		this.added = added;
-
-		updateResource();
-	}
 
 	/**
 	 * Sets the state of the button to reflect whether or not the tag
@@ -66,19 +51,6 @@ public class TagButton extends Button {
 	public void setAdded(boolean added){
 
 		this.added = added;
-		updateResource();
-	}
-
-	private void updateResource(){
-        // if (isEditable()){
-        // if (isAdded()){
-        // this.setBackgroundResource(R.drawable.btn_tag_remove);
-        // }else{
-        // this.setBackgroundResource(R.drawable.btn_tag_add);
-        // }
-        // }else{
-        // this.setBackgroundResource(R.drawable.btn_tag_normal);
-        // }
 	}
 
 	public boolean isAdded(){
@@ -91,6 +63,6 @@ public class TagButton extends Button {
 
 	public void setTagName(String name){
 		setText(name);
-		setTag(name);
+        setTag(R.id.locast_core__tag, name);
 	}
 }
