@@ -1,7 +1,7 @@
 package edu.mit.mobile.android.locast.widget;
 
 /*
- * Copyright (C) 2010  MIT Mobile Experience Lab
+ * Copyright (C) 2010-2013 MIT Mobile Experience Lab
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -55,7 +55,6 @@ public class TagList extends TagListView implements OnEditorActionListener, OnFo
     private int style;
 
     private RemoteTagsAdapter acAdapter;
-    private int mTagButtonStyle;
 
     public TagList(Context context) {
         super(context);

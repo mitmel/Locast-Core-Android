@@ -32,12 +32,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.location.Location;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.util.Log;
-
-import com.google.android.maps.GeoPoint;
-
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.content.column.BooleanColumn;
 import edu.mit.mobile.android.content.column.DBColumn;
@@ -358,7 +356,7 @@ public abstract class CastMedia extends JsonSyncableItem {
          * if location information was discovered from the media's metadata, this location is
          * extracted. Otherwise null.
          */
-        public GeoPoint location;
+        public Location location;
         /**
          * the path on disk to the media
          */
@@ -374,7 +372,7 @@ public abstract class CastMedia extends JsonSyncableItem {
          * @param castMediaItem
          * @param location
          */
-        public CastMediaInfo(String path, String mimeType, Uri castMediaItem, GeoPoint location) {
+        public CastMediaInfo(String path, String mimeType, Uri castMediaItem, Location location) {
             this.path = path;
             this.mimeType = mimeType;
             this.castMediaItem = castMediaItem;

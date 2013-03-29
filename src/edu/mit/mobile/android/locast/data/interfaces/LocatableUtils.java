@@ -34,7 +34,6 @@ import android.net.Uri;
 
 import com.beoui.geocell.GeocellUtils;
 import com.beoui.geocell.model.Point;
-import com.google.android.maps.GeoPoint;
 
 import edu.mit.mobile.android.content.ProviderUtils;
 import edu.mit.mobile.android.locast.data.JsonSyncableItem.SyncCustom;
@@ -80,26 +79,6 @@ public class LocatableUtils {
                 .appendQueryParameter(SERVER_QUERY_PARAMETER,
                         location.getLongitude() + "," + location.getLatitude() + "," + distance)
                 .build();
-    }
-
-    /**
-     * Makes a URI that queries the locatable item by distance.
-     *
-     * @param contentUri
-     *            the GeoPoint content URI to build upon. Must be a dir, not an item.
-     * @param location
-     *            center point
-     * @param distance
-     *            distance in meters
-     * @return
-     */
-    public static Uri toDistanceSearchUri(Uri contentUri, GeoPoint location, double distance) {
-        return contentUri
-                .buildUpon()
-                .appendQueryParameter(
-                        SERVER_QUERY_PARAMETER,
-                        location.getLongitudeE6() / 1E6f + "," + location.getLatitudeE6() / 1E6f
-                                + "," + distance).build();
     }
 
     /**
@@ -220,9 +199,9 @@ public class LocatableUtils {
      * @param location
      * @return the same {@link ContentValues} that was passed in.
      */
-    public static ContentValues toContentValues(ContentValues cv, GeoPoint location) {
-        cv.put(Locatable.COL_LATITUDE, location.getLatitudeE6() / 1E6d);
-        cv.put(Locatable.COL_LONGITUDE, location.getLongitudeE6() / 1E6d);
+    public static ContentValues toContentValues(ContentValues cv, Location location) {
+        cv.put(Locatable.COL_LATITUDE, location.getLatitude());
+        cv.put(Locatable.COL_LONGITUDE, location.getLongitude());
 
         return cv;
     }

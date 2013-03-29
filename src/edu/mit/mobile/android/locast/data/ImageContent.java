@@ -3,13 +3,11 @@ package edu.mit.mobile.android.locast.data;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.location.Location;
 import android.net.Uri;
 import android.provider.MediaStore.Images.Media;
 import android.provider.MediaStore.MediaColumns;
 import android.util.Log;
-
-import com.google.android.maps.GeoPoint;
-
 import edu.mit.mobile.android.content.column.DBColumn;
 import edu.mit.mobile.android.content.column.TextColumn;
 
@@ -24,7 +22,7 @@ public abstract class ImageContent extends CastMedia {
         super(c);
     }
 
-    public static GeoPoint extractLocationFromContentUri(Cursor c) {
+    public static Location extractLocationFromContentUri(Cursor c) {
         // if the current location is null, infer it from the first media that's
         // added.
         final int latCol = c.getColumnIndex(Media.LATITUDE);
@@ -38,8 +36,10 @@ public abstract class ImageContent extends CastMedia {
                                                          // an unfortunate edge
                                                          // case...
         if (!c.isNull(latCol) && !c.isNull(lonCol) && !isInArmpit) {
-            return new GeoPoint((int) (c.getDouble(latCol) * 1E6),
-                    (int) (c.getDouble(lonCol) * 1E6));
+            final Location l = new Location("internal");
+            l.setLatitude(c.getDouble(latCol));
+            l.setLongitude(c.getDouble(lonCol));
+            return l;
         } else {
             return null;
         }
