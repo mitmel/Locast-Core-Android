@@ -204,6 +204,13 @@ public abstract class AbsLocastAuthenticator extends AbstractAccountAuthenticato
         return bundle;
     }
 
+	/**
+	 * @param context
+	 * @param accountType
+	 * @return
+	 * @deprecated use {@link #getUserUri(Context, Account)} instead.
+	 */
+	@Deprecated
     public static String getUserUri(Context context, String accountType) {
         final Account[] accounts = AbsLocastAuthenticator.getAccounts(context, accountType);
         if (accounts.length > 0){
